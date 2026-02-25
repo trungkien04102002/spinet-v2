@@ -56,14 +56,18 @@ scp -P [PORT] vast_setup.sh root@[IP_ADDRESS]:~/
 # SSH into the machine
 ssh -p [PORT] root@[IP_ADDRESS]
 
-# Run the setup script
+# Run the setup script (uses main branch by default)
 chmod +x vast_setup.sh
 ./vast_setup.sh
+
+# Or specify a different branch
+./vast_setup.sh --branch test-run-project
+./vast_setup.sh --branch your-feature-branch
 ```
 
 ### 4. Run Python Scripts
 ```bash
-cd SpineNetV2
+cd spinet-v2
 source spinenet-venv/bin/activate
 python test_spinenet.py
 ```
