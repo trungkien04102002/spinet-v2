@@ -30,6 +30,8 @@ def main():
     parser.add_argument('--format', type=str, default='original',
                         choices=['original', 'rsna'],
                         help='Output format: original (11 tasks) or rsna (3 tasks)')
+    parser.add_argument('--use-pretrained', action='store_true',
+                        help='Use pretrained SpineNet backbone (for RSNA format with transfer learning)')
     args = parser.parse_args()
 
     print("=" * 60)
@@ -37,11 +39,19 @@ def main():
     print("=" * 60)
 
     if args.format == 'rsna':
-        print("\n⚠ RSNA mode: Using custom baseline model (not SpineNet pretrained)")
-        print("  - 3 tasks: Spinal Canal, Left Foraminal, Right Foraminal")
-        print("  - 3 classes per task: Normal/Mild, Moderate, Severe")
-        print("  - Model has RANDOM weights (for architecture testing only)")
-        print("  - Predictions will be meaningless until trained on RSNA data")
+        if args.use_pretrained:
+            print("\n✓ RSNA mode with TRANSFER LEARNING")
+            print("  - 3 tasks: Spinal Canal, Left Foraminal, Right Foraminal")
+            print("  - 3 classes per task: Normal/Mild, Moderate, Severe")
+            print("  - Backbone: PRETRAINED from SpineNet (transfer learning)")
+            print("  - Heads: RANDOM weights (not trained yet)")
+            print("  - Predictions will be random, but architecture is ready for training")
+        else:
+            print("\n⚠ RSNA mode: Using custom baseline model (not SpineNet pretrained)")
+            print("  - 3 tasks: Spinal Canal, Left Foraminal, Right Foraminal")
+            print("  - 3 classes per task: Normal/Mild, Moderate, Severe")
+            print("  - Model has RANDOM weights (for architecture testing only)")
+            print("  - Predictions will be meaningless until trained on RSNA data")
     else:
         print("\n✓ Original mode: Using SpineNet pretrained model")
         print("  - 11 tasks: Pfirrmann, Stenosis, Herniation, etc.")
@@ -56,8 +66,8 @@ def main():
     download_example_scan(scan_name, file_path='example_scans')
     print(f"✓ Downloaded {scan_name}")
 
-    # Download weights (only for original format)
-    if args.format == 'original':
+    # Download weights (for original format, or for RSNA with pretrained)
+    if args.format == 'original' or (args.format == 'rsna' and args.use_pretrained):
         print("\n[2/5] Downloading model weights...")
         spinenet.download_weights(verbose=True, force=False)
         print("✓ Weights downloaded")
@@ -114,9 +124,31 @@ def main():
         print(f"\n✓ Results saved to: {output_file}")
 
     else:  # args.format == 'rsna'
-        # Use RSNA baseline model (untrained)
-        print("\nUsing RSNA baseline model (RANDOM weights)...")
-        model = GradingModelBaseline(format='rsna')
+        # Use RSNA baseline model
+        if args.use_pretrained:
+            print("\nUsing RSNA baseline model with PRETRAINED backbone...")
+            model = GradingModelBaseline(format='rsna')
+
+            # Load pretrained backbone from SpineNet
+            try:
+                # Get SpineNet weights path
+                weights_dir = os.path.expanduser('~/.spinenet/weights')
+                if os.path.exists(weights_dir):
+                    print(f"Loading pretrained backbone from: {weights_dir}")
+                    model.load_pretrained_backbone(weights_dir, verbose=True)
+                    print("\n✓ Transfer learning enabled!")
+                    print("  - Backbone: PRETRAINED (knows spine anatomy)")
+                    print("  - Heads: RANDOM (need training)")
+                else:
+                    print(f"⚠ SpineNet weights not found at {weights_dir}")
+                    print("  Using random weights for now")
+            except Exception as e:
+                print(f"⚠ Could not load pretrained weights: {e}")
+                print("  Using random weights for now")
+        else:
+            print("\nUsing RSNA baseline model (RANDOM weights)...")
+            model = GradingModelBaseline(format='rsna')
+
         model.to(device)
         model.eval()
 
@@ -144,9 +176,15 @@ def main():
 
             # Display results
             print("\n" + "=" * 60)
-            print("GRADING RESULTS (RSNA Format - RANDOM WEIGHTS)")
-            print("=" * 60)
-            print("⚠ WARNING: These predictions are MEANINGLESS (untrained model)")
+            if args.use_pretrained:
+                print("GRADING RESULTS (RSNA Format - PRETRAINED BACKBONE)")
+                print("=" * 60)
+                print("⚠ Note: Backbone is pretrained, but heads need training")
+                print("  Predictions are still random until heads are trained")
+            else:
+                print("GRADING RESULTS (RSNA Format - RANDOM WEIGHTS)")
+                print("=" * 60)
+                print("⚠ WARNING: These predictions are MEANINGLESS (untrained model)")
             print("=" * 60)
 
             for i, ivd_label in enumerate(ivd_labels):
