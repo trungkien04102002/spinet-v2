@@ -155,13 +155,17 @@ def main():
         # Prepare IVD volumes
         ivd_volumes = []
         ivd_labels = []
-        for ivd in ivd_dicts:
+        for idx, ivd in enumerate(ivd_dicts):
             if 'volume' in ivd and ivd['volume'] is not None:
                 vol = ivd['volume']
                 if vol.shape == (9, 112, 224):
                     ivd_volumes.append(vol)
                     # Get IVD label (try different possible keys)
-                    label = ivd.get('predicted_label') or ivd.get('label') or ivd.get('ivd_label') or 'Unknown'
+                    label = (ivd.get('predicted_label') or
+                            ivd.get('label') or
+                            ivd.get('ivd_label') or
+                            ivd.get('ivd_name') or
+                            f'IVD_{idx+1}')  # Fallback: IVD_1, IVD_2, etc.
                     ivd_labels.append(label)
 
         print(f"✓ Prepared {len(ivd_volumes)} IVD volumes")
