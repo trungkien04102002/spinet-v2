@@ -128,7 +128,9 @@ def main():
                 vol = ivd['volume']
                 if vol.shape == (9, 112, 224):
                     ivd_volumes.append(vol)
-                    ivd_labels.append(ivd['predicted_label'])
+                    # Get IVD label (try different possible keys)
+                    label = ivd.get('predicted_label') or ivd.get('label') or ivd.get('ivd_label') or 'Unknown'
+                    ivd_labels.append(label)
 
         print(f"✓ Prepared {len(ivd_volumes)} IVD volumes")
 
