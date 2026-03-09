@@ -61,7 +61,15 @@ fi
 # Extract
 echo ""
 echo "[3/3] Extracting..."
-unzip -q rsna_preprocessed.zip -d rsna_preprocessed
+unzip -q rsna_preprocessed.zip
+
+# Check if extraction created nested folder (rsna_preprocessed/rsna_preprocessed/)
+if [ -d "rsna_preprocessed/rsna_preprocessed" ]; then
+    echo "Fixing nested folder structure..."
+    mv rsna_preprocessed/rsna_preprocessed/* rsna_preprocessed/
+    mv rsna_preprocessed/rsna_preprocessed/.* rsna_preprocessed/ 2>/dev/null || true
+    rmdir rsna_preprocessed/rsna_preprocessed
+fi
 
 # Verify
 if [ -f "rsna_preprocessed/train_metadata.csv" ]; then
