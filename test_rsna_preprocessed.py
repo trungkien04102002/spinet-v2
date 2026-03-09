@@ -80,12 +80,27 @@ def main():
         print(f"  - Loading trained model from {args.model}...")
         try:
             checkpoint = torch.load(args.model, map_location='cpu')
-            model.load_state_dict(checkpoint['model_weights'])
-            epoch = checkpoint.get('epoch_no', '?')
-            val_loss = checkpoint.get('val_loss', '?')
-            print(f"  ✓ Loaded checkpoint from epoch {epoch} (val_loss: {val_loss:.4f})" if isinstance(val_loss, float) else f"  ✓ Loaded checkpoint from epoch {epoch}")
+
+            # Check if checkpoint has expected format
+            if isinstance(checkpoint, dict):
+                if 'model_weights' in checkpoint:
+                    # Standard checkpoint format (from train_rsna_baseline.py)
+                    model.load_state_dict(checkpoint['model_weights'])
+                    epoch = checkpoint.get('epoch_no', '?')
+                    val_loss = checkpoint.get('val_loss', '?')
+                    print(f"  ✓ Loaded checkpoint from epoch {epoch} (val_loss: {val_loss:.4f})" if isinstance(val_loss, float) else f"  ✓ Loaded checkpoint from epoch {epoch}")
+                else:
+                    # Direct state_dict format
+                    print(f"  - Checkpoint keys: {list(checkpoint.keys())[:10]}...")
+                    model.load_state_dict(checkpoint)
+                    print(f"  ✓ Loaded model state dict")
+            else:
+                print(f"  ❌ Unexpected checkpoint format: {type(checkpoint)}")
+                return
         except Exception as e:
             print(f"  ❌ Error loading checkpoint: {e}")
+            import traceback
+            traceback.print_exc()
             return
     elif args.use_pretrained:
         print("  - Loading pretrained backbone...")
