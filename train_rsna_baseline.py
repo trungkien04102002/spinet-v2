@@ -312,8 +312,7 @@ def main():
         optimizer,
         mode='min',
         factor=0.5,
-        patience=5,
-        verbose=True
+        patience=5
     )
 
     print(f"✓ Optimizer: Adam (lr={args.lr}, weight_decay={args.weight_decay})")
