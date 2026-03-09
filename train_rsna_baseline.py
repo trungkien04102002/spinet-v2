@@ -29,7 +29,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, Subset
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, confusion_matrix, log_loss
+from sklearn.metrics import accuracy_score, confusion_matrix, log_loss, precision_recall_fscore_support, classification_report
+from tqdm import tqdm
 
 from rsna_preprocessed_dataloader import RSNAPreprocessedDataset
 from spinenet.models.grading_baseline import GradingModelBaseline
@@ -94,7 +95,8 @@ def evaluate(model, dataloader, device):
     criterion = nn.CrossEntropyLoss(ignore_index=-1)  # Ignore missing labels (-1)
 
     with torch.no_grad():
-        for volumes, labels in dataloader:
+        val_pbar = tqdm(dataloader, desc="Validating", leave=False)
+        for volumes, labels in val_pbar:
             volumes = volumes.unsqueeze(1).to(device)  # [B, 1, 9, 112, 224]
 
             # Move labels to device
@@ -127,15 +129,38 @@ def evaluate(model, dataloader, device):
     avg_loss = total_loss / num_batches
 
     accuracies = {}
+    per_class_metrics = {}  # Store precision, recall, F1 per class
+
     for condition in ['spinal_canal', 'left_foraminal', 'right_foraminal']:
         # Filter out -1 labels (missing data)
         labels_arr = np.array(all_labels[condition])
         preds_arr = np.array(all_preds[condition])
         valid_mask = labels_arr != -1
+
         if valid_mask.sum() > 0:
-            accuracies[condition] = accuracy_score(labels_arr[valid_mask], preds_arr[valid_mask])
+            labels_filtered = labels_arr[valid_mask]
+            preds_filtered = preds_arr[valid_mask]
+
+            # Overall accuracy
+            accuracies[condition] = accuracy_score(labels_filtered, preds_filtered)
+
+            # Per-class metrics: precision, recall, F1
+            precision, recall, f1, support = precision_recall_fscore_support(
+                labels_filtered, preds_filtered,
+                labels=[0, 1, 2],
+                average=None,
+                zero_division=0
+            )
+
+            per_class_metrics[condition] = {
+                'precision': precision,
+                'recall': recall,
+                'f1': f1,
+                'support': support
+            }
         else:
             accuracies[condition] = 0.0
+            per_class_metrics[condition] = None
 
     # Compute weighted log loss
     all_outputs_concat = {
@@ -146,7 +171,41 @@ def evaluate(model, dataloader, device):
     }
     weighted_logloss = compute_weighted_log_loss(all_outputs_concat, all_labels_tensor)
 
-    return avg_loss, accuracies, weighted_logloss, all_labels, all_preds
+    return avg_loss, accuracies, weighted_logloss, all_labels, all_preds, per_class_metrics
+
+
+def print_per_class_metrics(per_class_metrics):
+    """Print precision, recall, F1-score per class for each condition"""
+    conditions = ['spinal_canal', 'left_foraminal', 'right_foraminal']
+    condition_names = ['Spinal Canal', 'Left Foraminal', 'Right Foraminal']
+    class_names = ['Normal/Mild', 'Moderate', 'Severe']
+
+    print("\n" + "="*70)
+    print("Per-Class Metrics (Precision, Recall, F1-Score)")
+    print("="*70)
+
+    for condition, name in zip(conditions, condition_names):
+        metrics = per_class_metrics.get(condition)
+        if metrics is not None:
+            print(f"\n{name}:")
+            print(f"{'Class':<15} {'Support':>8} {'Precision':>10} {'Recall':>10} {'F1-Score':>10}")
+            print("-" * 70)
+
+            for i, class_name in enumerate(class_names):
+                print(f"{class_name:<15} "
+                      f"{int(metrics['support'][i]):>8} "
+                      f"{metrics['precision'][i]:>10.3f} "
+                      f"{metrics['recall'][i]:>10.3f} "
+                      f"{metrics['f1'][i]:>10.3f}")
+
+            # Macro average (unweighted mean - treats all classes equally)
+            macro_p = np.mean(metrics['precision'])
+            macro_r = np.mean(metrics['recall'])
+            macro_f1 = np.mean(metrics['f1'])
+            print("-" * 70)
+            print(f"{'Macro Avg':<15} {'':<8} {macro_p:>10.3f} {macro_r:>10.3f} {macro_f1:>10.3f}")
+        else:
+            print(f"\n{name}: No valid labels")
 
 
 def print_confusion_matrices(all_labels, all_preds):
@@ -154,7 +213,10 @@ def print_confusion_matrices(all_labels, all_preds):
     conditions = ['spinal_canal', 'left_foraminal', 'right_foraminal']
     condition_names = ['Spinal Canal', 'Left Foraminal', 'Right Foraminal']
 
-    print("\nConfusion Matrices:")
+    print("\n" + "="*70)
+    print("Confusion Matrices")
+    print("="*70)
+
     for condition, name in zip(conditions, condition_names):
         # Filter out -1 labels (missing data)
         labels_arr = np.array(all_labels[condition])
@@ -352,7 +414,10 @@ def main():
         train_loss = 0.0
         num_batches = 0
 
-        for batch_idx, (volumes, labels) in enumerate(train_loader):
+        # Progress bar for training batches
+        train_pbar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{args.epochs} [Train]", leave=False)
+
+        for batch_idx, (volumes, labels) in enumerate(train_pbar):
             volumes = volumes.unsqueeze(1).to(device)  # [B, 1, 9, 112, 224]
 
             # Move labels to device
@@ -379,16 +444,13 @@ def main():
             train_loss += loss.item()
             num_batches += 1
 
-            # Print progress
-            if (batch_idx + 1) % 10 == 0:
-                print(f"  Epoch [{epoch+1}/{args.epochs}] "
-                      f"Batch [{batch_idx+1}/{len(train_loader)}] "
-                      f"Loss: {loss.item():.4f}")
+            # Update progress bar
+            train_pbar.set_postfix({'loss': f'{loss.item():.4f}'})
 
         avg_train_loss = train_loss / num_batches
 
         # Validation
-        val_loss, val_accuracies, val_weighted_logloss, all_labels, all_preds = evaluate(
+        val_loss, val_accuracies, val_weighted_logloss, all_labels, all_preds, val_per_class_metrics = evaluate(
             model, val_loader, device
         )
 
@@ -408,8 +470,9 @@ def main():
         print(f"  Left Foraminal:   {val_accuracies['left_foraminal']:.2%}")
         print(f"  Right Foraminal:  {val_accuracies['right_foraminal']:.2%}")
 
-        # Print confusion matrices every 5 epochs
+        # Print detailed metrics every 5 epochs
         if (epoch + 1) % 5 == 0:
+            print_per_class_metrics(val_per_class_metrics)
             print_confusion_matrices(all_labels, all_preds)
 
         # Save checkpoint
