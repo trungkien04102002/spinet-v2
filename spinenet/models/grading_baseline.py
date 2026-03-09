@@ -374,6 +374,84 @@ class GradingModelBaseline(nn.Module):
                 if reset_weights:
                     module.reset_parameters()
 
+    def load_pretrained_backbone(self, weights_dir: str, strict: bool = False, verbose: bool = True):
+        """
+        Load pretrained backbone weights from original SpineNet model.
+
+        Only loads backbone (conv1, bn1, layer1-4, avgpool), NOT classification heads.
+        This allows transfer learning: use pretrained features, train new heads.
+
+        Args:
+            weights_dir: Path to directory containing pretrained weights (.pt files)
+            strict: If True, requires exact match. If False, allows missing/extra keys
+            verbose: Print loading information
+        """
+        import glob
+
+        # Find latest checkpoint
+        if os.path.isdir(weights_dir):
+            list_of_pt = glob.glob(os.path.join(weights_dir, "*.pt"))
+            if not list_of_pt:
+                raise FileNotFoundError(f"No .pt files found in {weights_dir}")
+            checkpoint_path = max(list_of_pt, key=os.path.getctime)
+        else:
+            checkpoint_path = weights_dir
+
+        if verbose:
+            print(f"  Loading backbone from: {checkpoint_path}")
+
+        # Load checkpoint
+        checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+        pretrained_dict = checkpoint.get("model_weights", checkpoint)
+
+        # Get current model state
+        model_dict = self.state_dict()
+
+        # Filter out classification heads (fc_* layers)
+        # Only load backbone weights
+        backbone_dict = {}
+        for k, v in pretrained_dict.items():
+            # Skip classification heads
+            if k.startswith('fc_'):
+                continue
+            # Only load if key exists in current model
+            if k in model_dict:
+                # Check shape compatibility
+                if v.shape == model_dict[k].shape:
+                    backbone_dict[k] = v
+                elif verbose:
+                    print(f"  Warning: Skipping {k} due to shape mismatch: "
+                          f"{v.shape} vs {model_dict[k].shape}")
+            elif verbose and not k.startswith('fc_'):
+                print(f"  Warning: Key {k} not found in current model")
+
+        if verbose:
+            total_params = len(model_dict)
+            loaded_params = len(backbone_dict)
+            print(f"  Loaded {loaded_params}/{total_params} parameters")
+            print(f"  Classification heads will be randomly initialized")
+
+        # Update model dict and load
+        model_dict.update(backbone_dict)
+        self.load_state_dict(model_dict, strict=strict)
+
+        if verbose:
+            print(f"  ✓ Backbone loaded successfully")
+
+    def freeze_backbone(self, freeze: bool = True):
+        """
+        Freeze or unfreeze backbone parameters for transfer learning.
+
+        Args:
+            freeze: If True, freeze backbone (train only heads).
+                   If False, unfreeze backbone (train everything).
+        """
+        # Freeze/unfreeze all backbone layers
+        for name, param in self.named_parameters():
+            # Classification heads start with 'fc_'
+            if not name.startswith('fc_'):
+                param.requires_grad = not freeze
+
 
 # Test code
 if __name__ == "__main__":
