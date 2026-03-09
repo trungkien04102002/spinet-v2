@@ -7,8 +7,12 @@ tutorials/results/*
 # RSNA 2024 Dataset (large data files - do not commit)
 rsna-2024-lumbar-spine-degenerative-classification/
 rsna_preprocessed/
+rsna_preprocessed.zip
 example_scans/
 *.npy
+
+# macOS
+.DS_Store
 
 
 # Standard Python GitIgnore
