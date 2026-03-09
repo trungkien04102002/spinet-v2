@@ -55,12 +55,15 @@ def compute_weighted_log_loss(outputs_dict, labels_dict):
         probs = torch.softmax(outputs_dict[condition], dim=1).cpu().numpy()
         labels = labels_dict[condition].cpu().numpy()
 
-        # Compute log loss for this condition
-        condition_loss = log_loss(labels, probs, labels=[0, 1, 2])
+        # Filter out -1 labels (missing data)
+        valid_mask = labels != -1
+        if valid_mask.sum() > 0:
+            # Compute log loss for this condition
+            condition_loss = log_loss(labels[valid_mask], probs[valid_mask], labels=[0, 1, 2])
 
-        # Weight it
-        total_loss += condition_loss * weights[condition]
-        total_weight += weights[condition]
+            # Weight it
+            total_loss += condition_loss * weights[condition]
+            total_weight += weights[condition]
 
     return total_loss / total_weight
 
@@ -88,7 +91,7 @@ def evaluate(model, dataloader, device):
     total_loss = 0.0
     num_batches = 0
 
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(ignore_index=-1)  # Ignore missing labels (-1)
 
     with torch.no_grad():
         for volumes, labels in dataloader:
@@ -125,7 +128,14 @@ def evaluate(model, dataloader, device):
 
     accuracies = {}
     for condition in ['spinal_canal', 'left_foraminal', 'right_foraminal']:
-        accuracies[condition] = accuracy_score(all_labels[condition], all_preds[condition])
+        # Filter out -1 labels (missing data)
+        labels_arr = np.array(all_labels[condition])
+        preds_arr = np.array(all_preds[condition])
+        valid_mask = labels_arr != -1
+        if valid_mask.sum() > 0:
+            accuracies[condition] = accuracy_score(labels_arr[valid_mask], preds_arr[valid_mask])
+        else:
+            accuracies[condition] = 0.0
 
     # Compute weighted log loss
     all_outputs_concat = {
@@ -146,12 +156,20 @@ def print_confusion_matrices(all_labels, all_preds):
 
     print("\nConfusion Matrices:")
     for condition, name in zip(conditions, condition_names):
-        cm = confusion_matrix(all_labels[condition], all_preds[condition], labels=[0, 1, 2])
-        print(f"\n{name}:")
-        print("              Pred: Normal  Moderate  Severe")
-        print(f"  True: Normal     {cm[0, 0]:6d}    {cm[0, 1]:6d}  {cm[0, 2]:6d}")
-        print(f"        Moderate   {cm[1, 0]:6d}    {cm[1, 1]:6d}  {cm[1, 2]:6d}")
-        print(f"        Severe     {cm[2, 0]:6d}    {cm[2, 1]:6d}  {cm[2, 2]:6d}")
+        # Filter out -1 labels (missing data)
+        labels_arr = np.array(all_labels[condition])
+        preds_arr = np.array(all_preds[condition])
+        valid_mask = labels_arr != -1
+
+        if valid_mask.sum() > 0:
+            cm = confusion_matrix(labels_arr[valid_mask], preds_arr[valid_mask], labels=[0, 1, 2])
+            print(f"\n{name} (excluding {(~valid_mask).sum()} missing labels):")
+            print("              Pred: Normal  Moderate  Severe")
+            print(f"  True: Normal     {cm[0, 0]:6d}    {cm[0, 1]:6d}  {cm[0, 2]:6d}")
+            print(f"        Moderate   {cm[1, 0]:6d}    {cm[1, 1]:6d}  {cm[1, 2]:6d}")
+            print(f"        Severe     {cm[2, 0]:6d}    {cm[2, 1]:6d}  {cm[2, 2]:6d}")
+        else:
+            print(f"\n{name}: No valid labels")
 
 
 def main():
@@ -300,7 +318,7 @@ def main():
 
     # Setup training
     print(f"\n[4/6] Setting up training...")
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(ignore_index=-1)  # Ignore missing labels (-1)
     optimizer = optim.Adam(
         filter(lambda p: p.requires_grad, model.parameters()),
         lr=args.lr,
