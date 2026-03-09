@@ -8,9 +8,14 @@ Quick test to verify:
 3. Output format is correct
 
 Usage:
-    python3 test_rsna_preprocessed.py
+    # Test with trained model
+    python3 test_rsna_preprocessed.py --model checkpoints/best_model.pth
+
+    # Test with pretrained backbone (random heads)
     python3 test_rsna_preprocessed.py --use-pretrained
-    python3 test_rsna_preprocessed.py --num-patients 3
+
+    # Test specific number of patients
+    python3 test_rsna_preprocessed.py --model checkpoints/best_model.pth --num-patients 5
 """
 
 import argparse
@@ -27,8 +32,10 @@ def main():
     parser = argparse.ArgumentParser(description='Test grading model with preprocessed data')
     parser.add_argument('--data-dir', type=str, default='rsna_preprocessed',
                         help='Path to preprocessed data')
+    parser.add_argument('--model', type=str, default=None,
+                        help='Path to trained model checkpoint (.pth file)')
     parser.add_argument('--use-pretrained', action='store_true',
-                        help='Load pretrained backbone weights')
+                        help='Load pretrained backbone weights (only if no --model specified)')
     parser.add_argument('--num-patients', type=int, default=2,
                         help='Number of patients to test')
     args = parser.parse_args()
@@ -68,7 +75,19 @@ def main():
 
     model = GradingModelBaseline(format='rsna')
 
-    if args.use_pretrained:
+    # Load trained model checkpoint if provided
+    if args.model:
+        print(f"  - Loading trained model from {args.model}...")
+        try:
+            checkpoint = torch.load(args.model, map_location='cpu')
+            model.load_state_dict(checkpoint['model_weights'])
+            epoch = checkpoint.get('epoch_no', '?')
+            val_loss = checkpoint.get('val_loss', '?')
+            print(f"  ✓ Loaded checkpoint from epoch {epoch} (val_loss: {val_loss:.4f})" if isinstance(val_loss, float) else f"  ✓ Loaded checkpoint from epoch {epoch}")
+        except Exception as e:
+            print(f"  ❌ Error loading checkpoint: {e}")
+            return
+    elif args.use_pretrained:
         print("  - Loading pretrained backbone...")
         import os
         weights_dir = os.path.expanduser('~/.spinenet/weights')
@@ -78,6 +97,8 @@ def main():
         except Exception as e:
             print(f"  ⚠ Warning: Could not load pretrained weights: {e}")
             print("  → Using random weights")
+    else:
+        print("  - Using random weights (no checkpoint or pretrained weights specified)")
 
     model = model.to(device)
     model.eval()
