@@ -6,14 +6,26 @@ Complete guide for preprocessing and training SpineNet on RSNA 2024 dataset.
 
 ## 📋 Quick Reference
 
+### Option A: Efficient Workflow (Recommended for Multiple GPU Instances)
+
+**Do once on local machine:**
 ```bash
-# 1. Setup (on GPU instance)
-./setup_rsna_preprocessing.sh
+./1_prepare_locally.sh              # Convert DICOM → .npy, create zip (~8GB)
+# Upload rsna_preprocessed.zip to Google Drive
+```
 
-# 2. Prepare data
-python3 prepare_rsna_data.py
+**On each GPU instance:**
+```bash
+./2_download_preprocessed.sh YOUR_FILE_ID   # Download .npy zip (~8GB, fast!)
+python3 train_rsna_baseline.py --epochs 30 --batch-size 32 --lr 1e-3
+```
 
-# 3. Train model
+**Benefits:** Skip 30GB DICOM download + 30min preprocessing every time!
+
+### Option B: Full Pipeline (If you don't have preprocessed data)
+
+```bash
+./setup_rsna_preprocessing.sh       # Download 30GB DICOM + preprocess (slow)
 python3 train_rsna_baseline.py --epochs 30 --batch-size 32 --lr 1e-3
 ```
 
@@ -57,22 +69,54 @@ chmod +x setup_rsna_preprocessing.sh
 
 ## 📦 Step 2: Prepare Data
 
-### Option A: Automatic (Recommended)
+### Option A: Efficient Two-Step Workflow (Recommended)
 
-Already done if you ran `setup_rsna_preprocessing.sh` above!
+**Perfect if you'll use multiple GPU instances!**
 
-### Option B: Manual
+#### Step 2A: Prepare Once on Local Machine
 
 ```bash
-# Download, extract, and preprocess all-in-one
-python3 prepare_rsna_data.py
+# On your local machine (where you have the original dataset)
+chmod +x 1_prepare_locally.sh
+./1_prepare_locally.sh
 ```
 
-**OR** if you already have the dataset:
+This will:
+1. Convert DICOM → .npy files (~20-40 minutes)
+2. Create `rsna_preprocessed.zip` (~8GB)
+3. Tell you to upload to Google Drive
+
+**Upload the zip:**
+1. Upload `rsna_preprocessed.zip` to Google Drive
+2. Right-click → Share → "Anyone with the link"
+3. Copy the file ID from URL: `https://drive.google.com/file/d/YOUR_FILE_ID/view`
+
+#### Step 2B: Download on GPU Instance
 
 ```bash
-# Skip download, just preprocess
-python3 prepare_rsna_data.py --skip-download --data-dir rsna-2024-lumbar-spine-degenerative-classification
+# On GPU instance (every time you rent a new machine)
+chmod +x 2_download_preprocessed.sh
+./2_download_preprocessed.sh YOUR_FILE_ID
+```
+
+**Time savings:**
+- ❌ Old way: Download 30GB + preprocess 30min = **~60min per instance**
+- ✅ New way: Download 8GB = **~10min per instance**
+
+### Option B: If Dataset Already Exists Locally
+
+```bash
+# If rsna-2024-lumbar-spine-degenerative-classification/ exists
+python3 prepare_rsna_data.py --skip-download
+```
+
+### Option C: Full Download (Slow, Not Recommended)
+
+```bash
+# Downloads 30GB DICOM + preprocesses (takes 60+ minutes)
+python3 prepare_rsna_data.py
+# OR
+./setup_rsna_preprocessing.sh
 ```
 
 ### Output Structure
