@@ -4,6 +4,12 @@ spinenet/weights/*
 tutorials/example_scans/*
 tutorials/results/*
 
+# RSNA 2024 Dataset (large data files - do not commit)
+rsna-2024-lumbar-spine-degenerative-classification/
+rsna_preprocessed/
+example_scans/
+*.npy
+
 
 # Standard Python GitIgnore
 # Byte-compiled / optimized / DLL files
