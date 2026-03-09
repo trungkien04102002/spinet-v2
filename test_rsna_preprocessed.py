@@ -83,8 +83,21 @@ def main():
 
             # Check if checkpoint has expected format
             if isinstance(checkpoint, dict):
-                if 'model_weights' in checkpoint:
+                if 'model_state_dict' in checkpoint:
                     # Standard checkpoint format (from train_rsna_baseline.py)
+                    model.load_state_dict(checkpoint['model_state_dict'])
+                    epoch = checkpoint.get('epoch', '?')
+                    val_loss = checkpoint.get('val_loss', '?')
+                    val_wll = checkpoint.get('val_weighted_logloss', None)
+
+                    if isinstance(val_loss, float) and val_wll:
+                        print(f"  ✓ Loaded checkpoint from epoch {epoch} (val_loss: {val_loss:.4f}, weighted_logloss: {val_wll:.4f})")
+                    elif isinstance(val_loss, float):
+                        print(f"  ✓ Loaded checkpoint from epoch {epoch} (val_loss: {val_loss:.4f})")
+                    else:
+                        print(f"  ✓ Loaded checkpoint from epoch {epoch}")
+                elif 'model_weights' in checkpoint:
+                    # Alternative checkpoint format
                     model.load_state_dict(checkpoint['model_weights'])
                     epoch = checkpoint.get('epoch_no', '?')
                     val_loss = checkpoint.get('val_loss', '?')
