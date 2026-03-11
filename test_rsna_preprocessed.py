@@ -26,6 +26,7 @@ import pandas as pd
 
 from rsna_preprocessed_dataloader import RSNAPreprocessedDataset
 from spinenet.models.grading_baseline import GradingModelBaseline
+from spinenet.models.grading_attention import GradingModelWithCBAM
 
 
 def main():
@@ -73,13 +74,39 @@ def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"  - Device: {device}")
 
-    model = GradingModelBaseline(format='rsna')
+    # Detect model type from checkpoint if provided
+    use_cbam = False
+    if args.model:
+        print(f"  - Detecting model type from {args.model}...")
+        try:
+            checkpoint = torch.load(args.model, map_location='cpu', weights_only=False)
+
+            # Check if checkpoint contains CBAM layers
+            if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
+                state_dict = checkpoint['model_state_dict']
+                use_cbam = any('cbam' in key for key in state_dict.keys())
+            elif isinstance(checkpoint, dict):
+                use_cbam = any('cbam' in key for key in checkpoint.keys())
+
+            if use_cbam:
+                print(f"  ✓ Detected attention model (with CBAM)")
+            else:
+                print(f"  ✓ Detected baseline model (no CBAM)")
+        except Exception as e:
+            print(f"  ⚠ Warning: Could not detect model type: {e}")
+            print(f"  → Assuming baseline model")
+
+    # Create appropriate model
+    if use_cbam:
+        model = GradingModelWithCBAM(format='rsna', use_cbam=True)
+    else:
+        model = GradingModelBaseline(format='rsna')
 
     # Load trained model checkpoint if provided
     if args.model:
-        print(f"  - Loading trained model from {args.model}...")
+        print(f"  - Loading weights from {args.model}...")
         try:
-            checkpoint = torch.load(args.model, map_location='cpu')
+            checkpoint = torch.load(args.model, map_location='cpu', weights_only=False)
 
             # Check if checkpoint has expected format
             if isinstance(checkpoint, dict):
