@@ -11,6 +11,10 @@ rsna_preprocessed.zip
 example_scans/
 *.npy
 
+# Training outputs (large model files - do not commit)
+checkpoints/
+*.pth
+
 # macOS
 .DS_Store
 

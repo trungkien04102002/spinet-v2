@@ -5,6 +5,7 @@ pandas
 pydicom
 requests
 scikit-image
+scikit-learn
 scipy
 shapely
 torch
