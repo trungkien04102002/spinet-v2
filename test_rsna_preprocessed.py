@@ -23,6 +23,7 @@ import torch
 import numpy as np
 from pathlib import Path
 import pandas as pd
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
 from rsna_preprocessed_dataloader import RSNAPreprocessedDataset
 from spinenet.models.grading_baseline import GradingModelBaseline
@@ -174,7 +175,11 @@ def main():
     print(f"  ✓ Total samples to test: {num_samples}")
     print("="*70)
 
-    severity_map = {0: 'Normal/Mild', 1: 'Moderate', 2: 'Severe'}
+    severity_map = {-1: 'N/A', 0: 'Normal/Mild', 1: 'Moderate', 2: 'Severe'}
+
+    # Initialize lists to collect predictions and labels for metrics
+    all_preds = {'spinal_canal': [], 'left_foraminal': [], 'right_foraminal': []}
+    all_labels = {'spinal_canal': [], 'left_foraminal': [], 'right_foraminal': []}
 
     # Test each patient
     for patient_idx, patient_id in enumerate(selected_patients):
@@ -208,6 +213,17 @@ def main():
             pred_left = torch.argmax(outputs['left_foraminal'], dim=1).item()
             pred_right = torch.argmax(outputs['right_foraminal'], dim=1).item()
 
+            # Collect predictions and labels for metrics (skip -1 labels)
+            if labels['spinal_canal'] != -1:
+                all_preds['spinal_canal'].append(pred_spinal)
+                all_labels['spinal_canal'].append(labels['spinal_canal'])
+            if labels['left_foraminal'] != -1:
+                all_preds['left_foraminal'].append(pred_left)
+                all_labels['left_foraminal'].append(labels['left_foraminal'])
+            if labels['right_foraminal'] != -1:
+                all_preds['right_foraminal'].append(pred_right)
+                all_labels['right_foraminal'].append(labels['right_foraminal'])
+
             # Display results
             print(f"  Sample {sample_idx+1}/{num_patient_samples}:")
             print(f"    Series ID: {row['series_id']}")
@@ -224,6 +240,67 @@ def main():
             print(f"      Left Foraminal:   {severity_map[pred_left]}")
             print(f"      Right Foraminal:  {severity_map[pred_right]}")
             print()
+
+    # Compute and display comprehensive metrics
+    print("\n" + "="*70)
+    print("EVALUATION METRICS")
+    print("="*70)
+
+    conditions = ['spinal_canal', 'left_foraminal', 'right_foraminal']
+    condition_names = ['Spinal Canal Stenosis', 'Left Foraminal Narrowing', 'Right Foraminal Narrowing']
+    class_names = ['Normal/Mild', 'Moderate', 'Severe']
+
+    overall_accuracies = []
+
+    for condition, condition_name in zip(conditions, condition_names):
+        if len(all_labels[condition]) == 0:
+            print(f"\n{condition_name}:")
+            print("  No samples to evaluate (all labels were -1)")
+            continue
+
+        preds = np.array(all_preds[condition])
+        labels = np.array(all_labels[condition])
+
+        # Overall accuracy
+        acc = accuracy_score(labels, preds)
+        overall_accuracies.append(acc)
+
+        # Per-class metrics
+        precision, recall, f1, support = precision_recall_fscore_support(
+            labels, preds, labels=[0, 1, 2], zero_division=0
+        )
+
+        print(f"\n{condition_name}:")
+        print(f"  Overall Accuracy: {acc:.4f} ({acc*100:.2f}%)")
+        print(f"  Total Samples: {len(labels)}")
+        print()
+        print("  Per-Class Metrics:")
+        print("  " + "-"*66)
+        print(f"  {'Class':<15} {'Precision':<12} {'Recall':<12} {'F1-Score':<12} {'Support':<10}")
+        print("  " + "-"*66)
+
+        for i, class_name in enumerate(class_names):
+            print(f"  {class_name:<15} {precision[i]:>8.3f}     {recall[i]:>8.3f}     {f1[i]:>8.3f}     {support[i]:>7.0f}")
+
+        print("  " + "-"*66)
+
+        # Macro averages
+        macro_p = np.mean(precision)
+        macro_r = np.mean(recall)
+        macro_f1 = np.mean(f1)
+        print(f"  {'Macro Avg':<15} {macro_p:>8.3f}     {macro_r:>8.3f}     {macro_f1:>8.3f}     {np.sum(support):>7.0f}")
+        print("  " + "-"*66)
+
+    # Overall summary
+    if len(overall_accuracies) > 0:
+        print("\n" + "="*70)
+        print("OVERALL SUMMARY")
+        print("="*70)
+        print(f"Mean Accuracy Across Conditions: {np.mean(overall_accuracies):.4f} ({np.mean(overall_accuracies)*100:.2f}%)")
+        print()
+        for condition, condition_name, acc in zip(conditions, condition_names, overall_accuracies):
+            samples = len(all_labels[condition])
+            print(f"  {condition_name:<30} {acc:.4f} ({acc*100:.2f}%) - {samples} samples")
 
     # Summary
     print("\n" + "="*70)
