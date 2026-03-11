@@ -181,7 +181,10 @@ def compute_class_weights(dataset, num_classes=3, mode='inverse'):
     for idx in range(len(dataset)):
         _, labels = dataset[idx]
         for condition in ['spinal_canal', 'left_foraminal', 'right_foraminal']:
-            label = labels[condition].item()
+            label = labels[condition]
+            # Handle both tensor and int labels
+            if hasattr(label, 'item'):
+                label = label.item()
             if label != -1:  # Ignore missing labels
                 class_counts[label] += 1
 
