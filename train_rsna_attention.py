@@ -76,8 +76,8 @@ def parse_args():
                         help='Use FocalLoss')
     parser.add_argument('--focal-gamma', type=float, default=2.0,
                         help='Focal loss gamma parameter')
-    parser.add_argument('--use-uncertainty', action='store_true', default=True,
-                        help='Use UncertaintyLoss for task weighting')
+    parser.add_argument('--use-uncertainty', type=lambda x: str(x).lower() == 'true',
+                        default=True, help='Use UncertaintyLoss for task weighting (default: True)')
 
     # Augmentation
     parser.add_argument('--augmentation', type=str, default='medium',
