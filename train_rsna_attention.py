@@ -353,13 +353,10 @@ def main():
     print(f"\n[4/7] Setting up loss functions...")
 
     if args.use_focal:
-        # Compute class weights from training data
-        # Note: Using full_dataset to get true class distribution (before oversampling)
-        class_weights = compute_class_weights(full_dataset, num_classes=3, mode='effective')
-        class_weights = class_weights.to(device)
-        print(f"  ✓ FocalLoss (gamma={args.focal_gamma})")
-        print(f"    Class weights: {class_weights.cpu().numpy()}")
-        criterion = FocalLoss(alpha=class_weights, gamma=args.focal_gamma, ignore_index=-1)
+        # Use FocalLoss WITHOUT class weights (FocalLoss + Oversampling is enough!)
+        # Note: Removed class weights to avoid triple-stacking balancing techniques
+        print(f"  ✓ FocalLoss (gamma={args.focal_gamma}, no class weights)")
+        criterion = FocalLoss(alpha=None, gamma=args.focal_gamma, ignore_index=-1)
     else:
         print(f"  ✓ CrossEntropyLoss")
         criterion = nn.CrossEntropyLoss(ignore_index=-1)
