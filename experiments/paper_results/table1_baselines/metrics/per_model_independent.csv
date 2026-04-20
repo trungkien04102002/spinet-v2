@@ -1,0 +1,10 @@
+Model,Condition,Accuracy (%),Precision (%),Recall (%),F1-Score (%),TP,FP,FN,TN,Support,N_Patients
+SpineNetV2,Spinal Canal Stenosis,81.58,77.61,80.0,78.79,52,15,13,72,65/152,152
+SpineNetV2,Left Neural Foraminal Narrowing,75.66,71.59,84.0,77.3,63,25,12,52,75/152,152
+SpineNetV2,Right Neural Foraminal Narrowing,72.37,75.56,77.27,76.4,68,22,20,42,88/152,152
+MedGemma,Spinal Canal Stenosis,66.0,57.14,22.22,32.0,12,9,42,87,54/150,150
+MedGemma,Left Neural Foraminal Narrowing,47.33,62.5,12.05,20.2,10,6,73,61,83/150,150
+MedGemma,Right Neural Foraminal Narrowing,46.67,71.43,6.02,11.11,5,2,78,65,83/150,150
+NingShen,Spinal Canal Stenosis,86.63,81.82,80.6,81.2,54,12,13,108,67/187,187
+NingShen,Left Neural Foraminal Narrowing,77.01,72.81,87.37,79.43,83,31,12,61,95/187,187
+NingShen,Right Neural Foraminal Narrowing,78.61,78.57,84.62,81.48,88,24,16,59,104/187,187

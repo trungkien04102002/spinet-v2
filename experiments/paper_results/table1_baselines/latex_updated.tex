@@ -1,0 +1,88 @@
+%==============================================================================
+% Updated LaTeX for Table 1 — Per-(patient, condition, level) evaluation.
+% Replaces the previous patient-level (ANY-rule) evaluation at advisor's request.
+% Binary label: Moderate|Severe -> 1, Normal/Mild -> 0.
+% Inner-join on (study_id, condition, level); N rows differ per model because
+% each model covers a different subset of RSNA studies. See footnote.
+%==============================================================================
+
+\subsection{Kết quả thực nghiệm}
+
+Ba mô hình được đánh giá trên ba nhóm bệnh lý chính: Hẹp ống sống (Spinal Canal Stenosis), hẹp lỗ liên hợp trái (Left Foraminal Narrowing), và hẹp lỗ liên hợp phải (Right Foraminal Narrowing). Khác với đánh giá gộp theo bệnh nhân (ANY-rule), ở đây mỗi mẫu đánh giá được xác định ở mức \textbf{(bệnh nhân, nhóm bệnh, đốt sống)} với nhãn nhị phân Moderate/Severe được gom lại thành dương tính. Đánh giá ở mức đốt sống (per-level) cung cấp chi tiết về định vị tổn thương thay vì chỉ đánh giá sự có/không của bệnh lý trên từng bệnh nhân.
+
+Do mỗi mô hình có số bệnh nhân khác nhau trong đầu ra (Ning Shen: 187--188 bệnh nhân, SpineNetV2: 152 bệnh nhân, MedGemma: 150 bệnh nhân), chúng tôi báo cáo số lượng mẫu đánh giá riêng cho từng mô hình\footnote{SpineNetV2 upstream (Windsor et al., 2024) không xuất nhãn theo đốt sống; chúng tôi áp dụng ANY-rule ở mức bệnh nhân và sao chép dự đoán cho cả 5 đốt sống. Điều này làm tăng tỉ lệ báo động giả (False Positive) ở chỉ số Precision nhưng phản ánh đúng cách mô hình này được triển khai trong thực tế khi không có thông tin đốt sống.}.
+
+\textbf{a. Hẹp ống sống}
+
+Ning Shen đạt F1-Score cao nhất (77.42\%) với Precision 75.00\% và Recall 80.00\%, cho thấy khả năng phát hiện đúng đốt sống có tổn thương tốt. SpineNetV2 upstream có Recall cao (86.79\%) nhờ bản chất ANY-rule nhưng Precision chỉ đạt 27.46\% do mô hình báo động ở cả 5 đốt sống khi chỉ có một số thực sự bị tổn thương, dẫn đến F1-Score 41.72\%. MedGemma tiếp tục thể hiện hiện tượng \textit{mode collapse} nghiêm trọng: dù Accuracy đạt 85.73\% (do đa số nhãn là Normal/Mild), Recall chỉ 3.37\% -- mô hình bỏ sót gần như toàn bộ đốt sống có tổn thương.
+
+\begin{table}[h!]
+    \centering
+    \caption{Kết quả chi tiết nhóm Hẹp ống sống (per-level)}
+    \label{tab:scs_metrics}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{lccccc}
+        \toprule
+        \textbf{Mô hình} & \textbf{N đốt sống} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} \\
+        \midrule
+        Ning Shen & 935 & 94.76\% & 75.00\% & 80.00\% & 77.42\% \\
+        SpineNetV2 upstream & 760 & 66.18\% & 27.46\% & 86.79\% & 41.72\% \\
+        MedGemma & 750 & 85.73\% & 12.50\% & 3.37\% & 5.31\% \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\textbf{b. Hẹp lỗ liên hợp trái}
+
+Ning Shen đạt Recall cao (74.75\%), phù hợp với yêu cầu sàng lọc là ưu tiên phát hiện ca bệnh, với F1-Score 69.00\%. SpineNetV2 upstream tiếp tục có pattern tương tự: Recall cao (86.42\%) nhưng Precision thấp (31.82\%) dẫn đến F1-Score 46.51\%. MedGemma sụp đổ hoàn toàn ở nhóm này với Recall = 0.00\% -- không phát hiện được ca bệnh nào trong các đốt sống có tổn thương foraminal trái.
+
+\begin{table}[h!]
+    \centering
+    \caption{Kết quả chi tiết nhóm Hẹp lỗ liên hợp trái (per-level)}
+    \label{tab:nfn_left_metrics}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{lccccc}
+        \toprule
+        \textbf{Mô hình} & \textbf{N đốt sống} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} \\
+        \midrule
+        Ning Shen & 935 & 85.78\% & 64.07\% & 74.75\% & 69.00\% \\
+        SpineNetV2 upstream & 760 & 57.63\% & 31.82\% & 86.42\% & 46.51\% \\
+        MedGemma & 750 & 74.00\% & 0.00\% & 0.00\% & 0.00\% \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\newpage
+
+\textbf{c. Hẹp lỗ liên hợp phải}
+
+Ning Shen có F1-Score 76.59\% với Precision và Recall cân bằng (74.76\% và 78.50\%), thể hiện sự ổn định nhất trong 3 nhóm bệnh lý. SpineNetV2 upstream duy trì pattern Recall-cao-Precision-thấp (78.66\% / 28.67\%, F1 = 42.02\%). MedGemma có kết quả thấp nhất với F1-Score 1.18\% -- Recall chỉ 0.63\%, tức mô hình bỏ sót gần như 100\% các đốt sống có Foraminal phải bị hẹp.
+
+\begin{table}[h!]
+    \centering
+    \caption{Kết quả chi tiết nhóm Hẹp lỗ liên hợp phải (per-level)}
+    \label{tab:nfn_right_metrics}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{lccccc}
+        \toprule
+        \textbf{Mô hình} & \textbf{N đốt sống} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} \\
+        \midrule
+        Ning Shen & 925 & 89.62\% & 74.76\% & 78.50\% & 76.59\% \\
+        SpineNetV2 upstream & 760 & 53.16\% & 28.67\% & 78.66\% & 42.02\% \\
+        MedGemma & 750 & 77.73\% & 10.00\% & 0.63\% & 1.18\% \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Phân tích và thảo luận}
+
+\textbf{Hiệu năng tổng thể:} Ning Shen có hiệu năng tốt nhất với F1-Score trung bình 74.34\% và ổn định trên cả ba nhóm bệnh lý (69.00\% -- 77.42\%). Kết quả này phù hợp với kỳ vọng của một SOTA model được thiết kế và tinh chỉnh riêng cho RSNA 2024 dataset. SpineNetV2 upstream đạt F1-Score trung bình 43.42\%, thấp hơn Ning Shen đáng kể trong khung đánh giá per-level chủ yếu do thiếu cơ chế phân bổ dự đoán theo đốt sống -- tuy nhiên Recall cao (78--87\%) vẫn cho thấy mô hình catch được đúng \textit{bệnh nhân} có tổn thương, chỉ không catch đúng \textit{đốt sống} nào. MedGemma có F1-Score trung bình chỉ 2.16\%, xác nhận mô hình VLM đa dụng không fine-tune không phù hợp cho tác vụ sàng lọc chuyên biệt này.
+
+\textbf{Về recall và precision trong bài toán sàng lọc:}
+Kết quả thực nghiệm cho thấy một xu hướng rõ rệt ở Ning Shen và SpineNetV2 là việc ưu tiên độ nhạy (Recall, đạt 74--86\%) hơn so với độ chính xác (Precision, đạt 27--75\%). Chiến lược này phù hợp với nguyên tắc cốt lõi của sàng lọc y tế: tối thiểu hóa tỷ lệ bỏ sót bệnh (False Negatives) ngay cả khi phải chấp nhận gia tăng tỷ lệ báo động giả (False Positives). Trong thực tế lâm sàng, các cảnh báo giả có thể được bác sĩ loại bỏ qua quá trình kiểm tra chi tiết, nhưng việc bỏ sót một bệnh nhân có bệnh lại gây ra hậu quả nghiêm trọng hơn nhiều.
+
+Tuy nhiên, SpineNetV2 upstream ở chế độ per-level có Precision quá thấp (27--32\%) có thể gây quá tải cho workflow lâm sàng nếu triển khai trực tiếp. Điều này tạo động lực cho hướng tiếp cận của chúng tôi: cải tiến SpineNetV2 bằng mô-đun attention (CBAM) và hàm mất mát Focal Loss để khôi phục Recall ở lớp \textit{Severe} mà không làm tăng báo động giả trầm trọng (xem Phần~\ref{sec:ablation}).
+
+Trái lại, MedGemma thể hiện một chiến lược dự đoán thận trọng quá mức ở tất cả các nhóm. Mặc dù Precision ở một số điều kiện đạt mức tương đối (10--12.5\%), Recall lại cực thấp (0.00\% -- 3.37\%), đồng nghĩa với việc mô hình đã bỏ sót 97--100\% số đốt sống có tổn thương. Điều này khẳng định rằng MedGemma, với bản chất là một mô hình Vision-Language Model (VLM) đa dụng chưa được fine-tune trên dữ liệu cột sống thắt lưng, không đáp ứng được yêu cầu của bài toán sàng lọc bệnh lý cột sống thắt lưng.
+
+\textbf{Lý do chọn SpineNetV2 để cải tiến:} Trong ba mô hình được khảo sát, chúng tôi chọn SpineNetV2 làm nền tảng cải tiến vì các lý do sau: (i) SpineNetV2 là pipeline được công bố công khai với mã nguồn đầy đủ, cho phép kế thừa và mở rộng; (ii) điểm yếu chính của SpineNetV2 (Precision thấp ở chế độ per-level) có thể được khắc phục bằng các kỹ thuật attention (CBAM) và loss cân bằng lớp (Focal Loss); (iii) Ning Shen là một Kaggle submission không công bố mã huấn luyện đầy đủ, khó mở rộng; (iv) MedGemma thuộc dạng VLM khổng lồ, fine-tune đòi hỏi tài nguyên tính toán vượt quá phạm vi luận văn.
