@@ -19,6 +19,7 @@ Usage:
 
 import argparse
 import json
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
 
@@ -233,10 +234,54 @@ def main():
     by_tier = {}
     for r in results:
         by_tier.setdefault(r["tier"], []).append(r["f1_macro"])
+    summary_by_tier = {}
     for tier in ["easy", "medium", "hard"]:
         if tier in by_tier:
-            avg = np.mean(by_tier[tier])
+            avg = float(np.mean(by_tier[tier]))
+            summary_by_tier[tier] = {
+                "avg_f1_macro": avg,
+                "n_diseases": len(by_tier[tier]),
+            }
             print(f"  {tier}: avg F1_macro = {avg:.3f} ({len(by_tier[tier])} diseases)")
+
+    # ---- Best metrics file (human-readable + JSON) ----
+    summary_json = out.parent / "best_metrics.json"
+    summary_txt = out.parent / "best_metrics.txt"
+
+    with open(summary_json, "w") as f:
+        json.dump({
+            "timestamp": datetime.now().isoformat(timespec="seconds"),
+            "hybrid_checkpoint": args.hybrid_checkpoint,
+            "cbam_checkpoint": args.cbam_checkpoint,
+            "test_csv": args.test_csv,
+            "summary_by_tier": summary_by_tier,
+            "results": results,
+        }, f, indent=2)
+
+    with open(summary_txt, "w") as f:
+        f.write("=== ZERO-SHOT SPIDER EVAL ===\n")
+        f.write(f"Saved at: {datetime.now().isoformat(timespec='seconds')}\n")
+        f.write(f"Hybrid: {args.hybrid_checkpoint}\n")
+        f.write(f"CBAM:   {args.cbam_checkpoint}\n\n")
+        f.write("Summary by tier:\n")
+        for tier, s in summary_by_tier.items():
+            f.write(f"  {tier:6s}  avg_F1_macro={s['avg_f1_macro']:.4f}  n={s['n_diseases']}\n")
+        f.write("\nPer-disease:\n")
+        f.write(f"  {'Disease':24s}  {'Tier':6s}  {'F1m':>6s}  {'BalAcc':>6s}  {'AUC':>6s}  {'n':>5s}\n")
+        for r in results:
+            auc = r.get("auc", float("nan"))
+            try:
+                auc_str = f"{float(auc):.3f}"
+            except (TypeError, ValueError):
+                auc_str = "  N/A"
+            f.write(
+                f"  {r['disease']:24s}  {r['tier']:6s}  "
+                f"{r['f1_macro']:6.3f}  {r['balanced_acc']:6.3f}  "
+                f"{auc_str:>6s}  {r['n_samples']:5d}\n"
+            )
+
+    print(f"Saved summary -> {summary_json}")
+    print(f"Saved summary -> {summary_txt}")
 
 
 if __name__ == "__main__":

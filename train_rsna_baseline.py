@@ -34,6 +34,7 @@ from tqdm import tqdm
 
 from rsna_preprocessed_dataloader import RSNAPreprocessedDataset
 from spinenet.models.grading_baseline import GradingModelBaseline
+from spinenet.metrics_logger import MetricsLogger
 
 
 def compute_weighted_log_loss(outputs_dict, labels_dict):
@@ -405,6 +406,7 @@ def main():
 
     best_epoch = 0
     epochs_without_improvement = 0
+    metrics_logger = MetricsLogger(save_dir=save_dir, prefix="baseline")
 
     for epoch in range(start_epoch, args.epochs):
         epoch_start_time = time.time()
@@ -475,6 +477,17 @@ def main():
             print_per_class_metrics(val_per_class_metrics)
             print_confusion_matrices(all_labels, all_preds)
 
+        # Compute avg Severe F1 for logging
+        avg_severe_f1 = float('nan')
+        if val_per_class_metrics:
+            severe_f1s = [
+                val_per_class_metrics[c]['f1'][2]
+                for c in val_per_class_metrics
+                if 'f1' in val_per_class_metrics[c] and len(val_per_class_metrics[c]['f1']) >= 3
+            ]
+            if severe_f1s:
+                avg_severe_f1 = float(np.mean(severe_f1s))
+
         # Save checkpoint
         is_best = val_loss < best_val_loss
         if is_best:
@@ -495,8 +508,33 @@ def main():
                 'best_val_loss': best_val_loss,
             }, best_path)
             print(f"\n✓ Saved best model to {best_path}")
+
+            metrics_logger.save_best(
+                epoch=epoch + 1,
+                train_loss=avg_train_loss,
+                val_loss=val_loss,
+                val_accuracies=val_accuracies,
+                per_class_metrics=val_per_class_metrics,
+                avg_severe_f1=avg_severe_f1,
+                extra={
+                    'val_weighted_logloss': float(val_weighted_logloss),
+                    'best_path': str(best_path),
+                    'args': vars(args),
+                },
+            )
         else:
             epochs_without_improvement += 1
+
+        metrics_logger.log_epoch(
+            epoch=epoch + 1,
+            train_loss=avg_train_loss,
+            val_loss=val_loss,
+            val_accuracies=val_accuracies,
+            per_class_metrics=val_per_class_metrics,
+            avg_severe_f1=avg_severe_f1,
+            is_best=is_best,
+            extra={'val_weighted_logloss': float(val_weighted_logloss)},
+        )
 
         # Save periodic checkpoint
         if (epoch + 1) % args.save_freq == 0:

@@ -45,6 +45,7 @@ from tqdm import tqdm
 from spinenet.models.grading_hybrid import SpineNetHybrid
 from spinenet.losses import FocalLoss, UncertaintyLoss
 from spinenet.augmentation import get_training_augmentation, OversamplingDataset
+from spinenet.metrics_logger import MetricsLogger
 from rsna_preprocessed_dataloader import RSNAPreprocessedDataset
 
 
@@ -479,6 +480,7 @@ def main():
 
     best_epoch = 0
     epochs_without_improvement = 0
+    metrics_logger = MetricsLogger(save_dir=save_dir, prefix="hybrid")
 
     for epoch in range(start_epoch, args.epochs):
         epoch_start_time = time.time()
@@ -603,8 +605,32 @@ def main():
                 'args': vars(args),
             }, best_path)
             print(f"\n✓ Saved best model to {best_path} (Severe F1: {best_severe_f1:.4f})")
+
+            metrics_logger.save_best(
+                epoch=epoch + 1,
+                train_loss=avg_train_loss,
+                val_loss=val_loss,
+                val_accuracies=val_accuracies,
+                per_class_metrics=val_per_class_metrics,
+                avg_severe_f1=avg_severe_f1,
+                extra={
+                    'best_path': str(best_path),
+                    'cbam_checkpoint': args.cbam_checkpoint,
+                    'args': vars(args),
+                },
+            )
         else:
             epochs_without_improvement += 1
+
+        metrics_logger.log_epoch(
+            epoch=epoch + 1,
+            train_loss=avg_train_loss,
+            val_loss=val_loss,
+            val_accuracies=val_accuracies,
+            per_class_metrics=val_per_class_metrics,
+            avg_severe_f1=avg_severe_f1,
+            is_best=is_best,
+        )
 
         # Save periodic checkpoint
         if (epoch + 1) % args.save_freq == 0:
