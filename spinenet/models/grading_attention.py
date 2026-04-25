@@ -265,6 +265,39 @@ class GradingModelWithCBAM(nn.Module):
             return (x_pf, x_nar, x_ccs, x_spn, x_ued, x_led,
                     x_umc, x_lmc, x_fsl, x_fsr, x_hrn)
 
+    def encode(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Extract 512-dim feature BEFORE classification heads.
+        Used by Hybrid model when CBAM is frozen backbone.
+
+        Args:
+            x: Input volume [B, 1, 9, 112, 224]
+
+        Returns:
+            Feature tensor [B, 512]
+        """
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+
+        x = self.layer1(x)
+        if self.use_cbam:
+            x = self.cbam1(x)
+        x = self.layer2(x)
+        if self.use_cbam:
+            x = self.cbam2(x)
+        x = self.layer3(x)
+        if self.use_cbam:
+            x = self.cbam3(x)
+        x = self.layer4(x)
+        if self.use_cbam:
+            x = self.cbam4(x)
+
+        x = self.avgpool(x)
+        x = torch.flatten(x, 1)
+        return x
+
     def load_pretrained_backbone(self, weights_dir: str, strict: bool = False, verbose: bool = True):
         """
         Load pretrained backbone weights from original SpineNet model.

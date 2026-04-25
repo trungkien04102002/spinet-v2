@@ -11,3 +11,6 @@ shapely
 torch
 torchvision
 tqdm
+open_clip_torch
+transformers
+SimpleITK
