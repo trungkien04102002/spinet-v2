@@ -488,9 +488,8 @@ def main():
             print(f"  Left Foraminal: {task_weights[1]:.4f}")
             print(f"  Right Foraminal: {task_weights[2]:.4f}")
 
-        # Print detailed metrics every 5 epochs
-        if (epoch + 1) % 5 == 0:
-            print_per_class_metrics(val_per_class_metrics)
+        # Print detailed per-class metrics every epoch (Severe F1 is critical)
+        print_per_class_metrics(val_per_class_metrics)
 
         # Save checkpoint
         is_best = val_loss < best_val_loss
