@@ -247,6 +247,7 @@ def main():
     print(f"UncertaintyLoss: {args.use_uncertainty}")
     print(f"Augmentation: {args.augmentation}")
     print(f"Oversampling: {args.oversample_factor}x for Moderate/Severe")
+    print(f"Class weight mode: {args.class_weight_mode}")
     print(f"Freeze backbone: {args.freeze_backbone}")
     print("="*70)
 
