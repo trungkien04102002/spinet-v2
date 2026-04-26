@@ -1,0 +1,36 @@
+=== BEST MODEL METRICS (attention) ===
+Saved at:  2026-04-26T03:53:28
+Epoch:     20
+Train Loss: -1.5265
+Val Loss:   0.1579
+Avg Severe F1: 0.3331
+
+Validation Accuracies:
+  spinal_canal       0.8826
+  left_foraminal     0.5710
+  right_foraminal    0.6035
+
+Per-Class Metrics:
+
+  spinal_canal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.964  0.928  0.946     1722
+    Moderate         0.324  0.424  0.368      139
+    Severe           0.559  0.704  0.623       81
+
+  left_foraminal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.934  0.545  0.688     1497
+    Moderate         0.282  0.764  0.412      360
+    Severe           0.172  0.188  0.180       80
+
+  right_foraminal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.941  0.586  0.723     1482
+    Moderate         0.309  0.758  0.439      372
+    Severe           0.180  0.217  0.197       83
+
+Extra:
+  val_weighted_logloss: 0.0
+  best_path: checkpoints/best_model_attention.pth
+  args: {'data_dir': 'rsna_preprocessed', 'weights_dir': '/root/.spinenet/weights', 'val_split': 0.2, 'epochs': 25, 'batch_size': 64, 'lr': 0.001, 'weight_decay': 0.0001, 'use_cbam': True, 'freeze_backbone': True, 'use_focal': True, 'focal_gamma': 1.8, 'use_uncertainty': True, 'class_weight_mode': 'sqrt', 'augmentation': 'medium', 'oversample_factor': 5, 'num_workers': 8, 'save_freq': 5, 'early_stop_patience': 15, 'resume': None}

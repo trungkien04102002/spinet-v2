@@ -1,0 +1,36 @@
+=== BEST MODEL METRICS (baseline) ===
+Saved at:  2026-04-26T08:22:14
+Epoch:     25
+Train Loss: 0.4388
+Val Loss:   0.4567
+Avg Severe F1: 0.1522
+
+Validation Accuracies:
+  spinal_canal       0.8950
+  left_foraminal     0.7780
+  right_foraminal    0.7682
+
+Per-Class Metrics:
+
+  spinal_canal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.911  0.986  0.947     1722
+    Moderate         0.333  0.079  0.128      139
+    Severe           0.630  0.358  0.457       81
+
+  left_foraminal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.804  0.962  0.876     1497
+    Moderate         0.462  0.186  0.265      360
+    Severe           0.000  0.000  0.000       80
+
+  right_foraminal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.795  0.962  0.871     1482
+    Moderate         0.434  0.167  0.241      372
+    Severe           0.000  0.000  0.000       83
+
+Extra:
+  val_weighted_logloss: 0.45718956171958886
+  best_path: checkpoints/best_model.pth
+  args: {'data_dir': 'rsna_preprocessed', 'val_split': 0.2, 'use_pretrained': True, 'unfreeze_backbone': False, 'resume': None, 'epochs': 25, 'batch_size': 64, 'lr': 0.001, 'weight_decay': 0.0001, 'num_workers': 8, 'save_dir': 'checkpoints', 'save_freq': 5, 'early_stop_patience': 10, 'class_weight_mode': 'none'}
