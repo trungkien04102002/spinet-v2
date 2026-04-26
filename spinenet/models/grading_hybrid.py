@@ -111,7 +111,12 @@ class SpineNetHybrid(nn.Module):
         )
 
         # ---- Trainable: logit scale (CLIP-style) ----
-        self.logit_scale = nn.Parameter(torch.ones([]) * (1 / 0.07))
+        # CLIP convention: parameter is in log-space, exp() gives temperature.
+        # init log(1/0.07) ≈ 2.659, so exp(2.659) ≈ 14.3 (CLIP default temperature).
+        # Init as 1/0.07 (=14.28) was a bug: exp(14.28) ≈ 1.6M, gets clamped to
+        # 100 from step 1, dead gradient. See OpenAI CLIP / OpenCLIP / HF convention.
+        import math
+        self.logit_scale = nn.Parameter(torch.tensor(math.log(1 / 0.07)))
 
     # ----------------- Slice encoding -----------------
 
