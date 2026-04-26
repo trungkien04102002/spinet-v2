@@ -43,7 +43,7 @@ from tqdm import tqdm
 
 # SpineNetV2 imports
 from spinenet.models.grading_hybrid import SpineNetHybrid
-from spinenet.losses import FocalLoss, UncertaintyLoss
+from spinenet.losses import FocalLoss, UncertaintyLoss, compute_class_weights
 from spinenet.augmentation import get_training_augmentation, OversamplingDataset
 from spinenet.metrics_logger import MetricsLogger
 from rsna_preprocessed_dataloader import RSNAPreprocessedDataset
@@ -113,6 +113,12 @@ def parse_args():
                         help='SupCon weight (default 0.1, low due to imbalance)')
     parser.add_argument('--use-uncertainty', type=lambda x: str(x).lower() == 'true',
                         default=True, help='Use UncertaintyLoss for task weighting')
+    parser.add_argument('--class-weight-mode', type=str, default='none',
+                        choices=['none', 'sqrt', 'inverse', 'effective'],
+                        help='Class weight mode for FocalLoss alpha. '
+                             'none=no weights (default). sqrt=mild boost (~4.4x Severe). '
+                             'effective=class-balanced (Cui 2019, ~7.7x). '
+                             'inverse=strong boost (~19x).')
 
     # Augmentation
     parser.add_argument('--augmentation', type=str, default='medium',
@@ -324,6 +330,7 @@ def main():
     print(f"UncertaintyLoss: {args.use_uncertainty}")
     print(f"Augmentation: {args.augmentation}")
     print(f"Oversampling: {args.oversample_factor}x for Moderate/Severe")
+    print(f"Class weight mode: {args.class_weight_mode}")
     print("="*70)
 
     # [1/7] Load datasets
@@ -425,12 +432,28 @@ def main():
     # [5/7] Setup loss functions
     print(f"\n[5/7] Setting up loss functions...")
 
+    class_alpha = None
+    if args.class_weight_mode != 'none':
+        print(f"  Computing class weights (mode={args.class_weight_mode}) from base train set...")
+        class_alpha = compute_class_weights(
+            base_train_dataset, num_classes=3, mode=args.class_weight_mode,
+        )
+        print(f"  ✓ Class weights: Normal={class_alpha[0]:.3f} "
+              f"Moderate={class_alpha[1]:.3f} Severe={class_alpha[2]:.3f}")
+
     if args.use_focal:
-        print(f"  ✓ FocalLoss (gamma={args.focal_gamma}, no class weights)")
-        criterion = FocalLoss(alpha=None, gamma=args.focal_gamma, ignore_index=-1)
+        if class_alpha is not None:
+            print(f"  ✓ FocalLoss (gamma={args.focal_gamma}, class_weight_mode={args.class_weight_mode})")
+        else:
+            print(f"  ✓ FocalLoss (gamma={args.focal_gamma}, no class weights)")
+        criterion = FocalLoss(alpha=class_alpha, gamma=args.focal_gamma, ignore_index=-1)
     else:
-        print(f"  ✓ CrossEntropyLoss")
-        criterion = nn.CrossEntropyLoss(ignore_index=-1)
+        if class_alpha is not None:
+            print(f"  ✓ CrossEntropyLoss (class_weight_mode={args.class_weight_mode})")
+            criterion = nn.CrossEntropyLoss(weight=class_alpha, ignore_index=-1)
+        else:
+            print(f"  ✓ CrossEntropyLoss")
+            criterion = nn.CrossEntropyLoss(ignore_index=-1)
 
     if args.use_uncertainty:
         uncertainty_loss = UncertaintyLoss(num_tasks=3).to(device)
