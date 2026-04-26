@@ -35,6 +35,7 @@ from tqdm import tqdm
 from rsna_preprocessed_dataloader import RSNAPreprocessedDataset
 from spinenet.models.grading_baseline import GradingModelBaseline
 from spinenet.metrics_logger import MetricsLogger
+from spinenet.losses import compute_class_weights
 
 
 def compute_weighted_log_loss(outputs_dict, labels_dict):
@@ -273,6 +274,13 @@ def main():
                         help='Save checkpoint every N epochs (default: 5)')
     parser.add_argument('--early-stop-patience', type=int, default=10,
                         help='Early stopping patience (default: 10)')
+    parser.add_argument('--class-weight-mode', type=str, default='none',
+                        choices=['none', 'sqrt', 'inverse', 'effective'],
+                        help='Class weight mode for CrossEntropyLoss. '
+                             'none=no weights (default). '
+                             'sqrt=mild boost for minority. '
+                             'inverse=strong boost (may drop overall acc). '
+                             'effective=class-balanced (Cui et al. 2019).')
 
     args = parser.parse_args()
 
@@ -381,7 +389,17 @@ def main():
 
     # Setup training
     print(f"\n[4/6] Setting up training...")
-    criterion = nn.CrossEntropyLoss(ignore_index=-1)  # Ignore missing labels (-1)
+    class_alpha = None
+    if args.class_weight_mode != 'none':
+        print(f"  Computing class weights (mode={args.class_weight_mode}) from train set...")
+        class_alpha = compute_class_weights(
+            train_dataset, num_classes=3, mode=args.class_weight_mode,
+        )
+        print(f"  ✓ Class weights: Normal={class_alpha[0]:.3f} "
+              f"Moderate={class_alpha[1]:.3f} Severe={class_alpha[2]:.3f}")
+        criterion = nn.CrossEntropyLoss(weight=class_alpha, ignore_index=-1)
+    else:
+        criterion = nn.CrossEntropyLoss(ignore_index=-1)  # Ignore missing labels (-1)
     optimizer = optim.Adam(
         filter(lambda p: p.requires_grad, model.parameters()),
         lr=args.lr,

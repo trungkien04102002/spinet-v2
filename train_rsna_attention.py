@@ -79,6 +79,13 @@ def parse_args():
                         help='Focal loss gamma parameter')
     parser.add_argument('--use-uncertainty', type=lambda x: str(x).lower() == 'true',
                         default=True, help='Use UncertaintyLoss for task weighting (default: True)')
+    parser.add_argument('--class-weight-mode', type=str, default='none',
+                        choices=['none', 'sqrt', 'inverse', 'effective'],
+                        help='Class weight mode for FocalLoss alpha. '
+                             'none=no weights (preserves accuracy). '
+                             'sqrt=mild boost for minority (~3-4x Severe weight). '
+                             'inverse=strong boost (~10x Severe, may drop overall acc). '
+                             'effective=class-balanced loss (Cui et al. 2019).')
 
     # Augmentation
     parser.add_argument('--augmentation', type=str, default='medium',
@@ -353,14 +360,29 @@ def main():
     # [4/7] Setup loss functions
     print(f"\n[4/7] Setting up loss functions...")
 
+    # Compute class weights from base dataset (pre-oversampling) when requested
+    class_alpha = None
+    if args.class_weight_mode != 'none':
+        print(f"  Computing class weights (mode={args.class_weight_mode}) from base train set...")
+        class_alpha = compute_class_weights(
+            base_train_dataset, num_classes=3, mode=args.class_weight_mode,
+        )
+        print(f"  ✓ Class weights: Normal={class_alpha[0]:.3f} "
+              f"Moderate={class_alpha[1]:.3f} Severe={class_alpha[2]:.3f}")
+
     if args.use_focal:
-        # Use FocalLoss WITHOUT class weights (FocalLoss + Oversampling is enough!)
-        # Note: Removed class weights to avoid triple-stacking balancing techniques
-        print(f"  ✓ FocalLoss (gamma={args.focal_gamma}, no class weights)")
-        criterion = FocalLoss(alpha=None, gamma=args.focal_gamma, ignore_index=-1)
+        if class_alpha is not None:
+            print(f"  ✓ FocalLoss (gamma={args.focal_gamma}, class_weight_mode={args.class_weight_mode})")
+        else:
+            print(f"  ✓ FocalLoss (gamma={args.focal_gamma}, no class weights)")
+        criterion = FocalLoss(alpha=class_alpha, gamma=args.focal_gamma, ignore_index=-1)
     else:
-        print(f"  ✓ CrossEntropyLoss")
-        criterion = nn.CrossEntropyLoss(ignore_index=-1)
+        if class_alpha is not None:
+            print(f"  ✓ CrossEntropyLoss (class_weight_mode={args.class_weight_mode})")
+            criterion = nn.CrossEntropyLoss(weight=class_alpha, ignore_index=-1)
+        else:
+            print(f"  ✓ CrossEntropyLoss")
+            criterion = nn.CrossEntropyLoss(ignore_index=-1)
 
     if args.use_uncertainty:
         uncertainty_loss = UncertaintyLoss(num_tasks=3).to(device)
