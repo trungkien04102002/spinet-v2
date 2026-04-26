@@ -15,6 +15,98 @@ Reference for all hyperparameters of the Hybrid CBAM + BiomedCLIP training scrip
 
 Total trainable: ~500K params (~0.3% of 218M total). Inference = cosine similarity between image embedding and 9 frozen text embeddings.
 
+## Forward pass detail
+
+The two encoders run **in parallel** on the same input volume — not sequentially.
+Their outputs are concatenated, projected, L2-normalized, and matched against a
+**precomputed** text-embedding database via cosine similarity.
+
+```
+Input volume [B, 1, 9, 112, 224]   (B = batch, 9 sagittal slices)
+        │
+        ├──── Branch 1 (parallel): CBAM 3D ResNet34 (frozen) ──────────────┐
+        │     Treats the 9 slices as a 3-D stack.                          │
+        │     Output: [B, 512]                                              │
+        │                                                                   │
+        └──── Branch 2 (parallel): BiomedCLIP image encoder (frozen) ──────┤
+              Pick 3 center slices (indices 3, 4, 5) — the "static"          │
+              strategy. Each slice is processed as a 2-D image:              │
+                grayscale [112, 224] → resize 224×224 → repeat to 3 ch       │
+                  → CLIP normalization → ViT-B/16 → [B, 512] per slice       │
+              Stacked: [B, 3, 512]                                           │
+                          │                                                  │
+                          ▼                                                  │
+              SliceAttentionPool (TRAINABLE, ~1K params):                    │
+                a learned scorer assigns weights to the 3 slices, then       │
+                returns a weighted sum. The pooler does NOT modify slice     │
+                embeddings — it just decides which slice matters more.       │
+              Output: [B, 512]                                               │
+                                                                              │
+                ┌─────────────────────────────────────────────────────────────┘
+                ▼
+        Concatenate features:        [B, 1024]   (CBAM 512 + BiomedCLIP 512)
+                │
+                ▼
+        Image projection MLP (TRAINABLE, ~500K):
+                Linear(1024 → 768) → GELU → Dropout(0.1) → Linear(768 → 512)
+                │
+                ▼
+        L2 normalize           image_emb / ||image_emb||₂   →  [B, 512]
+                │
+                │  (the text side runs once at training start, then cached)
+                │
+                │     ┌───────────────────────────────────────────┐
+                │     │ Build text database (one-time, frozen):    │
+                │     │   for each (condition, severity) prompt:   │
+                │     │     tokens = tokenizer(prompt)             │
+                │     │     emb = biomedclip.encode_text(tokens)   │
+                │     │     L2 normalize                           │
+                │     │   stack → text_embs [9, 512]               │
+                │     │   stored on device, reused every batch     │
+                │     └───────────────────────────────────────────┘
+                │                              │
+                ▼                              ▼
+        cosine = image_emb @ text_embs.T   →  [B, 9]
+                │
+                ▼
+        logits = clamp(exp(logit_scale), max=100) × cosine     [B, 9]
+                  └─ logit_scale: TRAINABLE temperature (1 scalar). Larger
+                     temperature sharpens the softmax; clamp prevents the
+                     parameter from exploding during early training.
+                │
+                ▼
+        argmax → predicted class (or softmax → calibrated probs)
+```
+
+### Why every step matters
+
+| Step | Why it's there |
+|---|---|
+| **Parallel branches** | CBAM captures 3-D spatial structure (vertebrae, canal); BiomedCLIP captures 2-D radiology semantics from PubMed pretraining. They see the volume differently — concatenation gives the projection MLP both views. |
+| **3 center slices, not 9** | BiomedCLIP is 2-D. We could feed all 9, but they're highly correlated (adjacent sagittal slices), and 9 forwards per batch tripled training time. Center slices contain the most diagnostic IVD information. |
+| **SliceAttentionPool** | Even within 3 center slices, the most diagnostic one varies per case (some pathologies show on slice 3, others on slice 5). A learned pooler is more robust than a hard-coded mean. |
+| **L2 normalization before cosine** | Cosine similarity = dot product **only when vectors are unit-norm**. Without L2 norm, the dot product reflects vector magnitude, not direction — collapses CLIP-style classifiers. |
+| **Text DB precomputed** | Encoding 9 prompts costs ~5 s. Encoding them every batch would cost ~5 s × N batches = hours wasted. The text encoder is frozen, so the embeddings never change after init — cache once. |
+| **`logit_scale` (temperature)** | Without scaling, cosine values live in [-1, 1] — softmax is too soft and gradients vanish. CLIP introduced learnable `exp(logit_scale)` (init 1/0.07 ≈ 14.3) so the model picks its own sharpness. The clamp at 100 prevents runaway growth in the first few epochs. |
+
+### Adding a new label (zero-shot extension)
+
+```python
+# 1. Define new prompts (text)
+new_prompts = ["normal disc", "modic change type 1", "modic change type 2"]
+
+# 2. Encode once via frozen BiomedCLIP text encoder
+new_text_embs = biomedclip.encode_text(new_prompts)   # [3, 512]
+# No retraining. No weight updates.
+
+# 3. Reuse the SAME image encoder
+image_emb = hybrid.encode_image(volume)               # [B, 512]
+logits = logit_scale * (image_emb @ new_text_embs.T)  # [B, 3]
+predictions = logits.argmax(dim=-1)
+```
+
+This is exactly what `eval_zeroshot_spider.py` does for SPIDER's 8 unseen disease labels.
+
 ## Hyperparameter reference
 
 ### Data
