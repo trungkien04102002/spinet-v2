@@ -192,9 +192,16 @@ class SpineNetHybrid(nn.Module):
         Returns:
             image_emb: [B, 512] L2-normalized
         """
-        # CBAM 3D path (frozen)
-        with torch.no_grad():
-            feat_cbam = self.cbam.encode(volume)  # [B, 512]
+        # CBAM 3D path. If any CBAM parameter still requires gradients (e.g.
+        # SPIDER full fine-tune via --unfreeze-cbam), we keep autograd active so
+        # gradients can flow into the backbone. Otherwise we save memory + time
+        # by running under no_grad.
+        cbam_trainable = any(p.requires_grad for p in self.cbam.parameters())
+        if cbam_trainable:
+            feat_cbam = self.cbam.encode(volume)
+        else:
+            with torch.no_grad():
+                feat_cbam = self.cbam.encode(volume)  # [B, 512]
 
         # BiomedCLIP 2D path (frozen) + slice attention pool (trainable)
         if self.slice_strategy == "static":

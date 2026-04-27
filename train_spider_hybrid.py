@@ -271,13 +271,19 @@ def main():
     print(f"  Loaded. Missing keys (expected for frozen modules): {len(missing)}, "
           f"Unexpected: {len(unexpected)}")
 
-    # Freeze CBAM backbone unless requested otherwise
-    if not args.unfreeze_cbam:
+    # SpineNetHybrid constructor freezes CBAM by default (requires_grad=False).
+    # When --unfreeze-cbam is set, we must actively re-enable gradients for it
+    # AND switch the module out of eval() so BatchNorm running stats update.
+    if args.unfreeze_cbam:
+        for p in model.cbam.parameters():
+            p.requires_grad = True
+        model.cbam.train()
+        print("  CBAM backbone: TRAINABLE (gradients enabled)")
+    else:
         for p in model.cbam.parameters():
             p.requires_grad = False
+        model.cbam.eval()
         print("  CBAM backbone: FROZEN")
-    else:
-        print("  CBAM backbone: TRAINABLE")
     # BiomedCLIP is always frozen (handled internally by SpineNetHybrid)
 
     n_train = sum(p.numel() for p in model.parameters() if p.requires_grad)
