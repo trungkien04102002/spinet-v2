@@ -218,6 +218,9 @@ def main():
     metrics_dir = Path(args.metrics_dir)
     metrics_dir.mkdir(parents=True, exist_ok=True)
 
+    # Tag for output filenames so frozen and unfreeze runs don't overwrite each other.
+    tag = "unfreeze" if args.unfreeze_cbam else "frozen"
+
     print("=" * 72)
     print("Phase 4: Train Hybrid CBAM + BiomedCLIP on SPIDER")
     print("=" * 72)
@@ -228,6 +231,7 @@ def main():
     print(f"Conditions:           {SPIDER_CONDITIONS}")
     print(f"Unfreeze CBAM:        {args.unfreeze_cbam}")
     print(f"Loss mode:            {args.loss}")
+    print(f"Output filename tag:  _{tag}")
     print("=" * 72)
 
     # ---- Dataset ----
@@ -386,7 +390,7 @@ def main():
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             epochs_no_improve = 0
-            best_path = ckpt_dir / "best_model_hybrid_spider.pth"
+            best_path = ckpt_dir / f"best_model_hybrid_spider_{tag}.pth"
             torch.save({
                 "epoch": epoch + 1,
                 "model_state_dict": model.state_dict(),
@@ -402,8 +406,8 @@ def main():
             print(f"  ✓ Saved best model: {best_path}")
 
             # Persist best metrics text
-            with open(metrics_dir / "best_metrics_hybrid_spider.txt", "w") as f:
-                f.write("=== BEST HYBRID SPIDER MODEL ===\n")
+            with open(metrics_dir / f"best_metrics_hybrid_spider_{tag}.txt", "w") as f:
+                f.write(f"=== BEST HYBRID SPIDER MODEL ({tag}) ===\n")
                 f.write(f"Saved at: {datetime.now().isoformat(timespec='seconds')}\n")
                 f.write(f"Epoch: {epoch + 1}\n")
                 f.write(f"Val loss: {val_loss:.4f}\n")
@@ -415,12 +419,30 @@ def main():
                             f"per-class F1={[round(float(x), 3) for x in per_class[c]['f1']]}\n")
                     f.write(f"{'':>20s}  precision={[round(float(x), 3) for x in per_class[c]['precision']]}  "
                             f"recall={[round(float(x), 3) for x in per_class[c]['recall']]}\n")
+
+            # Persist best metrics JSON (machine readable)
+            import json as _json
+            with open(metrics_dir / f"best_metrics_hybrid_spider_{tag}.json", "w") as f:
+                _json.dump({
+                    'tag': tag,
+                    'epoch': epoch + 1,
+                    'train_loss': float(avg_train_loss),
+                    'val_loss': float(val_loss),
+                    'val_mean_acc': float(mean_acc),
+                    'val_mean_f1_macro': mean_f1,
+                    'val_accuracies': {c: float(val_acc[c]) for c in SPIDER_CONDITIONS},
+                    'val_f1_macro': f1_macro,
+                    'per_class_f1':       {c: [float(x) for x in per_class[c]['f1']]        for c in SPIDER_CONDITIONS},
+                    'per_class_precision':{c: [float(x) for x in per_class[c]['precision']] for c in SPIDER_CONDITIONS},
+                    'per_class_recall':   {c: [float(x) for x in per_class[c]['recall']]    for c in SPIDER_CONDITIONS},
+                    'args': vars(args),
+                }, f, indent=2)
         else:
             epochs_no_improve += 1
 
         # Periodic snapshot
         if (epoch + 1) % args.save_freq == 0:
-            snap = ckpt_dir / f"checkpoint_hybrid_spider_epoch{epoch+1}.pth"
+            snap = ckpt_dir / f"checkpoint_hybrid_spider_{tag}_epoch{epoch+1}.pth"
             torch.save({
                 "epoch": epoch + 1,
                 "model_state_dict": model.state_dict(),
@@ -429,7 +451,7 @@ def main():
             print(f"  Saved snapshot: {snap}")
 
         # Save running training log
-        with open(metrics_dir / "training_log_hybrid_spider.json", "w") as f:
+        with open(metrics_dir / f"training_log_hybrid_spider_{tag}.json", "w") as f:
             json.dump(history, f, indent=2)
 
         if epochs_no_improve >= args.early_stop_patience:
@@ -442,7 +464,7 @@ def main():
     print("\n" + "=" * 72)
     print("Training complete.")
     print(f"Best val loss: {best_val_loss:.4f}")
-    print(f"Best checkpoint: {ckpt_dir}/best_model_hybrid_spider.pth")
+    print(f"Best checkpoint: {ckpt_dir}/best_model_hybrid_spider_{tag}.pth")
     print(f"Metrics: {metrics_dir}/")
     print("=" * 72)
 
