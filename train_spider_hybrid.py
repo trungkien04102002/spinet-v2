@@ -352,23 +352,34 @@ def main():
         mean_acc = float(np.mean(list(val_acc.values())))
         elapsed = time.time() - t0
 
+        # Per-condition F1 macro (mean of per-class F1) — primary metric on
+        # imbalanced classes where accuracy is misleading.
+        f1_macro = {c: float(np.mean(per_class[c]['f1'])) for c in SPIDER_CONDITIONS}
+        mean_f1 = float(np.mean(list(f1_macro.values())))
+
         print(f"\nEpoch {epoch+1}/{args.epochs} ({elapsed:.1f}s):")
         print(f"  Train Loss: {avg_train_loss:.4f}")
         print(f"  Val   Loss: {val_loss:.4f}")
-        print(f"  Val Accuracies:")
+        print(f"  Val per-condition (accuracy | F1 macro):")
         for c in SPIDER_CONDITIONS:
-            print(f"    - {DISPLAY_NAMES[c]:<20s}: {val_acc[c]*100:.2f}%")
-        print(f"    - {'Mean':<20s}: {mean_acc*100:.2f}%")
+            print(f"    - {DISPLAY_NAMES[c]:<20s}  acc={val_acc[c]*100:6.2f}%  F1={f1_macro[c]:.3f}")
+        print(f"    - {'Mean':<20s}  acc={mean_acc*100:6.2f}%  F1={mean_f1:.3f}")
         if (epoch + 1) % 5 == 0:
             print_per_class_metrics(per_class)
 
-        # Track history
+        # Track history (CSV row per epoch)
         row = {"epoch": epoch + 1, "train_loss": avg_train_loss,
-               "val_loss": val_loss, "val_mean_acc": mean_acc}
+               "val_loss": val_loss, "val_mean_acc": mean_acc,
+               "val_mean_f1_macro": mean_f1}
         for c in SPIDER_CONDITIONS:
-            row[f"val_acc_{c}"] = val_acc[c]
+            row[f"val_acc_{c}"] = float(val_acc[c])
+            row[f"val_f1_macro_{c}"] = f1_macro[c]
             for i, f in enumerate(per_class[c]["f1"]):
                 row[f"f1_{c}_class{i}"] = float(f)
+            for i, p in enumerate(per_class[c]["precision"]):
+                row[f"precision_{c}_class{i}"] = float(p)
+            for i, r in enumerate(per_class[c]["recall"]):
+                row[f"recall_{c}_class{i}"] = float(r)
         history.append(row)
 
         # Save best
@@ -382,6 +393,7 @@ def main():
                 "optimizer_state_dict": optimizer.state_dict(),
                 "val_loss": val_loss,
                 "val_accuracies": val_acc,
+                "val_f1_macro": f1_macro,
                 "per_class_metrics": {c: {k: v.tolist() if hasattr(v, "tolist") else v
                                           for k, v in m.items()}
                                       for c, m in per_class.items()},
@@ -395,10 +407,14 @@ def main():
                 f.write(f"Saved at: {datetime.now().isoformat(timespec='seconds')}\n")
                 f.write(f"Epoch: {epoch + 1}\n")
                 f.write(f"Val loss: {val_loss:.4f}\n")
-                f.write(f"Val mean acc: {mean_acc*100:.2f}%\n\n")
+                f.write(f"Val mean acc:      {mean_acc*100:.2f}%\n")
+                f.write(f"Val mean F1 macro: {mean_f1:.3f}\n\n")
                 for c in SPIDER_CONDITIONS:
-                    f.write(f"{DISPLAY_NAMES[c]}: acc={val_acc[c]*100:.2f}%, "
+                    f.write(f"{DISPLAY_NAMES[c]:<20s}  acc={val_acc[c]*100:6.2f}%  "
+                            f"F1_macro={f1_macro[c]:.3f}  "
                             f"per-class F1={[round(float(x), 3) for x in per_class[c]['f1']]}\n")
+                    f.write(f"{'':>20s}  precision={[round(float(x), 3) for x in per_class[c]['precision']]}  "
+                            f"recall={[round(float(x), 3) for x in per_class[c]['recall']]}\n")
         else:
             epochs_no_improve += 1
 

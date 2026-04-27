@@ -381,15 +381,20 @@ def main():
         # Compute mean accuracy
         mean_acc = np.mean(list(val_accuracies.values()))
 
+        # Per-condition F1 macro (mean of per-class F1) — more informative than
+        # accuracy on imbalanced classes (e.g. Spondylolisthesis 97% prevalence).
+        f1_macro = {c: float(np.mean(per_class_metrics[c]['f1'])) for c in SPIDER_CONDITIONS}
+        mean_f1 = float(np.mean(list(f1_macro.values())))
+
         # Print epoch summary
         epoch_time = time.time() - epoch_start_time
         print(f"\nEpoch {epoch+1}/{args.epochs} ({epoch_time:.1f}s):")
         print(f"  Train Loss: {avg_train_loss:.4f}")
         print(f"  Val Loss: {val_loss:.4f}")
-        print(f"  Val Accuracies:")
+        print(f"  Val per-condition (accuracy | F1 macro):")
         for c in SPIDER_CONDITIONS:
-            print(f"    - {DISPLAY_NAMES[c]:<20s}: {val_accuracies[c]*100:.2f}%")
-        print(f"    - {'Mean':<20s}: {mean_acc*100:.2f}%")
+            print(f"    - {DISPLAY_NAMES[c]:<20s}  acc={val_accuracies[c]*100:6.2f}%  F1={f1_macro[c]:.3f}")
+        print(f"    - {'Mean':<20s}  acc={mean_acc*100:6.2f}%  F1={mean_f1:.3f}")
 
         # Print per-class metrics every 5 epochs
         if (epoch + 1) % 5 == 0:
@@ -401,11 +406,17 @@ def main():
             'train_loss': float(avg_train_loss),
             'val_loss': float(val_loss),
             'val_mean_acc': float(mean_acc),
+            'val_mean_f1_macro': mean_f1,
         }
         for c in SPIDER_CONDITIONS:
             row[f'val_acc_{c}'] = float(val_accuracies[c])
+            row[f'val_f1_macro_{c}'] = f1_macro[c]
             for i, f1 in enumerate(per_class_metrics[c]['f1']):
                 row[f'f1_{c}_class{i}'] = float(f1)
+            for i, p in enumerate(per_class_metrics[c]['precision']):
+                row[f'precision_{c}_class{i}'] = float(p)
+            for i, r in enumerate(per_class_metrics[c]['recall']):
+                row[f'recall_{c}_class{i}'] = float(r)
         history.append(row)
 
         # Persist running CSV every epoch (so partial runs are recoverable)
@@ -441,10 +452,14 @@ def main():
                 f.write(f"Epoch: {epoch + 1}\n")
                 f.write(f"Train loss: {avg_train_loss:.4f}\n")
                 f.write(f"Val loss:   {val_loss:.4f}\n")
-                f.write(f"Val mean acc: {mean_acc*100:.2f}%\n\n")
+                f.write(f"Val mean acc:      {mean_acc*100:.2f}%\n")
+                f.write(f"Val mean F1 macro: {mean_f1:.3f}\n\n")
                 for c in SPIDER_CONDITIONS:
-                    f.write(f"{DISPLAY_NAMES[c]:<20s}  acc={val_accuracies[c]*100:.2f}%  "
+                    f.write(f"{DISPLAY_NAMES[c]:<20s}  acc={val_accuracies[c]*100:6.2f}%  "
+                            f"F1_macro={f1_macro[c]:.3f}  "
                             f"per-class F1={[round(float(x), 3) for x in per_class_metrics[c]['f1']]}\n")
+                    f.write(f"{'':>20s}  precision={[round(float(x), 3) for x in per_class_metrics[c]['precision']]}  "
+                            f"recall={[round(float(x), 3) for x in per_class_metrics[c]['recall']]}\n")
 
             best_json = metrics_dir / f'best_metrics_{args.model}.json'
             import json as _json
@@ -454,9 +469,12 @@ def main():
                     'train_loss': float(avg_train_loss),
                     'val_loss': float(val_loss),
                     'val_mean_acc': float(mean_acc),
+                    'val_mean_f1_macro': mean_f1,
                     'val_accuracies': {c: float(val_accuracies[c]) for c in SPIDER_CONDITIONS},
-                    'per_class_f1': {c: [float(x) for x in per_class_metrics[c]['f1']]
-                                     for c in SPIDER_CONDITIONS},
+                    'val_f1_macro': f1_macro,
+                    'per_class_f1':       {c: [float(x) for x in per_class_metrics[c]['f1']]        for c in SPIDER_CONDITIONS},
+                    'per_class_precision':{c: [float(x) for x in per_class_metrics[c]['precision']] for c in SPIDER_CONDITIONS},
+                    'per_class_recall':   {c: [float(x) for x in per_class_metrics[c]['recall']]    for c in SPIDER_CONDITIONS},
                     'args': vars(args),
                 }, f, indent=2)
         else:
