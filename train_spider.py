@@ -218,6 +218,9 @@ def main():
     # Create checkpoint directory
     checkpoint_dir = Path('checkpoints_spider')
     checkpoint_dir.mkdir(exist_ok=True)
+    metrics_dir = Path('experiments/spider_phase4')
+    metrics_dir.mkdir(parents=True, exist_ok=True)
+    history = []  # per-epoch rows for training_log csv
 
     print("\n" + "="*70)
     print("SPIDER Dataset Transfer Learning")
@@ -390,6 +393,27 @@ def main():
         if (epoch + 1) % 5 == 0:
             print_per_class_metrics(per_class_metrics)
 
+        # Append to per-epoch training log
+        row = {
+            'epoch': epoch + 1,
+            'train_loss': float(avg_train_loss),
+            'val_loss': float(val_loss),
+            'val_mean_acc': float(mean_acc),
+        }
+        for c in SPIDER_CONDITIONS:
+            row[f'val_acc_{c}'] = float(val_accuracies[c])
+            for i, f1 in enumerate(per_class_metrics[c]['f1']):
+                row[f'f1_{c}_class{i}'] = float(f1)
+        history.append(row)
+
+        # Persist running CSV every epoch (so partial runs are recoverable)
+        import csv as _csv
+        log_path = metrics_dir / f'training_log_{args.model}.csv'
+        with open(log_path, 'w', newline='') as f:
+            writer = _csv.DictWriter(f, fieldnames=list(row.keys()))
+            writer.writeheader()
+            writer.writerows(history)
+
         # Save best model
         if val_loss < best_val_loss:
             best_val_loss = val_loss
@@ -405,6 +429,34 @@ def main():
                 'args': vars(args)
             }, checkpoint_path)
             print(f"  ✓ Saved best model to {checkpoint_path}")
+
+            # Persist best metrics txt + json (human + machine readable)
+            from datetime import datetime as _dt
+            best_txt = metrics_dir / f'best_metrics_{args.model}.txt'
+            with open(best_txt, 'w') as f:
+                f.write(f"=== BEST {args.model.upper()} SPIDER MODEL ===\n")
+                f.write(f"Saved at: {_dt.now().isoformat(timespec='seconds')}\n")
+                f.write(f"Epoch: {epoch + 1}\n")
+                f.write(f"Train loss: {avg_train_loss:.4f}\n")
+                f.write(f"Val loss:   {val_loss:.4f}\n")
+                f.write(f"Val mean acc: {mean_acc*100:.2f}%\n\n")
+                for c in SPIDER_CONDITIONS:
+                    f.write(f"{DISPLAY_NAMES[c]:<20s}  acc={val_accuracies[c]*100:.2f}%  "
+                            f"per-class F1={[round(float(x), 3) for x in per_class_metrics[c]['f1']]}\n")
+
+            best_json = metrics_dir / f'best_metrics_{args.model}.json'
+            import json as _json
+            with open(best_json, 'w') as f:
+                _json.dump({
+                    'epoch': epoch + 1,
+                    'train_loss': float(avg_train_loss),
+                    'val_loss': float(val_loss),
+                    'val_mean_acc': float(mean_acc),
+                    'val_accuracies': {c: float(val_accuracies[c]) for c in SPIDER_CONDITIONS},
+                    'per_class_f1': {c: [float(x) for x in per_class_metrics[c]['f1']]
+                                     for c in SPIDER_CONDITIONS},
+                    'args': vars(args),
+                }, f, indent=2)
         else:
             epochs_no_improve += 1
 
