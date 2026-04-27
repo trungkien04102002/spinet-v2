@@ -12,6 +12,14 @@ rsna_preprocessed.zip
 example_scans/
 *.npy
 
+# SPIDER Phase 3+4 large artifacts (regenerate with prepare_spider_zeroshot.py)
+rsna_preprocessed_spider/
+spider.zip
+*.pdf
+
+# Stray files
+/checkpoints_spider/
+
 # Training outputs (large model files - do not commit)
 checkpoints/
 *.pth

@@ -1,10 +1,12 @@
 """
 Grading Models for SPIDER Dataset Transfer Learning.
 
-Contains both Baseline and CBAM models with SPIDER-specific output heads:
-- Pfirrmann: 5 classes (grades 1-5, stored as 0-4)
-- Spondylolisthesis: 2 classes (No/Yes)
-- Disc herniation: 2 classes (No/Yes)
+Contains both Baseline and CBAM models with SPIDER-specific output heads.
+Four representative SPIDER labels covering disc / vertebra / alignment categories:
+    - pfirrmann:         5 classes (grades 1-5, stored as 0-4)  — disc degeneration
+    - modic:             4 classes (types 0-3)                  — vertebra inflammation
+    - disc_narrowing:    2 classes (No/Yes)                     — disc structure
+    - spondylolisthesis: 2 classes (No/Yes)                     — spinal alignment
 
 These models support loading pretrained RSNA weights (backbone + CBAM)
 and only retraining the classification heads.
@@ -23,14 +25,31 @@ from spinenet.models.grading_baseline import BasicBlock, conv3x3, conv1x1
 from spinenet.models.attention import CBAM
 
 
+# Single source of truth for SPIDER conditions used across this module and
+# train_spider.py / spider_dataloader.py. Keep order stable.
+SPIDER_CONDITIONS: List[str] = [
+    "pfirrmann",
+    "modic",
+    "disc_narrowing",
+    "spondylolisthesis",
+]
+SPIDER_NUM_CLASSES = {
+    "pfirrmann": 5,
+    "modic": 4,
+    "disc_narrowing": 2,
+    "spondylolisthesis": 2,
+}
+
+
 class GradingModelSPIDERBaseline(nn.Module):
     """
     Baseline model (ResNet34) for SPIDER dataset.
 
-    Output heads:
-    - pfirrmann: 5 classes (0-4)
-    - spondylolisthesis: 2 classes (0-1)
-    - disc_herniation: 2 classes (0-1)
+    Output heads (4 representative SPIDER labels):
+    - pfirrmann:         5 classes (disc degeneration)
+    - modic:             4 classes (vertebra inflammation)
+    - disc_narrowing:    2 classes (disc structure)
+    - spondylolisthesis: 2 classes (spinal alignment)
 
     Can load pretrained RSNA backbone weights.
     """
@@ -80,10 +99,12 @@ class GradingModelSPIDERBaseline(nn.Module):
         # Global average pooling
         self.avgpool = nn.AdaptiveAvgPool3d((1, 1, 1))
 
-        # === CLASSIFICATION HEADS (SPIDER-specific) ===
-        self.fc_pfirrmann = nn.Linear(512 * block.expansion, 5)  # 5 classes
-        self.fc_spondylolisthesis = nn.Linear(512 * block.expansion, 2)  # Binary
-        self.fc_disc_herniation = nn.Linear(512 * block.expansion, 2)  # Binary
+        # === CLASSIFICATION HEADS (SPIDER-specific, 4 representative tasks) ===
+        feat_dim = 512 * block.expansion
+        self.fc_pfirrmann         = nn.Linear(feat_dim, SPIDER_NUM_CLASSES["pfirrmann"])
+        self.fc_modic             = nn.Linear(feat_dim, SPIDER_NUM_CLASSES["modic"])
+        self.fc_disc_narrowing    = nn.Linear(feat_dim, SPIDER_NUM_CLASSES["disc_narrowing"])
+        self.fc_spondylolisthesis = nn.Linear(feat_dim, SPIDER_NUM_CLASSES["spondylolisthesis"])
 
         # === INITIALIZATION ===
         self._initialize_weights(zero_init_residual)
@@ -155,10 +176,11 @@ class GradingModelSPIDERBaseline(nn.Module):
             x: [B, 1, 9, 112, 224]
 
         Returns:
-            Dictionary with 3 keys:
-            - 'pfirrmann': [B, 5]
+            dict with one entry per SPIDER condition (see SPIDER_CONDITIONS):
+            - 'pfirrmann':         [B, 5]
+            - 'modic':             [B, 4]
+            - 'disc_narrowing':    [B, 2]
             - 'spondylolisthesis': [B, 2]
-            - 'disc_herniation': [B, 2]
         """
         # Backbone
         x = self.conv1(x)
@@ -175,15 +197,11 @@ class GradingModelSPIDERBaseline(nn.Module):
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
 
-        # Classification heads
-        out_pfirrmann = self.fc_pfirrmann(x)
-        out_spondylolisthesis = self.fc_spondylolisthesis(x)
-        out_disc_herniation = self.fc_disc_herniation(x)
-
         return {
-            'pfirrmann': out_pfirrmann,
-            'spondylolisthesis': out_spondylolisthesis,
-            'disc_herniation': out_disc_herniation
+            "pfirrmann":         self.fc_pfirrmann(x),
+            "modic":             self.fc_modic(x),
+            "disc_narrowing":    self.fc_disc_narrowing(x),
+            "spondylolisthesis": self.fc_spondylolisthesis(x),
         }
 
     def load_pretrained_rsna_backbone(self, checkpoint_path: str, strict: bool = False, verbose: bool = True):
@@ -305,10 +323,12 @@ class GradingModelSPIDERCBAM(nn.Module):
         # Global average pooling
         self.avgpool = nn.AdaptiveAvgPool3d((1, 1, 1))
 
-        # === CLASSIFICATION HEADS (SPIDER-specific) ===
-        self.fc_pfirrmann = nn.Linear(512 * block.expansion, 5)  # 5 classes
-        self.fc_spondylolisthesis = nn.Linear(512 * block.expansion, 2)  # Binary
-        self.fc_disc_herniation = nn.Linear(512 * block.expansion, 2)  # Binary
+        # === CLASSIFICATION HEADS (SPIDER-specific, 4 representative tasks) ===
+        feat_dim = 512 * block.expansion
+        self.fc_pfirrmann         = nn.Linear(feat_dim, SPIDER_NUM_CLASSES["pfirrmann"])
+        self.fc_modic             = nn.Linear(feat_dim, SPIDER_NUM_CLASSES["modic"])
+        self.fc_disc_narrowing    = nn.Linear(feat_dim, SPIDER_NUM_CLASSES["disc_narrowing"])
+        self.fc_spondylolisthesis = nn.Linear(feat_dim, SPIDER_NUM_CLASSES["spondylolisthesis"])
 
         # === INITIALIZATION ===
         self._initialize_weights(zero_init_residual)
@@ -380,10 +400,11 @@ class GradingModelSPIDERCBAM(nn.Module):
             x: [B, 1, 9, 112, 224]
 
         Returns:
-            Dictionary with 3 keys:
-            - 'pfirrmann': [B, 5]
+            dict with one entry per SPIDER condition (see SPIDER_CONDITIONS):
+            - 'pfirrmann':         [B, 5]
+            - 'modic':             [B, 4]
+            - 'disc_narrowing':    [B, 2]
             - 'spondylolisthesis': [B, 2]
-            - 'disc_herniation': [B, 2]
         """
         # Backbone
         x = self.conv1(x)
@@ -392,31 +413,20 @@ class GradingModelSPIDERCBAM(nn.Module):
         x = self.maxpool(x)
 
         # ResNet + CBAM
-        x = self.layer1(x)
-        x = self.cbam1(x)
-
-        x = self.layer2(x)
-        x = self.cbam2(x)
-
-        x = self.layer3(x)
-        x = self.cbam3(x)
-
-        x = self.layer4(x)
-        x = self.cbam4(x)
+        x = self.layer1(x); x = self.cbam1(x)
+        x = self.layer2(x); x = self.cbam2(x)
+        x = self.layer3(x); x = self.cbam3(x)
+        x = self.layer4(x); x = self.cbam4(x)
 
         # Global pooling
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
 
-        # Classification heads
-        out_pfirrmann = self.fc_pfirrmann(x)
-        out_spondylolisthesis = self.fc_spondylolisthesis(x)
-        out_disc_herniation = self.fc_disc_herniation(x)
-
         return {
-            'pfirrmann': out_pfirrmann,
-            'spondylolisthesis': out_spondylolisthesis,
-            'disc_herniation': out_disc_herniation
+            "pfirrmann":         self.fc_pfirrmann(x),
+            "modic":             self.fc_modic(x),
+            "disc_narrowing":    self.fc_disc_narrowing(x),
+            "spondylolisthesis": self.fc_spondylolisthesis(x),
         }
 
     def load_pretrained_rsna_backbone(self, checkpoint_path: str, strict: bool = False, verbose: bool = True):

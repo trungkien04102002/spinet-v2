@@ -8,11 +8,11 @@ SpineNet V2 Original (RSNA):
 - 3 conditions: spinal_canal, left_foraminal, right_foraminal
 - Each: 3 classes (0: Normal/Mild, 1: Moderate, 2: Severe)
 
-SPIDER Transfer Learning:
-- 3 conditions: pfirrmann, spondylolisthesis, disc_herniation
-- Pfirrmann: 5 classes (0-4, originally 1-5)
-- Spondylolisthesis: 2 classes (0: No, 1: Yes)
-- Disc herniation: 2 classes (0: No, 1: Yes)
+SPIDER Transfer Learning (Phase 4 — 4 representative conditions):
+- pfirrmann:         5 classes (0-4, originally 1-5)  — disc degeneration
+- modic:             4 classes (0-3)                  — vertebra inflammation
+- disc_narrowing:    2 classes (0: No, 1: Yes)        — disc structure
+- spondylolisthesis: 2 classes (0: No, 1: Yes)        — spinal alignment
 
 Usage:
     from spider_dataloader import SPIDERDataset
@@ -75,8 +75,28 @@ class SPIDERDataset(Dataset):
         self.overview = pd.read_csv(self.data_dir / 'overview.csv')
         self.gradings = pd.read_csv(self.data_dir / 'radiological_gradings.csv')
 
-        # Filter by split
-        self.overview = self.overview[self.overview['subset'] == split].reset_index(drop=True)
+        # Filter by split. 'all' means use everything (training + validation),
+        # which is what we want for zero-shot eval (no SPIDER training).
+        if split != 'all':
+            self.overview = self.overview[self.overview['subset'] == split].reset_index(drop=True)
+        else:
+            self.overview = self.overview.reset_index(drop=True)
+
+        # Drop the 3 non-lumbar series (2 TSPINE + 1 MRI RUGPOLI).
+        # LSPINE / empty / "MRI LWK" / "MRI LWK _DECENTR" are all lumbar
+        # (LWK = "Lendenwervelkolom", Dutch for lumbar spine).
+        bp = self.overview['BodyPartExamined'].fillna('').str.strip().str.upper()
+        non_lumbar = bp.isin(['TSPINE', 'MRI RUGPOLI ZEVE'])
+        if non_lumbar.any():
+            self.overview = self.overview[~non_lumbar].reset_index(drop=True)
+
+        # Filter by modality: only keep series whose filename ends with the chosen
+        # modality (e.g. '*_t2' but not '*_t2_SPACE'). T2_SPACE is a different
+        # acquisition type (3D isotropic) that this loader's resampling assumes away.
+        names = self.overview['new_file_name'].astype(str)
+        suffix = '_' + modality
+        keep = names.str.endswith(suffix) & ~names.str.endswith('_SPACE')
+        self.overview = self.overview[keep].reset_index(drop=True)
 
         # Build sample list
         self.samples = self._build_sample_list()
@@ -85,7 +105,7 @@ class SPIDERDataset(Dataset):
         print(f"  - Modality: {modality}")
         print(f"  - Samples: {len(self.samples)} IVDs")
         print(f"  - Patients: {len(self.overview)}")
-        print(f"  - Format: 3 conditions (pfirrmann, spondylolisthesis, disc_herniation)")
+        print(f"  - Format: 4 conditions (pfirrmann, modic, disc_narrowing, spondylolisthesis)")
         print(f"  - Output shape: ({num_slices}, {height}, {width})")
 
     def _build_sample_list(self) -> List[Tuple[int, int]]:
@@ -121,12 +141,13 @@ class SPIDERDataset(Dataset):
         """
         patient_id, ivd_level = self.samples[idx]
 
-        # Load volume and mask
-        volume = self._load_volume(patient_id)
+        # Load volume and mask. Spacing in mm/voxel for axes (1=SI, 2=PA) is needed
+        # to crop in physical units that match the RSNA training distribution.
+        volume, si_mm, pa_mm = self._load_volume(patient_id)
         mask = self._load_mask(patient_id)
 
         # Extract IVD region using mask (label = 200 + ivd_level)
-        ivd_volume = self._extract_ivd(volume, mask, ivd_level)
+        ivd_volume = self._extract_ivd(volume, mask, ivd_level, si_mm, pa_mm)
 
         # Preprocess to (9, 112, 224)
         ivd_volume = self._preprocess_ivd(ivd_volume)
@@ -143,8 +164,28 @@ class SPIDERDataset(Dataset):
 
         return ivd_volume, labels
 
-    def _load_volume(self, patient_id: int) -> np.ndarray:
-        """Load MRI volume from .mha file."""
+    # Canonical orientation for the grading model.
+    #
+    # SPIDER .mha files come in two patterns: some have axis 0 as sagittal slices
+    # (e.g. 107_t2 with shape (17, 512, 512)), others have axis 2 as sagittal slices
+    # (e.g. 1_t2 with shape (578, 448, 50)). Without standardization, the same
+    # crop/resample logic interprets entirely different anatomical axes per case.
+    #
+    # 'PIR' reorients so that after sitk.GetArrayFromImage the axes are:
+    #   axis 0 = R direction = lateral (sagittal slice axis, smallest count, largest spacing)
+    #   axis 1 = I direction = superior->inferior (image vertical, head at index 0)
+    #   axis 2 = P direction = anterior->posterior (image horizontal width)
+    # This matches the (slices, H=112, W=224) convention the grading model expects.
+    _CANONICAL_ORIENT = 'PIR'
+
+    def _load_volume(self, patient_id: int) -> Tuple[np.ndarray, float, float]:
+        """Load MRI volume from .mha, reorient, and return (volume, si_mm, pa_mm).
+
+        After PIR reorientation, sitk GetSpacing returns (i_spc, j_spc, k_spc)
+        for physical axes (P, I, R). Numpy array axes map as:
+          axis 1 (numpy) = j (sitk) = I direction → spacing index 1 (si_mm)
+          axis 2 (numpy) = i (sitk) = P direction → spacing index 0 (pa_mm)
+        """
         filename = f"{patient_id}_{self.modality}.mha"
         filepath = self.data_dir / 'images' / filename
 
@@ -152,77 +193,94 @@ class SPIDERDataset(Dataset):
             raise FileNotFoundError(f"Volume not found: {filepath}")
 
         image = sitk.ReadImage(str(filepath))
-        volume = sitk.GetArrayFromImage(image)  # (slices, height, width)
-        return volume
+        image = sitk.DICOMOrient(image, self._CANONICAL_ORIENT)
+        volume = sitk.GetArrayFromImage(image)
+        spacing = image.GetSpacing()
+        si_mm = float(spacing[1])
+        pa_mm = float(spacing[0])
+        return volume, si_mm, pa_mm
 
     def _load_mask(self, patient_id: int) -> np.ndarray:
-        """Load segmentation mask (.mha file with IVD labels 201-207)."""
-        # Try current modality first, then fallback
+        """Load segmentation mask (.mha with IVD labels 201-207), reoriented to canonical."""
+        # Try current modality first, then fallback. T1/T2 from the same patient
+        # share coordinate system in SPIDER (verified across all 48 t1-only-mask cases).
         for mod in [self.modality, 't1', 't2']:
             filename = f"{patient_id}_{mod}.mha"
             filepath = self.data_dir / 'masks' / filename
 
             if filepath.exists():
                 image = sitk.ReadImage(str(filepath))
+                image = sitk.DICOMOrient(image, self._CANONICAL_ORIENT)
                 mask = sitk.GetArrayFromImage(image)
                 return mask
 
         raise FileNotFoundError(f"Mask not found for patient {patient_id}")
 
-    def _extract_ivd(self, volume: np.ndarray, mask: np.ndarray, ivd_level: int) -> np.ndarray:
-        """
-        Extract IVD region using segmentation mask.
+    # Physical crop extent in millimetres around the disc center.
+    # Chosen to match RSNA training crop (240 px PA × 120 px SI at ~0.5 mm/px ≈
+    # 120 mm × 60 mm), which captures the disc plus 1-2 vertebra of context above
+    # and below — the distribution the grading backbone was trained on.
+    _CROP_SI_MM = 60.0
+    _CROP_PA_MM = 120.0
 
-        SPIDER masks: IVD label = 200 + ivd_level
-        - Label 201: IVD level 1 (L1/L2)
-        - Label 202: IVD level 2 (L2/L3)
-        - ...
-        - Label 207: IVD level 7 (L5/S1)
+    def _extract_ivd(
+        self,
+        volume: np.ndarray,
+        mask: np.ndarray,
+        ivd_level: int,
+        si_mm: float,
+        pa_mm: float,
+    ) -> np.ndarray:
+        """
+        Extract IVD region centered on the disc with RSNA-matched physical extent.
+
+        SPIDER masks: IVD label = 200 + ivd_level (label 201..207, lowest disc up).
 
         Args:
-            volume: Full spine volume (slices, H, W)
-            mask: Segmentation mask (slices, H, W)
-            ivd_level: IVD level (1-7)
+            volume: Full spine volume in canonical (LR_slices, SI, PA) ordering.
+            mask:   Segmentation mask in same ordering and shape.
+            ivd_level: IVD level (1-7).
+            si_mm:  mm per voxel along axis 1 (SI direction).
+            pa_mm:  mm per voxel along axis 2 (PA direction).
 
         Returns:
-            IVD volume cropped around disc
+            Cropped volume of shape ~(num_slices, ~_CROP_SI_MM/si_mm, ~_CROP_PA_MM/pa_mm).
+            The in-plane physical aspect is exactly _CROP_PA_MM:_CROP_SI_MM = 2:1, so the
+            downstream resize to (112, 224) preserves anatomical aspect (modulo edge
+            clipping near the volume boundary, which mirrors RSNA behavior).
         """
         ivd_label = 200 + ivd_level
-
-        # Find bounding box
         coords = np.where(mask == ivd_label)
 
         if len(coords[0]) == 0:
-            # Fallback: use center region if mask not found
-            center_slice = volume.shape[0] // 2
-            center_h = volume.shape[1] // 2
-            center_w = volume.shape[2] // 2
-
-            slice_start = max(0, center_slice - self.num_slices // 2)
-            slice_end = min(volume.shape[0], slice_start + self.num_slices)
-            h_start = max(0, center_h - self.height // 2)
-            h_end = min(volume.shape[1], h_start + self.height)
-            w_start = max(0, center_w - self.width // 2)
-            w_end = min(volume.shape[2], w_start + self.width)
-
-            return volume[slice_start:slice_end, h_start:h_end, w_start:w_end]
+            # Fallback: center of volume if mask label not found (rare).
+            slice_center = volume.shape[0] // 2
+            si_center = volume.shape[1] // 2
+            pa_center = volume.shape[2] // 2
         else:
-            # Get bounding box from mask
-            slice_min, slice_max = coords[0].min(), coords[0].max()
-            h_min, h_max = coords[1].min(), coords[1].max()
-            w_min, w_max = coords[2].min(), coords[2].max()
+            slice_center = (int(coords[0].min()) + int(coords[0].max())) // 2
+            si_center = (int(coords[1].min()) + int(coords[1].max())) // 2
+            pa_center = (int(coords[2].min()) + int(coords[2].max())) // 2
 
-            # Add margin
-            margin_slice, margin_h, margin_w = 2, 10, 10
+        # Sagittal slice axis: take num_slices consecutive slices centered on the
+        # disc's lateral midline (matches RSNA's [-4, +4] around center IVD).
+        half_slices = self.num_slices // 2
+        s_start = max(0, slice_center - half_slices)
+        s_end = min(volume.shape[0], s_start + self.num_slices)
+        # If clipped at the right boundary, shift the start back to keep num_slices.
+        if s_end - s_start < self.num_slices:
+            s_start = max(0, s_end - self.num_slices)
 
-            slice_min = max(0, slice_min - margin_slice)
-            slice_max = min(volume.shape[0], slice_max + margin_slice)
-            h_min = max(0, h_min - margin_h)
-            h_max = min(volume.shape[1], h_max + margin_h)
-            w_min = max(0, w_min - margin_w)
-            w_max = min(volume.shape[2], w_max + margin_w)
+        # In-plane: crop physical extent in mm, converted to voxels via spacing.
+        half_si_v = max(1, int(round((self._CROP_SI_MM / 2) / si_mm)))
+        half_pa_v = max(1, int(round((self._CROP_PA_MM / 2) / pa_mm)))
 
-            return volume[slice_min:slice_max, h_min:h_max, w_min:w_max]
+        si_start = max(0, si_center - half_si_v)
+        si_end = min(volume.shape[1], si_center + half_si_v)
+        pa_start = max(0, pa_center - half_pa_v)
+        pa_end = min(volume.shape[2], pa_center + half_pa_v)
+
+        return volume[s_start:s_end, si_start:si_end, pa_start:pa_end]
 
     def _preprocess_ivd(self, ivd_volume: np.ndarray) -> np.ndarray:
         """
@@ -266,13 +324,14 @@ class SPIDERDataset(Dataset):
 
     def _get_labels(self, patient_id: int, ivd_level: int) -> Dict[str, int]:
         """
-        Get 3 condition labels matching SpineNet V2 format.
+        Get 4 SPIDER condition labels for Phase 4 transfer learning.
 
         Returns:
             {
-                'pfirrmann': 0-4 (5 classes),
-                'spondylolisthesis': 0-1 (binary),
-                'disc_herniation': 0-1 (binary)
+                'pfirrmann':         0-4 (5 classes, originally 1-5),
+                'modic':             0-3 (4 classes),
+                'disc_narrowing':    0 or 1 (binary),
+                'spondylolisthesis': 0 or 1 (binary),
             }
         """
         grading = self.gradings[
@@ -285,14 +344,12 @@ class SPIDERDataset(Dataset):
 
         grading = grading.iloc[0]
 
-        # Return 3 conditions (same structure as RSNA dataset)
-        labels = {
-            'pfirrmann': int(grading['Pfirrman grade']) - 1,  # Convert 1-5 → 0-4
-            'spondylolisthesis': int(grading['Spondylolisthesis']),  # Binary 0-1
-            'disc_herniation': int(grading['Disc herniation']),  # Binary 0-1
+        return {
+            'pfirrmann':         int(grading['Pfirrman grade']) - 1,
+            'modic':             int(grading['Modic']),
+            'disc_narrowing':    int(grading['Disc narrowing']),
+            'spondylolisthesis': int(grading['Spondylolisthesis']),
         }
-
-        return labels
 
 
 # Test script
@@ -320,11 +377,11 @@ if __name__ == "__main__":
     print(f"  - Volume shape: {volume.shape}")
     print(f"  - Volume dtype: {volume.dtype}")
     print(f"  - Volume range: [{volume.min():.3f}, {volume.max():.3f}]")
-    print(f"\n  - Labels (3 conditions):")
-    print(f"    • Pfirrmann: {labels['pfirrmann']} (0-4 scale)")
-    print(f"      → Original: {labels['pfirrmann'] + 1} (1-5 scale)")
+    print(f"\n  - Labels (4 conditions):")
+    print(f"    • Pfirrmann:         {labels['pfirrmann']} (0-4 scale, original 1-5)")
+    print(f"    • Modic:             {labels['modic']} (0-3, 4 classes)")
+    print(f"    • Disc narrowing:    {labels['disc_narrowing']} (0: No, 1: Yes)")
     print(f"    • Spondylolisthesis: {labels['spondylolisthesis']} (0: No, 1: Yes)")
-    print(f"    • Disc herniation: {labels['disc_herniation']} (0: No, 1: Yes)")
 
     # Test DataLoader batching
     print("\n" + "="*70)
@@ -337,9 +394,10 @@ if __name__ == "__main__":
 
     print(f"\n✓ Batch loaded!")
     print(f"  - Batch shape: {batch_volumes.shape}")
-    print(f"  - Pfirrmann: {batch_labels['pfirrmann']}")
+    print(f"  - Pfirrmann:         {batch_labels['pfirrmann']}")
+    print(f"  - Modic:             {batch_labels['modic']}")
+    print(f"  - Disc narrowing:    {batch_labels['disc_narrowing']}")
     print(f"  - Spondylolisthesis: {batch_labels['spondylolisthesis']}")
-    print(f"  - Disc herniation: {batch_labels['disc_herniation']}")
 
     # Test with SpineNet model (will need modification for 5 classes)
     print("\n" + "="*70)

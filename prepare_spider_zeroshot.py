@@ -152,12 +152,9 @@ def main():
     spider_ds = SPIDERDataset(data_dir=str(spider_dir), split="all", transform=None)
     print(f"SPIDER samples: {len(spider_ds)}")
 
-    # Index spider_ds samples by (patient_id, ivd_label) for lookup
-    sample_index = {}
-    for idx in range(len(spider_ds)):
-        sample = spider_ds.samples[idx]
-        key = (sample["patient_id"], sample["ivd_label"])
-        sample_index[key] = idx
+    # Index spider_ds samples by (patient_id, ivd_label) for lookup.
+    # SPIDERDataset.samples is a list of (patient_id, ivd_level) tuples.
+    sample_index = {tuple(spider_ds.samples[idx]): idx for idx in range(len(spider_ds))}
 
     # Convert each gradings row to a test sample
     rows = []

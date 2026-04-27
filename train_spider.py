@@ -101,154 +101,110 @@ def parse_args():
     return parser.parse_args()
 
 
+SPIDER_CONDITIONS = ['pfirrmann', 'modic', 'disc_narrowing', 'spondylolisthesis']
+SPIDER_NUM_CLASSES = {'pfirrmann': 5, 'modic': 4, 'disc_narrowing': 2, 'spondylolisthesis': 2}
+
+
 def compute_class_weights_spider(dataset):
     """
-    Compute class weights for SPIDER dataset.
+    Compute class weights for SPIDER dataset (sqrt-of-inverse-frequency variant).
 
     Returns:
-        dict with 'pfirrmann', 'spondylolisthesis', 'disc_herniation' weights
+        dict mapping condition -> tensor of per-class weights, one entry per
+        SPIDER_CONDITIONS condition.
     """
-    pfirrmann_counts = torch.zeros(5)
-    spondy_counts = torch.zeros(2)
-    herniation_counts = torch.zeros(2)
-
+    counts = {c: torch.zeros(SPIDER_NUM_CLASSES[c]) for c in SPIDER_CONDITIONS}
     for idx in range(len(dataset)):
         _, labels = dataset[idx]
-        pfirrmann_counts[labels['pfirrmann']] += 1
-        spondy_counts[labels['spondylolisthesis']] += 1
-        herniation_counts[labels['disc_herniation']] += 1
+        for c in SPIDER_CONDITIONS:
+            counts[c][labels[c]] += 1
 
-    # Compute inverse frequency weights
-    pfirrmann_weights = 1.0 / pfirrmann_counts
-    spondy_weights = 1.0 / spondy_counts
-    herniation_weights = 1.0 / herniation_counts
-
-    # Normalize
-    pfirrmann_weights = pfirrmann_weights / pfirrmann_weights.sum() * 5
-    spondy_weights = spondy_weights / spondy_weights.sum() * 2
-    herniation_weights = herniation_weights / herniation_weights.sum() * 2
-
-    return {
-        'pfirrmann': pfirrmann_weights,
-        'spondylolisthesis': spondy_weights,
-        'disc_herniation': herniation_weights
-    }
+    weights = {}
+    for c in SPIDER_CONDITIONS:
+        # Inverse frequency, then normalize so weights sum to num_classes (mean=1)
+        w = 1.0 / counts[c].clamp(min=1)
+        w = w / w.sum() * SPIDER_NUM_CLASSES[c]
+        weights[c] = w
+    return weights
 
 
 def evaluate(model, dataloader, criteria, device):
-    """Evaluate model on validation set."""
+    """Evaluate model on validation set across all SPIDER_CONDITIONS."""
     model.eval()
 
-    all_losses = {'pfirrmann': [], 'spondylolisthesis': [], 'disc_herniation': []}
-    all_preds = {'pfirrmann': [], 'spondylolisthesis': [], 'disc_herniation': []}
-    all_labels = {'pfirrmann': [], 'spondylolisthesis': [], 'disc_herniation': []}
+    all_losses = {c: [] for c in SPIDER_CONDITIONS}
+    all_preds  = {c: [] for c in SPIDER_CONDITIONS}
+    all_labels = {c: [] for c in SPIDER_CONDITIONS}
 
     val_pbar = tqdm(dataloader, desc="Validating", leave=False)
 
     with torch.no_grad():
         for volumes, labels in val_pbar:
             volumes = volumes.unsqueeze(1).to(device)  # [B, 1, 9, 112, 224]
+            labels_device = {c: labels[c].to(device) for c in SPIDER_CONDITIONS}
 
-            # Move labels to device
-            labels_device = {
-                'pfirrmann': labels['pfirrmann'].to(device),
-                'spondylolisthesis': labels['spondylolisthesis'].to(device),
-                'disc_herniation': labels['disc_herniation'].to(device)
-            }
-
-            # Forward pass
             outputs = model(volumes)
 
-            # Compute per-task losses
-            for condition in ['pfirrmann', 'spondylolisthesis', 'disc_herniation']:
-                loss = criteria[condition](outputs[condition], labels_device[condition])
-                all_losses[condition].append(loss.item())
+            for c in SPIDER_CONDITIONS:
+                loss = criteria[c](outputs[c], labels_device[c])
+                all_losses[c].append(loss.item())
+                preds = torch.argmax(outputs[c], dim=1)
+                all_preds[c].extend(preds.cpu().numpy())
+                all_labels[c].extend(labels[c].numpy())
 
-                # Get predictions
-                preds = torch.argmax(outputs[condition], dim=1)
-                all_preds[condition].extend(preds.cpu().numpy())
-                all_labels[condition].extend(labels[condition].numpy())
-
-    # Compute metrics per condition
     val_accuracies = {}
     per_class_metrics = {}
-
-    for condition in ['pfirrmann', 'spondylolisthesis', 'disc_herniation']:
-        labels_np = np.array(all_labels[condition])
-        preds_np = np.array(all_preds[condition])
-
-        # Accuracy
-        acc = accuracy_score(labels_np, preds_np)
-        val_accuracies[condition] = acc
-
-        # Per-class metrics
-        if condition == 'pfirrmann':
-            num_classes = 5
-        else:
-            num_classes = 2
+    for c in SPIDER_CONDITIONS:
+        labels_np = np.array(all_labels[c])
+        preds_np = np.array(all_preds[c])
+        val_accuracies[c] = accuracy_score(labels_np, preds_np)
 
         precision, recall, f1, support = precision_recall_fscore_support(
             labels_np, preds_np,
-            labels=list(range(num_classes)),
+            labels=list(range(SPIDER_NUM_CLASSES[c])),
             average=None,
-            zero_division=0
+            zero_division=0,
         )
-
-        per_class_metrics[condition] = {
-            'precision': precision,
-            'recall': recall,
-            'f1': f1,
-            'support': support
+        per_class_metrics[c] = {
+            'precision': precision, 'recall': recall, 'f1': f1, 'support': support
         }
 
-    # Compute total loss
-    avg_loss = np.mean([np.mean(all_losses[c]) for c in ['pfirrmann', 'spondylolisthesis', 'disc_herniation']])
-
+    avg_loss = float(np.mean([np.mean(all_losses[c]) for c in SPIDER_CONDITIONS]))
     return avg_loss, val_accuracies, per_class_metrics
 
 
+CLASS_NAMES = {
+    'pfirrmann':         ['Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5'],
+    'modic':             ['Type 0',  'Type 1',  'Type 2',  'Type 3'],
+    'disc_narrowing':    ['No', 'Yes'],
+    'spondylolisthesis': ['No', 'Yes'],
+}
+DISPLAY_NAMES = {
+    'pfirrmann':         'Pfirrmann Grading',
+    'modic':             'Modic',
+    'disc_narrowing':    'Disc Narrowing',
+    'spondylolisthesis': 'Spondylolisthesis',
+}
+
+
 def print_per_class_metrics(per_class_metrics):
-    """Print per-class metrics for SPIDER dataset."""
+    """Print per-class metrics for all SPIDER conditions."""
     print("\n" + "="*70)
     print("Per-Class Metrics (Precision, Recall, F1-Score)")
     print("="*70)
 
-    # Pfirrmann (5 classes)
-    if 'pfirrmann' in per_class_metrics:
-        metrics = per_class_metrics['pfirrmann']
-        print(f"\nPfirrmann Grading (5 classes):")
+    for c in SPIDER_CONDITIONS:
+        if c not in per_class_metrics:
+            continue
+        m = per_class_metrics[c]
+        n = SPIDER_NUM_CLASSES[c]
+        print(f"\n{DISPLAY_NAMES[c]} ({n} classes):")
         print(f"  {'Class':<15} {'Precision':<12} {'Recall':<12} {'F1':<12} {'Support':<10}")
         print(f"  {'-'*15} {'-'*12} {'-'*12} {'-'*12} {'-'*10}")
-        class_names = ['Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5']
-        for i, name in enumerate(class_names):
-            print(f"  {name:<15} {metrics['precision'][i]:<12.3f} "
-                  f"{metrics['recall'][i]:<12.3f} {metrics['f1'][i]:<12.3f} "
-                  f"{int(metrics['support'][i]):<10}")
-
-    # Spondylolisthesis (binary)
-    if 'spondylolisthesis' in per_class_metrics:
-        metrics = per_class_metrics['spondylolisthesis']
-        print(f"\nSpondylolisthesis (2 classes):")
-        print(f"  {'Class':<15} {'Precision':<12} {'Recall':<12} {'F1':<12} {'Support':<10}")
-        print(f"  {'-'*15} {'-'*12} {'-'*12} {'-'*12} {'-'*10}")
-        class_names = ['No', 'Yes']
-        for i, name in enumerate(class_names):
-            print(f"  {name:<15} {metrics['precision'][i]:<12.3f} "
-                  f"{metrics['recall'][i]:<12.3f} {metrics['f1'][i]:<12.3f} "
-                  f"{int(metrics['support'][i]):<10}")
-
-    # Disc herniation (binary)
-    if 'disc_herniation' in per_class_metrics:
-        metrics = per_class_metrics['disc_herniation']
-        print(f"\nDisc Herniation (2 classes):")
-        print(f"  {'Class':<15} {'Precision':<12} {'Recall':<12} {'F1':<12} {'Support':<10}")
-        print(f"  {'-'*15} {'-'*12} {'-'*12} {'-'*12} {'-'*10}")
-        class_names = ['No', 'Yes']
-        for i, name in enumerate(class_names):
-            print(f"  {name:<15} {metrics['precision'][i]:<12.3f} "
-                  f"{metrics['recall'][i]:<12.3f} {metrics['f1'][i]:<12.3f} "
-                  f"{int(metrics['support'][i]):<10}")
-
+        for i, name in enumerate(CLASS_NAMES[c]):
+            print(f"  {name:<15} {m['precision'][i]:<12.3f} "
+                  f"{m['recall'][i]:<12.3f} {m['f1'][i]:<12.3f} "
+                  f"{int(m['support'][i]):<10}")
     print("="*70)
 
 
@@ -342,19 +298,13 @@ def main():
         print("  Computing class weights...")
         weights = compute_class_weights_spider(train_dataset)
         criteria = {
-            'pfirrmann': nn.CrossEntropyLoss(weight=weights['pfirrmann'].to(device)),
-            'spondylolisthesis': nn.CrossEntropyLoss(weight=weights['spondylolisthesis'].to(device)),
-            'disc_herniation': nn.CrossEntropyLoss(weight=weights['disc_herniation'].to(device))
+            c: nn.CrossEntropyLoss(weight=weights[c].to(device))
+            for c in SPIDER_CONDITIONS
         }
-        print(f"  - Pfirrmann weights: {weights['pfirrmann'].numpy()}")
-        print(f"  - Spondylolisthesis weights: {weights['spondylolisthesis'].numpy()}")
-        print(f"  - Disc herniation weights: {weights['disc_herniation'].numpy()}")
+        for c in SPIDER_CONDITIONS:
+            print(f"  - {DISPLAY_NAMES[c]} weights: {weights[c].numpy()}")
     else:
-        criteria = {
-            'pfirrmann': nn.CrossEntropyLoss(),
-            'spondylolisthesis': nn.CrossEntropyLoss(),
-            'disc_herniation': nn.CrossEntropyLoss()
-        }
+        criteria = {c: nn.CrossEntropyLoss() for c in SPIDER_CONDITIONS}
         print(f"  - Using standard CrossEntropyLoss")
 
     # Create optimizer and scheduler
@@ -400,26 +350,14 @@ def main():
 
         for volumes, labels in train_pbar:
             volumes = volumes.unsqueeze(1).to(device)  # [B, 1, 9, 112, 224]
+            labels_device = {c: labels[c].to(device) for c in SPIDER_CONDITIONS}
 
-            # Move labels to device
-            labels_device = {
-                'pfirrmann': labels['pfirrmann'].to(device),
-                'spondylolisthesis': labels['spondylolisthesis'].to(device),
-                'disc_herniation': labels['disc_herniation'].to(device)
-            }
-
-            # Forward pass
             outputs = model(volumes)
 
-            # Compute per-task losses
-            loss_pfirrmann = criteria['pfirrmann'](outputs['pfirrmann'], labels_device['pfirrmann'])
-            loss_spondy = criteria['spondylolisthesis'](outputs['spondylolisthesis'], labels_device['spondylolisthesis'])
-            loss_herniation = criteria['disc_herniation'](outputs['disc_herniation'], labels_device['disc_herniation'])
+            # Per-task loss + simple average across conditions
+            losses = [criteria[c](outputs[c], labels_device[c]) for c in SPIDER_CONDITIONS]
+            loss = sum(losses) / len(losses)
 
-            # Total loss (simple average)
-            loss = (loss_pfirrmann + loss_spondy + loss_herniation) / 3.0
-
-            # Backward pass
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -444,10 +382,9 @@ def main():
         print(f"  Train Loss: {avg_train_loss:.4f}")
         print(f"  Val Loss: {val_loss:.4f}")
         print(f"  Val Accuracies:")
-        print(f"    - Pfirrmann: {val_accuracies['pfirrmann']*100:.2f}%")
-        print(f"    - Spondylolisthesis: {val_accuracies['spondylolisthesis']*100:.2f}%")
-        print(f"    - Disc herniation: {val_accuracies['disc_herniation']*100:.2f}%")
-        print(f"    - Mean: {mean_acc*100:.2f}%")
+        for c in SPIDER_CONDITIONS:
+            print(f"    - {DISPLAY_NAMES[c]:<20s}: {val_accuracies[c]*100:.2f}%")
+        print(f"    - {'Mean':<20s}: {mean_acc*100:.2f}%")
 
         # Print per-class metrics every 5 epochs
         if (epoch + 1) % 5 == 0:

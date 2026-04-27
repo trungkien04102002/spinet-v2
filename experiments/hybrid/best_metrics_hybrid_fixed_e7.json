@@ -1,0 +1,108 @@
+{
+  "prefix": "hybrid",
+  "epoch": 7,
+  "timestamp": "2026-04-26T09:50:45",
+  "train_loss": 1.0152604196752821,
+  "val_loss": 0.14691019224135274,
+  "val_accuracies": {
+    "spinal_canal": 0.8614830072090628,
+    "left_foraminal": 0.6122870418172431,
+    "right_foraminal": 0.6277749096541043
+  },
+  "avg_severe_f1": 0.35317218792568766,
+  "per_class_metrics": {
+    "spinal_canal": {
+      "precision": [
+        0.9714463066418374,
+        0.27976190476190477,
+        0.37423312883435583
+      ],
+      "recall": [
+        0.9088269454123112,
+        0.3381294964028777,
+        0.7530864197530864
+      ],
+      "f1": [
+        0.9390939093909391,
+        0.30618892508143325,
+        0.5
+      ],
+      "support": [
+        1722,
+        139,
+        81
+      ]
+    },
+    "left_foraminal": {
+      "precision": [
+        0.9362139917695473,
+        0.2971014492753623,
+        0.21897810218978103
+      ],
+      "recall": [
+        0.6078824315297261,
+        0.6833333333333333,
+        0.375
+      ],
+      "f1": [
+        0.7371405427298502,
+        0.41414141414141414,
+        0.2764976958525346
+      ],
+      "support": [
+        1497,
+        360,
+        80
+      ]
+    },
+    "right_foraminal": {
+      "precision": [
+        0.940996948118006,
+        0.31636363636363635,
+        0.23255813953488372
+      ],
+      "recall": [
+        0.6241565452091767,
+        0.7016129032258065,
+        0.3614457831325301
+      ],
+      "f1": [
+        0.7505070993914807,
+        0.43609022556390975,
+        0.2830188679245283
+      ],
+      "support": [
+        1482,
+        372,
+        83
+      ]
+    }
+  },
+  "extra": {
+    "best_path": "checkpoints/hybrid/best_model_hybrid.pth",
+    "cbam_checkpoint": "checkpoints/best_model_attention.pth",
+    "args": {
+      "data_dir": "rsna_preprocessed",
+      "cbam_checkpoint": "checkpoints/best_model_attention.pth",
+      "save_dir": "checkpoints/hybrid",
+      "val_split": 0.2,
+      "epochs": 20,
+      "batch_size": 32,
+      "lr": 0.0001,
+      "weight_decay": 0.0001,
+      "slice_strategy": "static",
+      "use_focal": true,
+      "focal_gamma": 2.0,
+      "use_supcon": true,
+      "supcon_weight": 0.1,
+      "use_uncertainty": true,
+      "class_weight_mode": "sqrt",
+      "augmentation": "medium",
+      "oversample_factor": 3,
+      "num_workers": 16,
+      "save_freq": 5,
+      "early_stop_patience": 15,
+      "resume": null
+    }
+  }
+}
