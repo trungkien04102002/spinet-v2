@@ -1,0 +1,36 @@
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+*.lof
+*.lot
+*.nav
+*.snm
+*.vrb
+*.brf
+*.bcf
+*.run.xml
+*.xdv
+*.dvi
+
+# pdflatex/latexmk side artifacts
+*.figlist
+*.makefile
+*.fls
+
+# Editor / OS
+.DS_Store
+*.swp
+
+# Compiled paper PDF (don't commit large binaries; regenerate with latexmk)
+main.pdf
+
+# Overleaf-style backups
+*.bak
+*.synctex(busy)

@@ -1,0 +1,55 @@
+\section{Methods}
+\label{sec:methods}
+
+\subsection{Architecture Overview}
+% TODO: include figure: hybrid_architecture.png
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{hybrid_architecture.png}
+  \caption{Hybrid architecture. A 3D ResNet-34 with CBAM
+           (left, frozen on RSNA) and a per-slice frozen
+           BiomedCLIP image encoder with attention pooling (right) are
+           fused by a small projection MLP into a 512-d embedding,
+           which is matched against BiomedCLIP-encoded label prompts
+           via cosine similarity.}
+  \label{fig:arch}
+\end{figure}
+
+Given a sagittal IVD volume $V \in \mathbb{R}^{1 \times 9 \times 112 \times 224}$,
+we compute two complementary features:
+\begin{align}
+  f_{\mathrm{cbam}} &= \mathrm{CBAM\text{-}ResNet34_{3D}}(V) \in \mathbb{R}^{512},\\
+  f_{\mathrm{bmc}}  &= \mathrm{AttnPool}\left(\{\phi_v(s_i)\}_{i=1}^{K}\right) \in \mathbb{R}^{512},
+\end{align}
+where $\phi_v$ is the frozen BiomedCLIP image encoder, $s_i$ are
+$K{=}3$ centre slices, and $\mathrm{AttnPool}$ is a learned
+soft-attention pool. The image embedding is
+\begin{equation}
+  z = \mathrm{L2}\left(\mathrm{MLP}\left([f_{\mathrm{cbam}};\,f_{\mathrm{bmc}}]\right)\right) \in \mathbb{R}^{512}.
+\end{equation}
+
+\subsection{Cosine-similarity Zero-shot Head}
+For a label set $\mathcal{Y} = \{y_1, \dots, y_N\}$ described by text prompts,
+we compute frozen text embeddings $t_j = \mathrm{L2}(\phi_t(\mathrm{prompt}(y_j)))$
+and predict
+\begin{equation}
+  \hat{y} = \arg\max_j \;\; \tau \cdot z^\top t_j,
+\end{equation}
+where $\tau = \exp(\mathrm{logit\_scale})$ is a learned temperature
+initialised to $\log(1/0.07)$ following~\cite{radford2021clip}.
+
+\subsection{Training Objective}
+% TODO: focal loss, uncertainty weighting, supcon, class weights — pull
+% concrete formulas from spinenet/losses.py.
+For supervised stages we minimise a multi-task focal
+loss~\cite{lin2017focal} with task-uncertainty
+weighting~\cite{kendall2018uncertainty}; class weights are derived from
+inverse-square-root frequency. Only the projection MLP, attention pool,
+$\mathrm{logit\_scale}$, and (optionally) the CBAM 3D backbone are updated;
+the BiomedCLIP image and text encoders remain frozen throughout.
+
+\subsection{Implementation Details}
+% TODO: AdamW, lr, batch size, epochs, augmentation, hardware.
+Trained on a single consumer GPU. Total parameters: ${\sim}218$M;
+trainable: ${\sim}5$M (projection + attention pool + temperature) when
+the backbone is frozen, or ${\sim}95$M when CBAM is unfrozen.

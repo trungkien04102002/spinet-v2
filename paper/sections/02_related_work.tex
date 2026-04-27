@@ -1,0 +1,38 @@
+\section{Related Work}
+\label{sec:related}
+
+\subsection{Spine MRI Grading}
+% Windsor SpineNetV2, Ningshen rsna-2024 Kaggle pipeline, RSNA top-10
+% solutions, SPIDER benchmark. Position our contribution: 3D
+% volumetric grading with cross-dataset zero-shot label extension.
+SpineNetV2~\cite{windsor2024spinenet} provides a 3D ResNet-34 backbone
+pretrained on lumbar IVD volumes, which we adopt as our base. The
+RSNA~2024 challenge produced multiple 2D pipelines~\cite{nshen7rsna2024};
+these treat each IVD as a 2D crop and train independent models per
+condition. Our approach differs in two ways: (i) we use volumetric
+input throughout, and (ii) we add a label-space-extensible head
+allowing inference on unseen disease classes from the SPIDER
+dataset~\cite{spider} without any SPIDER training.
+
+\subsection{Attention for Imbalanced Medical Imaging}
+% CBAM (Woo 2018), SE-Net (Hu 2018), small-lesion attention precedents.
+CBAM~\cite{woo2018cbam} combines channel and spatial attention at near-zero
+parameter cost. We choose CBAM over SE-Net~\cite{hu2018senet} because the
+spatial gate is the critical component for localising small Severe
+lesions; non-local~\cite{wang2018nonlocal} and transformer self-attention
+scale poorly under our small-data regime.
+
+\subsection{Medical Vision-Language Foundation Models}
+% BiomedCLIP, MedGemma, RadFM, RAD-DINO. Justify why a frozen
+% contrastive encoder is the right choice for our task.
+Recent medical foundation models include BiomedCLIP~\cite{zhang2023biomedclip},
+RadFM~\cite{wu2025radfm}, RAD-DINO~\cite{perezgarcia2024raddino} and
+MedGemma~\cite{sebro2025medgemma}. Of these, BiomedCLIP is the only
+contrastive image–text encoder small enough (${\sim}86$M image params)
+to integrate as a frozen feature extractor on a consumer GPU while
+exposing a CLIP-style~\cite{radford2021clip} embedding space suitable
+for cosine-similarity zero-shot classification. MedGemma and RadFM are
+generative models whose multimodal arms are 2D-only and whose
+fine-tuning requirements exceed our resource regime; we leave
+plug-in replacement of BiomedCLIP with their contrastive companions
+(e.g.\ MedSigLIP) as future work.

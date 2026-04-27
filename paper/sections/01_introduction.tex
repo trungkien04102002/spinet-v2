@@ -1,0 +1,30 @@
+\section{Introduction}
+\label{sec:intro}
+
+% TODO: open with clinical motivation paragraph (low back pain
+% prevalence, MRI grading workload, inter-rater variability).
+
+% TODO: state the gap — most spine grading models have rigid label
+% spaces, so a model trained on RSNA's 5 stenosis labels cannot answer
+% questions about Pfirrmann grading or Modic changes from SPIDER.
+
+% TODO: state our contributions (3 bullets).
+
+\textbf{Contributions.}
+\begin{itemize}
+  \item A 3D CBAM-augmented backbone that recovers minority Severe-class
+        detection on imbalanced spinal stenosis grading
+        (Foraminal Severe F1 from $0.000 \to 0.18/0.20$).
+  \item A hybrid integration of frozen BiomedCLIP image and text
+        encoders with the 3D backbone, enabling zero-shot extension
+        to unseen disease labels via cosine-similarity classification.
+  \item A cross-dataset zero-shot evaluation (RSNA $\to$ SPIDER) showing
+        \emph{selective transfer}: the hybrid wins on disc-related
+        labels where 3D context matters, while a 2D-only baseline wins
+        on vertebra/endplate appearance — characterising when the
+        added complexity is justified.
+\end{itemize}
+
+% Motivation for the design choice (vs MedGemma / RadFM) is summarised
+% in MOTIVATION_AND_DESIGN.md (repo); short version belongs in
+% Section~\ref{sec:related} of this paper.
