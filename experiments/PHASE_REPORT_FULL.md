@@ -6,6 +6,7 @@
 ## Related docs
 
 **Big picture & architecture:**
+- [`MOTIVATION_AND_DESIGN.md`](../MOTIVATION_AND_DESIGN.md) — **why** the architecture was designed this way (vs Ningshen / MedGemma / RadFM); thesis defense Q&A; mechanism explanation for CBAM + BiomedCLIP
 - [`PROJECT_OVERVIEW.md`](../PROJECT_OVERVIEW.md) — high-level pipeline view, phase diagrams, status colors
 - [`experiments/paper_results/HIGH_LEVEL_ARCHITECTURE.md`](paper_results/HIGH_LEVEL_ARCHITECTURE.md) — detailed Mermaid diagrams of the Hybrid dual-encoder
 - [`experiments/hybrid_architecture.png`](hybrid_architecture.png) — visual diagram of CBAM + BiomedCLIP fusion
