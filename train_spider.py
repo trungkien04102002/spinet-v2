@@ -319,12 +319,12 @@ def main():
         weight_decay=args.weight_decay
     )
 
+    # PyTorch 2.x removed `verbose`. Pass only the params it still accepts.
     scheduler = ReduceLROnPlateau(
         optimizer,
         mode='min',
         factor=0.5,
         patience=5,
-        verbose=True
     )
 
     # Training loop

@@ -302,8 +302,8 @@ def main():
     # ---- Optimizer ----
     optimizer = AdamW(filter(lambda p: p.requires_grad, model.parameters()),
                       lr=args.lr, weight_decay=args.weight_decay)
-    scheduler = ReduceLROnPlateau(optimizer, mode="min", factor=0.5,
-                                  patience=4, verbose=True)
+    # PyTorch 2.x removed `verbose` arg.
+    scheduler = ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=4)
 
     # ---- Training ----
     print("\n[5/5] Starting training...")
