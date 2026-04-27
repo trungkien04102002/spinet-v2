@@ -36,6 +36,12 @@ from spider_dataloader import SPIDERDataset
 from spinenet.models.grading_hybrid import SpineNetHybrid
 
 
+def _slim_state_dict(state):
+    """Drop frozen biomedclip.* keys before saving — they're re-loadable from
+    the HF hub and would otherwise add ~750 MB to every checkpoint file."""
+    return {k: v for k, v in state.items() if not k.startswith("biomedclip.")}
+
+
 # ============================ SPIDER text prompts ============================
 # Index = class label (0-based). Pfirrmann labels are stored 0-4 in the dataloader
 # (originally 1-5 in the CSV).
@@ -399,7 +405,7 @@ def main():
             best_path = ckpt_dir / f"best_model_hybrid_spider_{tag}.pth"
             torch.save({
                 "epoch": epoch + 1,
-                "model_state_dict": model.state_dict(),
+                "model_state_dict": _slim_state_dict(model.state_dict()),
                 "optimizer_state_dict": optimizer.state_dict(),
                 "val_loss": val_loss,
                 "val_accuracies": val_acc,
@@ -451,7 +457,7 @@ def main():
             snap = ckpt_dir / f"checkpoint_hybrid_spider_{tag}_epoch{epoch+1}.pth"
             torch.save({
                 "epoch": epoch + 1,
-                "model_state_dict": model.state_dict(),
+                "model_state_dict": _slim_state_dict(model.state_dict()),
                 "args": vars(args),
             }, snap)
             print(f"  Saved snapshot: {snap}")
