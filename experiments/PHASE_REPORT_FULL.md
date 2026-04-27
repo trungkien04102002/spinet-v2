@@ -3,6 +3,20 @@
 > Date: 2026-04-27. Unified results across Phase 1+2 (RSNA), Phase 3 (SPIDER zero-shot), Phase 4 (SPIDER transfer).
 > All numbers reproducible from `experiments/{fresh_baseline, fresh_cbam, hybrid, paper_results, spider_phase4}/`.
 
+## Related docs
+
+**Big picture & architecture:**
+- [`PROJECT_OVERVIEW.md`](../PROJECT_OVERVIEW.md) — high-level pipeline view, phase diagrams, status colors
+- [`experiments/paper_results/HIGH_LEVEL_ARCHITECTURE.md`](paper_results/HIGH_LEVEL_ARCHITECTURE.md) — detailed Mermaid diagrams of the Hybrid dual-encoder
+- [`experiments/hybrid_architecture.png`](hybrid_architecture.png) — visual diagram of CBAM + BiomedCLIP fusion
+- [`STEPS.md`](../STEPS.md) — master execution plan and 3 contributions
+
+**Phase-specific docs:**
+- Phase 1+2 (RSNA): [`RSNA_PIPELINE.md`](../RSNA_PIPELINE.md) (preprocessing), [`HYBRID_TRAINING_GUIDE.md`](../HYBRID_TRAINING_GUIDE.md) (Hybrid model on RSNA), [`experiments/fresh_cbam/RESULTS_SUMMARY.md`](fresh_cbam/RESULTS_SUMMARY.md) (detailed RSNA results)
+- Phase 3 (SPIDER zero-shot): [`SPIDER_ZEROSHOT_SETUP.md`](../SPIDER_ZEROSHOT_SETUP.md) (setup), [`experiments/paper_results/spider_zeroshot/RESULTS_REPORT.md`](paper_results/spider_zeroshot/RESULTS_REPORT.md) (full results), [`SUMMARY_FOR_ADVISOR.md`](paper_results/spider_zeroshot/SUMMARY_FOR_ADVISOR.md) (advisor-friendly version)
+- Phase 4 (SPIDER transfer): [`SPIDER_TRAINING_GUIDE.md`](../SPIDER_TRAINING_GUIDE.md) (general workflow), this report (Phase 4 4-way comparison)
+- Workflow & restore: [`NEXT_SESSION_WORKFLOW.md`](../NEXT_SESSION_WORKFLOW.md), [`COMMANDS.md`](../COMMANDS.md)
+
 ## TL;DR
 
 | Phase | Task | Best model | Mean F1 macro | Mean Acc |
@@ -31,6 +45,8 @@
 ---
 
 ## Phase 1+2 — RSNA Lumbar Stenosis Classification
+
+> 📖 Architecture: [`HIGH_LEVEL_ARCHITECTURE.md`](paper_results/HIGH_LEVEL_ARCHITECTURE.md) · 📊 Detailed results: [`fresh_cbam/RESULTS_SUMMARY.md`](fresh_cbam/RESULTS_SUMMARY.md) · 🛠 Pipeline: [`RSNA_PIPELINE.md`](../RSNA_PIPELINE.md), [`HYBRID_TRAINING_GUIDE.md`](../HYBRID_TRAINING_GUIDE.md)
 
 **Setup**: 3 conditions (spinal_canal, left_foraminal, right_foraminal) × 3 classes (Normal / Moderate / Severe). 80/20 patient-level split, 1942 val samples, `random_state=42`.
 
@@ -63,6 +79,8 @@ Hybrid Severe Recall: 0.75 / 0.38 / 0.36 — catches more Severe across all cond
 ---
 
 ## Phase 3 — SPIDER Zero-shot Evaluation
+
+> 📖 Architecture: [`HIGH_LEVEL_ARCHITECTURE.md`](paper_results/HIGH_LEVEL_ARCHITECTURE.md) (cosine-sim head) · 📊 Detailed results: [`spider_zeroshot/RESULTS_REPORT.md`](paper_results/spider_zeroshot/RESULTS_REPORT.md), [`SUMMARY_FOR_ADVISOR.md`](paper_results/spider_zeroshot/SUMMARY_FOR_ADVISOR.md) · 🛠 Setup: [`SPIDER_ZEROSHOT_SETUP.md`](../SPIDER_ZEROSHOT_SETUP.md) · 📈 Visuals: [`ablation_hybrid_vs_naked.png`](paper_results/spider_zeroshot/ablation_hybrid_vs_naked.png), [`accuracy_by_ivd_level.png`](paper_results/spider_zeroshot/accuracy_by_ivd_level.png)
 
 **Setup**: SPIDER test set (1439 IVDs), 8 disease labels never seen during RSNA training. Prediction via cosine similarity between image embedding and BiomedCLIP-encoded text prompts.
 
@@ -97,6 +115,8 @@ This is a meaningful finding for the paper: the RSNA-trained image projection do
 ---
 
 ## Phase 4 — SPIDER Transfer Learning (supervised)
+
+> 📖 Architecture: [`HIGH_LEVEL_ARCHITECTURE.md`](paper_results/HIGH_LEVEL_ARCHITECTURE.md) (Hybrid + 4 SPIDER heads) · 🛠 Setup: [`SPIDER_TRAINING_GUIDE.md`](../SPIDER_TRAINING_GUIDE.md) · 📂 Raw metrics: [`spider_phase4/`](spider_phase4/) (4 best_metrics.txt + training_log.csv per run) · 📈 Cross-phase plot: [`cross_phase_comparison.png`](cross_phase_comparison.png)
 
 **Setup**: 4-way comparison on 4 SPIDER conditions (Pfirrmann 5-class, Modic 4-class, Disc_narrowing binary, Spondylolisthesis binary). Same train/val split, same hyperparameters where applicable.
 
