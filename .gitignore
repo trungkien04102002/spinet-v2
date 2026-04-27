@@ -16,9 +16,9 @@ example_scans/
 rsna_preprocessed_spider/
 spider.zip
 *.pdf
-
-# Stray files
-/checkpoints_spider/
+# Note: checkpoints_spider/ folder is kept (via .gitkeep) so Phase 4 runs
+# don't need a manual mkdir on a fresh clone. Inside .pth files are still
+# ignored by the global *.pth rule.
 
 # Training outputs (large model files - do not commit)
 checkpoints/

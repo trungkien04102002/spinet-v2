@@ -216,6 +216,8 @@ def main():
     print(f"Using device: {device}")
 
     # Create checkpoint directory
+    # Folders already exist in the repo (.gitkeep). mkdir is a no-op safety net
+    # for the rare case the user deletes them.
     checkpoint_dir = Path('checkpoints_spider')
     checkpoint_dir.mkdir(exist_ok=True)
     metrics_dir = Path('experiments/spider_phase4')
