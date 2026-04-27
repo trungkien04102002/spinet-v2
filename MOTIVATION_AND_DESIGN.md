@@ -2,6 +2,7 @@
 
 > Date: 2026-04-27. Audience: master's thesis committee + EMBC 2027 reviewers.
 > This document explains **why** the architecture was designed this way — not what it does (see [`PROJECT_OVERVIEW.md`](PROJECT_OVERVIEW.md), [`HIGH_LEVEL_ARCHITECTURE.md`](experiments/paper_results/HIGH_LEVEL_ARCHITECTURE.md)) and not the empirical numbers (see [`PHASE_REPORT_FULL.md`](experiments/PHASE_REPORT_FULL.md)).
+> Vietnamese version (for thesis defense): [`MOTIVATION_AND_DESIGN_VI.md`](MOTIVATION_AND_DESIGN_VI.md).
 
 ## TL;DR
 
