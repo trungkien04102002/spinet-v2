@@ -61,13 +61,78 @@ language-aligned semantic features supply complementary signal beyond
   \label{fig:cross_phase}
 \end{figure}
 
-% TODO: per-disease F1 table — pull from PHASE_REPORT_FULL.md §3.
+\begin{table}[t]
+\centering
+\caption{Per-disease F1 macro on SPIDER zero-shot evaluation
+         (no SPIDER training used). $\Delta$ = Hybrid $-$ Naked.}
+\label{tab:spider_zeroshot}
+\small
+\begin{tabular}{@{}llccr@{}}
+\toprule
+Disease            & Tier   & Hybrid          & Naked BMC         & $\Delta$ \\
+\midrule
+Disc\_narrowing    & easy   & \textbf{0.586}  & 0.403             & $+0.183$ \\
+Disc\_bulging      & medium & \textbf{0.613}  & 0.363             & $+0.250$ \\
+Disc\_herniation   & medium & \textbf{0.563}  & 0.532             & $+0.031$ \\
+Pfirrman           & hard   & \textbf{0.155}  & 0.152             & $+0.003$ \\
+\midrule
+UP\_endplate       & hard   & 0.467           & \textbf{0.569}    & $-0.102$ \\
+LOW\_endplate      & hard   & 0.468           & \textbf{0.558}    & $-0.090$ \\
+Spondylolisthesis  & medium & 0.028           & \textbf{0.500}    & $-0.472$ \\
+Modic              & hard   & 0.018           & \textbf{0.071}    & $-0.053$ \\
+\midrule
+\textbf{Mean (8)}  &        & 0.362           & \textbf{0.394}    & $-0.032$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{ablation_hybrid_vs_naked.png}
+  \caption{Phase 3 ablation: per-disease zero-shot F1 macro.
+           Hybrid wins on disc-related labels (top), Naked BiomedCLIP
+           wins on vertebra/endplate labels (bottom) — supporting the
+           complementarity argument.}
+  \label{fig:ablation}
+\end{figure}
+
+The split in Tab.~\ref{tab:spider_zeroshot} and Fig.~\ref{fig:ablation}
+is the central evidence for selective transfer: gains on disc-related
+labels (where 3D volumetric context dominates) trade against losses on
+vertebra/endplate labels (where 2D appearance is sufficient and the
+RSNA-trained projection MLP over-specialises). We interpret this as a
+characterisation of \emph{when} the hybrid integration is preferred to
+a frozen 2D-only baseline, rather than a failure mode.
 
 \subsection{Phase 4 — SPIDER Transfer Learning}
-% TODO: per-condition F1 macro table — pull from PHASE_REPORT_FULL.md §4.
+\begin{table}[t]
+\centering
+\caption{Per-condition F1 macro on SPIDER supervised transfer.
+         Best per row in bold. Hybrid frozen achieves the best mean
+         with ${\sim}5$M trainable parameters vs $22$M for Vanilla.}
+\label{tab:spider_transfer}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Condition           & Vanilla & CBAM   & Hybrid fz       & Hybrid unfz     \\
+\midrule
+Pfirrmann (5-cls)   & 0.594   & 0.535  & \textbf{0.626}  & 0.580           \\
+Modic (4-cls)       & 0.363   & 0.358  & 0.373           & \textbf{0.387}  \\
+Disc Narrow.\ (2)   & 0.851   & 0.862  & 0.865           & \textbf{0.878}  \\
+Spondylolist.\ (2)  & 0.633   & 0.634  & 0.627           & \textbf{0.643}  \\
+\midrule
+Mean F1 macro       & 0.610   & 0.597  & \textbf{0.623}  & 0.622           \\
+Mean Acc            & 77.1\,\% & 75.2\,\% & 79.7\,\%     & \textbf{80.4\,\%} \\
+Trainable params    & 22M     & 22M    & \textbf{5M}     & 95M             \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 With $\sim 5$M trainable parameters, Hybrid frozen reaches Mean F1
 macro $0.623$, exceeding both fully fine-tuned Vanilla ($0.610$) and
 CBAM ($0.597$) baselines while training in $\sim 5$ minutes per epoch
 on a single GPU. Full backbone fine-tuning (Hybrid unfreeze) does not
 improve mean F1 — gains on three conditions are offset by a Pfirrmann
-regression — supporting frozen as the better default.
+regression — supporting frozen as the better default
+(Tab.~\ref{tab:spider_transfer}).
