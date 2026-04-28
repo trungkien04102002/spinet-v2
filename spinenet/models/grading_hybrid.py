@@ -67,6 +67,10 @@ class SpineNetHybrid(nn.Module):
         biomedclip_device: Device for BiomedCLIP (separate from main device for memory)
         slice_strategy: 'static' (3 center slices) or 'dynamic' (cosine similarity filter)
         dynamic_keep_ratio: Fraction of slices to keep when slice_strategy='dynamic' (default 0.33)
+        ablate_branch: One of {"none", "cbam_only", "biomedclip_only"}. For component
+            ablation: "cbam_only" zeros out the BiomedCLIP image branch (text head still
+            used); "biomedclip_only" zeros out the CBAM 3D branch. Both keep the same
+            projection MLP shape so checkpoints stay compatible. Default "none" = full Hybrid.
     """
 
     def __init__(
@@ -77,8 +81,12 @@ class SpineNetHybrid(nn.Module):
         dynamic_keep_ratio: float = 0.33,
         projection_hidden: int = 768,
         embed_dim: int = 512,
+        ablate_branch: str = "none",
     ):
         super().__init__()
+        assert ablate_branch in ("none", "cbam_only", "biomedclip_only"), \
+            f"Unknown ablate_branch: {ablate_branch}"
+        self.ablate_branch = ablate_branch
 
         # ---- Frozen CBAM backbone ----
         self.cbam = GradingModelWithCBAM(format="rsna", use_cbam=True)
@@ -192,25 +200,35 @@ class SpineNetHybrid(nn.Module):
         Returns:
             image_emb: [B, 512] L2-normalized
         """
-        # CBAM 3D path. If any CBAM parameter still requires gradients (e.g.
-        # SPIDER full fine-tune via --unfreeze-cbam), we keep autograd active so
-        # gradients can flow into the backbone. Otherwise we save memory + time
-        # by running under no_grad.
-        cbam_trainable = any(p.requires_grad for p in self.cbam.parameters())
-        if cbam_trainable:
-            feat_cbam = self.cbam.encode(volume)
+        B = volume.shape[0]
+        device = volume.device
+
+        # CBAM 3D path. Skip and zero-fill if ablated.
+        if self.ablate_branch == "biomedclip_only":
+            feat_cbam = torch.zeros(B, 512, device=device, dtype=volume.dtype)
         else:
-            with torch.no_grad():
-                feat_cbam = self.cbam.encode(volume)  # [B, 512]
+            # If any CBAM param still requires gradients (e.g. SPIDER full fine-tune
+            # via --unfreeze-cbam), keep autograd active so gradients flow into
+            # the backbone. Otherwise run under no_grad to save memory + time.
+            cbam_trainable = any(p.requires_grad for p in self.cbam.parameters())
+            if cbam_trainable:
+                feat_cbam = self.cbam.encode(volume)
+            else:
+                with torch.no_grad():
+                    feat_cbam = self.cbam.encode(volume)  # [B, 512]
 
-        # BiomedCLIP 2D path (frozen) + slice attention pool (trainable)
-        if self.slice_strategy == "static":
-            slices = self._select_slices_static(volume)
-        else:  # dynamic
-            slices = self._select_slices_dynamic(volume)
+        # BiomedCLIP 2D path (frozen) + slice attention pool (trainable). Skip and
+        # zero-fill if ablated.
+        if self.ablate_branch == "cbam_only":
+            feat_bmc = torch.zeros(B, 512, device=device, dtype=volume.dtype)
+        else:
+            if self.slice_strategy == "static":
+                slices = self._select_slices_static(volume)
+            else:  # dynamic
+                slices = self._select_slices_dynamic(volume)
 
-        slice_features = self._encode_slices_via_biomedclip(slices)  # [B, K, 512]
-        feat_bmc = self.slice_pool(slice_features)  # [B, 512]
+            slice_features = self._encode_slices_via_biomedclip(slices)  # [B, K, 512]
+            feat_bmc = self.slice_pool(slice_features)  # [B, 512]
 
         # Fuse
         concat = torch.cat([feat_cbam, feat_bmc], dim=-1)  # [B, 1024]

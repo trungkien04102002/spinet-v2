@@ -139,7 +139,31 @@ def parse_args():
     parser.add_argument('--resume', type=str, default=None,
                         help='Path to Hybrid checkpoint to resume from')
 
+    # Reproducibility
+    parser.add_argument('--seed', type=int, default=42,
+                        help='Random seed for split + torch + numpy + cudnn')
+
+    # Component ablation (for paper Table V)
+    parser.add_argument('--ablate-branch', type=str, default='none',
+                        choices=['none', 'cbam_only', 'biomedclip_only'],
+                        help='Zero out one branch for component ablation. '
+                             '"cbam_only" = drop BiomedCLIP image features; '
+                             '"biomedclip_only" = drop CBAM 3D features.')
+
     return parser.parse_args()
+
+
+def set_seed(seed: int):
+    """Make training as deterministic as possible across torch/numpy/python."""
+    import random as _random
+    import numpy as _np
+    import torch as _torch
+    _random.seed(seed)
+    _np.random.seed(seed)
+    _torch.manual_seed(seed)
+    _torch.cuda.manual_seed_all(seed)
+    _torch.backends.cudnn.deterministic = True
+    _torch.backends.cudnn.benchmark = False
 
 
 def supervised_contrastive_loss(image_embs, labels, temperature=0.07):
@@ -309,6 +333,9 @@ def print_per_class_metrics(per_class_metrics):
 def main():
     args = parse_args()
 
+    # Reproducibility — must be set before any RNG-using import path
+    set_seed(args.seed)
+
     # Set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -349,7 +376,7 @@ def main():
     train_patients, val_patients = train_test_split(
         unique_patients,
         test_size=args.val_split,
-        random_state=42
+        random_state=args.seed,
     )
 
     train_indices = full_dataset.metadata[full_dataset.metadata['study_id'].isin(train_patients)].index.tolist()
@@ -416,7 +443,11 @@ def main():
         cbam_checkpoint_path=args.cbam_checkpoint,
         biomedclip_device=str(device),
         slice_strategy=args.slice_strategy,
+        ablate_branch=args.ablate_branch,
     ).to(device)
+    if args.ablate_branch != 'none':
+        print(f"  Ablation mode: {args.ablate_branch} "
+              f"(other branch zeroed before fusion)")
 
     total_params = sum(p.numel() for p in model.parameters())
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -503,7 +534,16 @@ def main():
 
     best_epoch = 0
     epochs_without_improvement = 0
-    metrics_logger = MetricsLogger(save_dir=save_dir, prefix="hybrid")
+
+    # Tag output filenames by seed + ablation so multi-seed / ablation runs
+    # don't overwrite each other. Default seed=42, ablate=none → tag="" (backward compat).
+    _tag_parts = []
+    if args.seed != 42:
+        _tag_parts.append(f"seed{args.seed}")
+    if args.ablate_branch != 'none':
+        _tag_parts.append(args.ablate_branch)
+    run_tag = "_" + "_".join(_tag_parts) if _tag_parts else ""
+    metrics_logger = MetricsLogger(save_dir=save_dir, prefix=f"hybrid{run_tag}")
 
     for epoch in range(start_epoch, args.epochs):
         epoch_start_time = time.time()
@@ -611,7 +651,7 @@ def main():
             best_epoch = epoch + 1
             epochs_without_improvement = 0
 
-            best_path = save_dir / 'best_model_hybrid.pth'
+            best_path = save_dir / f'best_model_hybrid{run_tag}.pth'
             # Save only trainable weights (keeps file small ~2MB)
             trainable_state = {
                 k: v for k, v in model.state_dict().items()
@@ -689,7 +729,7 @@ def main():
     print("Training Complete!")
     print("="*70)
     print(f"Best Model: Epoch {best_epoch} (Severe F1: {best_severe_f1:.4f})")
-    print(f"Saved to: {save_dir / 'best_model_hybrid.pth'}")
+    print(f"Saved to: {save_dir / f'best_model_hybrid{run_tag}.pth'}")
     print("="*70)
 
 

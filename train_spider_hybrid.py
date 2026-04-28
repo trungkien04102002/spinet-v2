@@ -111,6 +111,11 @@ def parse_args():
     p.add_argument("--checkpoint-dir", type=str, default="checkpoints_spider")
     p.add_argument("--metrics-dir", type=str, default="experiments/spider_phase4")
     p.add_argument("--seed", type=int, default=42)
+    p.add_argument("--ablate-branch", type=str, default="none",
+                   choices=["none", "cbam_only", "biomedclip_only"],
+                   help='Zero out one branch for component ablation. '
+                        '"cbam_only" = drop BiomedCLIP image features; '
+                        '"biomedclip_only" = drop CBAM 3D features.')
     return p.parse_args()
 
 
@@ -224,8 +229,14 @@ def main():
     metrics_dir = Path(args.metrics_dir)
     metrics_dir.mkdir(parents=True, exist_ok=True)
 
-    # Tag for output filenames so frozen and unfreeze runs don't overwrite each other.
-    tag = "unfreeze" if args.unfreeze_cbam else "frozen"
+    # Tag for output filenames so frozen/unfreeze + multi-seed + ablation runs
+    # don't overwrite each other.
+    _tag_parts = ["unfreeze" if args.unfreeze_cbam else "frozen"]
+    if args.seed != 42:
+        _tag_parts.append(f"seed{args.seed}")
+    if args.ablate_branch != "none":
+        _tag_parts.append(args.ablate_branch)
+    tag = "_".join(_tag_parts)
 
     print("=" * 72)
     print("Phase 4: Train Hybrid CBAM + BiomedCLIP on SPIDER")
@@ -267,7 +278,11 @@ def main():
         cbam_checkpoint_path=args.cbam_checkpoint,
         biomedclip_device=str(device),
         slice_strategy=args.slice_strategy,
+        ablate_branch=args.ablate_branch,
     ).to(device)
+    if args.ablate_branch != "none":
+        print(f"  Ablation mode: {args.ablate_branch} "
+              f"(other branch zeroed before fusion)")
 
     # Load Hybrid trainable weights (image_projection + slice_pool + logit_scale)
     print(f"  Loading Hybrid trainable weights from {args.hybrid_checkpoint}")
