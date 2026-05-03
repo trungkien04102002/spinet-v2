@@ -305,49 +305,197 @@ python3 train_linear_probe.py --backbone imagenet_vit    # ImageNet ViT-B/16 con
 
 ### Q-JS-3: "Tại sao cần MLP projection riêng? BiomedCLIP đã có projection rồi mà?"
 
-**Trả lời**: Có **2 projection** trong pipeline, làm 2 việc khác nhau, không trùng:
+**Câu trả lời ngắn**: 2 projection trong pipeline làm 2 việc **khác nhau hoàn toàn**, KHÔNG redundant.
+
+#### Setup: 2 projection cùng tồn tại trong pipeline (sơ đồ chi tiết)
 
 ```
-PROJECTION 1 (BiomedCLIP nội bộ — frozen, đã có sẵn):
-    Image → ViT-B/16 → patch features [B, N, 768]
-            → CLS token [B, 768]
-            → BiomedCLIP_internal_proj (Linear 768→512) ← TRAINED on PMC-15M
-                 mục đích: align (image, caption) cho zero-shot retrieval
-            → feat_bmc [B, 512]
-
-  ↑ Đây là projection "image-text alignment" của BMC. Không thể bỏ — nó CHÍNH LÀ
-    cái cho phép cosine(image_emb, text_emb) hoạt động.
-
-PROJECTION 2 (Hybrid MLP — trainable, mình thêm):
-    feat_cbam [B, 512] ─┐
-                         ├─ concat → [B, 1024]
-    feat_bmc  [B, 512] ─┘
-            → MLP(1024→768→512) ← TRAINED on RSNA grading
-                 mục đích: fuse 2 modality + adapt cho task IVD grading
-            → image_emb [B, 512]
-
-  ↑ Đây là projection "task-specific fusion" của mình. Không có nó thì:
-    - 2 nhánh CBAM/BMC không fuse được
-    - Không có trainable param adapt cho RSNA grading
+INPUT VOLUME [B, 1, 9, 112, 224]
+         │
+    ┌────┴────┐
+    │         │
+    ▼         ▼
+┌────────┐  ┌──────────────────────────┐
+│ CBAM   │  │  BiomedCLIP image branch │
+│ 3D     │  │  ┌──────────────────┐    │
+│ ResNet │  │  │ ViT-B/16         │    │
+│        │  │  │ patch embed → ...│    │
+│        │  │  │ → CLS [B, 768]   │    │  ← raw ViT output
+│        │  │  └────────┬─────────┘    │
+│        │  │           ▼              │
+│        │  │  ┌──────────────────┐    │
+│        │  │  │ PROJECTION 1     │    │  ← BMC internal Linear(768→512)
+│        │  │  │ Linear(768→512)  │    │     FROZEN
+│        │  │  │ trained: PMC-15M │    │     trained for retrieval
+│        │  │  │ contrastive loss │    │
+│        │  │  └────────┬─────────┘    │
+│        │  └───────────┼──────────────┘
+│        │              │
+│   feat_cbam [B,512]   feat_bmc [B,512]   ← cả 2 đều 512-d, cùng dimension
+│        │              │
+│        └──────┬───────┘
+│               ▼
+│       concat [B, 1024]
+│               │
+│               ▼
+│       ┌────────────────────┐
+│       │ PROJECTION 2 (MLP) │  ← Hybrid MLP, TRAINABLE
+│       │ Linear(1024→768)   │     trained: RSNA grading
+│       │ GELU + Dropout     │     classification loss
+│       │ Linear(768→512)    │
+│       └─────────┬──────────┘
+│                 │
+│           image_emb [B, 512]
+│                 │
+│                 ▼
+│            cosine sim với text_emb [N_classes, 512]
 ```
 
-**Tại sao không dùng BMC's projection thay cho MLP của mình?**
+#### Lý do 1 — Khác **TASK** = khác optimal embedding space
 
-4 lý do:
+**BMC's Projection 1 train cho gì?**
 
-1. **Khác task**: BMC's projection train cho **image↔text contrastive alignment** (retrieval). MLP của mình cho **multi-class IVD grading** (classification). Khác objective → khác optimal weights.
+```python
+# BMC pretraining trên PMC-15M
+loss_bmc = InfoNCE(image_emb, caption_emb)  # contrastive, retrieval
+# Mục tiêu: image_i gần với caption_i, xa caption_j (j≠i)
+```
 
-2. **Khác input**: BMC's projection nhận **1** input (768-d image features). Mình cần fuse **2** input (CBAM 512 ⊕ BMC 512 = 1024). Không tương thích shape.
+→ Projection 1 sắp xếp ảnh sao cho "ảnh gần với caption riêng của nó". **Mục đích retrieval/matching** ("Cho caption này, tìm ảnh phù hợp").
 
-3. **BMC's projection FROZEN**: là một phần của BiomedCLIP frozen weights. Nếu chỉ dùng nó → **0 trainable params trên image side** → model không thể adapt cho RSNA grading. Cần ít nhất 1 layer trainable.
+**Projection 2 mình train cho gì?**
 
-4. **2 projection ≠ duplicate**: BMC's projection xử lý 1 image → 1 embedding cho retrieval. MLP của mình combine 2 nguồn embedding khác nhau → 1 embedding fused cho task. Stack nhau, không thay thế nhau.
+```python
+# Hybrid training trên RSNA
+loss_grade = focal_CE(cosine(image_emb, text_emb_classes), y_true)
+# Mục tiêu: image_emb của Severe gần class prompt "severe stenosis",
+#           xa class prompt "normal"
+```
 
-**Ngụ ý kiến trúc**: trong Hybrid, BMC's projection vẫn chạy bên trong (frozen) để cho ra `feat_bmc`. MLP của mình chạy **sau đó**, nhận output của BMC's projection làm input. **2 projection cùng tồn tại** trong pipeline, mỗi cái 1 vai trò.
+→ Projection 2 sắp xếp ảnh sao cho **discrimination giữa các class** rõ ràng cho grading.
+
+**Tại sao 2 cái khác nhau? Concrete example**:
+
+- Ảnh A: "moderate central canal stenosis L4-L5" (Moderate spinal_canal)
+- Ảnh B: "severe foraminal narrowing L4-L5" (Severe foraminal)
+
+| Trong Projection 1's space (retrieval) | Trong Projection 2's space (grading) |
+|---|---|
+| A gần caption A; B gần caption B | A trong cluster "Moderate"; B trong cluster "Severe" |
+| A và B XA nhau (caption khác hẳn) | A và B XA theo trục **grade**, gần theo trục location |
+| Có thể clustering theo location ("L4-L5") | Clustering theo grade hierarchy |
+
+→ **Cùng features đầu vào, 2 cách tổ chức space khác nhau** → 2 axis quan trọng khác nhau.
+
+**Analogy**: thư viện sách:
+- Projection 1 = sắp xếp theo "tóm tắt nội dung" (mỗi sách 1 chỗ riêng theo summary)
+- Projection 2 = sắp xếp theo "thể loại" (tiểu thuyết tất cả 1 chỗ, kỹ thuật 1 chỗ)
+- Cùng kho sách, 2 cách index khác nhau cho 2 use-case khác nhau.
+
+#### Lý do 2 — Khác **INPUT SHAPE**
+
+```
+Projection 1 (BMC):  Linear(768 → 512)    ← nhận 1 vector 768-d
+Projection 2 (mình): Linear(1024 → 768) → Linear(768 → 512)   ← nhận 1 vector 1024-d
+```
+
+**Hai input dimensionality khác nhau hoàn toàn**:
+- BMC's projection chỉ biết xử lý 768-d (CLS từ ViT)
+- Mình cần 1024-d (concat CBAM 512 + BMC 512)
+
+**Cố ép dùng BMC's projection cho input 1024-d?** → vài hack đều SAI:
+
+| Hack | Vấn đề |
+|---|---|
+| Mean pool feat_cbam và feat_bmc → 512 → pad 768 với zero | **Mất thông tin từng nhánh**, không học được routing |
+| Concat → truncate 1024→768 (bỏ 256) | Bỏ thông tin tùy ý, không có cơ sở |
+| Project CBAM 512→768 trước rồi cộng vào CLS BMC | Đè CBAM lên CLS → nhiễu cả 2 nhánh |
+| Element-wise sum feat_cbam + feat_bmc | Treat 2 nhánh ngang hàng cứng, không học được nhánh nào quan trọng theo từng sample |
+
+→ **Không có cách nào dùng BMC's projection với 2 input mà không hỏng thông tin.** MLP **học cách combine** từ data thay vì hard-code một quy tắc kết hợp tùy ý.
+
+#### Lý do 3 — Trainable params (CỰC KỲ QUAN TRỌNG)
+
+**Nếu chỉ dùng BMC's Projection 1 (frozen)**:
+
+```
+Trainable params trên image side:
+  CBAM:                     0  (frozen — load từ Phase 1+2)
+  BMC's projection:         0  (frozen — phần của BMC weights)
+  ─────────────────────────────
+  TOTAL:                    0
+```
+
+→ Pipeline có **0 trainable parameter** trên image side → không có gradient flow back → model **không thể học từ RSNA labels** → output bằng đúng **zero-shot output của BMC = F1 0.394** trên SPIDER → **không có Hybrid 0.623 retrain** nữa, vì retrain vào đâu được? Không có param.
+
+**Khi thêm Projection 2 (trainable MLP)**:
+
+```
+Trainable params trên image side:
+  CBAM:                     0  (frozen)
+  BMC's projection:         0  (frozen — vẫn nguyên)
+  Projection 2 (MLP):       1.18M  ← chỗ này
+  Slice attention pool:     ~1K
+  Logit scale:              1
+  ─────────────────────────────────
+  TOTAL:                    ~1.18M trainable
+```
+
+→ Có gradient path. MLP học cách **dịch** features từ "BMC retrieval space" sang "RSNA grading space".
+→ Empirical: F1 **0.623 retrain** trên SPIDER vs 0.394 zero-shot Naked BMC → **+23 F1 absolute đến từ MLP này**.
+
+**Suy nghĩ ngược: unfreeze BMC's projection thay vì thêm MLP?**
+
+| Vấn đề | Tại sao |
+|---|---|
+| **Catastrophic forgetting** | BMC's projection trained trên 15M pair. Fine-tune trên ~10K RSNA → mất alignment image-text gốc → hỏng zero-shot. |
+| **Vẫn không xử lý 2-input** | BMC's projection vẫn là Linear(768→512). Không nhận 1024-d được. |
+| **Compute đắt hơn** | Fine-tune 1 layer của BMC vẫn không "đơn giản" hơn thêm 1 MLP riêng. |
+
+→ Unfreeze KHÔNG giải quyết được lý do 1 và 2.
+
+#### Lý do 4 — Khác **OBJECTIVE FUNCTION** trong training
+
+```
+BMC training:    L_NCE  = -log[ exp(sim(I_i, T_i)/τ) / Σ_j exp(sim(I_i, T_j)/τ) ]
+                                                       ↑ negative samples = ALL OTHER pairs in batch
+
+Hybrid training: L_grade = focal_CE( cosine(img_emb, text_classes_only), y_true )
+                                                       ↑ negative samples = chỉ các CLASS trong task (3 grade)
+```
+
+→ **Khác cấu trúc loss** → gradient flow khác → optimal weights khác.
+- BMC's projection optimize cho image gần caption KHÔNG TƯƠNG ĐỒNG ngẫu nhiên trong batch.
+- MLP của mình optimize cho image rơi vào ĐÚNG class trong tập class cố định.
+- Khác use-case → khác optimal solution.
+
+#### Empirical proof — không phải lý thuyết suông
+
+| Setup | Trainable params | RSNA F1 | SPIDER zero-shot F1 | SPIDER retrain F1 |
+|---|---|---|---|---|
+| BMC Projection 1 alone (no MLP) | 0 | N/A | 0.394 | **N/A** *(không có gì để retrain)* |
+| BMC Projection 1 + MLP (Hybrid) | ~1.18M | 0.516 | 0.362* | **0.623** |
+
+→ Δ retrain = **+22.9 F1 absolute** từ MLP. **MLP thực sự tạo value**, không redundant với BMC's projection.
+
+#### Tóm tắt 4 lý do — table dễ nhớ
+
+| # | Lý do | Nếu chỉ dùng Projection 1 (BMC) | Tại sao Projection 2 (MLP) cần? |
+|---|---|---|---|
+| 1 | **Task khác** | Space tối ưu cho retrieval (caption matching) | Mình cần space tối ưu cho classification (grade discrimination) — khác axis quan trọng |
+| 2 | **Input khác** | Chỉ nhận 768-d (1 modal) | Mình có 1024-d (fused 2 modal CBAM+BMC) — không tương thích shape |
+| 3 | **Cần trainable** | Frozen → 0 params learn từ RSNA | MLP cho ~1.18M params trainable → adapt task + domain |
+| 4 | **Objective khác** | InfoNCE contrastive | Focal CE classification — gradient khác → optimal weight khác |
+
+→ **2 projection ≠ duplicate**. Stack nhau, làm 2 việc khác nhau, KHÔNG thay thế nhau.
+
+#### Ngụ ý kiến trúc
+
+Trong Hybrid, BMC's Projection 1 vẫn chạy bên trong (frozen) để cho ra `feat_bmc` 512-d. MLP của mình (Projection 2) chạy **sau đó**, nhận output của Projection 1 làm 1 trong 2 input. **2 projection cùng tồn tại trong pipeline**, mỗi cái 1 vai trò: Projection 1 cho retrieval alignment (gốc của zero-shot capability), Projection 2 cho task adaptation + 2-modal fusion (gốc của grading performance).
 
 ### Storyline 1 câu cho thầy:
 
-> "Em đã thử cả 3 architecture. **CBAM-only** không zero-shot được vì thiếu text encoder phối hợp. **BMC-only** không đủ cho IVD grading vì 2D + không spine-specialized + frozen + không có trainable adapt — empirical 0.394 zero-shot, kém Hybrid 0.623 retrain. **Hybrid** là cấu hình duy nhất vừa tốt nhất trên cả 2 protocol, vừa rẻ nhất 4.4× params, vừa unlock label-space extension. **Mỗi nhánh chữa hạn chế của nhánh kia**: CBAM bù spine knowledge BMC thiếu, BMC bù text alignment CBAM thiếu. MLP projection riêng vì task khác (grading vs retrieval) + input khác (fused 2-modal vs 1-modal) + cần trainable params."
+> "Em đã thử cả 3 architecture. **CBAM-only** không zero-shot được vì thiếu text encoder phối hợp. **BMC-only** không đủ cho IVD grading vì 2D + không spine-specialized + frozen + không có trainable adapt — empirical 0.394 zero-shot, kém Hybrid 0.623 retrain. **Hybrid** là cấu hình duy nhất vừa tốt nhất trên cả 2 protocol, vừa rẻ nhất 4.4× params, vừa unlock label-space extension. **Mỗi nhánh chữa hạn chế của nhánh kia**: CBAM bù spine knowledge BMC thiếu, BMC bù text alignment CBAM thiếu. **MLP projection riêng** vì 4 lý do **không trùng** với BMC's internal projection: (1) khác task — BMC trained cho retrieval alignment, MLP trained cho grading discrimination; (2) khác input — BMC's projection nhận 768-d single modal, MLP nhận 1024-d fused 2-modal; (3) khác trainability — BMC frozen 0 params, MLP ~1.18M trainable params; (4) khác objective — InfoNCE contrastive vs focal CE classification. **Empirical bỏ MLP đi → model về thành Naked BMC F1 0.394; có MLP → 0.623 (+23 absolute)** — 2 projection cùng tồn tại, làm 2 việc bổ sung."
 
 ### Q-JS-4: "BiomedCLIP có vẻ overengineer? Có VLM nào nhẹ hơn / specialized cho spine hơn không?"
 
