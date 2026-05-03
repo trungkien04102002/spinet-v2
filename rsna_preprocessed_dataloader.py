@@ -63,6 +63,14 @@ class RSNAPreprocessedDataset(Dataset):
     def __len__(self) -> int:
         return len(self.metadata)
 
+    def get_labels(self, idx: int) -> Dict[str, int]:
+        row = self.metadata.iloc[idx]
+        return {
+            'spinal_canal': int(row['spinal_canal']),
+            'left_foraminal': int(row['left_foraminal']),
+            'right_foraminal': int(row['right_foraminal']),
+        }
+
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, Dict[str, int]]:
         """
         Get one preprocessed IVD sample.

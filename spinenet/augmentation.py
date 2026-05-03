@@ -295,28 +295,29 @@ class OversamplingDataset(torch.utils.data.Dataset):
         self.indices = self._build_indices()
 
     def _build_indices(self):
-        """Build list of indices with oversampling."""
-        indices = []
+        """Build list of indices with oversampling.
 
-        # First, add all samples once
-        for i in range(len(self.base_dataset)):
-            indices.append(i)
+        Uses base_dataset.get_labels(idx) when available to avoid loading
+        full volumes from disk (~7800 reads → ~CSV-only).
+        """
+        n = len(self.base_dataset)
+        indices = list(range(n))
 
-        # Then, add extra copies of minority class samples
-        for i in range(len(self.base_dataset)):
-            _, labels = self.base_dataset[i]
+        get_labels = getattr(self.base_dataset, 'get_labels', None)
 
-            # Check if any label is in target classes
-            has_minority = False
-            for condition in ['spinal_canal', 'left_foraminal', 'right_foraminal']:
-                if labels[condition] in self.target_classes:
-                    has_minority = True
-                    break
+        for i in range(n):
+            if get_labels is not None:
+                labels = get_labels(i)
+            else:
+                _, labels = self.base_dataset[i]
 
-            # Add extra copies
+            has_minority = any(
+                labels[c] in self.target_classes
+                for c in ('spinal_canal', 'left_foraminal', 'right_foraminal')
+            )
+
             if has_minority:
-                for _ in range(self.oversample_factor - 1):
-                    indices.append(i)
+                indices.extend([i] * (self.oversample_factor - 1))
 
         return indices
 
