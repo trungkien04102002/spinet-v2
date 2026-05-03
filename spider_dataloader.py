@@ -131,6 +131,10 @@ class SPIDERDataset(Dataset):
     def __len__(self) -> int:
         return len(self.samples)
 
+    def get_labels(self, idx: int) -> Dict[str, int]:
+        patient_id, ivd_level = self.samples[idx]
+        return self._get_labels(patient_id, ivd_level)
+
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, Dict[str, int]]:
         """
         Get one IVD sample.

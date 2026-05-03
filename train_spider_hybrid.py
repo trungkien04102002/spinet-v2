@@ -134,10 +134,20 @@ def build_text_database(model: SpineNetHybrid, device: torch.device):
 
 
 def compute_class_weights(dataset):
-    """sqrt-inverse-frequency class weights per condition (normalized)."""
+    """sqrt-inverse-frequency class weights per condition (normalized).
+
+    Uses _resolve_get_labels to skip full .mha volume loads at startup.
+    """
+    from spinenet.augmentation import _resolve_get_labels
+
     counts = {c: torch.zeros(SPIDER_NUM_CLASSES[c]) for c in SPIDER_CONDITIONS}
+    get_labels = _resolve_get_labels(dataset)
+
     for idx in range(len(dataset)):
-        _, labels = dataset[idx]
+        if get_labels is not None:
+            labels = get_labels(idx)
+        else:
+            _, labels = dataset[idx]
         for c in SPIDER_CONDITIONS:
             counts[c][labels[c]] += 1
 

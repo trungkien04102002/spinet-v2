@@ -109,13 +109,22 @@ def compute_class_weights_spider(dataset):
     """
     Compute class weights for SPIDER dataset (sqrt-of-inverse-frequency variant).
 
+    Uses _resolve_get_labels to skip full .mha volume loads at startup.
+
     Returns:
         dict mapping condition -> tensor of per-class weights, one entry per
         SPIDER_CONDITIONS condition.
     """
+    from spinenet.augmentation import _resolve_get_labels
+
     counts = {c: torch.zeros(SPIDER_NUM_CLASSES[c]) for c in SPIDER_CONDITIONS}
+    get_labels = _resolve_get_labels(dataset)
+
     for idx in range(len(dataset)):
-        _, labels = dataset[idx]
+        if get_labels is not None:
+            labels = get_labels(idx)
+        else:
+            _, labels = dataset[idx]
         for c in SPIDER_CONDITIONS:
             counts[c][labels[c]] += 1
 
