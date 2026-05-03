@@ -346,11 +346,8 @@ class RSNASpineDataset(Dataset):
         # Convert to torch tensor
         volume = torch.from_numpy(volume).float()
 
-        # Apply transform if provided
-        if self.transform is not None:
-            volume = self.transform(volume)
-
-        # Get all labels for this study/level
+        # Get all labels for this study/level (built before transform so the
+        # augmentation pipeline can swap left_/right_ pairs on horizontal flip).
         labels = {}
         for condition in self.CONDITIONS:
             label = self._get_label(sample['study_id'], condition, sample['level'])
@@ -365,6 +362,9 @@ class RSNASpineDataset(Dataset):
                 continue
 
             labels[key] = label if label is not None else -1  # -1 for missing labels
+
+        if self.transform is not None:
+            volume, labels = self.transform(volume, labels)
 
         return volume, labels
 

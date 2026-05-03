@@ -6,21 +6,44 @@ Implements medically appropriate augmentations for lumbar spine MRI:
 - Intensity transforms (brightness, contrast, noise)
 - Class-aware oversampling for minority classes
 
+All transforms share the API ``(volume, labels=None) -> (volume, labels)``.
+Horizontal flipping swaps any ``left_*``/``right_*`` paired labels in-place;
+other transforms pass the labels dict through unchanged.
+
 Author: SpineNetV2 Improved Implementation
 """
 
 import torch
 import numpy as np
 import random
-from typing import Tuple
+
+
+def _swap_lr_labels(labels):
+    """Swap any left_<X>/right_<X> paired entries in labels.
+
+    Labels dict is shallow-copied; original is left untouched. Keys without a
+    matching ``right_<X>`` counterpart pass through. Values can be ints, -1
+    sentinel for missing, or torch tensors — only references are swapped.
+    """
+    if labels is None:
+        return labels
+    swapped = dict(labels)
+    for key in list(labels.keys()):
+        if key.startswith("left_"):
+            mate = "right_" + key[len("left_"):]
+            if mate in labels:
+                swapped[key], swapped[mate] = labels[mate], labels[key]
+    return swapped
 
 
 class RandomHorizontalFlip:
     """
-    Randomly flip the volume horizontally (left-right).
+    Randomly flip the volume horizontally (left-right) AND swap left/right
+    paired labels (e.g. left_foraminal <-> right_foraminal).
 
-    Medical justification: Spine anatomy is roughly symmetric.
-    Safe for spinal canal stenosis and foraminal narrowing.
+    Without label swapping, half of the foraminal training samples would be
+    label-noisy because the flipped image's left foramen is on the right side
+    while the label says "left". This class is the corrected version.
     """
     def __init__(self, p=0.5):
         """
@@ -29,17 +52,18 @@ class RandomHorizontalFlip:
         """
         self.p = p
 
-    def __call__(self, volume):
+    def __call__(self, volume, labels=None):
         """
         Args:
             volume: Tensor of shape (9, 112, 224) or (C, D, H, W)
+            labels: Optional dict; left_*/right_* pairs are swapped on flip
         Returns:
-            Flipped or original volume
+            (flipped_volume, swapped_labels) tuple
         """
         if random.random() < self.p:
-            # Flip along width dimension (last dimension)
-            return torch.flip(volume, dims=[-1])
-        return volume
+            volume = torch.flip(volume, dims=[-1])
+            labels = _swap_lr_labels(labels)
+        return volume, labels
 
 
 class RandomRotation:
@@ -56,12 +80,14 @@ class RandomRotation:
         """
         self.degrees = degrees
 
-    def __call__(self, volume):
+    def __call__(self, volume, labels=None):
         """
         Args:
             volume: Tensor of shape (9, 112, 224) or (C, D, H, W)
+            labels: Optional dict; passed through unchanged (rotation does
+                not flip L/R semantics, just rotates within plane).
         Returns:
-            Rotated volume
+            (rotated_volume, labels) tuple
         """
         # Random angle in range [-degrees, +degrees]
         angle = random.uniform(-self.degrees, self.degrees)
@@ -83,8 +109,7 @@ class RandomRotation:
 
         rotated_volume = np.stack(rotated_slices, axis=0)
 
-        # Convert back to tensor
-        return torch.from_numpy(rotated_volume).float()
+        return torch.from_numpy(rotated_volume).float(), labels
 
     @staticmethod
     def _get_rotation_matrix(center, angle, scale):
@@ -130,28 +155,23 @@ class RandomBrightnessContrast:
         self.contrast_limit = contrast_limit
         self.p = p
 
-    def __call__(self, volume):
+    def __call__(self, volume, labels=None):
         """
         Args:
             volume: Tensor of shape (9, 112, 224)
+            labels: Optional dict; passed through unchanged.
         Returns:
-            Adjusted volume
+            (adjusted_volume, labels) tuple
         """
         if random.random() < self.p:
-            # Random brightness factor
             brightness = random.uniform(-self.brightness_limit, self.brightness_limit)
-
-            # Random contrast factor
             contrast = random.uniform(-self.contrast_limit, self.contrast_limit)
             contrast_factor = 1.0 + contrast
 
-            # Apply: I' = contrast * I + brightness
             volume = volume * contrast_factor + brightness
-
-            # Clip to valid range [0, 1]
             volume = torch.clamp(volume, 0.0, 1.0)
 
-        return volume
+        return volume, labels
 
 
 class RandomGaussianNoise:
@@ -170,25 +190,21 @@ class RandomGaussianNoise:
         self.std_limit = std_limit
         self.p = p
 
-    def __call__(self, volume):
+    def __call__(self, volume, labels=None):
         """
         Args:
             volume: Tensor of shape (9, 112, 224)
+            labels: Optional dict; passed through unchanged.
         Returns:
-            Noisy volume
+            (noisy_volume, labels) tuple
         """
         if random.random() < self.p:
-            # Random noise std
             std = random.uniform(0, self.std_limit)
-
-            # Generate noise
             noise = torch.randn_like(volume) * std
-
-            # Add noise and clip
             volume = volume + noise
             volume = torch.clamp(volume, 0.0, 1.0)
 
-        return volume
+        return volume, labels
 
 
 class Compose:
@@ -210,18 +226,19 @@ class Compose:
         """
         self.transforms = transforms
 
-    def __call__(self, volume):
+    def __call__(self, volume, labels=None):
         """
         Apply all transforms sequentially.
 
         Args:
             volume: Input tensor
+            labels: Optional dict; threaded through every transform.
         Returns:
-            Transformed tensor
+            (volume, labels) tuple
         """
         for t in self.transforms:
-            volume = t(volume)
-        return volume
+            volume, labels = t(volume, labels)
+        return volume, labels
 
 
 def get_training_augmentation(mode='medium'):
@@ -319,31 +336,39 @@ if __name__ == "__main__":
     # Create dummy volume
     volume = torch.rand(9, 112, 224)
 
-    # Test individual transforms
-    print("\n1. Testing RandomHorizontalFlip...")
+    labels = {"spinal_canal": 0, "left_foraminal": 1, "right_foraminal": 2}
+
+    print("\n1. Testing RandomHorizontalFlip with labels...")
     flip = RandomHorizontalFlip(p=1.0)
-    flipped = flip(volume)
+    flipped, swapped = flip(volume, dict(labels))
     print(f"   Original: {volume.shape}, Flipped: {flipped.shape}")
+    print(f"   Labels in : {labels}")
+    print(f"   Labels out: {swapped}  (left/right_foraminal must be swapped)")
+    assert swapped["left_foraminal"] == labels["right_foraminal"], "L/R swap failed"
+    assert swapped["right_foraminal"] == labels["left_foraminal"], "L/R swap failed"
+    assert swapped["spinal_canal"] == labels["spinal_canal"], "spinal_canal must not change"
 
     print("\n2. Testing RandomRotation...")
     rotate = RandomRotation(degrees=10)
-    rotated = rotate(volume)
+    rotated, lbl_out = rotate(volume, dict(labels))
     print(f"   Original: {volume.shape}, Rotated: {rotated.shape}")
+    assert lbl_out == labels, "Rotation must not change labels"
 
     print("\n3. Testing RandomBrightnessContrast...")
     bright = RandomBrightnessContrast(p=1.0)
-    adjusted = bright(volume)
+    adjusted, _ = bright(volume, dict(labels))
     print(f"   Original range: [{volume.min():.3f}, {volume.max():.3f}]")
     print(f"   Adjusted range: [{adjusted.min():.3f}, {adjusted.max():.3f}]")
 
     print("\n4. Testing RandomGaussianNoise...")
     noise = RandomGaussianNoise(p=1.0)
-    noisy = noise(volume)
+    noisy, _ = noise(volume, dict(labels))
     print(f"   Original: {volume.shape}, Noisy: {noisy.shape}")
 
     print("\n5. Testing Compose...")
     transform = get_training_augmentation(mode='medium')
-    augmented = transform(volume)
+    augmented, lbl_after = transform(volume, dict(labels))
     print(f"   Original: {volume.shape}, Augmented: {augmented.shape}")
+    print(f"   Labels after compose: {lbl_after}")
 
     print("\n✓ All transforms working!")

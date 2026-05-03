@@ -35,6 +35,10 @@ from tqdm import tqdm
 from rsna_preprocessed_dataloader import RSNAPreprocessedDataset
 from spinenet.models.grading_baseline import GradingModelBaseline
 from spinenet.metrics_logger import MetricsLogger
+from spinenet.auc_metrics import (
+    aggregate_overall_auprc,
+    compute_auc_auprc_per_condition,
+)
 from spinenet.losses import compute_class_weights
 
 
@@ -173,7 +177,17 @@ def evaluate(model, dataloader, device):
     }
     weighted_logloss = compute_weighted_log_loss(all_outputs_concat, all_labels_tensor)
 
-    return avg_loss, accuracies, weighted_logloss, all_labels, all_preds, per_class_metrics
+    # Per-class AUC / AUPRC / Brier (one-vs-rest) — reuse the logits we already
+    # cached for log_loss. Avoids a second pass.
+    probs_dict = {
+        k: torch.softmax(v, dim=1).numpy() for k, v in all_outputs_concat.items()
+    }
+    labels_dict = {k: np.array(v) for k, v in all_labels.items()}
+    auc_auprc_metrics = compute_auc_auprc_per_condition(probs_dict, labels_dict)
+    auc_auprc_overall = aggregate_overall_auprc(auc_auprc_metrics)
+
+    return (avg_loss, accuracies, weighted_logloss, all_labels, all_preds,
+            per_class_metrics, auc_auprc_metrics, auc_auprc_overall)
 
 
 def print_per_class_metrics(per_class_metrics):
@@ -470,7 +484,8 @@ def main():
         avg_train_loss = train_loss / num_batches
 
         # Validation
-        val_loss, val_accuracies, val_weighted_logloss, all_labels, all_preds, val_per_class_metrics = evaluate(
+        (val_loss, val_accuracies, val_weighted_logloss, all_labels, all_preds,
+         val_per_class_metrics, val_auc_auprc_metrics, val_auc_auprc_overall) = evaluate(
             model, val_loader, device
         )
 
@@ -534,6 +549,8 @@ def main():
                 val_accuracies=val_accuracies,
                 per_class_metrics=val_per_class_metrics,
                 avg_severe_f1=avg_severe_f1,
+                auc_auprc_metrics=val_auc_auprc_metrics,
+                auc_auprc_overall=val_auc_auprc_overall,
                 extra={
                     'val_weighted_logloss': float(val_weighted_logloss),
                     'best_path': str(best_path),
@@ -551,6 +568,8 @@ def main():
             per_class_metrics=val_per_class_metrics,
             avg_severe_f1=avg_severe_f1,
             is_best=is_best,
+            auc_auprc_metrics=val_auc_auprc_metrics,
+            auc_auprc_overall=val_auc_auprc_overall,
             extra={'val_weighted_logloss': float(val_weighted_logloss)},
         )
 

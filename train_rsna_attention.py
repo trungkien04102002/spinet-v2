@@ -37,6 +37,10 @@ from spinenet.models.grading_attention import GradingModelWithCBAM
 from spinenet.losses import FocalLoss, UncertaintyLoss, compute_class_weights
 from spinenet.augmentation import get_training_augmentation, OversamplingDataset
 from spinenet.metrics_logger import MetricsLogger
+from spinenet.auc_metrics import (
+    aggregate_overall_auprc,
+    compute_auc_auprc_per_condition,
+)
 from rsna_preprocessed_dataloader import RSNAPreprocessedDataset
 
 
@@ -116,6 +120,7 @@ def evaluate(model, dataloader, criterion, uncertainty_loss, device):
     all_losses = {'spinal_canal': [], 'left_foraminal': [], 'right_foraminal': []}
     all_preds = {'spinal_canal': [], 'left_foraminal': [], 'right_foraminal': []}
     all_labels = {'spinal_canal': [], 'left_foraminal': [], 'right_foraminal': []}
+    all_probs = {'spinal_canal': [], 'left_foraminal': [], 'right_foraminal': []}
     per_class_metrics = {}
 
     val_pbar = tqdm(dataloader, desc="Validating", leave=False)
@@ -141,17 +146,22 @@ def evaluate(model, dataloader, criterion, uncertainty_loss, device):
                 task_losses.append(loss)
                 all_losses[condition].append(loss.item())
 
-                # Get predictions
-                preds = torch.argmax(outputs[condition], dim=1)
+                logits = outputs[condition]
+                probs = torch.softmax(logits, dim=1).cpu().numpy()  # [B, 3]
+                preds = torch.argmax(logits, dim=1)
                 all_preds[condition].extend(preds.cpu().numpy())
                 all_labels[condition].extend(labels[condition].numpy())
+                all_probs[condition].append(probs)
 
     # Compute metrics per condition
     val_accuracies = {}
     val_weighted_logloss = 0.0
 
+    probs_dict = {c: np.concatenate(all_probs[c], axis=0) for c in all_probs}
+    labels_dict = {c: np.array(all_labels[c]) for c in all_labels}
+
     for condition in ['spinal_canal', 'left_foraminal', 'right_foraminal']:
-        labels_np = np.array(all_labels[condition])
+        labels_np = labels_dict[condition]
         preds_np = np.array(all_preds[condition])
 
         # Filter out -1 labels
@@ -182,10 +192,15 @@ def evaluate(model, dataloader, criterion, uncertainty_loss, device):
                 'support': support
             }
 
+    # Per-class AUC / AUPRC / Brier (one-vs-rest)
+    auc_auprc_metrics = compute_auc_auprc_per_condition(probs_dict, labels_dict)
+    auc_auprc_overall = aggregate_overall_auprc(auc_auprc_metrics)
+
     # Compute total loss
     avg_loss = np.mean([np.mean(all_losses[c]) for c in ['spinal_canal', 'left_foraminal', 'right_foraminal']])
 
-    return avg_loss, val_weighted_logloss, val_accuracies, per_class_metrics
+    return (avg_loss, val_weighted_logloss, val_accuracies, per_class_metrics,
+            auc_auprc_metrics, auc_auprc_overall)
 
 
 def print_per_class_metrics(per_class_metrics):
@@ -485,7 +500,8 @@ def main():
         avg_train_loss = train_loss / num_batches
 
         # Validation
-        val_loss, val_weighted_logloss, val_accuracies, val_per_class_metrics = evaluate(
+        (val_loss, val_weighted_logloss, val_accuracies, val_per_class_metrics,
+         val_auc_auprc_metrics, val_auc_auprc_overall) = evaluate(
             model, val_loader, criterion, uncertainty_loss, device
         )
 
@@ -555,6 +571,8 @@ def main():
                 val_accuracies=val_accuracies,
                 per_class_metrics=val_per_class_metrics,
                 avg_severe_f1=avg_severe_f1,
+                auc_auprc_metrics=val_auc_auprc_metrics,
+                auc_auprc_overall=val_auc_auprc_overall,
                 extra={
                     'val_weighted_logloss': float(val_weighted_logloss),
                     'best_path': str(best_path),
@@ -572,6 +590,8 @@ def main():
             per_class_metrics=val_per_class_metrics,
             avg_severe_f1=avg_severe_f1,
             is_best=is_best,
+            auc_auprc_metrics=val_auc_auprc_metrics,
+            auc_auprc_overall=val_auc_auprc_overall,
             extra={'val_weighted_logloss': float(val_weighted_logloss)},
         )
 

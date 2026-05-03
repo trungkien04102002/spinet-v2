@@ -27,6 +27,7 @@ Frozen parameters:
     - BiomedCLIP text encoder + text projection (~110M)
 """
 
+import random
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -58,6 +59,50 @@ class SliceAttentionPool(nn.Module):
         return pooled
 
 
+class ConcatMLPFusion(nn.Module):
+    """Default fusion: concat(feat_a, feat_b) -> 2-layer MLP -> embed_dim.
+
+    Original Hybrid head. Treats the two modalities as a single 1024-D vector;
+    the MLP is the only place where per-modality information mixes.
+    """
+
+    def __init__(self, in_dim_each: int = 512, hidden: int = 768, out_dim: int = 512):
+        super().__init__()
+        self.proj = nn.Sequential(
+            nn.Linear(in_dim_each * 2, hidden),
+            nn.GELU(),
+            nn.Dropout(0.1),
+            nn.Linear(hidden, out_dim),
+        )
+
+    def forward(self, feat_a: torch.Tensor, feat_b: torch.Tensor) -> torch.Tensor:
+        return self.proj(torch.cat([feat_a, feat_b], dim=-1))
+
+
+class GatedFusion(nn.Module):
+    """GMU-style gated fusion (Arevalo et al. 2017, arXiv:1702.01992).
+
+    Each modality has its own non-linear projection; a per-dimension gate
+    computed from both modalities decides how much of each to keep. Unlike
+    concat-MLP, the gate gives the model an explicit "trust this branch
+    more for this sample" knob — useful when modality reliability varies
+    (e.g. when BiomedCLIP gives a poor prior for a hard case but CBAM has
+    strong local evidence, the gate can route around the noisy branch).
+    """
+
+    def __init__(self, in_dim_each: int = 512, out_dim: int = 512):
+        super().__init__()
+        self.h_a = nn.Linear(in_dim_each, out_dim)
+        self.h_b = nn.Linear(in_dim_each, out_dim)
+        self.gate = nn.Linear(2 * in_dim_each, out_dim)
+
+    def forward(self, feat_a: torch.Tensor, feat_b: torch.Tensor) -> torch.Tensor:
+        ha = torch.tanh(self.h_a(feat_a))
+        hb = torch.tanh(self.h_b(feat_b))
+        z = torch.sigmoid(self.gate(torch.cat([feat_a, feat_b], dim=-1)))
+        return z * ha + (1.0 - z) * hb
+
+
 class SpineNetHybrid(nn.Module):
     """
     Hybrid CBAM + BiomedCLIP model for spine MRI grading with zero-shot capability.
@@ -71,6 +116,17 @@ class SpineNetHybrid(nn.Module):
             ablation: "cbam_only" zeros out the BiomedCLIP image branch (text head still
             used); "biomedclip_only" zeros out the CBAM 3D branch. Both keep the same
             projection MLP shape so checkpoints stay compatible. Default "none" = full Hybrid.
+        fusion_mode: How to fuse feat_cbam and feat_bmc.
+            "concat_mlp" (default) = concat -> 2-layer MLP. Original head.
+            "gated"               = GMU-style gated fusion (Arevalo 2017). The
+                                    gate lets each branch contribute per-dim
+                                    based on input, instead of a fixed mixing
+                                    learned by the MLP weights.
+        modality_dropout_p: Probability of zero-ing out one branch during
+            training (50/50 which one). Acts as both regularizer and an explicit
+            trainer for missing-modality robustness — addresses the common
+            "what if text/image is unavailable at inference" question. Set 0.0
+            (default) to disable. Recommended ~0.15 if enabled.
     """
 
     def __init__(
@@ -82,11 +138,19 @@ class SpineNetHybrid(nn.Module):
         projection_hidden: int = 768,
         embed_dim: int = 512,
         ablate_branch: str = "none",
+        fusion_mode: str = "concat_mlp",
+        modality_dropout_p: float = 0.0,
     ):
         super().__init__()
         assert ablate_branch in ("none", "cbam_only", "biomedclip_only"), \
             f"Unknown ablate_branch: {ablate_branch}"
+        assert fusion_mode in ("concat_mlp", "gated"), \
+            f"Unknown fusion_mode: {fusion_mode}"
+        assert 0.0 <= modality_dropout_p <= 1.0, \
+            f"modality_dropout_p must be in [0,1], got {modality_dropout_p}"
         self.ablate_branch = ablate_branch
+        self.fusion_mode = fusion_mode
+        self.modality_dropout_p = modality_dropout_p
 
         # ---- Frozen CBAM backbone ----
         self.cbam = GradingModelWithCBAM(format="rsna", use_cbam=True)
@@ -108,15 +172,20 @@ class SpineNetHybrid(nn.Module):
         # ---- Trainable: attention pool ----
         self.slice_pool = SliceAttentionPool(dim=embed_dim)
 
-        # ---- Trainable: image projection MLP ----
-        cbam_dim = embed_dim  # CBAM outputs 512
-        bmc_dim = embed_dim  # BiomedCLIP outputs 512
-        self.image_projection = nn.Sequential(
-            nn.Linear(cbam_dim + bmc_dim, projection_hidden),
-            nn.GELU(),
-            nn.Dropout(0.1),
-            nn.Linear(projection_hidden, embed_dim),
-        )
+        # ---- Trainable: image fusion head ----
+        # `image_projection` is kept as the attribute name so existing
+        # checkpoints (concat_mlp) load via state_dict[*image_projection.proj*]
+        # if we rename — but we stay backward-compatible by keeping the old
+        # nn.Sequential layout under the same name when fusion_mode='concat_mlp'.
+        if fusion_mode == "concat_mlp":
+            self.image_projection = nn.Sequential(
+                nn.Linear(embed_dim * 2, projection_hidden),
+                nn.GELU(),
+                nn.Dropout(0.1),
+                nn.Linear(projection_hidden, embed_dim),
+            )
+        else:  # gated
+            self.image_projection = GatedFusion(in_dim_each=embed_dim, out_dim=embed_dim)
 
         # ---- Trainable: logit scale (CLIP-style) ----
         # CLIP convention: parameter is in log-space, exp() gives temperature.
@@ -230,9 +299,22 @@ class SpineNetHybrid(nn.Module):
             slice_features = self._encode_slices_via_biomedclip(slices)  # [B, K, 512]
             feat_bmc = self.slice_pool(slice_features)  # [B, 512]
 
-        # Fuse
-        concat = torch.cat([feat_cbam, feat_bmc], dim=-1)  # [B, 1024]
-        image_emb = self.image_projection(concat)  # [B, 512]
+        # Modality dropout: during training only, zero out one branch with
+        # probability p. Skip when an ablation is already active so the
+        # ablation result is deterministic.
+        if self.training and self.modality_dropout_p > 0.0 and self.ablate_branch == "none":
+            if random.random() < self.modality_dropout_p:
+                if random.random() < 0.5:
+                    feat_cbam = torch.zeros_like(feat_cbam)
+                else:
+                    feat_bmc = torch.zeros_like(feat_bmc)
+
+        # Fuse via the configured head (concat-MLP or gated).
+        if self.fusion_mode == "concat_mlp":
+            concat = torch.cat([feat_cbam, feat_bmc], dim=-1)  # [B, 1024]
+            image_emb = self.image_projection(concat)  # [B, 512]
+        else:  # gated
+            image_emb = self.image_projection(feat_cbam, feat_bmc)  # [B, 512]
         image_emb = F.normalize(image_emb, dim=-1)
         return image_emb
 

@@ -46,6 +46,10 @@ from spinenet.models.grading_hybrid import SpineNetHybrid
 from spinenet.losses import FocalLoss, UncertaintyLoss, compute_class_weights
 from spinenet.augmentation import get_training_augmentation, OversamplingDataset
 from spinenet.metrics_logger import MetricsLogger
+from spinenet.auc_metrics import (
+    aggregate_overall_auprc,
+    compute_auc_auprc_per_condition,
+)
 from rsna_preprocessed_dataloader import RSNAPreprocessedDataset
 
 
@@ -150,6 +154,22 @@ def parse_args():
                              '"cbam_only" = drop BiomedCLIP image features; '
                              '"biomedclip_only" = drop CBAM 3D features.')
 
+    # Fusion architecture (advisor: "đổi MLP, đổi concat cho đúng đắn")
+    parser.add_argument('--fusion', type=str, default='concat_mlp',
+                        choices=['concat_mlp', 'gated'],
+                        help='Image fusion head. concat_mlp (default) = '
+                             'concat -> 2-layer MLP (original). gated = '
+                             'GMU (Arevalo 2017) per-dim learned gate. Use to '
+                             'test whether a smarter fusion improves over the '
+                             'fixed-mixing MLP.')
+
+    # Modality dropout (Q10 robustness ablation)
+    parser.add_argument('--modality-dropout', type=float, default=0.0,
+                        help='Probability of zero-ing one branch (50/50 which) '
+                             'each training step. Trains the model to handle '
+                             'missing-modality at inference. Recommended 0.15 '
+                             'when enabled. Default 0.0 = disabled.')
+
     return parser.parse_args()
 
 
@@ -226,6 +246,7 @@ def evaluate(model, dataloader, text_db, criterion, uncertainty_loss, device):
     all_losses = {'spinal_canal': [], 'left_foraminal': [], 'right_foraminal': []}
     all_preds = {'spinal_canal': [], 'left_foraminal': [], 'right_foraminal': []}
     all_labels = {'spinal_canal': [], 'left_foraminal': [], 'right_foraminal': []}
+    all_probs = {'spinal_canal': [], 'left_foraminal': [], 'right_foraminal': []}
     per_class_metrics = {}
 
     val_pbar = tqdm(dataloader, desc="Validating", leave=False)
@@ -252,16 +273,21 @@ def evaluate(model, dataloader, text_db, criterion, uncertainty_loss, device):
                 loss = criterion(logits, labels_device[condition])
                 all_losses[condition].append(loss.item())
 
+                probs = torch.softmax(logits, dim=1).cpu().numpy()
                 preds = torch.argmax(logits, dim=1)
                 all_preds[condition].extend(preds.cpu().numpy())
                 all_labels[condition].extend(labels[condition].numpy())
+                all_probs[condition].append(probs)
 
     # Compute metrics per condition
     val_accuracies = {}
     val_weighted_logloss = 0.0
 
+    probs_dict = {c: np.concatenate(all_probs[c], axis=0) for c in all_probs}
+    labels_dict = {c: np.array(all_labels[c]) for c in all_labels}
+
     for condition in ['spinal_canal', 'left_foraminal', 'right_foraminal']:
-        labels_np = np.array(all_labels[condition])
+        labels_np = labels_dict[condition]
         preds_np = np.array(all_preds[condition])
 
         valid_mask = labels_np != -1
@@ -289,9 +315,13 @@ def evaluate(model, dataloader, text_db, criterion, uncertainty_loss, device):
                 'support': support
             }
 
+    auc_auprc_metrics = compute_auc_auprc_per_condition(probs_dict, labels_dict)
+    auc_auprc_overall = aggregate_overall_auprc(auc_auprc_metrics)
+
     avg_loss = np.mean([np.mean(all_losses[c]) for c in ['spinal_canal', 'left_foraminal', 'right_foraminal']])
 
-    return avg_loss, val_weighted_logloss, val_accuracies, per_class_metrics
+    return (avg_loss, val_weighted_logloss, val_accuracies, per_class_metrics,
+            auc_auprc_metrics, auc_auprc_overall)
 
 
 def print_per_class_metrics(per_class_metrics):
@@ -444,10 +474,16 @@ def main():
         biomedclip_device=str(device),
         slice_strategy=args.slice_strategy,
         ablate_branch=args.ablate_branch,
+        fusion_mode=args.fusion,
+        modality_dropout_p=args.modality_dropout,
     ).to(device)
     if args.ablate_branch != 'none':
         print(f"  Ablation mode: {args.ablate_branch} "
               f"(other branch zeroed before fusion)")
+    if args.fusion != 'concat_mlp':
+        print(f"  Fusion head: {args.fusion}")
+    if args.modality_dropout > 0:
+        print(f"  Modality dropout: p={args.modality_dropout} (training only)")
 
     total_params = sum(p.numel() for p in model.parameters())
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -542,6 +578,10 @@ def main():
         _tag_parts.append(f"seed{args.seed}")
     if args.ablate_branch != 'none':
         _tag_parts.append(args.ablate_branch)
+    if args.fusion != 'concat_mlp':
+        _tag_parts.append(args.fusion)
+    if args.modality_dropout > 0:
+        _tag_parts.append(f"mdrop{args.modality_dropout:g}")
     run_tag = "_" + "_".join(_tag_parts) if _tag_parts else ""
     metrics_logger = MetricsLogger(save_dir=save_dir, prefix=f"hybrid{run_tag}")
 
@@ -605,7 +645,8 @@ def main():
         avg_train_loss = train_loss / num_batches
 
         # Validation
-        val_loss, val_weighted_logloss, val_accuracies, val_per_class_metrics = evaluate(
+        (val_loss, val_weighted_logloss, val_accuracies, val_per_class_metrics,
+         val_auc_auprc_metrics, val_auc_auprc_overall) = evaluate(
             model, val_loader, text_db, criterion, uncertainty_loss, device
         )
 
@@ -676,6 +717,8 @@ def main():
                 val_accuracies=val_accuracies,
                 per_class_metrics=val_per_class_metrics,
                 avg_severe_f1=avg_severe_f1,
+                auc_auprc_metrics=val_auc_auprc_metrics,
+                auc_auprc_overall=val_auc_auprc_overall,
                 extra={
                     'best_path': str(best_path),
                     'cbam_checkpoint': args.cbam_checkpoint,
@@ -693,6 +736,8 @@ def main():
             per_class_metrics=val_per_class_metrics,
             avg_severe_f1=avg_severe_f1,
             is_best=is_best,
+            auc_auprc_metrics=val_auc_auprc_metrics,
+            auc_auprc_overall=val_auc_auprc_overall,
         )
 
         # Save periodic checkpoint

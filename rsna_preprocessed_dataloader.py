@@ -87,16 +87,15 @@ class RSNAPreprocessedDataset(Dataset):
         # Convert to tensor
         volume = torch.from_numpy(volume).float()
 
-        # Apply transform if provided
-        if self.transform is not None:
-            volume = self.transform(volume)
-
-        # Get labels
+        # Build labels first so the transform can swap left/right pairs on flip.
         labels = {
             'spinal_canal': int(row['spinal_canal']),
             'left_foraminal': int(row['left_foraminal']),
             'right_foraminal': int(row['right_foraminal'])
         }
+
+        if self.transform is not None:
+            volume, labels = self.transform(volume, labels)
 
         return volume, labels
 

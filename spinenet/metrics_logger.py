@@ -45,6 +45,14 @@ def _list_of_floats(x):
     return [float(v) for v in x]
 
 
+def _is_nan(x) -> bool:
+    """NaN check that survives None / strings."""
+    try:
+        return x != x  # NaN is the only float that is not equal to itself
+    except Exception:
+        return True
+
+
 class MetricsLogger:
     def __init__(self, save_dir, prefix: str):
         self.save_dir = Path(save_dir)
@@ -65,6 +73,8 @@ class MetricsLogger:
         avg_severe_f1: Optional[float] = None,
         is_best: bool = False,
         extra: Optional[Dict[str, Any]] = None,
+        auc_auprc_metrics: Optional[Dict[str, Dict[str, Any]]] = None,
+        auc_auprc_overall: Optional[Dict[str, float]] = None,
     ) -> None:
         """Append one row to {prefix}_log.csv."""
         row = {
@@ -90,6 +100,19 @@ class MetricsLogger:
                     row[f"severe_f1_{cond}"] = f1[2]
                 if len(recall) >= 3:
                     row[f"severe_recall_{cond}"] = recall[2]
+
+        # Per-epoch AUC / AUPRC tracking — keep CSV columns minimal: per-cond
+        # macro AUC + macro AUPRC + overall severe AUPRC. Full per-class AUC
+        # only goes to best_metrics.json/.txt to avoid CSV column blow-up.
+        if auc_auprc_metrics:
+            for cond in ("spinal_canal", "left_foraminal", "right_foraminal"):
+                m = auc_auprc_metrics.get(cond)
+                if m:
+                    row[f"macro_auc_{cond}"] = _to_float(m.get("macro_auc", float("nan")))
+                    row[f"macro_auprc_{cond}"] = _to_float(m.get("macro_auprc", float("nan")))
+        if auc_auprc_overall:
+            row["overall_macro_auprc"] = _to_float(auc_auprc_overall.get("macro_auprc", float("nan")))
+            row["overall_severe_auprc"] = _to_float(auc_auprc_overall.get("severe_auprc", float("nan")))
 
         if extra:
             for k, v in extra.items():
@@ -122,8 +145,17 @@ class MetricsLogger:
         per_class_metrics: Optional[Dict[str, Dict[str, Any]]] = None,
         avg_severe_f1: Optional[float] = None,
         extra: Optional[Dict[str, Any]] = None,
+        auc_auprc_metrics: Optional[Dict[str, Dict[str, Any]]] = None,
+        auc_auprc_overall: Optional[Dict[str, float]] = None,
     ) -> None:
-        """Overwrite {prefix}_best_metrics.json + .txt with current snapshot."""
+        """Overwrite {prefix}_best_metrics.json + .txt with current snapshot.
+
+        ``auc_auprc_metrics`` is the dict returned by
+        ``spinenet.auc_metrics.compute_auc_auprc_per_condition``; pass it to
+        record AUC/AUPRC/Brier alongside the existing argmax metrics.
+        ``auc_auprc_overall`` is the result of ``aggregate_overall_auprc`` —
+        the popular/rare/Severe roll-up across conditions.
+        """
         clean_per_class: Dict[str, Dict[str, Any]] = {}
         if per_class_metrics:
             for cond, m in per_class_metrics.items():
@@ -145,6 +177,8 @@ class MetricsLogger:
                 _to_float(avg_severe_f1) if avg_severe_f1 is not None else None
             ),
             "per_class_metrics": clean_per_class,
+            "auc_auprc_metrics": auc_auprc_metrics or {},
+            "auc_auprc_overall": auc_auprc_overall or {},
             "extra": extra or {},
         }
 
@@ -189,6 +223,36 @@ class MetricsLogger:
                                 f"{m['f1'][i]:6.3f} "
                                 f"{m['support'][i]:8d}\n"
                             )
+
+            if auc_auprc_metrics:
+                f.write("\nAUC / AUPRC / Brier (per class, one-vs-rest):\n")
+                for cond, m in auc_auprc_metrics.items():
+                    f.write(f"\n  {cond}:\n")
+                    f.write(
+                        f"    {'Class':14s}  {'AUC':>6s} {'AUPRC':>6s} {'Brier':>6s} {'Support':>8s}\n"
+                    )
+                    for name in CLASS_NAMES:
+                        r = m.get("per_class", {}).get(name)
+                        if not r:
+                            continue
+                        auc_s = "  nan " if _is_nan(r["auc"]) else f"{r['auc']:6.3f}"
+                        ap_s = "  nan " if _is_nan(r["auprc"]) else f"{r['auprc']:6.3f}"
+                        br_s = "  nan " if _is_nan(r["brier"]) else f"{r['brier']:6.3f}"
+                        f.write(
+                            f"    {name:14s}  {auc_s} {ap_s} {br_s} {r['support']:8d}\n"
+                        )
+                    f.write(
+                        f"    {'macro':14s}  {m['macro_auc']:6.3f} {m['macro_auprc']:6.3f}\n"
+                    )
+
+            if auc_auprc_overall:
+                f.write("\nAUC / AUPRC overall (averaged across 3 conditions):\n")
+                fmt = lambda x: "nan" if _is_nan(x) else f"{x:.3f}"
+                f.write(f"  macro AUC      : {fmt(auc_auprc_overall.get('macro_auc'))}\n")
+                f.write(f"  macro AUPRC    : {fmt(auc_auprc_overall.get('macro_auprc'))}\n")
+                f.write(f"  popular AUPRC  : {fmt(auc_auprc_overall.get('popular_auprc'))}  (Normal/Mild)\n")
+                f.write(f"  rare    AUPRC  : {fmt(auc_auprc_overall.get('rare_auprc'))}  (Moderate + Severe)\n")
+                f.write(f"  Severe  AUPRC  : {fmt(auc_auprc_overall.get('severe_auprc'))}  (clinical priority)\n")
 
             if extra:
                 f.write("\nExtra:\n")
