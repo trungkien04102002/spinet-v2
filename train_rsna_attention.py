@@ -101,6 +101,8 @@ def parse_args():
     # System
     parser.add_argument('--num-workers', type=int, default=4,
                         help='Number of data loading workers')
+    parser.add_argument('--save-dir', type=str, default='checkpoints',
+                        help='Directory to save checkpoints + metrics')
     parser.add_argument('--save-freq', type=int, default=5,
                         help='Save checkpoint every N epochs')
     parser.add_argument('--early-stop-patience', type=int, default=15,
@@ -247,8 +249,8 @@ def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Create save directory
-    save_dir = Path('checkpoints')
-    save_dir.mkdir(exist_ok=True)
+    save_dir = Path(args.save_dir)
+    save_dir.mkdir(parents=True, exist_ok=True)
 
     print("="*70)
     print("SpineNetV2 Attention Model Training for RSNA 2024")
