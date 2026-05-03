@@ -102,9 +102,9 @@ Extra:
 
 ---
 
-## Run 2: CBAM RSNA — IN PROGRESS
+## Run 2: CBAM RSNA — ABANDONED v3 (regression), USE v2 CKPT
 
-**CMD:**
+**CMD đã chạy v3 (KILLED at epoch 15, best at epoch 7):**
 ```
 python3 train_rsna_attention.py --epochs 20 --batch-size 64 --lr 1e-3 \
     --use-focal --use-uncertainty true --class-weight-mode sqrt \
@@ -112,17 +112,75 @@ python3 train_rsna_attention.py --epochs 20 --batch-size 64 --lr 1e-3 \
     --save-dir checkpoints/v3_20260503/cbam
 ```
 
-**Progress notes:**
-- Epoch 2: avg_severe_f1=0.094 (still warming up, foraminal Severe F1=0.000)
-- Epoch 3: avg_severe_f1=**0.184** (over-correction phase, Severe Recall=0.79 spinal but Precision=0.135)
-  - L-Foram Severe F1: 0.000 → 0.203 (breakthrough vs baseline)
-  - R-Foram Severe F1: 0.000 → 0.118 (breakthrough vs baseline)
-- Epoch time ~245s = ~4 min/epoch → 20 ep ≈ 80 min total
+**v3 Best (epoch 7) — REGRESSION vs v2:**
+- Avg Severe F1: 0.200 (v2: 0.333 — much worse)
+- Mean AUC: 0.793 (v3 baseline: 0.826 — model worse than its own baseline!)
+- Mean AUPRC: 0.466 (v3 baseline: 0.523)
+- Severe AUPRC: 0.215 (v3 baseline: 0.276)
+- **→ User killed, switched to Plan B (use v2 ckpt + eval AUC/AUPRC fresh)**
 
-**Raw cat (paste khi xong):**
+**Args diff vs v2:**
+- focal_gamma: 2.0 (v3) vs 1.8 (v2) — small
+- epochs: 20 (v3) vs 25 (v2) — 5 epoch ít hơn
+- HFlip fix → mất "free regularization", model cần thêm epoch để converge
+
+**Plan B: v2 fresh_cbam ckpt + eval_rsna_auc.py (DONE 2026-05-03 ~16h):**
+
+CMD chạy trên Vast.ai:
 ```
-[TODO]
+python3 eval_rsna_auc.py --model cbam --checkpoint checkpoints/fresh_cbam/best_model_attention_sqrt_cw_e20.pth --output experiments/v3_20260503/v2_cbam_auc.json
 ```
+
+**Raw output (Plan B):**
+```
+==============================================================================
+  AUC / AUPRC summary — model=cbam
+  checkpoint: checkpoints/fresh_cbam/best_model_attention_sqrt_cw_e20.pth
+  n_val_samples: 1942
+==============================================================================
+
+spinal_canal (n_valid=1942):
+  Class              AUC    AUPRC    Brier  Support
+  --------------------------------------------------
+  Normal/Mild      0.944    0.992    0.096     1722
+  Moderate         0.880    0.273    0.078      139
+  Severe           0.968    0.663    0.028       81
+  macro            0.931    0.643
+
+left_foraminal (n_valid=1937):
+  Class              AUC    AUPRC    Brier  Support
+  --------------------------------------------------
+  Normal/Mild      0.798    0.926    0.245     1497
+  Moderate         0.638    0.254    0.200      360
+  Severe           0.851    0.175    0.051       80
+  macro            0.762    0.452
+
+right_foraminal (n_valid=1937):
+  Class              AUC    AUPRC    Brier  Support
+  --------------------------------------------------
+  Normal/Mild      0.815    0.933    0.235     1482
+  Moderate         0.677    0.296    0.199      372
+  Severe           0.852    0.204    0.048       83
+  macro            0.781    0.478
+
+OVERALL (averaged across 3 conditions)
+  macro AUC       : 0.825
+  macro AUPRC     : 0.524
+  popular AUPRC   : 0.951
+  rare    AUPRC   : 0.311
+  Severe  AUPRC   : 0.347
+  inference: 11.8s for 1942 samples (164.1 samples/s)
+```
+
+**Aggregated for Bảng 1A/1C Ours column (combined v2 metrics):**
+- F1/Acc/Recall/Precision: từ summary.pdf v2 fresh_cbam (Mean F1=0.509, Severe F1=0.333 etc.)
+- AUC/AUPRC/Brier: từ Plan B eval ở trên
+- Mean AUC: **0.825** (≈ baseline)
+- Mean AUPRC: **0.524** (≈ baseline)
+- **Severe AUPRC: 0.347** (vs baseline 0.276 → **+26% relative**) ⭐
+- Severe AUC: **0.890** (vs baseline 0.860 → +0.030)
+
+**Status:** ✓ Filled into THESIS_REPORT_DRAFT_v3.md (Bảng 1A + Bảng 1C Ours column).
 
 ---
 

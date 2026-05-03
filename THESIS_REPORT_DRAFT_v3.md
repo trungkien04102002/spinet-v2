@@ -57,8 +57,8 @@
 | Mean F1 macro | 0.420 | **0.509** | **+0.089** |
 | Mean Recall macro | 0.411 | **0.568** | **+0.157** |
 | Mean Precision macro | 0.486 | **0.518** | **+0.032** |
-| **Mean AUC macro** | _[TODO Base]_ | _[TODO Ours]_ | _[TODO]_ |
-| **Mean AUPRC macro** | _[TODO Base]_ | _[TODO Ours]_ | _[TODO]_ |
+| **Mean AUC macro** | 0.826 | 0.825 | ≈0 |
+| **Mean AUPRC macro** | 0.523 | 0.524 | ≈0 |
 
 → Đánh đổi cố ý theo spirit AI y tế: hi sinh Acc để cứu Recall trên class Severe (rare class). Precision macro vẫn tăng nhẹ → không phải "đoán bừa", model học có cơ sở.
 
@@ -81,11 +81,11 @@ Trung bình qua **3 condition** (Spinal Canal / Left Foraminal / Right Foraminal
 | **Severe ONLY** *(clinical priority — class hiếm nhất)* | Recall | 0.119 | **0.370** | **+0.251** | Cứu **¼ số ca Severe** từ chỗ bị missed |
 | | Precision | 0.210 | **0.304** | **+0.094** | **Tăng cùng** Recall — cải thiện 2 chiều |
 | | F1 | 0.152 | **0.333** | **+0.181** | F1 Severe **GẤP HƠN 2×** |
-| | **AUC** | _[TODO]_ | _[TODO]_ | _[TODO]_ | Severity ranking quality |
-| | **AUPRC** | _[TODO]_ | _[TODO]_ | _[TODO]_ | **Số chính** cho rare class |
-| **Popular AUPRC** (Normal/Mild) | | _[TODO]_ | _[TODO]_ | _[TODO]_ | Easy class |
-| **Rare AUPRC** (Mod + Severe) | | _[TODO]_ | _[TODO]_ | _[TODO]_ | Khó hơn — cải thiện đáng kể nhất |
-| **Macro AUPRC** (avg 3 classes) | | _[TODO]_ | _[TODO]_ | _[TODO]_ | Overall |
+| | **AUC** | 0.860 | 0.890 | **+0.030** | Severity ranking quality |
+| | **AUPRC** | 0.276 | **0.347** | **+0.071** | **Số chính** cho rare class — **+26% relative** |
+| **Popular AUPRC** (Normal/Mild) | | 0.948 | 0.951 | +0.003 | Easy class |
+| **Rare AUPRC** (Mod + Severe) | | 0.310 | 0.311 | +0.001 | Macro level gần như unchanged |
+| **Macro AUPRC** (avg 3 classes) | | 0.523 | 0.524 | ≈0 | Overall |
 
 ### Đọc bảng (cho thầy nhìn tổng quan):
 
