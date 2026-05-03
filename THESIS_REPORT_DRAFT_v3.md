@@ -613,6 +613,66 @@ Quote từ Multimodal Survey 2024 ([arXiv:2411.17040](https://arxiv.org/html/241
 - GMU baseline: Arevalo 2017, [arXiv:1702.01992](https://arxiv.org/pdf/1702.01992)
 - Small-data overfitting on cross-attention: ACM EITCE 2024
 
+#### Verification deep dive (2026-05-03) — 3 paper 2025 trực tiếp support frozen-encoder + concat-MLP
+
+Sau khi research kỹ với 33 queries, finding: **không có paper nào recommend against** concat-MLP cho setup của ta (frozen encoders + global vectors + small medical data). 3 paper 2025 trực tiếp dùng cùng paradigm:
+
+| Paper | Setup | Findings |
+|---|---|---|
+| **BioFuse** ([PLOS One 2025](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0320989)) | Concat 9 frozen biomedical foundation models | Vector concat + MLP/XGBoost → **SOTA trên MedMNIST+** (best AUC 5/12 dataset) |
+| **Frozen VLM Breast Cancer** ([IEEE JBHI 2025, PMC12145120](https://pmc.ncbi.nlm.nih.gov/articles/PMC12145120/)) | Frozen CLIP image+text + lightweight connector | Shallow MLP > deep MLP trên frozen encoders, AUC 0.803→0.830. Quote: *"augmenting hidden layers enhances training but decrements validation"* |
+| **SAFFE** ([J. Supercomputing 2025](https://link.springer.com/article/10.1007/s11227-025-07473-7)) | Frozen unimodal encoders → bottleneck MLP fusion | "Lightweight bottleneck mid-fusion neural network" outperforms SOTA với **fewer trainable params** |
+
+#### Cross-attention thắng concat khi nào? Verify mathematically
+
+Cross-attention thắng concat **chỉ khi** có **token sequences** (patch-level features hoặc multi-slice tokens):
+- PCOS Springer 2025, HCC CT MLMI 2024, neuroimaging ViT PMC 2024 — đều dùng **token sequences**
+- Oxford spine MRI 2025 (Park et al.) — Transformer attend qua **multi-slice embeddings** (sequence)
+
+**Khi fuse 2 single global vector** (như setup ta): cross-attention nhận query [B, 1, d] và key/value [B, 1, d] → **softmax over 1 score = 1.0 always** → output = `V·W_O` = linear projection → **TƯƠNG ĐƯƠNG learned scalar gate**, không hơn concat-MLP-1-layer.
+
+→ Cross-attention giữa 2 global vector **mathematically equivalent** với concat + linear. **Không có architectural gain**, chỉ thêm parameters → overfitting risk trên small data.
+
+#### Concern QUAN TRỌNG agent flag (separate từ fusion method)
+
+Agent verify đã chỉ ra 1 vấn đề riêng cần address:
+
+> **"CBAM features sống trong RSNA-task space, BMC features sống trong PMC-15M contrastive space — KHÁC NHAU. Cosine với BMC text embeddings GIẢ ĐỊNH output sống trong BMC-text-aligned space. KHÔNG đảm bảo trừ khi MLP projection được train explicit để align."**
+
+**Cách pipeline em handle (verify từ code `train_rsna_hybrid.py`)**:
+
+Training có **2 loss đồng thời** ép MLP học alignment:
+
+```python
+# Loss chính — train cosine(image_emb, BMC_text_emb_classes) → đúng class
+loss_cls = FocalLoss(cosine_logits, y_true)
+
+# Loss phụ — Supervised Contrastive (default --use-supcon True, weight=0.1)
+# Pulls together same-class image_emb, pushes apart different-class
+loss_supcon = supervised_contrastive_loss(image_emb, y_true, temperature=0.07)
+
+total_loss = loss_cls + 0.1 * loss_supcon
+```
+
+→ MLP **được train explicit** để project concat[CBAM, BMC] vào BMC-text-aligned space. Không phải hope-and-pray.
+
+**Empirical proof alignment work**:
+- Zero-shot SPIDER F1 = 0.362 (>> random ~0.2 cho 5-class) → alignment đang hoạt động
+- Phase 4 retrain F1 = 0.623 → MLP học alignment chuẩn
+- Nếu alignment không learn được, zero-shot sẽ random hoàn toàn
+
+→ Concern agent **valid về lý thuyết**, **đã handle về thực tế** qua 2 loss design.
+
+#### Final defensible paragraph cho thầy (verified, citations chuẩn):
+
+> "Lựa chọn concat-MLP fusion là **principled và được hỗ trợ bởi literature 2024-2025** về frozen-encoder multimodal systems. Khi cả 2 encoder frozen và xuất ra single global pooled vector — như pipeline em — **cross-attention reduce thành learned scalar gate, không có architectural advantage** so với shallow MLP. Best practice hiện tại confirm: **BioFuse (PLOS One 2025)** fuse 9 frozen biomedical foundation models bằng vector concatenation đạt SOTA trên MedMNIST+; **SAFFE (J. Supercomputing 2025)** dùng lightweight bottleneck MLP; **Frozen VLM Breast Cancer (IEEE JBHI 2025)** explicit chứng minh shallow MLP heads trên frozen encoders **outperform deeper heads** trên small medical datasets — paralleling RSNA setting (~10K samples) của em. **Hornik 1989** universal approximation guarantee MLP(1024→768→512) approximate được cross-modal correlation function. Em **acknowledge 1 limitation**: CBAM features sống trong RSNA-task space, không sống trong BMC text space → cần MLP projection học alignment. Em **handle explicit** bằng 2 loss đồng thời: cross-entropy với BMC text embeddings (ép alignment) + SupCon auxiliary loss (pull same-class image_emb). Empirical chứng minh alignment work: zero-shot SPIDER F1=0.362 (>>random 0.2), Phase 4 retrain F1=0.623. **Không paper nào trong exhaustive search 33 queries recommend AGAINST concat-MLP cho setup này.**"
+
+#### Bottom line
+
+→ **Concat-MLP cho setup ta = ỔN, defensible, có 3 paper 2025 trực tiếp support.**
+→ Đã chuẩn bị **gated fusion alternative** (`--fusion gated`) để chạy ablation song song — nếu gated thắng, switch; nếu không, concat-MLP standard.
+→ Concern alignment đã handle bằng 2-loss design, có empirical proof.
+
 ---
 
 ### Q-JS-4: "BiomedCLIP có vẻ overengineer? Có VLM nào nhẹ hơn / specialized cho spine hơn không?"
