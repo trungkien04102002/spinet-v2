@@ -440,6 +440,9 @@ def main():
     epochs_without_improvement = 0
     metrics_logger = MetricsLogger(save_dir=save_dir, prefix="baseline")
 
+    # Total wall-clock from first training step (for paper Table: train time)
+    total_train_start = time.time()
+
     for epoch in range(start_epoch, args.epochs):
         epoch_start_time = time.time()
 
@@ -483,11 +486,16 @@ def main():
 
         avg_train_loss = train_loss / num_batches
 
-        # Validation
+        # Validation (timed end-to-end for inference throughput stat)
+        val_start = time.time()
         (val_loss, val_accuracies, val_weighted_logloss, all_labels, all_preds,
          val_per_class_metrics, val_auc_auprc_metrics, val_auc_auprc_overall) = evaluate(
             model, val_loader, device
         )
+        val_elapsed = time.time() - val_start
+        n_val_samples = len(val_loader.dataset)
+        val_throughput = float(n_val_samples / val_elapsed) if val_elapsed > 0 else 0.0
+        val_ms_per_sample = float(1000 * val_elapsed / n_val_samples) if n_val_samples > 0 else 0.0
 
         # Update scheduler
         scheduler.step(val_loss)
@@ -542,6 +550,7 @@ def main():
             }, best_path)
             print(f"\n✓ Saved best model to {best_path}")
 
+            elapsed_total = time.time() - total_train_start
             metrics_logger.save_best(
                 epoch=epoch + 1,
                 train_loss=avg_train_loss,
@@ -554,6 +563,12 @@ def main():
                 extra={
                     'val_weighted_logloss': float(val_weighted_logloss),
                     'best_path': str(best_path),
+                    'total_train_seconds': float(elapsed_total),
+                    'avg_epoch_seconds': float(elapsed_total / (epoch + 1)),
+                    'eval_seconds': float(val_elapsed),
+                    'eval_samples': int(n_val_samples),
+                    'eval_throughput_samples_per_sec': val_throughput,
+                    'eval_ms_per_sample': val_ms_per_sample,
                     'args': vars(args),
                 },
             )
@@ -570,7 +585,12 @@ def main():
             is_best=is_best,
             auc_auprc_metrics=val_auc_auprc_metrics,
             auc_auprc_overall=val_auc_auprc_overall,
-            extra={'val_weighted_logloss': float(val_weighted_logloss)},
+            extra={
+                'val_weighted_logloss': float(val_weighted_logloss),
+                'epoch_seconds': float(epoch_time),
+                'eval_seconds': float(val_elapsed),
+                'eval_throughput_samples_per_sec': val_throughput,
+            },
         )
 
         # Save periodic checkpoint

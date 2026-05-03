@@ -571,6 +571,9 @@ def main():
     best_epoch = 0
     epochs_without_improvement = 0
 
+    # Total wall-clock from first training step (for paper Table: train time)
+    total_train_start = time.time()
+
     # Tag output filenames by seed + ablation so multi-seed / ablation runs
     # don't overwrite each other. Default seed=42, ablate=none → tag="" (backward compat).
     _tag_parts = []
@@ -644,11 +647,16 @@ def main():
 
         avg_train_loss = train_loss / num_batches
 
-        # Validation
+        # Validation (timed end-to-end for inference throughput stat)
+        val_start = time.time()
         (val_loss, val_weighted_logloss, val_accuracies, val_per_class_metrics,
          val_auc_auprc_metrics, val_auc_auprc_overall) = evaluate(
             model, val_loader, text_db, criterion, uncertainty_loss, device
         )
+        val_elapsed = time.time() - val_start
+        n_val_samples = len(val_loader.dataset)
+        val_throughput = float(n_val_samples / val_elapsed) if val_elapsed > 0 else 0.0
+        val_ms_per_sample = float(1000 * val_elapsed / n_val_samples) if n_val_samples > 0 else 0.0
 
         # Scheduler step (cosine, per epoch)
         scheduler.step()
@@ -710,6 +718,7 @@ def main():
             }, best_path)
             print(f"\n✓ Saved best model to {best_path} (Severe F1: {best_severe_f1:.4f})")
 
+            elapsed_total = time.time() - total_train_start
             metrics_logger.save_best(
                 epoch=epoch + 1,
                 train_loss=avg_train_loss,
@@ -722,6 +731,12 @@ def main():
                 extra={
                     'best_path': str(best_path),
                     'cbam_checkpoint': args.cbam_checkpoint,
+                    'total_train_seconds': float(elapsed_total),
+                    'avg_epoch_seconds': float(elapsed_total / (epoch + 1)),
+                    'eval_seconds': float(val_elapsed),
+                    'eval_samples': int(n_val_samples),
+                    'eval_throughput_samples_per_sec': val_throughput,
+                    'eval_ms_per_sample': val_ms_per_sample,
                     'args': vars(args),
                 },
             )
@@ -738,6 +753,11 @@ def main():
             is_best=is_best,
             auc_auprc_metrics=val_auc_auprc_metrics,
             auc_auprc_overall=val_auc_auprc_overall,
+            extra={
+                'epoch_seconds': float(epoch_time),
+                'eval_seconds': float(val_elapsed),
+                'eval_throughput_samples_per_sec': val_throughput,
+            },
         )
 
         # Save periodic checkpoint
