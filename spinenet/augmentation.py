@@ -44,25 +44,40 @@ class RandomHorizontalFlip:
     Without label swapping, half of the foraminal training samples would be
     label-noisy because the flipped image's left foramen is on the right side
     while the label says "left". This class is the corrected version.
+
+    The constructor accepts ``swap_labels=False`` for v2 reproducibility:
+    that legacy mode does NOT swap labels on flip, reproducing the original
+    label-noise behavior. The noise (~25 % of foraminal samples flipped
+    without label swap, given p=0.5) acts as accidental regularization that
+    helped v2 break the Severe-foraminal F1=0 threshold. v3 with
+    ``swap_labels=True`` (default) is mathematically correct but loses that
+    free regularization, so foraminal-Severe may need stronger oversampling
+    or a smaller focal_gamma to break threshold.
     """
-    def __init__(self, p=0.5):
+    def __init__(self, p=0.5, swap_labels=True):
         """
         Args:
             p: Probability of applying the flip (default: 0.5)
+            swap_labels: If True (default), swap left_*/right_* paired labels
+                on flip. Set False to reproduce the v2 buggy behavior — useful
+                only for ablation/reproducibility experiments.
         """
         self.p = p
+        self.swap_labels = swap_labels
 
     def __call__(self, volume, labels=None):
         """
         Args:
             volume: Tensor of shape (9, 112, 224) or (C, D, H, W)
             labels: Optional dict; left_*/right_* pairs are swapped on flip
+                when ``swap_labels=True`` (default).
         Returns:
-            (flipped_volume, swapped_labels) tuple
+            (flipped_volume, maybe_swapped_labels) tuple
         """
         if random.random() < self.p:
             volume = torch.flip(volume, dims=[-1])
-            labels = _swap_lr_labels(labels)
+            if self.swap_labels:
+                labels = _swap_lr_labels(labels)
         return volume, labels
 
 
@@ -241,31 +256,34 @@ class Compose:
         return volume, labels
 
 
-def get_training_augmentation(mode='medium'):
+def get_training_augmentation(mode='medium', hflip_swap_labels=True):
     """
     Get predefined augmentation pipeline for training.
 
     Args:
         mode: 'light', 'medium', or 'heavy'
+        hflip_swap_labels: If True (default), HFlip swaps left_*/right_*
+            labels (correct behavior). If False, reproduces v2 buggy
+            label-noise behavior — useful only for ablation/reproducibility.
 
     Returns:
         Compose object with augmentation transforms
     """
     if mode == 'light':
         return Compose([
-            RandomHorizontalFlip(p=0.5),
+            RandomHorizontalFlip(p=0.5, swap_labels=hflip_swap_labels),
             RandomBrightnessContrast(brightness_limit=0.1, contrast_limit=0.1, p=0.3),
         ])
     elif mode == 'medium':
         return Compose([
-            RandomHorizontalFlip(p=0.5),
+            RandomHorizontalFlip(p=0.5, swap_labels=hflip_swap_labels),
             RandomRotation(degrees=10),
             RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.5),
             RandomGaussianNoise(std_limit=0.05, p=0.3),
         ])
     elif mode == 'heavy':
         return Compose([
-            RandomHorizontalFlip(p=0.5),
+            RandomHorizontalFlip(p=0.5, swap_labels=hflip_swap_labels),
             RandomRotation(degrees=15),
             RandomBrightnessContrast(brightness_limit=0.3, contrast_limit=0.3, p=0.7),
             RandomGaussianNoise(std_limit=0.08, p=0.5),

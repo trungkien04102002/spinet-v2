@@ -95,6 +95,14 @@ def parse_args():
     parser.add_argument('--augmentation', type=str, default='medium',
                         choices=['none', 'light', 'medium', 'heavy'],
                         help='Augmentation strength')
+    parser.add_argument('--hflip-swap-labels', dest='hflip_swap_labels',
+                        action='store_true', default=True,
+                        help='HFlip swaps left_*/right_* labels (default, correct)')
+    parser.add_argument('--no-hflip-swap-labels', dest='hflip_swap_labels',
+                        action='store_false',
+                        help='Reproduce v2 buggy behavior — HFlip flips image '
+                             'WITHOUT swapping labels (label-noise as accidental '
+                             'regularization). Use only for ablation studies.')
     parser.add_argument('--oversample-factor', type=int, default=5,
                         help='Oversampling factor for minority classes')
 
@@ -300,8 +308,15 @@ def main():
 
     # Apply augmentation to training set
     if args.augmentation != 'none':
-        train_transform = get_training_augmentation(mode=args.augmentation)
-        print(f"  ✓ Augmentation: {args.augmentation}")
+        train_transform = get_training_augmentation(
+            mode=args.augmentation,
+            hflip_swap_labels=args.hflip_swap_labels,
+        )
+        if not args.hflip_swap_labels:
+            print(f"  ⚠ Augmentation: {args.augmentation} (LEGACY v2 buggy mode — "
+                  "HFlip does NOT swap labels)")
+        else:
+            print(f"  ✓ Augmentation: {args.augmentation} (HFlip with label swap)")
         # Create augmented dataset by wrapping the base dataset
         augmented_full_dataset = RSNAPreprocessedDataset(
             data_dir=args.data_dir,
