@@ -24,10 +24,18 @@
 - **Focal Loss** ($\gamma=2.0$): sample dễ (model đã predict đúng) bị giảm đóng góp gradient gần về 0; sample khó (model còn chưa học) giữ gần như nguyên gradient.
 - **Class weight** (mode `sqrt`): nhân loss mỗi class với trọng số $w_c \propto 1/\sqrt{n_c}$ — tỉ lệ nghịch với số sample lớp đó. Bỏ qua label `-1` (missing) khi tính.
 - **Oversampling minority class** (factor ×3–5): mỗi sample Severe được nhân bản 3–5 lần vào sampling pool trước khi shuffle. Khác với class weight (đổi trọng số gradient), oversampling đổi trực tiếp **tần suất** sample Severe trong batch. Hai cơ chế bổ sung nhau.
-- **Augmentation** medium: 3 nhóm biến đổi
-  - *Hình học*: rotation ±15°, scaling 0.9–1.1× — mô phỏng độ lệch tư thế bệnh nhân.
-  - *Cường độ*: intensity jitter ±10% — mô phỏng sai số calibration MRI giữa máy/protocol.
-  - *Không gian*: random crop ±5% margin — robust với dao động nhỏ vùng quan tâm.
+- **Augmentation** medium (theo SpineNetV2 Windsor 2024 convention): **4 transform**, mỗi cái có clinical/physical justification:
+  - **HorizontalFlip** (p=0.5): spine có **roughly bilateral symmetry**, flip + swap nhãn `left_foraminal ↔ right_foraminal` (đã fix bug 2026-05-03) → **tăng gấp đôi effective sample**. SpineNetV2 dùng identical setup.
+  - **Rotation ±10°**: mô phỏng **patient positioning variability** (tư thế nằm scan không hoàn toàn thẳng). Range nhỏ để **không đảo lộn** anatomy (rotation lớn → đốt sống flip → label sai).
+  - **Brightness/Contrast ±20%**: mô phỏng **scanner/protocol variability** — MRI intensity phụ thuộc TR/TE settings, scanner manufacturer (Siemens vs GE vs Philips), magnet strength (1.5T vs 3T). Augment giúp model robust với MRI từ nhiều bệnh viện.
+  - **Gaussian Noise** (std up to 0.05, p=0.3): mô phỏng **MRI thermal noise + scanner artifact**. Buộc model học features robust với noise thay vì memorize pixel values.
+
+  **Tại sao 4 cái này, tại sao không thêm MixUp / CutMix?**
+  - MixUp/CutMix mix 2 sample → **không phù hợp grading task** vì label không có "trung bình" (Severe + Normal mix → grade gì?). Tốt cho ImageNet classification, không cho clinical grading.
+  - Elastic deformation: có thể đảo anatomy (bend đốt sống không tự nhiên) → có thể tạo label noise → bỏ qua.
+  - Cutout/Erasing: random remove patches → có thể remove vùng pathology → label sai → bỏ qua.
+
+  → **4 augs đã chọn = SpineNetV2 convention + minimal clinical risk** (không tạo label noise, không phá anatomy).
 
 ---
 
@@ -805,6 +813,73 @@ SpineGPT (arXiv 2510.03160) là model spine-specialized **mới nhất** xuất 
 #### (Optional Rank-B push) UniMed-CLIP ablation:
 
 UniMed-CLIP (Dec 2024) là alternative duy nhất legitimate — CLIP-style + có MRI explicit. Nếu reviewer push back về choice of BMC, có thể làm 1 ablation thay BMC bằng UniMed-CLIP (~6h GPU). **Không bắt buộc cho Rank-C**.
+
+---
+
+### Q-JS-5: "Tại sao 9-slice không phải 3 hay 5?"
+
+**Trả lời ngắn**: 9-slice = SpineNetV2 convention + đủ phủ IVD + đốt sống lân cận để phát hiện foraminal narrowing. Lấy 3 slice là **không đủ** clinical context.
+
+#### Setup hiện tại
+
+```python
+# rsna_dataloader.py:280
+for offset in range(-4, 5):  # -4, -3, -2, -1, 0, 1, 2, 3, 4
+    extract_slice(center_instance + offset)
+# → 9 slice centered at IVD coord, shape (9, 112, 224)
+```
+
+#### 4 lý do dùng 9 (không 3, không 13)
+
+| Lý do | Detail |
+|---|---|
+| **1. Coverage anatomical** | Sagittal MRI thường có spacing **3mm/slice**. ±4 slice = **27mm coverage** (9 × 3mm). IVD lumbar dày 8-12mm → 9-slice phủ IVD + ½ đốt sống trên + ½ đốt sống dưới. **3-slice = 9mm = chỉ đủ giữa IVD**, mất context đốt sống lân cận → khó assess foraminal narrowing (cần thấy đốt sống trên dưới để biết foramen). |
+| **2. Through-plane context cho foraminal** | Foraminal narrowing lồi ra **giữa 2 đốt sống** (≠ central canal stenosis ở giữa). Đánh giá đúng cần thấy cả đốt sống bên trên + bên dưới + IVD → **bắt buộc** lấy slice xa hơn IVD center. ±1 (3-slice) **không đủ**. |
+| **3. SpineNetV2 convention** | Windsor et al. 2024 (SpineNetV2 paper) dùng 9-slice cho grading model — model checkpoint ta load làm pretrained. Đổi slice count ≠ 9 → không thể load weight pretrained → mất initialization advantage. |
+| **4. Compute trade-off** | 13-slice cho nhiều context hơn nhưng tăng input shape ~44%, tăng VRAM, ít gain marginal. 9-slice là **sweet spot** giữa context và compute (Vu et al. Medical Physics 2020 confirm 5-9 slice là optimal range cho 3D medical CNN). |
+
+→ **Conclusion**: 9 = balance giữa anatomical coverage + pretrained compatibility + compute.
+
+→ **Defensible**: SpineNetV2 paper choice + literature confirm range (Vu 2020) + clinical reasoning (foraminal cần context đốt sống lân cận).
+
+---
+
+### Q-JS-6: "Text encoder của BMC là PubMedBERT — có model nào tốt hơn cho spine medical text không?"
+
+**Trả lời ngắn**: Có **một số candidate** (RadBERT, ClinicalBERT, BioBERT, SapBERT) nhưng **không nên swap** vì sẽ phá contrastive alignment với image encoder. PubMedBERT là **đủ** cho short-form classification prompts.
+
+#### Bảng JS-3 — So sánh 6 text encoder candidate
+
+| Model | Training data | Spine/radiology coverage | Phù hợp cho ta? |
+|---|---|---|---|
+| **PubMedBERT** (đang dùng, trong BMC) | PubMed abstracts + PMC full-text | Broad biomedical, includes radiology + orthopedics | ✅ **Đang dùng** — adequate |
+| **RadBERT** (Yan 2022, PMC9344353) | Millions radiology reports (MIMIC, etc.) | Radiology-specific, includes spine MRI reports | ⚠️ Có advantage cho **long-form report**, không cho short prompts |
+| **ClinicalBERT** | MIMIC-III clinical notes | General clinical, không radiology-specific | ❌ Worse than PubMedBERT cho radiology |
+| **BioBERT** | PubMed + PMC (giống PubMedBERT) | Tương đương PubMedBERT | ❌ Không advantage |
+| **SciBERT** | Broad scientific papers | Không biomedical-focused | ❌ Worse cho clinical text |
+| **SapBERT** | UMLS ontology entity alignment | Medical entity normalization | ⚠️ Cho entity-level, không sentence-level |
+
+#### Tại sao **không swap** PubMedBERT → RadBERT?
+
+**3 lý do**:
+
+1. **Phá contrastive alignment**: BiomedCLIP train (image_encoder, text_encoder=PubMedBERT) **cùng nhau** trên 15M pair với InfoNCE loss. Swap text encoder → mất alignment giữa 2 modal → cosine similarity vô nghĩa → **mất zero-shot capability**.
+
+2. **Short prompts không cần RadBERT advantage**: RadBERT mạnh nhất ở **long-form radiology report parsing** (vài trăm từ). Prompt classification của ta là short-form ("moderate disc degeneration at L4-L5", ~10 từ) → PubMedBERT đủ capacity.
+
+3. **Engineering risk vs reward**: Re-align RadBERT với BMC image encoder cần re-train contrastively → ~$$$$ + ~weeks GPU. Cho task RSNA classification thường không tăng F1 đáng kể (literature confirm).
+
+#### Khi nào RadBERT đáng swap?
+
+- Nếu task là **report generation** (LLaVA-Med-style VQA) thay vì classification → RadBERT sẽ help
+- Nếu prompt là full radiology report (>100 từ) → RadBERT advantage rõ
+- Nếu paper push lên Rank-A/B → có thể experiment
+
+→ **Cho thesis Rank-C**: keep PubMedBERT, không cần experiment thay text encoder. Citation: research agent verify trên 4+ papers (xem section research log).
+
+#### Storyline cho thầy:
+
+> "Em đã research các alternative text encoder cho spine medical text. **RadBERT** (Yan 2022) là alternative duy nhất đáng cân nhắc — train trên radiology reports nên có spine MRI vocabulary tốt hơn PubMedBERT. **Tuy nhiên, không swap** vì 3 lý do: (1) BiomedCLIP train PubMedBERT **cùng** image encoder bằng contrastive loss → swap text encoder phá alignment, mất zero-shot capability; (2) prompt của ta là short-form ('moderate disc degeneration L4-L5') không phải long-form report nên không tận dụng được RadBERT's advantage; (3) re-align RadBERT với BMC image encoder cần re-train contrastive ~weeks GPU, **không cost-effective** cho gain marginal. PubMedBERT trong BMC adequate cho task. Future work: nếu push Rank-A/B, có thể experiment RadBERT-aligned variant."
 
 ---
 
