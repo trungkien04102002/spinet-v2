@@ -175,17 +175,22 @@ def compute_class_weights(dataset, num_classes=3, mode='inverse'):
     Returns:
         Class weights tensor [num_classes]
     """
-    # Count samples per class
+    # Count samples per class. Prefer base_dataset.get_labels(idx) when
+    # available to avoid loading full volumes (~7800 disk reads).
     class_counts = torch.zeros(num_classes)
 
+    get_labels = getattr(dataset, 'get_labels', None)
+
     for idx in range(len(dataset)):
-        _, labels = dataset[idx]
+        if get_labels is not None:
+            labels = get_labels(idx)
+        else:
+            _, labels = dataset[idx]
         for condition in ['spinal_canal', 'left_foraminal', 'right_foraminal']:
             label = labels[condition]
-            # Handle both tensor and int labels
             if hasattr(label, 'item'):
                 label = label.item()
-            if label != -1:  # Ignore missing labels
+            if label != -1:
                 class_counts[label] += 1
 
     # Compute weights
