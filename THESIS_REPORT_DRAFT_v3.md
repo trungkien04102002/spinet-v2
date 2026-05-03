@@ -349,6 +349,52 @@ PROJECTION 2 (Hybrid MLP — trainable, mình thêm):
 
 > "Em đã thử cả 3 architecture. **CBAM-only** không zero-shot được vì thiếu text encoder phối hợp. **BMC-only** không đủ cho IVD grading vì 2D + không spine-specialized + frozen + không có trainable adapt — empirical 0.394 zero-shot, kém Hybrid 0.623 retrain. **Hybrid** là cấu hình duy nhất vừa tốt nhất trên cả 2 protocol, vừa rẻ nhất 4.4× params, vừa unlock label-space extension. **Mỗi nhánh chữa hạn chế của nhánh kia**: CBAM bù spine knowledge BMC thiếu, BMC bù text alignment CBAM thiếu. MLP projection riêng vì task khác (grading vs retrieval) + input khác (fused 2-modal vs 1-modal) + cần trainable params."
 
+### Q-JS-4: "BiomedCLIP có vẻ overengineer? Có VLM nào nhẹ hơn / specialized cho spine hơn không?"
+
+**Trả lời**: KHÔNG. Tại thời điểm mid-2025, **không có spine-specialized CLIP-style model** nào tồn tại công khai. BMC là **lựa chọn nhẹ nhất** thỏa mãn cả 3 yêu cầu (zero-shot capability + medical knowledge + public checkpoint).
+
+#### Bảng JS-2 — So sánh 12 candidate VLM cho spine MRI zero-shot
+
+| Model | Có spine? | CLIP-style (image+text aligned)? | Zero-shot cosine OK? | Nhẹ hơn BMC? | Phù hợp? |
+|---|---|---|---|---|---|
+| **BiomedCLIP** (Zhang 2023, ~200M) | Indirect (PMC papers) | ✅ | ✅ | — (baseline) | ✅ **Đang dùng** |
+| **UniMed-CLIP** (MBZUAI, Dec 2024) | MRI có (~6-7%), spine fraction unknown | ✅ | ✅ | ≈ | ⚠️ Alternative duy nhất legitimate |
+| BioViL / BioViL-T (Microsoft) | ❌ Chest X-ray only | ✅ | ✅ chest | Có | ❌ Không có spine |
+| MedCLIP (EMNLP 2022) | ❌ Chest X-ray only | ✅ | ✅ chest | Có | ❌ Không có spine |
+| PubMedCLIP (ROCO ~80K) | ⚠️ Minimal radiology | ✅ | ✅ | Có | ❌ Underperforms vanilla CLIP |
+| PMC-CLIP (1.6M PMC subset) | ⚠️ Tương tự BMC nhưng nhỏ hơn 10× | ✅ | ✅ | Có | ❌ Subset của BMC source |
+| **SpineNetV2** (Windsor 2022) | ✅ Specialized | ❌ Image-only (no text encoder) | ❌ Không cosine với text được | — | ❌ Không có text branch |
+| **SpineCLUE** (arXiv 2401.07271) | ✅ CT vertebra | ⚠️ Image-image contrastive only | ❌ Không có text encoder | — | ❌ Không có text branch |
+| **SPINEPS** (arXiv 2402.16368) | ✅ T2w MRI | ❌ Segmentation CNN | ❌ | — | ❌ Image-only |
+| **SpineFM** (arXiv 2411.00326) | ✅ X-ray | ❌ SAM adapter | ❌ | — | ❌ Image-only |
+| **SpineGPT** (ICLR 2026, arXiv 2510.03160) | ✅ Specialized (SpineMed-450k) | ❌ **Generative LLM** (Qwen2.5-VL-7B) | ❌ Tạo text tokens, không tạo embedding cho cosine | ❌ NẶNG hơn 35× (7B vs 200M) | ❌ Không CLIP-style |
+| RadFM / LLaVA-Med / BiomedGPT | Spine có | ❌ Generative VLM (7B-13B) | ❌ Sinh ra text answer, không embedding | ❌ Nặng 35× | ❌ Không CLIP-style |
+
+#### Lưu ý quan trọng về SpineGPT (mới nhất, ICLR 2026):
+
+SpineGPT (arXiv 2510.03160) là model spine-specialized **mới nhất** xuất bản tháng 10/2025. Thoạt nhìn đe dọa novelty của thesis, NHƯNG:
+
+1. SpineGPT là **generative VLM** (fine-tuned Qwen2.5-VL-7B). Output là **text tokens** trả lời VQA, không phải embedding chiếu vào cosine space → **không thay thế được** BMC trong pipeline cosine-based.
+2. SpineGPT 7B params >> BMC 200M → 35× **nặng hơn**, không phải "đơn giản hơn".
+3. Public checkpoint **chưa confirm** (paper mới Oct 2025).
+4. Dùng cho task khác hẳn (VQA, report generation) chứ không phải direct zero-shot classification.
+
+→ SpineGPT không invalidate thesis của ta. Khác paradigm hoàn toàn.
+
+#### Citation MẠNH cho thầy (SpineBench paper, arXiv 2510.03160, ICLR 2026):
+
+> "Existing general-purpose large vision-language models and even medical large language models are trained on **generic medical data**, which often **lacks the high-quality, specialized data needed for orthopedics**."
+
+→ **Authoritative paper xuất bản tháng 10/2025 confirm gap** mà thesis của bạn đang fill. Citation này nên đưa vào Discussion section.
+
+#### Tóm gọn cho thầy:
+
+> **BMC không overengineer**. Nó là **minimum sufficient** architecture cho zero-shot grading: (1) không có spine-specialized CLIP công khai (tháng 5/2025); (2) các spine-specific model (SpineNetV2, SpineCLUE, SPINEPS) đều image-only — không zero-shot text được; (3) các spine VLM mới nhất (SpineGPT) là generative LLM 7B params — nặng hơn 35×, không thay thế được CLIP cho cosine; (4) đơn giản hóa hơn BMC (CBAM-only) thì **MẤT zero-shot capability** — đó là contribution chính. Em chấp nhận limitation rằng PMC-15M chỉ ~0.1% spine MRI, **bù lại** bằng CBAM trainable trên RSNA — ablation chứng minh CBAM cộng thêm value (hybrid 0.623 vs zero-shot 0.362 trên SPIDER).
+
+#### (Optional Rank-B push) UniMed-CLIP ablation:
+
+UniMed-CLIP (Dec 2024) là alternative duy nhất legitimate — CLIP-style + có MRI explicit. Nếu reviewer push back về choice of BMC, có thể làm 1 ablation thay BMC bằng UniMed-CLIP (~6h GPU). **Không bắt buộc cho Rank-C**.
+
 ---
 
 ## Lưu ý
