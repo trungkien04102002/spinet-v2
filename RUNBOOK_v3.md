@@ -184,8 +184,12 @@ cat checkpoints/v3_20260503/baseline/baseline_best_metrics.txt
 
 ### 2.10. Train CBAM (~2h, **CẦN cho Hybrid input**)
 
+> **CRITICAL hyperparams** (match v2 fresh_cbam config working):
+> - `--focal-gamma 1.8` (NOT 2.0 — 2.0 quá sharp gây regression)
+> - `--epochs 25` (NOT 20 — 20 chưa converge với HFlip fix)
+
 ```bash
-python3 train_rsna_attention.py --epochs 25 --batch-size 64 --lr 1e-3 --use-focal --use-uncertainty true --class-weight-mode sqrt --augmentation medium --oversample-factor 5 --save-dir checkpoints/v3_20260503/cbam 2>&1 | tee experiments/v3_20260503/run_cbam.log
+python3 train_rsna_attention.py --epochs 25 --batch-size 64 --lr 1e-3 --focal-gamma 1.8 --use-focal --use-uncertainty true --class-weight-mode sqrt --augmentation medium --oversample-factor 5 --save-dir checkpoints/v3_20260503/cbam 2>&1 | tee experiments/v3_20260503/run_cbam.log
 ```
 
 Verify:

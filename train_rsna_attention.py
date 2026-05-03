@@ -57,7 +57,7 @@ def parse_args():
                         help='Validation split ratio (default: 0.2)')
 
     # Training
-    parser.add_argument('--epochs', type=int, default=30,
+    parser.add_argument('--epochs', type=int, default=25,
                         help='Number of epochs to train')
     parser.add_argument('--batch-size', type=int, default=32,
                         help='Batch size')
@@ -79,8 +79,8 @@ def parse_args():
     # Loss
     parser.add_argument('--use-focal', action='store_true', default=True,
                         help='Use FocalLoss')
-    parser.add_argument('--focal-gamma', type=float, default=2.0,
-                        help='Focal loss gamma parameter')
+    parser.add_argument('--focal-gamma', type=float, default=1.8,
+                        help='Focal loss gamma parameter (v2 fresh_cbam used 1.8)')
     parser.add_argument('--use-uncertainty', type=lambda x: str(x).lower() == 'true',
                         default=True, help='Use UncertaintyLoss for task weighting (default: True)')
     parser.add_argument('--class-weight-mode', type=str, default='none',
