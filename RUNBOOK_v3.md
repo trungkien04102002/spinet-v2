@@ -7,7 +7,26 @@ Chia 3 phần:
 
 Mỗi command = **1 dòng duy nhất**, copy-paste an toàn.
 
-Branch: `biomedclip-integration`, latest commit: `63326d6`.
+Branch: `biomedclip-integration`, latest commit: `e2c7736`.
+
+## PRIORITY (cập nhật 2026-05-03)
+
+Chỉ chạy **4 run quan trọng**, skip 3 run optional để tiết kiệm ~6h:
+
+| Step | Run | Priority | Time |
+|---|---|---|---|
+| 2.9 | Baseline | ✅ DONE | done |
+| 2.10 | CBAM | ✅ DONE/IN-PROGRESS | done |
+| 2.11 | Hybrid full | **MUST** | 2h |
+| 2.12 | Hybrid cbam_only ablation | **MUST** (Q6) | 2h |
+| 2.13 | Hybrid biomedclip_only ablation | **SKIP** — Run 8 thay thế | — |
+| 2.14 | Hybrid gated fusion | **SKIP** — defense lý thuyết Q-JS-3b đã đủ | — |
+| 2.15 | Hybrid modality_dropout | **SKIP** — không cần cho Rank-C | — |
+| 2.16 | Linear probe BiomedCLIP | **MUST** (Q-JS-1) | 15min |
+| 2.17 | Linear probe ImageNet ViT | **MUST** (Q-JS-2) | 15min |
+| 2.20 | SPIDER Phase 4 | OPTIONAL | 3.5h |
+
+→ **Total còn lại: ~4.5h** (4 run MUST). SPIDER nếu có time thêm 3.5h.
 
 ---
 
@@ -151,11 +170,17 @@ ls checkpoints/v3_20260503/ experiments/v3_20260503/
 python3 train_rsna_baseline.py --epochs 25 --batch-size 64 --lr 1e-3 --save-dir checkpoints/v3_20260503/baseline 2>&1 | tee experiments/v3_20260503/run_baseline.log
 ```
 
-Sau khi xong, verify:
+Verify:
+
+```bash
+ls -lh checkpoints/v3_20260503/baseline/
+```
 
 ```bash
 cat checkpoints/v3_20260503/baseline/baseline_best_metrics.txt
 ```
+
+→ **Paste output cat cho tôi để fill Bảng 1A/1C Base column.**
 
 ### 2.10. Train CBAM (~2h, **CẦN cho Hybrid input**)
 
@@ -166,12 +191,14 @@ python3 train_rsna_attention.py --epochs 25 --batch-size 64 --lr 1e-3 --use-foca
 Verify:
 
 ```bash
-ls -la checkpoints/v3_20260503/cbam/best_model_attention.pth
+ls -lh checkpoints/v3_20260503/cbam/
 ```
 
 ```bash
 cat checkpoints/v3_20260503/cbam/attention_best_metrics.txt
 ```
+
+→ **Paste output cat cho tôi để fill Bảng 1A/1C Ours column.**
 
 ### 2.11. Hybrid FULL run (~2h, main result cho paper)
 
@@ -179,29 +206,95 @@ cat checkpoints/v3_20260503/cbam/attention_best_metrics.txt
 python3 train_rsna_hybrid.py --cbam-checkpoint checkpoints/v3_20260503/cbam/best_model_attention.pth --epochs 20 --batch-size 32 --lr 1e-4 --save-dir checkpoints/v3_20260503/hybrid 2>&1 | tee experiments/v3_20260503/run_hybrid_full.log
 ```
 
+Verify:
+
+```bash
+ls -lh checkpoints/v3_20260503/hybrid/
+```
+
+```bash
+cat checkpoints/v3_20260503/hybrid/hybrid_best_metrics.txt
+```
+
+→ **Paste output cat cho tôi để fill Bảng 2 (Theme 3 main).**
+
 ### 2.12. Hybrid CBAM-only ablation (~2h, Q6 + Q10)
 
 ```bash
 python3 train_rsna_hybrid.py --cbam-checkpoint checkpoints/v3_20260503/cbam/best_model_attention.pth --ablate-branch cbam_only --epochs 20 --batch-size 32 --lr 1e-4 --save-dir checkpoints/v3_20260503/hybrid 2>&1 | tee experiments/v3_20260503/run_hybrid_cbam_only.log
 ```
 
-### 2.13. Hybrid BiomedCLIP-only ablation (~2h, Q6 + Q10)
+Verify:
+
+```bash
+ls -lh checkpoints/v3_20260503/hybrid/
+```
+
+```bash
+cat checkpoints/v3_20260503/hybrid/hybrid_cbam_only_best_metrics.txt
+```
+
+→ **Paste cho tôi để fill Bảng JS-1 (CBAM-only column).**
+
+### 2.13. Hybrid BiomedCLIP-only ablation — **SKIP** (~2h, Q6 + Q10)
+
+> **Skip lý do:** Run 8 (Linear probe BMC) đã cover "BMC một mình", rigorous hơn vì frozen hoàn toàn. Defense thầy: "Em đã làm linear probe BMC trên RSNA rồi (Run 8)."
 
 ```bash
 python3 train_rsna_hybrid.py --cbam-checkpoint checkpoints/v3_20260503/cbam/best_model_attention.pth --ablate-branch biomedclip_only --epochs 20 --batch-size 32 --lr 1e-4 --save-dir checkpoints/v3_20260503/hybrid 2>&1 | tee experiments/v3_20260503/run_hybrid_bmc_only.log
 ```
 
-### 2.14. Hybrid Gated Fusion (~2h, Q5 advisor request — đổi MLP)
+Verify:
+
+```bash
+ls -lh checkpoints/v3_20260503/hybrid/
+```
+
+```bash
+cat checkpoints/v3_20260503/hybrid/hybrid_biomedclip_only_best_metrics.txt
+```
+
+→ **Paste cho tôi để fill Bảng JS-1 (BMC-only hybrid-head column).**
+
+### 2.14. Hybrid Gated Fusion — **SKIP** (~2h, Q5 advisor request — đổi MLP)
+
+> **Skip lý do:** Q-JS-3b đã có math defense — gated fusion ≡ concat-MLP với learned gate trên 2 single vector. Defense thầy: "Lý thuyết đã chứng minh equivalent, không cần empirical compare."
 
 ```bash
 python3 train_rsna_hybrid.py --cbam-checkpoint checkpoints/v3_20260503/cbam/best_model_attention.pth --fusion gated --epochs 20 --batch-size 32 --lr 1e-4 --save-dir checkpoints/v3_20260503/hybrid 2>&1 | tee experiments/v3_20260503/run_hybrid_gated.log
 ```
 
-### 2.15. Hybrid Modality Dropout (~2h, Q10 robustness)
+Verify:
+
+```bash
+ls -lh checkpoints/v3_20260503/hybrid/
+```
+
+```bash
+cat checkpoints/v3_20260503/hybrid/hybrid_gated_best_metrics.txt
+```
+
+→ **Paste cho tôi để fill Q-JS-3b defense (concat-MLP vs gated comparison).**
+
+### 2.15. Hybrid Modality Dropout — **SKIP** (~2h, Q10 robustness)
+
+> **Skip lý do:** Robustness study cho deployment, không cần cho Rank-C accuracy benchmark. Defense thầy: "Paper focus accuracy, robustness study deferred to future work."
 
 ```bash
 python3 train_rsna_hybrid.py --cbam-checkpoint checkpoints/v3_20260503/cbam/best_model_attention.pth --modality-dropout 0.15 --epochs 20 --batch-size 32 --lr 1e-4 --save-dir checkpoints/v3_20260503/hybrid 2>&1 | tee experiments/v3_20260503/run_hybrid_mdrop.log
 ```
+
+Verify:
+
+```bash
+ls -lh checkpoints/v3_20260503/hybrid/
+```
+
+```bash
+cat checkpoints/v3_20260503/hybrid/hybrid_mdrop0.15_best_metrics.txt
+```
+
+→ **Paste cho tôi để fill Q10 robustness section.**
 
 ### 2.16. Linear probe BiomedCLIP (~15 phút)
 
@@ -209,21 +302,53 @@ python3 train_rsna_hybrid.py --cbam-checkpoint checkpoints/v3_20260503/cbam/best
 python3 train_linear_probe.py --backbone biomedclip --save-dir checkpoints/v3_20260503/linear_probe 2>&1 | tee experiments/v3_20260503/run_lp_biomedclip.log
 ```
 
+Verify:
+
+```bash
+ls -lh checkpoints/v3_20260503/linear_probe/
+```
+
+```bash
+cat checkpoints/v3_20260503/linear_probe/linear_probe_biomedclip_best_metrics.txt
+```
+
+→ **Paste cho tôi để fill Bảng JS-1 (BMC-only linear probe column) + Q-JS-3 defense.**
+
 ### 2.17. Linear probe ImageNet ViT (~15 phút)
 
 ```bash
 python3 train_linear_probe.py --backbone imagenet_vit --save-dir checkpoints/v3_20260503/linear_probe 2>&1 | tee experiments/v3_20260503/run_lp_imagenet.log
 ```
 
-### 2.18. Verify all 7 hybrid + linear probe outputs
+Verify:
+
+```bash
+ls -lh checkpoints/v3_20260503/linear_probe/
+```
+
+```bash
+cat checkpoints/v3_20260503/linear_probe/linear_probe_imagenet_vit_best_metrics.txt
+```
+
+→ **Paste cho tôi để fill Q-JS-2 defense (BMC vs ImageNet pretrained).**
+
+### 2.18. Verify outputs (theo plan SKIP — 4 run MUST)
 
 ```bash
 ls -la checkpoints/v3_20260503/hybrid/*.pth checkpoints/v3_20260503/linear_probe/*.pth
 ```
 
-→ Phải có **7 file `best_model_*.pth`** total (1 hybrid full + 4 hybrid variants + 2 linear probe).
+→ Theo plan MUST: phải có **4 file `best_model_*.pth`** (1 hybrid full + 1 hybrid cbam_only + 2 linear probe). Nếu chạy thêm Run 5/6/7 (skip) thì sẽ có thêm.
 
 ### 2.19. Tar tất cả results
+
+**Option A (gọn — recommended):** Bỏ `checkpoint_epoch_*.pth` periodic snapshots, chỉ giữ `best_model_*.pth` + metrics + logs:
+
+```bash
+tar -czvf v3_results.tar.gz --exclude='checkpoint_epoch_*.pth' --exclude='checkpoint_attention_epoch_*.pth' --exclude='checkpoint_hybrid_epoch_*.pth' experiments/v3_20260503/ checkpoints/v3_20260503/
+```
+
+**Option B (đầy đủ):** Bao gồm cả periodic snapshots (~1-2GB):
 
 ```bash
 tar -czvf v3_results.tar.gz experiments/v3_20260503/ checkpoints/v3_20260503/
@@ -233,7 +358,18 @@ tar -czvf v3_results.tar.gz experiments/v3_20260503/ checkpoints/v3_20260503/
 ls -lh v3_results.tar.gz
 ```
 
-→ Tar file ~50-200MB tùy checkpoint size. Nếu > 5GB, có gì sai.
+→ Option A: tar ~300-500MB. Option B: ~1-2GB. Nếu > 5GB có gì sai.
+
+### Nội dung tar bao gồm:
+
+- `experiments/v3_20260503/run_*.log` — toàn bộ log training (mỗi run 1 file)
+- `experiments/v3_20260503/RESULTS_LOG.md` — backup raw cat output (nếu append)
+- `checkpoints/v3_20260503/baseline/` — best_model.pth + baseline_best_metrics.{txt,json} + baseline_log.csv
+- `checkpoints/v3_20260503/cbam/` — best_model_attention.pth + attention_best_metrics.{txt,json} + attention_log.csv
+- `checkpoints/v3_20260503/hybrid/` — best_model_hybrid*.pth + hybrid*_best_metrics.{txt,json} + hybrid*_log.csv
+- `checkpoints/v3_20260503/linear_probe/` — best_model_linear_probe_*.pth + linear_probe_*_best_metrics.{txt,json} + linear_probe_*_log.csv
+
+→ **1 tar = đủ hết. SCP 1 lần là done.**
 
 ### 2.20. (Optional) SPIDER experiments — chỉ chạy nếu có SPIDER data
 
@@ -248,6 +384,18 @@ Nếu có SPIDER, chạy:
 ```bash
 python3 train_spider_hybrid.py --rsna-checkpoint checkpoints/v3_20260503/hybrid/best_model_hybrid.pth --freeze-backbone --save-dir checkpoints/v3_20260503/spider --epochs 15 --batch-size 16 --lr 1e-3 2>&1 | tee experiments/v3_20260503/run_spider_phase4.log
 ```
+
+Verify:
+
+```bash
+ls -lh checkpoints/v3_20260503/spider/
+```
+
+```bash
+cat checkpoints/v3_20260503/spider/spider_hybrid_best_metrics.txt
+```
+
+→ **Paste cho tôi để fill Bảng 2 (SPIDER retrain F1 column).**
 
 ### 2.21. Detach tmux + thoát SSH
 
