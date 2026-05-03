@@ -587,6 +587,91 @@ MLP **chính xác là designed cho việc này**. "Khó học" sẽ đúng nếu
 
 (Cross-attention chỉ có nghĩa nếu mình giữ ViT patch sequence của BMC — 196 tokens × 768 — và CBAM spatial features attend qua đó. Đây là **early fusion paradigm**, big architectural change, cần data lớn → không phù hợp Rank-C.)
 
+#### Cross-attention deep-dive (nếu thầy hỏi sâu)
+
+**Cross-attention là gì?** Mechanism cho phép 1 vector (Query) "hỏi" 1 tập vector khác (Key/Value) để lấy thông tin liên quan, theo Vaswani 2017:
+
+```
+Q (query): [B, N_q, d]    ← từ source A
+K (key):   [B, N_k, d]    ← từ source B
+V (value): [B, N_k, d]    ← từ source B (cùng từ B với K)
+
+scores  = Q · K^T / √d      → [B, N_q, N_k]   (similarity giữa từng Q với từng K)
+weights = softmax(scores)   → [B, N_q, N_k]   (mỗi query phân phối xác suất qua các key)
+output  = weights · V       → [B, N_q, d]      (weighted average của V theo importance)
+```
+
+**Cross-attention CHỈ HỮU ÍCH KHI có TOKEN SEQUENCES** — ví dụ:
+- VQA: 50 text tokens × 196 image patches → mỗi text token attend qua 196 patch
+- Multi-slice MRI: CLS token × 9 slice features → CLS chọn slice nào quan trọng
+- Oxford spine MRI 2025: Transformer attend qua multi-slice embeddings
+
+**Setup của ta — KHÔNG có sequence, chỉ 2 single vector**:
+
+```python
+feat_cbam: [B, 512]   ← 1 vector duy nhất (đã global pool từ CBAM)
+feat_bmc:  [B, 512]   ← 1 vector duy nhất (đã global pool từ BMC CLS)
+
+# Nếu thử dùng cross-attention:
+Q = feat_cbam.unsqueeze(1)   → [B, 1, 512]   chỉ 1 query
+K = feat_bmc.unsqueeze(1)    → [B, 1, 512]   chỉ 1 key
+V = feat_bmc.unsqueeze(1)    → [B, 1, 512]   chỉ 1 value
+
+scores = Q · K^T  →  [B, 1, 1]    ← chỉ 1 số duy nhất
+
+softmax of 1 number = 1.0 LUÔN LUÔN  ← không có gì để compare
+# softmax([5.0])   = [1.0]
+# softmax([-3.7])  = [1.0]
+# softmax([100])   = [1.0]
+```
+
+→ **Attention weights luôn = 1.0**, không học được gì.
+
+```
+output = weights · V = 1.0 · feat_bmc = feat_bmc      ← chỉ là feat_bmc nguyên xi
+
+final = output · W_O = feat_bmc · W_O = Linear(feat_bmc)
+                                        ↑
+                                   = 1 linear layer thường
+                                   ↓
+                              DISCARD feat_cbam hoàn toàn
+```
+
+→ **Cross-attention reduce thành 1 linear layer trên feat_bmc**, **bỏ qua feat_cbam**. Worse than concat-MLP, không hơn.
+
+**Bảng so sánh trực tiếp**:
+
+| Method | Operation | Trainable params | Học được gì? |
+|---|---|---|---|
+| Cross-attention với 2 single vector | `Linear(feat_bmc)` (W_O) | ~262K | Linear transform feat_bmc, **discard feat_cbam** |
+| **Concat + MLP** (đang dùng) | `MLP([feat_cbam ∥ feat_bmc])` | ~1.18M | **Học interaction** giữa 2 nhánh, dùng cả 2 |
+| Gated fusion (GMU) | `gate · feat_cbam + (1-gate) · feat_bmc` | ~1M | Học per-dim weighting giữa 2 nhánh |
+
+→ Concat-MLP **giữ thông tin từ cả 2 nhánh**, cross-attention degenerate **discard 1 nhánh**.
+
+**Tại sao paper khác báo cross-attention thắng concat?** Vì họ KHÔNG fuse 2 single vector. Họ fuse:
+- 9 slice tokens × ViT features (sequence!)
+- 196 image patches × text tokens (sequence!)
+- Multi-view tokens (sequence!)
+
+→ Trong các setup đó, cross-attention có ý nghĩa vì mỗi query có **nhiều** key để chọn. Setup ta đã global pool → mất tính sequence → cross-attn degenerate.
+
+**Nếu thật sự muốn dùng cross-attention?** → Phải sửa kiến trúc lớn:
+
+```
+Cũ (đang dùng):
+  CBAM → global pool → feat_cbam [B, 512]
+  BMC → CLS token → feat_bmc [B, 512]
+  → concat → MLP
+
+Mới (early fusion với cross-attn):
+  CBAM → KEEP spatial features [B, 512, D, H, W]   ← KHÔNG global pool
+  BMC → KEEP patch tokens [B, 196, 768]             ← KHÔNG lấy CLS
+  → cross-attention CBAM spatial × BMC patches → emb
+```
+
+→ **Big architectural change**: phải sửa CBAM model, sửa BMC wrapper, train từ đầu, cần data lớn (~100K+) → small data RSNA → overfit. **Defer to Rank-B push** if reviewers really push back.
+
 #### Empirical từ literature
 
 Quote từ ACM EITCE 2024 ([dl.acm.org/doi/10.1145/3711129.3711215](https://dl.acm.org/doi/10.1145/3711129.3711215)):
