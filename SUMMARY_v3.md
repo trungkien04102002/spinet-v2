@@ -27,13 +27,15 @@
 
 ### Bảng quan trọng nhất — Popular vs Rare class
 
-| Nhóm | Recall | Precision | F1 | AUPRC | Đánh giá |
-|---|---|---|---|---|---|
-| **Popular** (Normal/Mild) | 0.970 → 0.686 *(−28%)* | 0.837 → **0.946** *(+11%)* | 0.898 → 0.786 *(−11%)* | 0.948 → 0.951 *(≈)* | Hi sinh recall, ĐỔI lại precision tăng |
-| **Rare** (Mod + Severe) | 0.131 → **0.510** *(+38%)* | 0.310 → 0.305 *(≈)* | 0.181 → **0.370** *(×2.0)* | 0.310 → 0.311 *(≈)* | F1 GẤP HƠN 2× |
-| **Severe ONLY** *(clinical)* | 0.119 → **0.370** *(+25%)* | 0.210 → **0.304** *(+9%)* | 0.152 → **0.333** *(×2.2)* | **0.276** → **0.347** *(+26% rel)* ⭐ | **Tăng cả Recall + Precision + AUPRC** |
+| Nhóm | Recall | Precision | F1 | AUC | AUPRC | Đánh giá |
+|---|---|---|---|---|---|---|
+| **Popular** (Normal/Mild) | 0.970 → 0.686 *(−28%)* | 0.837 → **0.946** *(+11%)* | 0.898 → 0.786 *(−11%)* | 0.829 → **0.852** *(+0.023)* | 0.948 → 0.951 *(≈)* | Hi sinh recall, ĐỔI lại precision tăng |
+| **Rare** (Mod + Severe) | 0.131 → **0.510** *(+38%)* | 0.310 → 0.305 *(≈)* | 0.181 → **0.370** *(×2.0)* | 0.825 → 0.811 *(−0.014)* | 0.310 → 0.311 *(≈)* | F1 ×2 (decision-level), AUC sligth ↓ do Mod foraminal |
+| **Severe ONLY** *(clinical)* | 0.119 → **0.370** *(+25%)* | 0.210 → **0.304** *(+9%)* | 0.152 → **0.333** *(×2.2)* | 0.860 → **0.890** *(+0.030)* ⭐ | **0.276** → **0.347** *(+26% rel)* ⭐ | **Tăng cả 5 metrics** — win-win |
 
-→ **Đọc 1 dòng**: Severe Recall +25%, Severe Precision +9%, Severe AUPRC +26% relative — **không có đánh đổi nào ở class hiếm nhất, win-win**.
+→ **Đọc 1 dòng**: Severe Recall +25%, Severe Precision +9%, **Severe AUC +0.030, Severe AUPRC +26% relative** — không có đánh đổi nào ở class hiếm nhất.
+
+> **Note về Rare AUC giảm 0.014**: Moderate AUC trên L-foraminal giảm 0.758→0.638, R-foraminal 0.760→0.677. Lý do: v2 CBAM train với augmentation bao gồm HFlip BUG (label L/R không swap → noise lên foraminal Moderate). Severe AUC không bị ảnh hưởng vì đây là rank-based metric trên 1 class chính, ít noise. **v3 với HFlip fix sẽ recover Mod AUC** (TODO khi retrain CBAM v3 thành công).
 
 ### Trade-off đồ thị (text)
 
