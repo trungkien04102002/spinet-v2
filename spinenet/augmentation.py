@@ -274,6 +274,25 @@ def get_training_augmentation(mode='medium'):
         raise ValueError(f"Unknown mode: {mode}. Choose 'light', 'medium', or 'heavy'.")
 
 
+def _resolve_get_labels(dataset):
+    """Return a callable get_labels(idx) -> labels dict for `dataset`,
+    or None if no fast label-only path exists.
+
+    Walks Subset wrappers so we hit the underlying dataset's get_labels()
+    instead of triggering a full __getitem__ (which loads .npy volumes).
+    """
+    if hasattr(dataset, 'get_labels'):
+        return dataset.get_labels
+
+    if isinstance(dataset, torch.utils.data.Subset):
+        inner_get_labels = _resolve_get_labels(dataset.dataset)
+        if inner_get_labels is not None:
+            mapping = dataset.indices
+            return lambda i: inner_get_labels(mapping[i])
+
+    return None
+
+
 class OversamplingDataset(torch.utils.data.Dataset):
     """
     Dataset wrapper that oversamples minority classes.
@@ -297,13 +316,13 @@ class OversamplingDataset(torch.utils.data.Dataset):
     def _build_indices(self):
         """Build list of indices with oversampling.
 
-        Uses base_dataset.get_labels(idx) when available to avoid loading
-        full volumes from disk (~7800 reads → ~CSV-only).
+        Uses _resolve_get_labels() to find a fast label-only path through
+        Subset/wrapper layers, avoiding 7800 full-volume disk reads.
         """
         n = len(self.base_dataset)
         indices = list(range(n))
 
-        get_labels = getattr(self.base_dataset, 'get_labels', None)
+        get_labels = _resolve_get_labels(self.base_dataset)
 
         for i in range(n):
             if get_labels is not None:

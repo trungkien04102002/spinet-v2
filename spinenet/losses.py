@@ -175,11 +175,12 @@ def compute_class_weights(dataset, num_classes=3, mode='inverse'):
     Returns:
         Class weights tensor [num_classes]
     """
-    # Count samples per class. Prefer base_dataset.get_labels(idx) when
-    # available to avoid loading full volumes (~7800 disk reads).
-    class_counts = torch.zeros(num_classes)
+    # Count samples per class. Use _resolve_get_labels to find a fast
+    # label-only path (handling Subset wrappers).
+    from spinenet.augmentation import _resolve_get_labels
 
-    get_labels = getattr(dataset, 'get_labels', None)
+    class_counts = torch.zeros(num_classes)
+    get_labels = _resolve_get_labels(dataset)
 
     for idx in range(len(dataset)):
         if get_labels is not None:
