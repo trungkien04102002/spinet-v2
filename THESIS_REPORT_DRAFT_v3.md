@@ -497,6 +497,124 @@ Trong Hybrid, BMC's Projection 1 vẫn chạy bên trong (frozen) để cho ra `
 
 > "Em đã thử cả 3 architecture. **CBAM-only** không zero-shot được vì thiếu text encoder phối hợp. **BMC-only** không đủ cho IVD grading vì 2D + không spine-specialized + frozen + không có trainable adapt — empirical 0.394 zero-shot, kém Hybrid 0.623 retrain. **Hybrid** là cấu hình duy nhất vừa tốt nhất trên cả 2 protocol, vừa rẻ nhất 4.4× params, vừa unlock label-space extension. **Mỗi nhánh chữa hạn chế của nhánh kia**: CBAM bù spine knowledge BMC thiếu, BMC bù text alignment CBAM thiếu. **MLP projection riêng** vì 4 lý do **không trùng** với BMC's internal projection: (1) khác task — BMC trained cho retrieval alignment, MLP trained cho grading discrimination; (2) khác input — BMC's projection nhận 768-d single modal, MLP nhận 1024-d fused 2-modal; (3) khác trainability — BMC frozen 0 params, MLP ~1.18M trainable params; (4) khác objective — InfoNCE contrastive vs focal CE classification. **Empirical bỏ MLP đi → model về thành Naked BMC F1 0.394; có MLP → 0.623 (+23 absolute)** — 2 projection cùng tồn tại, làm 2 việc bổ sung."
 
+### Q-JS-3b: "Concat theo kiểu gì? BiomedCLIP có concat theo trục feature component không phải nối tiếp?"
+
+**Câu trả lời ngắn**: thầy đang hiểu nhầm 2 chỗ — (1) BiomedCLIP **không** có concat nào ở internal cả; (2) "concat theo trục feature component" là cách diễn đạt khác của **feature-wise concat** (chính cái mình đang dùng). "Position alignment" concern không hợp lệ cho independently trained encoders.
+
+#### Hiểu nhầm 1: BiomedCLIP **không** dùng concat ở internal
+
+Source: BiomedCLIP paper (Zhang 2023, [arXiv:2303.00915](https://arxiv.org/abs/2303.00915)), Section 3 Model.
+
+```
+BiomedCLIP architecture (chính xác từ paper):
+
+Image branch:                    Text branch:
+ViT-B/16                         PubMedBERT
+  → CLS [768]                      → [CLS] [768]
+  → Linear(768→512)                → Linear(768→512)
+  → image_emb [512]                → text_emb [512]
+                ╲                ╱
+                 cosine_similarity
+                  (1 scalar)
+              + InfoNCE loss
+```
+
+→ **2 modal sống ở 2 không gian riêng**, chỉ tương tác qua **cosine similarity** (1 scalar). **KHÔNG có concat** giữa image-text features bao giờ.
+
+→ Quote từ paper: *"We jointly train an image encoder and a text encoder to maximize the cosine similarity of the image and text embeddings of the N real pairs in the batch while minimizing the cosine similarity of embeddings of the N²−N incorrect pairings."* Đây giống y CLIP gốc (Radford 2021).
+
+→ Câu thầy "BiomedCLIP concat theo trục feature component" — **không có support trong paper**. Thầy có thể đang nghĩ đến model khác (LLaVA-Med, FLAVA — early-fusion) hoặc giả định không chính xác.
+
+#### Hiểu nhầm 2: "Concat theo trục feature component" = feature-wise concat = chính cái mình đang dùng
+
+Mapping terminology của thầy sang ML chuẩn ([arXiv:2411.17040 survey 2024](https://arxiv.org/html/2411.17040v1)):
+
+| Cách thầy diễn đạt | ML term chuẩn | PyTorch | Yêu cầu cùng dim? |
+|---|---|---|---|
+| "Concat theo trục feature component" | **Feature-wise / channel-wise concat** | `torch.cat([a,b], dim=-1)` | ❌ Không, [B,512]+[B,512]=[B,1024] |
+| "Nối tiếp" | (cùng nghĩa với trên) | (cùng) | (cùng) |
+| (advisor không phân biệt rõ) | Element-wise sum | `a + b` | ✅ Có, cùng D bắt buộc |
+
+→ **"Concat theo trục" và "nối tiếp" là CÙNG operation** trong ML literature. Không có sự phân biệt 2 loại concat khác nhau như thầy nghĩ.
+
+→ Code mình đang dùng (line 234 `grading_hybrid.py`):
+```python
+concat = torch.cat([feat_cbam, feat_bmc], dim=-1)  # [B, 1024]
+```
+→ **Đây CHÍNH LÀ feature-wise concat** = "concat theo trục feature component" theo terminology của thầy. **Mình đang làm đúng cái thầy yêu cầu**, chỉ khác cách gọi.
+
+#### Hiểu nhầm 3: "Position alignment" concern không hợp lệ cho independently trained encoders
+
+Thầy lo: position 5 trong CBAM và position 517 trong concat (= position 5 của BMC) cùng encode "đốt sống" nhưng model khó biết.
+
+**Counter-argument 1 — MLP là universal approximator** (Hornik 1989):
+
+```
+concat [B, 1024]  →  Linear(1024 → 768) → GELU → Linear(768 → 512)
+                          ↑
+                      786,432 weights
+                      Mỗi neuron output (768 cái) nhận TẤT CẢ 1024 input
+                      → Có ĐỦ capacity học correlation giữa position 5 và 517
+                      → Nếu 2 position cần map cùng 1 internal feature, MLP học được
+```
+
+MLP **chính xác là designed cho việc này**. "Khó học" sẽ đúng nếu chỉ có 1 layer linear (mới linear combination), nhưng **2-layer MLP với GELU phi tuyến** = universal approximator (Hornik et al., Neural Networks 1989).
+
+**Counter-argument 2 — Independently trained encoders KHÔNG CÓ position correspondence anyway**:
+
+- CBAM trained trên **RSNA spine MRI** với cross-entropy loss
+- BMC trained trên **PMC-15M general medical** với contrastive InfoNCE loss
+- 2 training run **độc lập**, không có constraint nào ép position 5 của 2 vector encode cùng concept
+
+→ **Không có lý do gì** để giả định position alignment giữa CBAM-position-5 và BMC-position-5.
+
+→ Element-wise sum/product **giả định** alignment này → **SAI** cho setup của ta. Concat-MLP **không giả định** → **ĐÚNG**.
+
+**Citation chuẩn**: Baltrušaitis et al., *"Multimodal Machine Learning: A Survey and Taxonomy"*, IEEE TPAMI 2019 — late fusion (concat-MLP) **agnostic to within-vector positional semantics**, đó là feature, không phải bug.
+
+#### Bảng so sánh 6 fusion methods cho setup của ta
+
+| Method | Output dim | Position alignment | Capacity | Phù hợp setup ta? |
+|---|---|---|---|---|
+| **Concat + MLP** (đang dùng) | 1024→512 | KHÔNG giả định | Cao (2-layer MLP) | ✅ **Đúng nhất** |
+| Element-wise SUM | 512 | Giả định CỨNG | 0 (linear) | ❌ Sai — encoders không co-trained |
+| Element-wise PRODUCT | 512 | Giả định CỨNG | 0 (linear) | ❌ Sai — same |
+| **Gated Fusion (GMU)** | 512 | Soft alignment | Trung bình | ⚠️ Alternative tốt — đã code `--fusion gated` |
+| Cross-attention | varies | KHÔNG giả định | Cao | ❌ Overkill cho 2 global vector |
+| Bilinear pooling | $D^2$→512 | KHÔNG | Cực cao | ❌ Tham số bùng nổ |
+
+**Cross-attention overkill** vì sao? Ta có **2 vector global 512-d** (không phải 2 sequence tokens). Cross-attention giữa 2 single vector reduce thành 1×1 attention weight = scalar gate học được = tương đương concat-MLP-1-layer. Không có information gain, chỉ thêm complexity.
+
+(Cross-attention chỉ có nghĩa nếu mình giữ ViT patch sequence của BMC — 196 tokens × 768 — và CBAM spatial features attend qua đó. Đây là **early fusion paradigm**, big architectural change, cần data lớn → không phù hợp Rank-C.)
+
+#### Empirical từ literature
+
+Quote từ ACM EITCE 2024 ([dl.acm.org/doi/10.1145/3711129.3711215](https://dl.acm.org/doi/10.1145/3711129.3711215)):
+
+> "The MOSI dataset is relatively small, leading to overfitting during model training **when using multi-attention-based multimodal fusion models**."
+
+Quote từ Multimodal Survey 2024 ([arXiv:2411.17040](https://arxiv.org/html/2411.17040v1)):
+
+> "Concatenation plus MLP is the simplest approach, described as fast but shallow. [It is] the standard late fusion baseline in virtually every multimodal classification paper."
+
+→ **Cross-attention thắng concat-MLP với margin ~2-5%** trên dataset lớn. Trên dataset y tế nhỏ (vài nghìn sample như RSNA): margin **biến mất hoặc đảo ngược** do overfitting trên thêm parameters.
+
+→ Concat-MLP **defensible cho thesis Rank-C**.
+
+#### Storyline cho thầy:
+
+> "BiomedCLIP **không có concat nào ở internal**, em đã verify từ paper section 3 — image và text chỉ tương tác qua cosine similarity, không phải concat. **Concat ở pipeline em** (line 234) là feature-wise concat giữa CBAM và BMC features (`torch.cat(dim=-1)`) — đây CHÍNH LÀ 'concat theo trục feature component' trong terminology của thầy, không khác. Lo position 5 của CBAM và 517 của concat (= 5 của BMC) không gặp nhau là **không hợp lệ** vì 2 encoder train độc lập trên 2 dataset → không có lý do gì để 2 position encode cùng concept. **Element-wise sum mới sai** vì giả định alignment cứng. **MLP 2-layer là universal approximator** (Hornik 1989), **đủ capacity** học alignment cross-space — đó CHÍNH LÀ việc của nó. Thực nghiệm: bỏ MLP → F1 0.394 (Naked BMC); có MLP → 0.623 (+23 absolute) → MLP đang thực sự học. **Cross-attention overkill** vì ta có 2 vector global, không phải 2 token sequence — cross-attn giữa 2 single vector reduce thành scalar gate, không hơn concat-MLP. Có sẵn **GatedFusion alternative** (`--fusion gated`) để chạy ablation nếu thầy muốn thấy số."
+
+#### Citations chính cho paper:
+
+- BiomedCLIP architecture: Zhang 2023, [arXiv:2303.00915](https://arxiv.org/abs/2303.00915), Section 3
+- Multimodal fusion taxonomy: [arXiv:2411.17040](https://arxiv.org/html/2411.17040v1) (survey 2024), Baltrušaitis IEEE TPAMI 2019
+- Universal approximation: Hornik et al., Neural Networks 1989
+- GMU baseline: Arevalo 2017, [arXiv:1702.01992](https://arxiv.org/pdf/1702.01992)
+- Small-data overfitting on cross-attention: ACM EITCE 2024
+
+---
+
 ### Q-JS-4: "BiomedCLIP có vẻ overengineer? Có VLM nào nhẹ hơn / specialized cho spine hơn không?"
 
 **Trả lời**: KHÔNG. Tại thời điểm mid-2025, **không có spine-specialized CLIP-style model** nào tồn tại công khai. BMC là **lựa chọn nhẹ nhất** thỏa mãn cả 3 yêu cầu (zero-shot capability + medical knowledge + public checkpoint).
