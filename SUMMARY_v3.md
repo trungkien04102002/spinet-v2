@@ -10,13 +10,13 @@
 
 ## OVERVIEW — đọc 30 giây
 
-> **Một câu**: Hi sinh Acc 12.8 pp → cứu Severe Recall +25 pp, **Severe AUPRC +26% relative (clinical priority class)** mà Precision *vẫn tăng* → đánh đổi đáng giá.
+> **Một câu**: Hi sinh Acc 12.8% → cứu Severe Recall +25%, **Severe AUPRC +26% relative (clinical priority class)** mà Precision *vẫn tăng* → đánh đổi đáng giá.
 
 ### Bảng tóm — 3 config × 6 metric chính
 
 | Metric | Base | **CBAM (Ours)** | Hybrid (Theme 3) | Δ Base→Ours | Đọc thế nào |
 |---|---|---|---|---|---|
-| Mean Accuracy | **81.4%** | 68.6% | _[TODO]_ | −12.8 pp | Hi sinh có chủ đích |
+| Mean Accuracy | **81.4%** | 68.6% | _[TODO]_ | −12.8% | Hi sinh có chủ đích |
 | Mean F1 macro | 0.420 | **0.509** | **0.516** | **+0.089** | F1 tăng |
 | Mean Recall macro | 0.411 | **0.568** | _[TODO]_ | **+0.157** | Recall tăng nhiều |
 | Mean Precision macro | 0.486 | **0.518** | _[TODO]_ | **+0.032** | Precision *vẫn* tăng nhẹ |
@@ -29,11 +29,11 @@
 
 | Nhóm | Recall | Precision | F1 | AUPRC | Đánh giá |
 |---|---|---|---|---|---|
-| **Popular** (Normal/Mild) | 0.970 → 0.686 *(−28 pp)* | 0.837 → **0.946** *(+11 pp)* | 0.898 → 0.786 *(−11 pp)* | 0.948 → 0.951 *(≈)* | Hi sinh recall, ĐỔI lại precision tăng |
-| **Rare** (Mod + Severe) | 0.131 → **0.510** *(+38 pp)* | 0.310 → 0.305 *(≈)* | 0.181 → **0.370** *(×2.0)* | 0.310 → 0.311 *(≈)* | F1 GẤP HƠN 2× |
-| **Severe ONLY** *(clinical)* | 0.119 → **0.370** *(+25 pp)* | 0.210 → **0.304** *(+9 pp)* | 0.152 → **0.333** *(×2.2)* | **0.276** → **0.347** *(+26% rel)* ⭐ | **Tăng cả Recall + Precision + AUPRC** |
+| **Popular** (Normal/Mild) | 0.970 → 0.686 *(−28%)* | 0.837 → **0.946** *(+11%)* | 0.898 → 0.786 *(−11%)* | 0.948 → 0.951 *(≈)* | Hi sinh recall, ĐỔI lại precision tăng |
+| **Rare** (Mod + Severe) | 0.131 → **0.510** *(+38%)* | 0.310 → 0.305 *(≈)* | 0.181 → **0.370** *(×2.0)* | 0.310 → 0.311 *(≈)* | F1 GẤP HƠN 2× |
+| **Severe ONLY** *(clinical)* | 0.119 → **0.370** *(+25%)* | 0.210 → **0.304** *(+9%)* | 0.152 → **0.333** *(×2.2)* | **0.276** → **0.347** *(+26% rel)* ⭐ | **Tăng cả Recall + Precision + AUPRC** |
 
-→ **Đọc 1 dòng**: Severe Recall +25 pp, Severe Precision +9 pp, Severe AUPRC +26% relative — **không có đánh đổi nào ở class hiếm nhất, win-win**.
+→ **Đọc 1 dòng**: Severe Recall +25%, Severe Precision +9%, Severe AUPRC +26% relative — **không có đánh đổi nào ở class hiếm nhất, win-win**.
 
 ### Trade-off đồ thị (text)
 
@@ -92,7 +92,7 @@ Inference latency tăng <10% — chấp nhận được cho gain clinical Severe
 
 | Chỉ số | Base | Ours (CBAM) | Δ |
 |---|---|---|---|
-| **Mean Accuracy** | **81.4%** | 68.6% | −12.8 pp |
+| **Mean Accuracy** | **81.4%** | 68.6% | −12.8% |
 | **Mean F1 macro** | 0.420 | **0.509** | **+0.089** |
 | **Mean Recall macro** | 0.411 | **0.568** | **+0.157** |
 | **Mean Precision macro** | 0.486 | **0.518** | **+0.032** |
@@ -101,7 +101,7 @@ Inference latency tăng <10% — chấp nhận được cho gain clinical Severe
 
 > **Đọc 2 dòng AUC/AUPRC**: Mean AUC ≈ Mean AUPRC ≈ unchanged vì lớp Popular (Normal/Mild ~85% data) thống lĩnh macro average. Story thật ở **dòng Severe AUPRC** dưới (Bảng 1C).
 
-> **Đánh đổi Acc-Recall**: Hi sinh Acc 12.8 pp để cứu Recall trên class Severe (rare class). Precision macro vẫn tăng nhẹ → không phải "đoán bừa", model học có cơ sở.
+> **Đánh đổi Acc-Recall**: Hi sinh Acc 12.8% để cứu Recall trên class Severe (rare class). Precision macro vẫn tăng nhẹ → không phải "đoán bừa", model học có cơ sở.
 
 ### Bảng 1B — Detail per Condition × Grade (Base vs Ours)
 
@@ -118,8 +118,8 @@ Inference latency tăng <10% — chấp nhận được cho gain clinical Severe
 | Right Foraminal | **Severe** | 76.8% → 60.4% | **0.0%** → **21.7%** (**+21.7**) | **0.0%** → **18.0%** (**+18.0**) | **0.000** → **0.197** (**+0.20**) |
 
 **4 ý chính:**
-1. Cả Moderate + Severe đều được cứu trên cả 3 condition. Moderate Recall thật ra tăng *mạnh hơn* Severe (+50 pp vs +25 pp trung bình).
-2. Acc giảm đến từ Normal/Mild Recall giảm — nhưng Normal/Mild **Precision TĂNG** cả 3 condition (+5/+13/+15 pp) → khi model nói Normal thì *chính xác hơn baseline*.
+1. Cả Moderate + Severe đều được cứu trên cả 3 condition. Moderate Recall thật ra tăng *mạnh hơn* Severe (+50% vs +25% trung bình).
+2. Acc giảm đến từ Normal/Mild Recall giảm — nhưng Normal/Mild **Precision TĂNG** cả 3 condition (+5/+13/+15%) → khi model nói Normal thì *chính xác hơn baseline*.
 3. **Foraminal là chỗ giá trị lớn nhất**: Severe F1 từ 0.000 → 0.18-0.20 (model trước đây bỏ qua hoàn toàn).
 4. **Spinal Canal đã dễ sẵn**: Baseline đã có Severe F1 = 0.457 (lesion to dễ thấy), CBAM chỉ đẩy thêm.
 
@@ -133,7 +133,7 @@ Trung bình qua **3 condition** (Spinal Canal / L-Foraminal / R-Foraminal).
 | | Precision | 0.837 | **0.946** | **+0.110** | Khi model **NÓI** Normal thì *chính xác hơn* baseline |
 | | F1 | **0.898** | 0.786 | −0.112 | Giảm nhưng vẫn cao tuyệt đối |
 | | AUPRC | 0.948 | 0.951 | +0.003 | Easy class — saturated |
-| **Rare** (Moderate + Severe — ~15% data) | Recall | 0.131 | **0.510** | **+0.379** | **Cứu được 38 pp ca rare bị bỏ sót** |
+| **Rare** (Moderate + Severe — ~15% data) | Recall | 0.131 | **0.510** | **+0.379** | **Cứu được 38% ca rare bị bỏ sót** |
 | | Precision | 0.310 | 0.305 | −0.005 | **Giữ nguyên** — không "đoán bừa Severe" |
 | | F1 | 0.181 | **0.370** | **+0.189** | F1 rare **GẤP HƠN 2×** |
 | | AUPRC | 0.310 | 0.311 | +0.001 | Macro AUPRC đỡ thay đổi |
