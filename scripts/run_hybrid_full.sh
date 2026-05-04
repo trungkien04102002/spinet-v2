@@ -29,5 +29,9 @@ python3 train_rsna_hybrid.py \
     --epochs 20 \
     --batch-size 32 \
     --lr 1e-4 \
+    --focal-gamma 2.0 \
+    --class-weight-mode sqrt \
+    --oversample-factor 3 \
+    --supcon-weight 0.1 \
     --no-hflip-swap-labels \
     --save-dir checkpoints/v3_20260503/hybrid 2>&1 | tee experiments/v3_20260503/run_hybrid_full.log
