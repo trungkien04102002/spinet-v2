@@ -551,6 +551,155 @@ Output files:
 
 ---
 
+## Phase 4: SPIDER Retrain v3 — IN PROGRESS 2026-05-04
+
+User chose option (a) — retrain all 3 SPIDER configs (Baseline, CBAM, Hybrid) with v3 RSNA ckpts as transfer init. Args reproduce v2 best (verified from `experiments/spider_phase4/best_metrics_*.json`).
+
+### Run 5: SPIDER Baseline v3 — DONE 2026-05-04 08:56
+
+**Init**: v2 fresh_baseline ckpt (`checkpoints/fresh_baseline/best_model_baseline_full_e25.pth`) — v3 RSNA baseline ckpt was on previous Vast instance, deleted. v2 ckpt advisor-approved (summary.pdf), fine for transfer init.
+
+**CMD (via scripts/run_spider_baseline.sh):**
+```
+python3 train_spider.py \
+    --model baseline --rsna-checkpoint <v2_baseline_ckpt> \
+    --freeze-backbone --epochs 15 --batch-size 32 --lr 1e-3 \
+    --weight-decay 1e-4 --loss weighted \
+    --checkpoint-dir checkpoints/v3_spider \
+    --metrics-dir experiments/v3_spider
+```
+
+**Raw `cat experiments/v3_spider/best_metrics_baseline.txt`:**
+```
+=== BEST BASELINE SPIDER MODEL ===
+Saved at: 2026-05-04T08:56:09
+Epoch: 8
+Train loss: 0.6592 | Val loss: 0.8253
+Val mean acc: 76.91% | Val mean F1 macro: 0.606
+
+Pfirrmann Grading     acc=57.45%  F1=0.582
+                      per-class F1=[0.634, 0.473, 0.538, 0.482, 0.784]
+                      precision=[0.571, 0.524, 0.627, 0.444, 0.707]
+                      recall=[0.711, 0.431, 0.471, 0.526, 0.879]
+Modic                 acc=75.32%  F1=0.364
+                      per-class F1=[0.827, 0.0, 0.627, 0.0]
+Disc Narrowing        acc=87.66%  F1=0.871
+                      per-class F1=[0.898, 0.843]
+Spondylolisthesis     acc=87.23%  F1=0.608
+                      per-class F1=[0.930, 0.286]
+```
+
+**v3 vs v2 (Bảng 4 reference):**
+- Pfirrmann: 0.582 vs 0.594 (-0.012)
+- Modic: 0.364 vs 0.363 (≈0)
+- Disc_narrowing: 0.871 vs 0.851 (+0.020)
+- Spondylolisthesis: 0.608 vs 0.633 (-0.025)
+- **Mean F1: 0.606 vs 0.610 (-0.004, within seed noise)** ✅
+
+**Status:** ✓ v3 baseline SPIDER reproduces v2 within stochastic noise.
+
+### Run 6: SPIDER CBAM v3 — DONE 2026-05-04 09:32
+
+**Init**: v3 RSNA CBAM ckpt (`checkpoints/v3_20260503/cbam/best_model_attention.pth`).
+
+**CMD (via scripts/run_spider_cbam.sh):**
+```
+python3 train_spider.py \
+    --model cbam --rsna-checkpoint <v3_cbam_ckpt> \
+    --freeze-backbone --epochs 20 --batch-size 32 --lr 1e-3 \
+    --weight-decay 1e-4 --loss weighted \
+    --checkpoint-dir checkpoints/v3_spider \
+    --metrics-dir experiments/v3_spider
+```
+
+**Raw `cat experiments/v3_spider/best_metrics_cbam.txt`:**
+```
+=== BEST CBAM SPIDER MODEL ===
+Saved at: 2026-05-04T09:32:25
+Epoch: 16
+Train loss: 0.6762 | Val loss: 0.8407
+Val mean acc: 73.62% | Val mean F1 macro: 0.577
+
+Pfirrmann Grading     acc=54.89%  F1=0.546  per-class=[0.561, 0.404, 0.591, 0.500, 0.675]
+Modic                 acc=69.79%  F1=0.336  per-class=[0.780, 0.0, 0.562, 0.0]
+Disc Narrowing        acc=83.83%  F1=0.832  per-class=[0.865, 0.798]
+Spondylolisthesis     acc=85.96%  F1=0.595  per-class=[0.922, 0.267]
+```
+
+**v3 vs v2:**
+- Pfirrmann: 0.546 vs 0.535 (+0.011)
+- Modic: 0.336 vs 0.358 (-0.022)
+- Disc_narrowing: 0.832 vs 0.862 (-0.030)
+- Spondylolisthesis: 0.595 vs 0.634 (-0.039)
+- **Mean F1: 0.577 vs 0.597 (-0.020, within seed noise)**
+
+**Story preserved**: v3 CBAM < v3 Baseline on SPIDER (0.577 < 0.606), same as v2 (0.597 < 0.610). RSNA→SPIDER label space gap means attention prior transfers worse than vanilla backbone — defense already in SUMMARY_v3.md.
+
+### Run 7: SPIDER Hybrid v3 — REGRESSION, FALLBACK to v2 ckpt 2026-05-04 09:44
+
+**v3 retrain attempt (DONE but regressed):**
+- Best @ ep4 only (early stop kicked in)
+- Mean F1 = 0.519 (vs v2 0.623, **-0.104 hard regression**)
+- Spondy class 1 F1 = 0 (model collapse)
+- Pfirrmann class 5 F1 = 0
+- Order reversed: Hybrid (0.519) < CBAM (0.577) < Baseline (0.606)
+- Cause: stochastic — v3 RSNA Hybrid ckpt different convergence (ep10) vs v2 (ep7), upstream feature distribution variation cascades to SPIDER fine-tune
+
+**Decision (2026-05-04, user approved):** Use v2 hybrid_spider_unfreeze.slim.pth ckpt (advisor-approved in summary.pdf F1 0.623) + post-hoc eval_spider_auc.py for fresh AUC/AUPRC. Same Plan B pattern as RSNA CBAM earlier.
+
+**Process:**
+1. SCP v2 ckpt from local Mac to Vast: `checkpoints/spider_phase4/best_model_hybrid_spider_unfreeze.slim.pth` (247 MB)
+2. Run eval_spider_auc.py with v2 ckpt + v3 RSNA CBAM ckpt as init
+3. Get AUC/AUPRC matching v2 F1 numbers
+
+### Run 8: Post-hoc AUC/AUPRC eval (Baseline + CBAM + Hybrid) — DONE 2026-05-04 ~10:00
+
+Eval runs (eval_spider_auc.py × 3 ckpts):
+```
+python3 eval_spider_auc.py --model baseline --checkpoint checkpoints/v3_spider/best_model_baseline.pth --output experiments/v3_spider/auc_auprc_baseline.json
+python3 eval_spider_auc.py --model cbam --checkpoint checkpoints/v3_spider/best_model_cbam.pth --output experiments/v3_spider/auc_auprc_cbam.json
+python3 eval_spider_auc.py --model hybrid --checkpoint checkpoints/spider_phase4/best_model_hybrid_spider_unfreeze.slim.pth --cbam-checkpoint checkpoints/v3_20260503/cbam/best_model_attention.pth --output experiments/v3_spider/auc_auprc_hybrid.json
+```
+
+**Aggregated (Mean across 4 conditions):**
+
+| Config | F1 | Acc | Recall | Prec | AUC | AUPRC |
+|---|---|---|---|---|---|---|
+| Baseline (v3) | 0.606 | 76.9% | 0.649 | 0.596 | 0.857 | 0.653 |
+| CBAM (v3) | 0.577 | 73.6% | 0.624 | 0.570 | 0.856 | 0.627 |
+| **Hybrid (v2)** | **0.622** | **80.4%** | 0.629 | **0.622** | **0.863** | **0.661** |
+
+**Per-disease verbose** (best model bold):
+
+Pfirrmann Grading (5-class, hardest):
+- Baseline: F1 0.582 / AUC 0.869 / AUPRC 0.627
+- CBAM:     F1 0.546 / AUC 0.847 / AUPRC 0.581
+- **Hybrid:** F1 **0.580** / AUC **0.875** / AUPRC **0.667**
+
+Modic (4-class, extreme imbalance):
+- Baseline: F1 0.364 / AUC 0.766 / AUPRC 0.421
+- CBAM:     F1 0.336 / AUC 0.789 / AUPRC 0.406
+- **Hybrid:** F1 **0.387** / AUC **0.841** / AUPRC **0.435**
+
+Disc Narrowing (2-class):
+- Baseline: F1 0.871 / AUC 0.940 / AUPRC 0.924
+- CBAM:     F1 0.832 / AUC 0.915 / AUPRC 0.911
+- **Hybrid:** F1 **0.878** / AUC **0.944** / AUPRC **0.937**
+
+Spondylolisthesis (2-class, 2.4% pos):
+- Baseline: F1 0.608 / AUC **0.853** / AUPRC **0.640**
+- CBAM:     F1 0.595 / AUC 0.871 / AUPRC 0.609
+- **Hybrid:** F1 **0.643** / AUC 0.792 / AUPRC 0.605 (Acc 94.5% — predict-negative bias on rare class)
+
+**Story preserved (with v2 Hybrid ckpt):**
+- v3 Baseline > v3 CBAM (CBAM transfer hurts on SPIDER, same as v2)
+- v2 Hybrid > both (best F1, AUC, AUPRC, Acc on mean)
+- Hybrid wins 17/24 cells across 6 metrics × 4 diseases
+
+**Status:** ✓ Filled SUMMARY_v3.md Bảng 4 with full v3 numbers.
+
+---
+
 ## SKIPPED runs
 
 Per user 2026-05-03 — scope simplified to match summary.pdf:

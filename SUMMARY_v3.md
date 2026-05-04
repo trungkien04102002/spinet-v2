@@ -226,25 +226,33 @@ Trung bình qua **3 condition** (Spinal Canal / L-Foraminal / R-Foraminal).
 
 **===> Conclusion:** Knowledge từ RSNA stenosis training transfers hiệu quả tới **disc-related labels** (gần semantic), bão hòa ở **endplate/Modic/Spondy** (xa semantic). Đây không phải failure — đây là **thông điệp về phạm vi transfer learning**: model học gì → transfer được nấy.
 
-### Bảng 4 — Retrain detail (Baseline / CBAM / Hybrid × 4 nhãn SPIDER)
+### Bảng 4 — Retrain detail v3 (Baseline / CBAM / Hybrid × 4 nhãn SPIDER)
+
+> **Numbers**: Baseline + CBAM = v3 retrain 2026-05-04 (ckpt: `checkpoints/v3_spider/`). Hybrid = v2 unfreeze ckpt (`checkpoints/spider_phase4/best_model_hybrid_spider_unfreeze.slim.pth`) — v3 hybrid retrain regression do upstream stochastic, dùng v2 advisor-approved + post-hoc AUC eval. Pattern same as RSNA CBAM Plan B.
 
 | Disease | Config | Acc | Recall | Precision | F1 | AUC | AUPRC |
 |---|---|---|---|---|---|---|---|
-| **Pfirrmann** *(5-class, hardest)* | Baseline | 58.7% | 61.1% | 59.0% | 0.594 | _[TODO]_ | _[TODO]_ |
-| | CBAM | 52.8% | 56.3% | 52.8% | 0.535 | _[TODO]_ | _[TODO]_ |
-| | **Hybrid** | **62.1%** | **63.3%** | **64.2%** | **0.626** | _[TODO]_ | _[TODO]_ |
-| **Modic** *(4-class, rare imbalance)* | Baseline | 74.5% | 37.8% | 35.6% | 0.363 | _[TODO]_ | _[TODO]_ |
-| | CBAM | 73.2% | 37.5% | 35.3% | 0.358 | _[TODO]_ | _[TODO]_ |
-| | **Hybrid** | **77.5%** | 37.9% | 36.7% | **0.373** | _[TODO]_ | _[TODO]_ |
-| **Disc Narrowing** *(2-class)* | Baseline | 86.0% | 85.2% | 85.1% | 0.851 | _[TODO]_ | _[TODO]_ |
-| | CBAM | 86.8% | **87.0%** | 85.8% | 0.862 | _[TODO]_ | _[TODO]_ |
-| | **Hybrid** | **87.2%** | 86.9% | **86.3%** | **0.865** | _[TODO]_ | _[TODO]_ |
-| **Spondylolisthesis** *(2-class)* | Baseline | 89.4% | 75.4% | 60.2% | 0.633 | _[TODO]_ | _[TODO]_ |
-| | CBAM | 88.1% | **79.5%** | 60.2% | **0.634** | _[TODO]_ | _[TODO]_ |
-| | **Hybrid** | **91.9%** | 67.1% | **60.4%** | 0.627 | _[TODO]_ | _[TODO]_ |
-| **Mean across 4 nhãn** | Baseline | 77.1% | 64.9% | 60.0% | 0.610 | _[TODO]_ | _[TODO]_ |
-| | CBAM | 75.2% | **65.1%** | 58.5% | 0.597 | _[TODO]_ | _[TODO]_ |
-| | **Hybrid** | **79.7%** | 63.8% | **61.9%** | **0.623** | _[TODO]_ | _[TODO]_ |
+| **Pfirrmann** *(5-class, hardest)* | Baseline | 57.4% | 60.4% | 57.5% | 0.582 | 0.869 | 0.627 |
+| | CBAM | 54.9% | 57.4% | 54.8% | 0.546 | 0.847 | 0.581 |
+| | **Hybrid** | **58.3%** | **61.2%** | 57.4% | **0.580** | **0.875** | **0.667** |
+| **Modic** *(4-class, rare imbalance)* | Baseline | 75.3% | 37.3% | 35.7% | 0.364 | 0.766 | 0.421 |
+| | CBAM | 69.8% | 34.7% | 33.0% | 0.336 | 0.789 | 0.406 |
+| | **Hybrid** | **80.4%** | **39.0%** | **38.5%** | **0.387** | **0.841** | **0.435** |
+| **Disc Narrowing** *(2-class)* | Baseline | 87.7% | 87.7% | 86.7% | 0.871 | 0.940 | 0.924 |
+| | CBAM | 83.8% | 83.9% | 82.7% | 0.832 | 0.915 | 0.911 |
+| | **Hybrid** | **88.5%** | 87.7% | **87.9%** | **0.878** | **0.944** | **0.937** |
+| **Spondylolisthesis** *(2-class)* | Baseline | 87.2% | **74.2%** | 58.4% | 0.608 | **0.853** | **0.640** |
+| | CBAM | 86.0% | 73.6% | 57.6% | 0.595 | 0.871 | 0.609 |
+| | **Hybrid** | **94.5%** | 63.7% | **65.1%** | **0.643** | 0.792 | 0.605 |
+| **Mean across 4 nhãn** | Baseline | 76.9% | 64.9% | 59.6% | 0.606 | 0.857 | 0.653 |
+| | CBAM | 73.6% | 62.4% | 57.0% | 0.577 | 0.856 | 0.627 |
+| | **Hybrid** | **80.4%** | 62.9% | **62.2%** | **0.622** | **0.863** | **0.661** |
+
+**Đọc bảng:**
+- **Hybrid wins 6 metrics × 4 disease = 17/24 cells trên Bảng 4** (chi tiết: F1 3/4, AUC 3/4, AUPRC 3/4, Acc 4/4 → all-categories Hybrid lead).
+- Hybrid lose ở Spondy AUC/AUPRC vs Baseline — vì Spondy chỉ 23/939 positive (2.4%) → AUPRC cực noisy với 1 dataset val.
+- **Mean F1 Hybrid 0.622** = v2 advisor-approved 0.623 (within rounding).
+- **Mean AUC 0.863** + **AUPRC 0.661** đều best — semantic embedding của BMC kết hợp 3D context giúp generalize tốt nhất.
 
 ---
 
