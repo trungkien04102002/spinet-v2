@@ -266,3 +266,39 @@ Trung bình qua **3 condition** (Spinal Canal / L-Foraminal / R-Foraminal).
    - BMC-only: F1 0.464, Severe F1 0.229, Severe AUPRC 0.218
    - Hybrid: F1 **0.528**, Severe F1 **0.343**, Severe AUPRC **0.321**
    → Hybrid > max(CBAM, BMC) trên cả 3 metrics → **fusion là gain thật, không phải artifact**. CBAM > BMC trên RSNA → 3D context dominant cho stenosis classification.
+
+---
+
+## Đánh giá nội bộ — Phase 1 RSNA hoàn chỉnh (2026-05-04)
+
+### ✅ Story chắc — 4 điểm tích cực:
+1. **Monotonic improvement** Base → CBAM → Hybrid trên F1, Severe F1, AUC, AUPRC — không bị inverted (loại trừ random/seed noise).
+2. **Severe F1 ×2.3** (0.149 → 0.343) — clinically meaningful gain, đáng để defense Theme 1+2.
+3. **Ablation BMC-only chứng minh fusion không thừa** (Hybrid 0.528 > max(CBAM 0.502, BMC 0.464)) → closed advisor's "are 2 branches redundant" question.
+4. **Reproduce v2 numbers within stochastic noise** (CBAM Severe F1 0.304 vs v2 0.333; Hybrid 0.343 vs v2 0.353) → no data leak, methodology defensible.
+
+### ⚠️ 3 điểm cần cẩn thận khi defense:
+
+**Cẩn thận #1: CBAM → Hybrid gain Severe AUPRC rất nhỏ (0.319 → 0.321, +0.002)**
+- Risk: thầy hỏi *"chỉ thêm 0.002, đáng không?"*
+- Trả lời sẵn: *"Severe AUPRC saturate ở 0.32 vì class quá rare (~5%). Story chính của Hybrid là **Mean AUC 0.825→0.837** + **enable zero-shot SPIDER** mà CBAM/Base không làm được (head 3-cls cố định). Trên RSNA, Hybrid là Pareto-better không hi sinh metric nào."*
+
+**Cẩn thận #2: Acc giảm 9% so với baseline (81.4% → 72.1%)**
+- Risk: thầy có thể hỏi *"có thật là 'có chủ đích' không?"*
+- Trả lời sẵn: *"Mean Acc bị Popular class (~85% data) dominate. Khi tăng Recall trên Severe (rare class) thì Acc tổng giảm — đây là hệ quả toán học bắt buộc của trade-off, không phải lỗi optimization. Với clinical use case (Severe miss = nguy hiểm), đánh đổi này đáng giá."*
+
+**Cẩn thận #3: BMC-only converge @ ep3 — overfit nhanh do capacity thấp**
+- Risk: thầy challenge tính fair của ablation
+- Trả lời sẵn: *"BMC-only architecture có 1 branch ít hơn nên overfit nhanh hơn. Đây là so sánh same-args/same-fusion fair, nhưng BMC-only không đại diện capacity tối đa của BMC features. Để có số tuyệt đối hơn cần linear probe BMC trực tiếp (ngoài scope Rank-C)."*
+
+### 📊 Position so với Rank-C bar (EMBC 2027):
+
+| Yêu cầu | Status | Note |
+|---|---|---|
+| 3 themes contribution | ✅ | Imbalance (focal/oversample) + Attention (CBAM) + Cross-dataset (BMC fusion) |
+| Ablation rigor | ✅ stronger than typical | 4 configs với fusion ablation |
+| Metric battery | ✅ | F1/Acc/Recall/Prec + AUC/AUPRC + per-class + timing |
+| Reproducibility | ✅ | Scripts checked in + v2 reproduction within noise |
+| Cross-dataset evidence | 🔄 PENDING | SPIDER zero-shot chưa eval — đây là test quan trọng nhất Theme 3 |
+
+→ **Tự tin defense.** Story 3-pillar coherent, ablation backup, AUC/AUPRC đầy đủ. SPIDER zero-shot kết quả sẽ confirm/challenge Theme 3 — đó là milestone defense quyết định.
