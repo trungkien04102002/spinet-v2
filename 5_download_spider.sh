@@ -1,5 +1,5 @@
 #!/bin/bash
-# Vast.ai: download SPIDER dataset from Google Drive, extract, delete zip.
+# Vast.ai: download SPIDER dataset from Google Drive, extract, preprocess, delete zip.
 #
 # Usage:
 #   ./5_download_spider.sh <FILE_ID>
@@ -12,6 +12,7 @@
 #   2. Extracts to spider/
 #   3. Verifies expected files exist
 #   4. Auto-deletes spider.zip to save disk
+#   5. Preprocesses SPIDER → rsna_preprocessed_spider/ (for zero-shot eval)
 
 set -e
 
@@ -105,12 +106,34 @@ echo
 echo "Removing spider.zip to save disk..."
 rm -f spider.zip
 
+# Step 6: preprocess for zero-shot eval (crops IVDs → .npy + builds zeroshot CSV)
+echo
+echo "[5/5] Preprocessing SPIDER for zero-shot eval..."
+echo "  This crops 257 patients × ~7 IVDs into (9, 112, 224) .npy volumes."
+echo "  Expected runtime: ~10-15 min."
+echo
+if [ -d "rsna_preprocessed_spider/volumes" ] && [ -f "rsna_preprocessed_spider/spider_zeroshot_test.csv" ]; then
+    n_npy=$(ls rsna_preprocessed_spider/volumes/*.npy 2>/dev/null | wc -l)
+    echo "  rsna_preprocessed_spider/ already exists ($n_npy .npy files) — skipping."
+else
+    python3 prepare_spider_zeroshot.py \
+        --spider-dir spider \
+        --output-dir rsna_preprocessed_spider
+fi
+
 echo
 echo "======================================================================"
-echo "SPIDER ready at: spider/   (size $(du -sh spider | awk '{print $1}'))"
+echo "SPIDER ready at:"
+echo "  spider/                     (raw, $(du -sh spider 2>/dev/null | awk '{print $1}'))"
+echo "  rsna_preprocessed_spider/   (preprocessed, $(du -sh rsna_preprocessed_spider 2>/dev/null | awk '{print $1}'))"
 echo "======================================================================"
 echo
-echo "Next steps (Phase 4 transfer learning):"
+echo "Next steps:"
+echo
+echo "  # Zero-shot eval (Hybrid v3 ckpt → 8 SPIDER diseases, no training):"
+echo "  bash scripts/run_spider_zeroshot.sh"
+echo
+echo "  # Or transfer learning (Phase 4):"
 echo "  python3 train_spider.py --model baseline \\"
 echo "      --rsna-checkpoint checkpoints/best_model.pth \\"
 echo "      --freeze-backbone --epochs 15 --batch-size 16 --lr 1e-3"
