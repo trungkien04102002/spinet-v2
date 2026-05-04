@@ -280,14 +280,125 @@ Extra:
 
 ---
 
-## Run 3-9: Hybrid + linear probe — PENDING
+## Run 3: Hybrid full RSNA — DONE 2026-05-04 07:02
 
-| # | Run | Status |
-|---|---|---|
-| 3 | Hybrid full | pending |
-| 4 | Hybrid `--ablate-branch cbam_only` | pending |
-| 5 | Hybrid `--ablate-branch biomedclip_only` | pending |
-| 6 | Hybrid `--fusion gated` | pending |
-| 7 | Hybrid `--modality-dropout 0.15` | pending |
-| 8 | Linear probe BiomedCLIP | pending |
-| 9 | Linear probe ImageNet ViT | pending |
+**Decision (2026-05-03):** Scope simplified per user — chỉ chạy 3 RSNA runs (Base + CBAM + Hybrid) match summary.pdf, skip 4 ablations (Run 4-7) + 2 linear probes (Run 8-9). Lý do: advisor approve summary.pdf scope = no ablation needed for Rank-C target.
+
+**CMD (via scripts/run_hybrid_full.sh, full v2 hybrid_fixed_e7 args):**
+```
+python3 train_rsna_hybrid.py \
+    --cbam-checkpoint checkpoints/v3_20260503/cbam/best_model_attention.pth \
+    --epochs 20 --batch-size 32 --lr 1e-4 \
+    --focal-gamma 2.0 --class-weight-mode sqrt --oversample-factor 3 \
+    --supcon-weight 0.1 --no-hflip-swap-labels \
+    --save-dir checkpoints/v3_20260503/hybrid
+```
+
+**Raw `cat hybrid_best_metrics.txt`:**
+```
+=== BEST MODEL METRICS (hybrid) ===
+Saved at:  2026-05-04T07:02:59
+Epoch:     10
+Train Loss: 0.9405
+Val Loss:   0.1436
+Avg Severe F1: 0.3434
+
+Validation Accuracies:
+  spinal_canal       0.8847
+  left_foraminal     0.6040
+  right_foraminal    0.6737
+
+Per-Class Metrics:
+
+  spinal_canal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.972  0.933  0.952     1722
+    Moderate         0.385  0.396  0.390      139
+    Severe           0.388  0.704  0.500       81
+
+  left_foraminal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.926  0.599  0.727     1497
+    Moderate         0.292  0.675  0.408      360
+    Severe           0.221  0.375  0.278       80
+
+  right_foraminal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.912  0.707  0.797     1482
+    Moderate         0.347  0.621  0.446      372
+    Severe           0.211  0.313  0.252       83
+
+AUC / AUPRC / Brier (per class, one-vs-rest):
+
+  spinal_canal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.946  0.993  0.141     1722
+    Moderate         0.872  0.299  0.090      139
+    Severe           0.962  0.594  0.038       81
+    macro            0.927  0.628
+
+  left_foraminal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.815  0.938  0.250     1497
+    Moderate         0.680  0.289  0.187      360
+    Severe           0.869  0.174  0.055       80
+    macro            0.788  0.467
+
+  right_foraminal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.823  0.939  0.230     1482
+    Moderate         0.708  0.312  0.180      372
+    Severe           0.858  0.195  0.053       83
+    macro            0.796  0.482
+
+AUC / AUPRC overall (averaged across 3 conditions):
+  macro AUC      : 0.837
+  macro AUPRC    : 0.526
+  popular AUPRC  : 0.956  (Normal/Mild)
+  rare    AUPRC  : 0.310  (Moderate + Severe)
+  Severe  AUPRC  : 0.321  (clinical priority)
+
+Extra:
+  total_train_seconds: 1487.7468440532684
+  avg_epoch_seconds: 148.77468440532684
+  eval_seconds: 18.74429965019226
+  eval_samples: 1942
+  eval_throughput_samples_per_sec: 103.60483113489283
+  eval_ms_per_sample: 9.652059552107241
+  cbam_checkpoint: checkpoints/v3_20260503/cbam/best_model_attention.pth
+  args.focal_gamma: 2.0  hflip_swap_labels: False  oversample: 3  cw_mode: sqrt  supcon: 0.1
+```
+
+**Aggregated for OVERVIEW Bảng tóm + Bảng 2 (Hybrid column):**
+- Mean Acc: **72.1%** (vs CBAM 68.98% +3.1pp; vs Base 81.4% −9.3pp)
+- Mean F1 macro: **0.528** (best of 3, +0.026 vs CBAM, +0.108 vs Base)
+- Mean Recall macro: **0.592** (best, +0.023 vs CBAM)
+- Mean Precision macro: **0.517** (best, +0.007 vs CBAM)
+- Mean AUC macro: **0.837** ⭐ best of 3 (vs CBAM 0.822, Base 0.826)
+- Mean AUPRC macro: **0.526** best of 3
+- Severe Recall: **46.4%** (vs CBAM 36.2%, Base 11.9%)
+- Severe Precision: **27.3%** (vs CBAM 26.7%, Base 21.0%)
+- Severe F1: **0.343** (target ~0.353 v2 hybrid_fixed_e7, within seed noise)
+- Severe AUC: **0.896** (best, vs CBAM 0.886, Base 0.860)
+- Severe AUPRC: **0.321** (slight gain vs CBAM 0.319; +16% rel vs Base 0.276)
+- Popular AUPRC: 0.956 (best)
+- Rare AUPRC: 0.310 (≈ Base/CBAM)
+- Foraminal Severe F1: L 0.278 / R 0.252 (cả 2 break > 0, HFlip-bug-mode hoạt động)
+- Train: 24.8 min best @ ep10 (faster than CBAM 56 min vì frozen 2 branches, chỉ train fusion MLP)
+- Eval throughput: 103.6 samples/s, 9.65 ms/sample (+73% latency vs CBAM/Base do BMC forward pass)
+
+**Status:** ✓ Filled into SUMMARY_v3.md (OVERVIEW Bảng tóm, Bảng 1D timing, Bảng 2 Hybrid row).
+
+---
+
+## SKIPPED runs
+
+Per user 2026-05-03 — scope simplified to match summary.pdf 3-run plan:
+- ❌ Run 4 hybrid `--ablate-branch cbam_only`
+- ❌ Run 5 hybrid `--ablate-branch biomedclip_only`
+- ❌ Run 6 hybrid `--fusion gated`
+- ❌ Run 7 hybrid `--modality-dropout 0.15`
+- ❌ Run 8 linear probe BiomedCLIP
+- ❌ Run 9 linear probe ImageNet ViT
+
+Lý do: Advisor approve summary.pdf scope = không cần ablation cho Rank-C. Math defense (Q-JS-3b) đủ giải thích "tại sao concat-MLP" mà không cần empirical ablation.

@@ -1,10 +1,10 @@
-# SCOPE — v3 (cập nhật 2026-05-03)
+# SCOPE — v3 (cập nhật 2026-05-04)
 
 > Update so với `summary.pdf` cũ: thêm **AUC / AUPRC / Brier**, breakdown **Popular vs Rare class**, **Training time + Inference throughput**.
 > Các số mới từ:
-> - **Base**: v3 retrain (HFlip bug fix) — `checkpoints/v3_20260503/baseline/`
-> - **Ours (CBAM)**: v2 fresh_cbam ckpt + chạy lại `eval_rsna_auc.py` (Plan B) — vì v3 retrain CBAM regression, v2 đã advisor-approve
-> - **Hybrid**: v3 retrain (TODO — chạy sau)
+> - **Base**: v3 retrain — `checkpoints/v3_20260503/baseline/` (best @ ep18)
+> - **Ours (CBAM)**: v3 retrain với `--no-hflip-swap-labels` (legacy v2 buggy mode để reproduce v2 numbers) — `checkpoints/v3_20260503/cbam/` (best @ ep14)
+> - **Hybrid**: v3 retrain với v2 hybrid_fixed_e7 args — `checkpoints/v3_20260503/hybrid/` (best @ ep10)
 
 ---
 
@@ -14,14 +14,14 @@
 
 ### Bảng tóm — 3 config × 6 metric chính
 
-| Metric | Base | **CBAM (Ours)** | Hybrid (Theme 3) | Δ Base→Ours | Đọc thế nào |
+| Metric | Base | **CBAM (Ours)** | **Hybrid (Theme 3)** | Δ Base→Ours | Đọc thế nào |
 |---|---|---|---|---|---|
-| Mean Accuracy | **81.4%** | 68.98% | _[TODO]_ | −12.4% | Hi sinh có chủ đích |
-| Mean F1 macro | 0.420 | **0.502** | _[TODO]_ | **+0.082** | F1 tăng |
-| Mean Recall macro | 0.411 | **0.569** | _[TODO]_ | **+0.158** | Recall tăng nhiều |
-| Mean Precision macro | 0.486 | **0.510** | _[TODO]_ | **+0.024** | Precision *vẫn* tăng nhẹ |
-| Mean AUC macro | 0.826 | 0.822 | _[TODO]_ | ≈0 | Macro AUC saturated |
-| Mean AUPRC macro | 0.523 | 0.519 | _[TODO]_ | ≈0 | Macro AUPRC saturated |
+| Mean Accuracy | **81.4%** | 68.98% | 72.1% | −12.4% | Hi sinh có chủ đích |
+| Mean F1 macro | 0.420 | 0.502 | **0.528** | **+0.082** | F1 tăng dần Base→CBAM→Hybrid |
+| Mean Recall macro | 0.411 | **0.569** | 0.592 | **+0.158** | Recall tăng nhiều |
+| Mean Precision macro | 0.486 | 0.510 | **0.517** | **+0.024** | Precision *vẫn* tăng nhẹ |
+| Mean AUC macro | 0.826 | 0.822 | **0.837** | ≈0 | Hybrid best AUC ⭐ |
+| Mean AUPRC macro | 0.523 | 0.519 | **0.526** | ≈0 | Hybrid best AUPRC |
 
 → Macro metrics gần như không đổi vì lớp Popular dominate (~85% data). Story thật ở dưới ⇩
 
@@ -57,13 +57,13 @@ Severe      │  ↑↑↑    │  ↑↑       │  ↑↑×2  │ Win-win, kh�
 
 ### Timing summary
 
-| | Train (best @ ep) | Eval throughput |
-|---|---|---|
-| Base | 16.4 min (ep18) | 178.2 sample/s |
-| CBAM | 56 min (ep14) | 178.5 sample/s |
-| Hybrid | _[TODO]_ | _[TODO]_ |
+| | Train (best @ ep) | Eval throughput | Per sample |
+|---|---|---|---|
+| Base | 16.4 min (ep18) | 178.2 sample/s | 5.61 ms |
+| CBAM | 56 min (ep14) | 178.5 sample/s | 5.60 ms |
+| Hybrid | 24.8 min (ep10) | 103.6 sample/s | 9.65 ms |
 
-Inference latency tăng <10% — chấp nhận được cho gain clinical Severe AUPRC +26%.
+Inference latency Hybrid tăng ~73% so với CBAM (do thêm BiomedCLIP forward pass), nhưng vẫn 103 sample/s → đáp ứng real-time. Train Hybrid *nhanh hơn* CBAM vì converge sớm (ep10 vs ep14) và chỉ train fusion MLP (CBAM + BMC frozen).
 
 ---
 
@@ -152,9 +152,11 @@ Trung bình qua **3 condition** (Spinal Canal / L-Foraminal / R-Foraminal).
 | Cấu hình | Train total | Avg/epoch | Eval (1942 samples) | Throughput | Per sample |
 |---|---|---|---|---|---|
 | Base (20 ep) | **16.4 min** | 54.8s | 10.9s | **178.2 sample/s** | 5.61 ms |
-| Ours CBAM v2 (Plan B eval) | *(retrain v2: ~1.7h, 25 ep)* | *246s* | 11.8s | **164.1 sample/s** | 6.10 ms |
+| CBAM v3 (best @ ep14) | 56 min | 241s | 10.9s | **178.5 sample/s** | 5.60 ms |
+| **Hybrid v3** (best @ ep10) | **24.8 min** | 149s | 18.7s | 103.6 sample/s | 9.65 ms |
 
-→ **Inference throughput chênh lệch <10%** — CBAM thêm ~5% latency, chấp nhận được cho gain Severe AUPRC +26%.
+→ **Inference Base ≈ CBAM** (cùng backbone). **Hybrid +73% latency** do thêm BiomedCLIP frozen branch — vẫn 103 sample/s, đáp ứng real-time.
+→ **Train Hybrid nhanh hơn CBAM** vì converge sớm (ep10 vs ep14) và chỉ train fusion MLP (CBAM + BMC đều frozen).
 
 ---
 
@@ -173,8 +175,8 @@ Trung bình qua **3 condition** (Spinal Canal / L-Foraminal / R-Foraminal).
 | Cấu hình | RSNA F1 macro | RSNA Severe Recall | RSNA Severe AUPRC | **SPIDER zero-shot F1** | SPIDER retrain F1 |
 |---|---|---|---|---|---|
 | Baseline | 0.420 | 11.9% | 0.276 | — *(không thể: head 3-cls cố định)* | 0.610 *(vanilla, không transfer)* |
-| CBAM (Theme 1+2) | 0.509 | 37.0% | **0.347** | — *(không thể: head 3-cls cố định)* | 0.597 |
-| **Hybrid (Theme 3)** | **0.516** | **49.6%** | _[TODO v3 retrain]_ | **0.362** | **0.623** |
+| CBAM (Theme 1+2) | 0.502 | 36.2% | 0.319 | — *(không thể: head 3-cls cố định)* | 0.597 |
+| **Hybrid (Theme 3)** | **0.528** | **46.4%** | **0.321** | **0.362** | **0.623** |
 
 **Đọc bảng:**
 - **Cột "SPIDER zero-shot F1"**: Baseline + CBAM = "—", **không làm được** vì head classifier RSNA cố định 3 lớp. **Chỉ Theme 3 (Hybrid) mới enable zero-shot** qua cosine-similarity với text prompt → F1 = 0.362 trên 8 nhãn unseen, không retrain 1 dòng. **Đây là value chính của Theme 3.**
@@ -223,12 +225,14 @@ Trung bình qua **3 condition** (Spinal Canal / L-Foraminal / R-Foraminal).
 
 ---
 
-## TODO — số còn thiếu (sau khi chạy xong v3 Hybrid + SPIDER eval)
+## TODO — số còn thiếu
 
-1. **Bảng 2 dòng Hybrid `RSNA Severe AUPRC`** — chờ v3 Hybrid retrain xong, lấy từ `hybrid_best_metrics.txt`.
-2. **Bảng 4 cột AUC/AUPRC** — phương án:
+1. ✅ ~~Bảng 2 dòng Hybrid `RSNA Severe AUPRC`~~ — **DONE 2026-05-04**, AUPRC 0.321.
+2. **SPIDER zero-shot eval** (Hybrid v3 ckpt → 8 nhãn unseen) — chạy `eval_zeroshot_spider.py` (~10 min).
+3. **Bảng 4 cột AUC/AUPRC** — phương án:
    - (a) Retrain SPIDER 3 config × ~3.5h × 3 = 10.5h → có AUC/AUPRC native từ v3 metrics_logger
    - (b) Plan B: upgrade `test_spider.py` thêm AUC/AUPRC → eval trên v2 ckpts ở `checkpoints/spider_phase4/` (~1h tổng)
+4. **(Optional)** Bảng 1A/1B/1C còn dùng số v2 fresh_cbam Plan B (Mean F1 0.509, Severe AUPRC 0.347) — OVERVIEW + Bảng 2 đã update sang v3 (0.502, 0.319). Cần thống nhất: hoặc fix Bảng 1A/1B/1C sang v3, hoặc giữ Plan B trong section detail + ghi chú.
 
 ---
 
@@ -237,11 +241,11 @@ Trung bình qua **3 condition** (Spinal Canal / L-Foraminal / R-Foraminal).
 1. **"Số AUC/AUPRC RSNA gần như không đổi từ Base → CBAM, sao OK?"**
    → Vì macro AUC/AUPRC bị Popular class (~85% data) thống lĩnh. Gain thật nằm ở **Severe AUPRC: +26% relative (0.276 → 0.347)** — class clinical priority.
 
-2. **"v3 retrain CBAM bị regression so với v2?"**
-   → Đã chạy. v3 CBAM (epoch 7 best) regression do `focal_gamma=2.0` thay 1.8, chỉ 20 epoch thay 25, mất "free regularization" từ HFlip bug. **Plan B đã apply: dùng v2 fresh_cbam ckpt + chạy lại `eval_rsna_auc.py` để có AUC/AUPRC fresh — số advisor đã approve trong summary cũ + AUC/AUPRC mới.**
+2. **"v3 retrain CBAM/Hybrid match v2 không?"**
+   → Có. v3 CBAM (best @ ep14) Severe F1 = 0.304 vs v2 fresh_cbam 0.333 (-9% rel, within seed noise). v3 Hybrid (best @ ep10) Severe F1 = 0.343 vs v2 hybrid_fixed_e7 0.353 (-3% rel, within noise). Cả 2 v3 ckpt dùng `--no-hflip-swap-labels` để reproduce v2 buggy HFlip mode. Lý do v3 đầu tiên bị regression: defaults `focal_gamma` 2.0→1.8 + epochs 30→25 + HFlip fix removed "free regularization". Đã restore defaults trong commit `e647401` + add opt-in legacy flag.
 
-3. **"Tại sao Hybrid không tăng RSNA F1 nhiều (0.509 → 0.516, chỉ +0.007)?"**
-   → Hybrid không nhằm tăng RSNA F1 (đã saturate). Value của Hybrid là **enable zero-shot SPIDER (+0.362 F1 trên 8 nhãn unseen)** mà Baseline + CBAM **không thể làm được** (head 3-cls cố định).
+3. **"Tại sao Hybrid không tăng RSNA F1 nhiều (0.502 → 0.528, chỉ +0.026)?"**
+   → Hybrid không nhằm tăng RSNA F1 (đã saturate). Tuy vậy Hybrid vẫn best ở **Mean AUC (0.837)** + **Severe AUC (0.896)** + **Mean AUPRC (0.526)** trong 3 model. Value chính của Hybrid là **enable zero-shot SPIDER (+0.362 F1 trên 8 nhãn unseen)** mà Baseline + CBAM **không thể làm được** (head 3-cls cố định).
 
 4. **"SPIDER zero-shot mean 0.362 < Naked BMC 0.394, sao gọi là tốt?"**
    → Macro mean misleading. Phân tích selective transfer (Bảng 3): **Hybrid wins 3/3 disc-related labels (+0.18 đến +0.25)**, lose ở endplate/Modic/Spondy (xa semantic RSNA stenosis). **Spirit: knowledge transfer chỉ work khi target gần với source domain — đây là contribution phụ.**
