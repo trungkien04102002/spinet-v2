@@ -27,11 +27,10 @@ python3 train_spider.py \
     --lr 1e-3 \
     --weight-decay 1e-4 \
     --loss weighted \
-    --num-workers 4 2>&1 | tee experiments/v3_spider/run_cbam.log
+    --num-workers 4 \
+    --checkpoint-dir checkpoints/v3_spider \
+    --metrics-dir experiments/v3_spider 2>&1 | tee experiments/v3_spider/run_cbam.log
 
-mv checkpoints_spider/best_model_cbam.pth checkpoints/v3_spider/best_model_cbam.pth 2>/dev/null || true
-mv experiments/spider_phase4/best_metrics_cbam.json experiments/v3_spider/best_metrics_cbam.json 2>/dev/null || true
-mv experiments/spider_phase4/best_metrics_cbam.txt experiments/v3_spider/best_metrics_cbam.txt 2>/dev/null || true
 echo ""
 echo "✓ CBAM SPIDER v3 done."
 echo "  Ckpt:    checkpoints/v3_spider/best_model_cbam.pth"

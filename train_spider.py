@@ -98,6 +98,12 @@ def parse_args():
     parser.add_argument('--resume', type=str, default=None,
                         help='Path to checkpoint to resume from')
 
+    # Output dirs (override defaults to avoid clobbering v2 ckpts)
+    parser.add_argument('--checkpoint-dir', type=str, default='checkpoints_spider',
+                        help='Where to save best_model_<model>.pth (default: checkpoints_spider)')
+    parser.add_argument('--metrics-dir', type=str, default='experiments/spider_phase4',
+                        help='Where to save best_metrics_<model>.{json,txt} (default: experiments/spider_phase4)')
+
     return parser.parse_args()
 
 
@@ -227,9 +233,9 @@ def main():
     # Create checkpoint directory
     # Folders already exist in the repo (.gitkeep). mkdir is a no-op safety net
     # for the rare case the user deletes them.
-    checkpoint_dir = Path('checkpoints_spider')
-    checkpoint_dir.mkdir(exist_ok=True)
-    metrics_dir = Path('experiments/spider_phase4')
+    checkpoint_dir = Path(args.checkpoint_dir)
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    metrics_dir = Path(args.metrics_dir)
     metrics_dir.mkdir(parents=True, exist_ok=True)
     history = []  # per-epoch rows for training_log csv
 
