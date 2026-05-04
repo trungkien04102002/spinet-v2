@@ -226,23 +226,23 @@ Trung bình qua **3 condition** (Spinal Canal / L-Foraminal / R-Foraminal).
 
 **===> Conclusion:** Knowledge từ RSNA stenosis training transfers hiệu quả tới **disc-related labels** (gần semantic), bão hòa ở **endplate/Modic/Spondy** (xa semantic). Đây không phải failure — đây là **thông điệp về phạm vi transfer learning**: model học gì → transfer được nấy.
 
-### Bảng 4 — Retrain detail (Vanilla / CBAM / Hybrid × 4 nhãn SPIDER)
+### Bảng 4 — Retrain detail (Baseline / CBAM / Hybrid × 4 nhãn SPIDER)
 
 | Disease | Config | Acc | Recall | Precision | F1 | AUC | AUPRC |
 |---|---|---|---|---|---|---|---|
-| **Pfirrmann** *(5-class, hardest)* | Vanilla | 58.7% | 61.1% | 59.0% | 0.594 | _[TODO]_ | _[TODO]_ |
+| **Pfirrmann** *(5-class, hardest)* | Baseline | 58.7% | 61.1% | 59.0% | 0.594 | _[TODO]_ | _[TODO]_ |
 | | CBAM | 52.8% | 56.3% | 52.8% | 0.535 | _[TODO]_ | _[TODO]_ |
 | | **Hybrid** | **62.1%** | **63.3%** | **64.2%** | **0.626** | _[TODO]_ | _[TODO]_ |
-| **Modic** *(4-class, rare imbalance)* | Vanilla | 74.5% | 37.8% | 35.6% | 0.363 | _[TODO]_ | _[TODO]_ |
+| **Modic** *(4-class, rare imbalance)* | Baseline | 74.5% | 37.8% | 35.6% | 0.363 | _[TODO]_ | _[TODO]_ |
 | | CBAM | 73.2% | 37.5% | 35.3% | 0.358 | _[TODO]_ | _[TODO]_ |
 | | **Hybrid** | **77.5%** | 37.9% | 36.7% | **0.373** | _[TODO]_ | _[TODO]_ |
-| **Disc Narrowing** *(2-class)* | Vanilla | 86.0% | 85.2% | 85.1% | 0.851 | _[TODO]_ | _[TODO]_ |
+| **Disc Narrowing** *(2-class)* | Baseline | 86.0% | 85.2% | 85.1% | 0.851 | _[TODO]_ | _[TODO]_ |
 | | CBAM | 86.8% | **87.0%** | 85.8% | 0.862 | _[TODO]_ | _[TODO]_ |
 | | **Hybrid** | **87.2%** | 86.9% | **86.3%** | **0.865** | _[TODO]_ | _[TODO]_ |
-| **Spondylolisthesis** *(2-class)* | Vanilla | 89.4% | 75.4% | 60.2% | 0.633 | _[TODO]_ | _[TODO]_ |
+| **Spondylolisthesis** *(2-class)* | Baseline | 89.4% | 75.4% | 60.2% | 0.633 | _[TODO]_ | _[TODO]_ |
 | | CBAM | 88.1% | **79.5%** | 60.2% | **0.634** | _[TODO]_ | _[TODO]_ |
 | | **Hybrid** | **91.9%** | 67.1% | **60.4%** | 0.627 | _[TODO]_ | _[TODO]_ |
-| **Mean across 4 nhãn** | Vanilla | 77.1% | 64.9% | 60.0% | 0.610 | _[TODO]_ | _[TODO]_ |
+| **Mean across 4 nhãn** | Baseline | 77.1% | 64.9% | 60.0% | 0.610 | _[TODO]_ | _[TODO]_ |
 | | CBAM | 75.2% | **65.1%** | 58.5% | 0.597 | _[TODO]_ | _[TODO]_ |
 | | **Hybrid** | **79.7%** | 63.8% | **61.9%** | **0.623** | _[TODO]_ | _[TODO]_ |
 
@@ -252,9 +252,11 @@ Trung bình qua **3 condition** (Spinal Canal / L-Foraminal / R-Foraminal).
 
 1. ✅ ~~Bảng 2 dòng Hybrid `RSNA Severe AUPRC`~~ — **DONE 2026-05-04**, AUPRC 0.321.
 2. **SPIDER zero-shot eval** (Hybrid v3 ckpt → 8 nhãn unseen) — chạy `eval_zeroshot_spider.py` (~10 min).
-3. **Bảng 4 cột AUC/AUPRC** — phương án:
-   - (a) Retrain SPIDER 3 config × ~3.5h × 3 = 10.5h → có AUC/AUPRC native từ v3 metrics_logger
-   - (b) Plan B: upgrade `test_spider.py` thêm AUC/AUPRC → eval trên v2 ckpts ở `checkpoints/spider_phase4/` (~1h tổng)
+3. **Bảng 4 cột AUC/AUPRC** — User chọn (a): retrain v3 + post-hoc eval. 4 scripts đã có sẵn:
+   - `scripts/run_spider_baseline.sh` (~30-40 min, freeze, lr 1e-3, ep15)
+   - `scripts/run_spider_cbam.sh` (~50 min, freeze, lr 1e-3, ep20)
+   - `scripts/run_spider_hybrid.sh` (~3h, unfreeze CBAM, lr 1e-5, ep20)
+   - `scripts/run_spider_eval_all.sh` (post-hoc AUC/AUPRC, ~10 min)
 4. **(Optional)** Bảng 1A/1B/1C còn dùng số v2 fresh_cbam Plan B (Mean F1 0.509, Severe AUPRC 0.347) — OVERVIEW + Bảng 2 đã update sang v3 (0.502, 0.319). Cần thống nhất: hoặc fix Bảng 1A/1B/1C sang v3, hoặc giữ Plan B trong section detail + ghi chú.
 
 ---
