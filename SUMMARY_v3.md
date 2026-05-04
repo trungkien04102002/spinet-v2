@@ -16,12 +16,12 @@
 
 | Metric | Base | **CBAM (Ours)** | Hybrid (Theme 3) | Δ Base→Ours | Đọc thế nào |
 |---|---|---|---|---|---|
-| Mean Accuracy | **81.4%** | 68.6% | _[TODO]_ | −12.8% | Hi sinh có chủ đích |
-| Mean F1 macro | 0.420 | **0.509** | **0.516** | **+0.089** | F1 tăng |
-| Mean Recall macro | 0.411 | **0.568** | _[TODO]_ | **+0.157** | Recall tăng nhiều |
-| Mean Precision macro | 0.486 | **0.518** | _[TODO]_ | **+0.032** | Precision *vẫn* tăng nhẹ |
-| Mean AUC macro | 0.826 | 0.825 | _[TODO]_ | ≈0 | Macro AUC saturated |
-| Mean AUPRC macro | 0.523 | 0.524 | _[TODO]_ | ≈0 | Macro AUPRC saturated |
+| Mean Accuracy | **81.4%** | 68.98% | _[TODO]_ | −12.4% | Hi sinh có chủ đích |
+| Mean F1 macro | 0.420 | **0.502** | _[TODO]_ | **+0.082** | F1 tăng |
+| Mean Recall macro | 0.411 | **0.569** | _[TODO]_ | **+0.158** | Recall tăng nhiều |
+| Mean Precision macro | 0.486 | **0.510** | _[TODO]_ | **+0.024** | Precision *vẫn* tăng nhẹ |
+| Mean AUC macro | 0.826 | 0.822 | _[TODO]_ | ≈0 | Macro AUC saturated |
+| Mean AUPRC macro | 0.523 | 0.519 | _[TODO]_ | ≈0 | Macro AUPRC saturated |
 
 → Macro metrics gần như không đổi vì lớp Popular dominate (~85% data). Story thật ở dưới ⇩
 
@@ -29,9 +29,9 @@
 
 | Nhóm | Recall | Precision | F1 | AUC | AUPRC | Đánh giá |
 |---|---|---|---|---|---|---|
-| **Popular** (Normal/Mild) | 0.970 → 0.686 *(−28%)* | 0.837 → **0.946** *(+11%)* | 0.898 → 0.786 *(−11%)* | 0.829 → **0.852** *(+0.023)* | 0.948 → 0.951 *(≈)* | Hi sinh recall, ĐỔI lại precision tăng |
-| **Rare** (Mod + Severe) | 0.131 → **0.510** *(+38%)* | 0.310 → 0.305 *(≈)* | 0.181 → **0.370** *(×2.0)* | 0.825 → 0.811 *(−0.014)* | 0.310 → 0.311 *(≈)* | F1 ×2 (decision-level), AUC sligth ↓ do Mod foraminal |
-| **Severe ONLY** *(clinical)* | 0.119 → **0.370** *(+25%)* | 0.210 → **0.304** *(+9%)* | 0.152 → **0.333** *(×2.2)* | 0.860 → **0.890** *(+0.030)* ⭐ | **0.276** → **0.347** *(+26% rel)* ⭐ | **Tăng cả 5 metrics** — win-win |
+| **Popular** (Normal/Mild) | 0.970 → 0.693 *(−28%)* | 0.837 → **0.949** *(+11%)* | 0.898 → 0.791 *(−11%)* | 0.829 → **0.848** *(+0.019)* | 0.948 → 0.949 *(≈)* | Hi sinh recall, ĐỔI lại precision tăng |
+| **Rare** (Mod + Severe) | 0.131 → **0.507** *(+38%)* | 0.310 → 0.291 *(≈)* | 0.181 → **0.358** *(×2.0)* | 0.825 → 0.809 *(−0.016)* | 0.310 → 0.303 *(≈)* | F1 ×2 (decision-level) |
+| **Severe ONLY** *(clinical)* | 0.119 → **0.362** *(+24%)* | 0.210 → **0.272** *(+6%)* | 0.152 → **0.304** *(×2.0)* | 0.860 → **0.886** *(+0.026)* ⭐ | **0.276** → **0.319** *(+16% rel)* ⭐ | **Tăng cả 5 metrics** — win-win |
 
 → **Đọc 1 dòng**: Severe Recall +25%, Severe Precision +9%, **Severe AUC +0.030, Severe AUPRC +26% relative** — không có đánh đổi nào ở class hiếm nhất.
 
@@ -57,10 +57,10 @@ Severe      │  ↑↑↑    │  ↑↑       │  ↑↑×2  │ Win-win, kh�
 
 ### Timing summary
 
-| | Train (full) | Inference throughput |
+| | Train (best @ ep) | Eval throughput |
 |---|---|---|
-| Base | 16.4 min | 178 sample/s |
-| CBAM | ~1.7h (25 ep) | 164 sample/s |
+| Base | 16.4 min (ep18) | 178.2 sample/s |
+| CBAM | 56 min (ep14) | 178.5 sample/s |
 | Hybrid | _[TODO]_ | _[TODO]_ |
 
 Inference latency tăng <10% — chấp nhận được cho gain clinical Severe AUPRC +26%.

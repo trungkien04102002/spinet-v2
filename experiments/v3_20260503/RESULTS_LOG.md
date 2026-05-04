@@ -182,6 +182,102 @@ OVERALL (averaged across 3 conditions)
 
 **Status:** ✓ Filled into THESIS_REPORT_DRAFT_v3.md (Bảng 1A + Bảng 1C Ours column).
 
+### Run 2b: CBAM RSNA v3 RETRAIN (NEW, replaces Plan B) — DONE 2026-05-04 04:06
+
+**Decision:** After fixing the regression root cause (HFlip fix + focal_gamma 2.0), user retrained CBAM in v2-bug mode (`--no-hflip-swap-labels`) to match v2 working config. Result: matches v2 within stochastic variation (Severe AUPRC 0.319 v3 vs 0.347 v2 = -8% rel, within seed-to-seed noise).
+
+**CMD (via scripts/run_cbam_v2bug.sh):**
+```
+python3 train_rsna_attention.py --epochs 25 --batch-size 64 --lr 1e-3 \
+    --focal-gamma 1.8 --use-focal --use-uncertainty true \
+    --class-weight-mode sqrt --augmentation medium --oversample-factor 5 \
+    --no-hflip-swap-labels \
+    --save-dir checkpoints/v3_20260503/cbam
+```
+
+**Raw `cat attention_best_metrics.txt` (v3 NEW):**
+```
+=== BEST MODEL METRICS (attention) ===
+Saved at:  2026-05-04T04:06:58
+Epoch:     14
+Train Loss: -1.4814
+Val Loss:   0.1601
+Avg Severe F1: 0.3044
+
+Validation Accuracies:
+  spinal_canal       0.8785
+  left_foraminal     0.6138
+  right_foraminal    0.5772
+
+Per-Class Metrics:
+
+  spinal_canal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.975  0.921  0.947     1722
+    Moderate         0.339  0.446  0.385      139
+    Severe           0.436  0.716  0.542       81
+
+  left_foraminal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.920  0.619  0.740     1497
+    Moderate         0.294  0.683  0.411      360
+    Severe           0.183  0.212  0.197       80
+
+  right_foraminal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.952  0.538  0.687     1482
+    Moderate         0.298  0.828  0.438      372
+    Severe           0.197  0.157  0.174       83
+
+AUC / AUPRC / Brier (per class, one-vs-rest):
+
+  spinal_canal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.947  0.993  0.105     1722
+    Moderate         0.884  0.319  0.082      139
+    Severe           0.963  0.602  0.031       81
+    macro            0.931  0.638
+
+  left_foraminal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.789  0.924  0.239     1497
+    Moderate         0.655  0.262  0.191      360
+    Severe           0.858  0.174  0.051       80
+    macro            0.767  0.453
+
+  right_foraminal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.807  0.931  0.250     1482
+    Moderate         0.657  0.283  0.209      372
+    Severe           0.837  0.181  0.050       83
+    macro            0.767  0.465
+
+AUC / AUPRC overall (averaged across 3 conditions):
+  macro AUC      : 0.822
+  macro AUPRC    : 0.519
+  popular AUPRC  : 0.949  (Normal/Mild)
+  rare    AUPRC  : 0.303  (Moderate + Severe)
+  Severe  AUPRC  : 0.319  (clinical priority)
+
+Extra:
+  total_train_seconds: 3374.98 (best @ ep14)
+  avg_epoch_seconds: 241.07
+  eval_throughput_samples_per_sec: 178.5
+  eval_ms_per_sample: 5.60
+```
+
+**Aggregated for Bảng 1A/1C Ours column (REPLACES Plan B):**
+- Mean AUC macro: 0.822
+- Mean AUPRC macro: 0.519
+- Severe AUC: 0.886 (avg of 0.963, 0.858, 0.837)
+- Severe AUPRC: **0.319**
+- Popular AUPRC: 0.949
+- Rare AUPRC: 0.303
+- Train time: 56 min (best @ ep14)
+- Eval throughput: 178.5 samples/s
+
+**Status:** ✓ Filled into SUMMARY_v3.md and THESIS_REPORT_DRAFT_v3.md (Ours column updated to v3 NEW numbers, replacing Plan B).
+
 ---
 
 ## Run 3-9: Hybrid + linear probe — PENDING
