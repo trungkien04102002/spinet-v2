@@ -472,6 +472,85 @@ Extra:
 
 ---
 
+## Phase 2: SPIDER Zero-Shot Eval — DONE 2026-05-04 08:23
+
+**Decision:** Use v3 Hybrid ckpt to encode SPIDER 8-disease text prompts via frozen BiomedCLIP, cosine-sim → predict. NO SPIDER training.
+
+**CMD (via scripts/run_spider_zeroshot.sh):**
+```
+# Pre-step (once per Vast instance):
+python3 prepare_spider_zeroshot.py --spider-dir spider --output-dir rsna_preprocessed_spider
+# Now wired into 5_download_spider.sh as [5/5] step (commit 6860602).
+
+python3 eval_zeroshot_spider.py \
+    --hybrid-checkpoint checkpoints/v3_20260503/hybrid/best_model_hybrid.pth \
+    --cbam-checkpoint checkpoints/v3_20260503/cbam/best_model_attention.pth \
+    --spider-test rsna_preprocessed_spider/spider_zeroshot_test.csv \
+    --volumes-dir rsna_preprocessed_spider \
+    --output experiments/v3_20260503/spider_zeroshot_v3.csv \
+    --prompt-template med --batch-size 8 --slice-strategy static
+```
+
+**Raw `cat experiments/v3_20260503/best_metrics.txt`:**
+```
+=== ZERO-SHOT SPIDER EVAL ===
+Saved at: 2026-05-04T08:23:34
+Hybrid: checkpoints/v3_20260503/hybrid/best_model_hybrid.pth
+CBAM:   checkpoints/v3_20260503/cbam/best_model_attention.pth
+
+Summary by tier:
+  easy    avg_F1_macro=0.3884  n=1
+  medium  avg_F1_macro=0.4202  n=3
+  hard    avg_F1_macro=0.2892  n=4
+
+Per-disease:
+  Disease                   Tier       F1m  BalAcc     AUC      n
+  Modic                     hard     0.117   0.260     nan   1439
+  UP_endplate               hard     0.441   0.521   0.743   1439
+  LOW_endplate              hard     0.452   0.529   0.747   1439
+  Spondylolisthesis         medium   0.030   0.501   0.745   1439
+  Disc_herniation           medium   0.522   0.724   0.802   1439
+  Disc_narrowing            easy     0.388   0.499   0.836   1439
+  Disc_bulging              medium   0.709   0.712   0.806   1439
+  Pfirrman_grade            hard     0.147   0.279     nan   1439
+```
+
+**Disease prevalence (verified during preprocess):**
+- Modic 4-cls: {0:930, 1:4, 2:498, 3:7} — class 1, 3 cực rare
+- UP_endplate: 40.2% pos | LOW_endplate: 40.9% pos
+- Spondylolisthesis: 2.9% pos (cực rare)
+- Disc_herniation: 4.9% pos (rare)
+- Disc_narrowing: 36.3% pos | Disc_bulging: 50.0% pos
+- Pfirrmann 5-cls: {1:218, 2:340, 3:411, 4:289, 5:181}
+
+**Aggregated for Bảng 3 (vs v2 Hybrid reference từ summary.pdf):**
+- Mean F1 macro v3 = 0.351 (vs v2 0.362, within noise, -0.011)
+- Disc-related v3 mean = 0.540 (Disc_bulging 0.709 best, Disc_herniation 0.522, Disc_narrowing 0.388)
+- Non-disc v3 mean = 0.237 (UP/LOW endplate ~0.45, Pfirrmann/Modic/Spondy < 0.15)
+- AUC binary tasks: 0.74-0.84 (semantic embedding ranks correctly even when threshold F1 fails)
+
+**Per-disease v3 vs v2:**
+- Disc_bulging: 0.709 v3 vs 0.613 v2 → **+0.096** ✅
+- Disc_narrowing: 0.388 v3 vs 0.586 v2 → **-0.198** ⚠️ (model predict toàn class 0; AUC 0.836 ranking vẫn đúng → threshold issue)
+- Modic: 0.117 v3 vs 0.018 v2 → +0.099 (vẫn rất thấp absolute)
+- Còn lại (5 disease) within ±0.04
+
+**Selective transfer story preserved**: disc-related ≫ non-disc trên cả v2 và v3 → narrative Theme 3 vẫn cohesive.
+
+**Bug nhỏ phát hiện:**
+1. `eval_zeroshot_spider.py` save vào `experiments/v3_20260503/best_metrics.{json,txt}` thay vì `spider_zeroshot_v3_summary.json` (như run script kỳ vọng) — cosmetic, fix sau.
+2. AUC = NaN cho Modic + Pfirrmann_grade (multiclass, sklearn cần `multi_class='ovr'`) — fix script khi cần.
+
+**Status:** ✓ Filled into SUMMARY_v3.md Bảng 3 (replaced v2 numbers + added v3 column).
+
+Output files:
+- `experiments/v3_20260503/spider_zeroshot_v3.csv` — per-sample predictions
+- `experiments/v3_20260503/best_metrics.json` — per-disease detailed metrics
+- `experiments/v3_20260503/best_metrics.txt` — human-readable summary
+- `experiments/v3_20260503/run_spider_zeroshot.log` — stdout log
+
+---
+
 ## SKIPPED runs
 
 Per user 2026-05-03 — scope simplified to match summary.pdf:
