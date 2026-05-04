@@ -8,10 +8,19 @@ set -e
 
 mkdir -p checkpoints/v3_20260503/hybrid experiments/v3_20260503
 
-CBAM_CKPT="checkpoints/fresh_cbam/best_model_attention_sqrt_cw_e20.pth"
-if [ ! -f "$CBAM_CKPT" ]; then
-    echo "ERROR: CBAM checkpoint not found at $CBAM_CKPT"
-    echo "Either scp from local or use checkpoints/v3_20260503/cbam/best_model_attention.pth if v3 retrain is done."
+V3_CKPT="checkpoints/v3_20260503/cbam/best_model_attention.pth"
+V2_CKPT="checkpoints/fresh_cbam/best_model_attention_sqrt_cw_e20.pth"
+
+if [ -f "$V3_CKPT" ]; then
+    CBAM_CKPT="$V3_CKPT"
+    echo "Using v3 retrained CBAM: $V3_CKPT"
+elif [ -f "$V2_CKPT" ]; then
+    CBAM_CKPT="$V2_CKPT"
+    echo "v3 not found, falling back to v2: $V2_CKPT"
+else
+    echo "ERROR: No CBAM checkpoint found"
+    echo "  Tried: $V3_CKPT"
+    echo "  Tried: $V2_CKPT"
     exit 1
 fi
 
