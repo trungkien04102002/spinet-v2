@@ -637,6 +637,25 @@ Spondylolisthesis     acc=85.96%  F1=0.595  per-class=[0.922, 0.267]
 
 ### Run 7: SPIDER Hybrid v3 — REGRESSION, FALLBACK to v2 ckpt 2026-05-04 09:44
 
+**Raw `cat experiments/v3_spider/best_metrics_hybrid_spider_unfreeze.txt` (v3 retrain, regressed):**
+```
+=== BEST HYBRID SPIDER MODEL (unfreeze) ===
+Saved at: 2026-05-04T09:44:25
+Epoch: 4
+Val loss: 0.7258
+Val mean acc:      75.32%
+Val mean F1 macro: 0.519
+
+Pfirrmann             acc=42.13%  F1=0.355  per-class F1=[0.65, 0.337, 0.36, 0.429, 0.0]
+                      precision=[0.513, 0.34, 0.562, 0.324, 0.0]  recall=[0.889, 0.333, 0.265, 0.632, 0.0]
+Modic                 acc=77.87%  F1=0.376  per-class F1=[0.846, 0.0, 0.658, 0.0]
+                      precision=[0.849, 0.0, 0.632, 0.0]  recall=[0.844, 0.0, 0.686, 0.0]
+Disc Narrowing        acc=86.81%  F1=0.858  per-class F1=[0.896, 0.819]
+                      precision=[0.876, 0.854]  recall=[0.918, 0.787]
+Spondylolisthesis     acc=94.47%  F1=0.486  per-class F1=[0.972, 0.0]
+                      precision=[0.957, 0.0]  recall=[0.987, 0.0]
+```
+
 **v3 retrain attempt (DONE but regressed):**
 - Best @ ep4 only (early stop kicked in)
 - Mean F1 = 0.519 (vs v2 0.623, **-0.104 hard regression**)
@@ -659,6 +678,70 @@ Eval runs (eval_spider_auc.py × 3 ckpts):
 python3 eval_spider_auc.py --model baseline --checkpoint checkpoints/v3_spider/best_model_baseline.pth --output experiments/v3_spider/auc_auprc_baseline.json
 python3 eval_spider_auc.py --model cbam --checkpoint checkpoints/v3_spider/best_model_cbam.pth --output experiments/v3_spider/auc_auprc_cbam.json
 python3 eval_spider_auc.py --model hybrid --checkpoint checkpoints/spider_phase4/best_model_hybrid_spider_unfreeze.slim.pth --cbam-checkpoint checkpoints/v3_20260503/cbam/best_model_attention.pth --output experiments/v3_spider/auc_auprc_hybrid.json
+```
+
+**Raw `cat auc_auprc_baseline.txt`:**
+```
+=== SPIDER AUC eval ===
+Model:       baseline
+Checkpoint:  checkpoints/v3_spider/best_model_baseline.pth
+Val samples: 235
+
+Per-condition (macro across classes):
+  Condition                 F1       Acc      Rec      Prec     AUC      AUPRC
+  Pfirrmann Grading         0.582    0.574    0.604    0.575    0.869    0.627
+  Modic                     0.364    0.753    0.373    0.357    0.766    0.421
+  Disc Narrowing            0.871    0.877    0.877    0.867    0.940    0.924
+  Spondylolisthesis         0.608    0.872    0.742    0.584    0.853    0.640
+
+Mean across 4 conditions:
+  F1     0.606    Acc   0.769
+  Recall 0.649    Prec  0.596
+  AUC    0.857    AUPRC 0.653
+```
+
+**Raw `cat auc_auprc_cbam.txt`:**
+```
+=== SPIDER AUC eval ===
+Model:       cbam
+Checkpoint:  checkpoints/v3_spider/best_model_cbam.pth
+Val samples: 235
+
+Per-condition (macro across classes):
+  Condition                 F1       Acc      Rec      Prec     AUC      AUPRC
+  Pfirrmann Grading         0.546    0.549    0.574    0.548    0.847    0.581
+  Modic                     0.336    0.698    0.347    0.330    0.789    0.406
+  Disc Narrowing            0.832    0.838    0.839    0.827    0.915    0.911
+  Spondylolisthesis         0.595    0.860    0.736    0.576    0.871    0.609
+
+Mean across 4 conditions:
+  F1     0.577    Acc   0.736
+  Recall 0.624    Prec  0.570
+  AUC    0.856    AUPRC 0.627
+
+Inference: 16.4s for 235 samples
+```
+
+**Raw `cat auc_auprc_hybrid.txt`:**
+```
+=== SPIDER AUC eval ===
+Model:       hybrid
+Checkpoint:  checkpoints/spider_phase4/best_model_hybrid_spider_unfreeze.slim.pth
+Val samples: 235
+
+Per-condition (macro across classes):
+  Condition                 F1       Acc      Rec      Prec     AUC      AUPRC
+  Pfirrmann Grading         0.580    0.583    0.612    0.574    0.875    0.667
+  Modic                     0.387    0.804    0.390    0.385    0.841    0.435
+  Disc Narrowing            0.878    0.885    0.877    0.879    0.944    0.937
+  Spondylolisthesis         0.643    0.945    0.637    0.651    0.792    0.605
+
+Mean across 4 conditions:
+  F1     0.622    Acc   0.804
+  Recall 0.629    Prec  0.622
+  AUC    0.863    AUPRC 0.661
+
+Inference: 42.9s for 235 samples
 ```
 
 **Aggregated (Mean across 4 conditions):**
