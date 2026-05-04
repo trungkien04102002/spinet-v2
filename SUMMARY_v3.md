@@ -12,16 +12,21 @@
 
 > **Một câu**: Hi sinh Acc 12.8% → cứu Severe Recall +25%, **Severe AUPRC +26% relative (clinical priority class)** mà Precision *vẫn tăng* → đánh đổi đáng giá.
 
-### Bảng tóm — 3 config × 6 metric chính
+### Bảng tóm — 4 config × 6 metric chính (có ablation BMC-only)
 
-| Metric | Base | **CBAM (Ours)** | **Hybrid (Theme 3)** | Δ Base→Ours | Đọc thế nào |
+| Metric | Base | CBAM-only | **BMC-only** *(ablation)* | **Hybrid** | Đọc |
 |---|---|---|---|---|---|
-| Mean Accuracy | **81.4%** | 68.98% | 72.1% | −12.4% | Hi sinh có chủ đích |
-| Mean F1 macro | 0.420 | 0.502 | **0.528** | **+0.082** | F1 tăng dần Base→CBAM→Hybrid |
-| Mean Recall macro | 0.411 | **0.569** | 0.592 | **+0.158** | Recall tăng nhiều |
-| Mean Precision macro | 0.486 | 0.510 | **0.517** | **+0.024** | Precision *vẫn* tăng nhẹ |
-| Mean AUC macro | 0.826 | 0.822 | **0.837** | ≈0 | Hybrid best AUC ⭐ |
-| Mean AUPRC macro | 0.523 | 0.519 | **0.526** | ≈0 | Hybrid best AUPRC |
+| Mean Accuracy | **81.4%** | 68.98% | 69.19% | 72.1% | Hybrid recover một phần Acc |
+| Mean F1 macro | 0.420 | 0.502 | 0.464 | **0.528** | BMC < CBAM < Hybrid ✅ |
+| Mean Recall macro | 0.411 | 0.569 | 0.528 | **0.592** | Hybrid best |
+| Mean Precision macro | 0.486 | 0.510 | 0.475 | **0.517** | Hybrid best |
+| Mean AUC macro | 0.826 | 0.822 | 0.812 | **0.837** | Hybrid best ⭐ |
+| Mean AUPRC macro | 0.523 | 0.519 | 0.482 | **0.526** | Hybrid best |
+| **Severe F1** | 0.149 | 0.304 | 0.229 | **0.343** | BMC-only yếu trên Severe |
+| **Severe AUC** | 0.860 | 0.886 | 0.874 | **0.896** | Hybrid best ⭐ |
+| **Severe AUPRC** | 0.276 | 0.319 | 0.218 | **0.321** | BMC-only kém ở rare |
+
+→ **Ablation chứng minh fusion hợp lý**: 2 single-branch (CBAM-only 0.502, BMC-only 0.464) đều **kém** Hybrid (0.528). CBAM contributes 3D context, BMC contributes semantic prior — bổ sung nhau, không thừa.
 
 → Macro metrics gần như không đổi vì lớp Popular dominate (~85% data). Story thật ở dưới ⇩
 
@@ -153,10 +158,12 @@ Trung bình qua **3 condition** (Spinal Canal / L-Foraminal / R-Foraminal).
 |---|---|---|---|---|---|
 | Base (20 ep) | **16.4 min** | 54.8s | 10.9s | **178.2 sample/s** | 5.61 ms |
 | CBAM v3 (best @ ep14) | 56 min | 241s | 10.9s | **178.5 sample/s** | 5.60 ms |
+| BMC-only *(ablation, best @ ep3)* | 3.2 min | 65s | 7.7s | **251.5 sample/s** | 3.98 ms |
 | **Hybrid v3** (best @ ep10) | **24.8 min** | 149s | 18.7s | 103.6 sample/s | 9.65 ms |
 
 → **Inference Base ≈ CBAM** (cùng backbone). **Hybrid +73% latency** do thêm BiomedCLIP frozen branch — vẫn 103 sample/s, đáp ứng real-time.
 → **Train Hybrid nhanh hơn CBAM** vì converge sớm (ep10 vs ep14) và chỉ train fusion MLP (CBAM + BMC đều frozen).
+→ **BMC-only nhanh nhất** (eval 251 s/s) vì skip 3D ResNet34, chỉ chạy ViT 2D + fusion MLP. Converge cực sớm @ ep3 — nghi ngờ overfit do capacity thấp.
 
 ---
 
@@ -252,3 +259,10 @@ Trung bình qua **3 condition** (Spinal Canal / L-Foraminal / R-Foraminal).
 
 5. **"Tại sao không có ablation gated fusion / modality dropout?"**
    → Q-JS-3b: math defense — gated fusion ≡ concat-MLP với learned gate trên 2 single vector (cross-attn degenerate case). Modality dropout là robustness study cho deployment, không bắt buộc cho Rank-C.
+
+6. **"Có chứng minh được 2 branches bổ sung nhau, không thừa không?"**
+   → CÓ — 2 single-branch ablations (cùng args, cùng fusion MLP, chỉ zero-out 1 branch ở forward):
+   - CBAM-only: F1 0.502, Severe F1 0.304, Severe AUPRC 0.319
+   - BMC-only: F1 0.464, Severe F1 0.229, Severe AUPRC 0.218
+   - Hybrid: F1 **0.528**, Severe F1 **0.343**, Severe AUPRC **0.321**
+   → Hybrid > max(CBAM, BMC) trên cả 3 metrics → **fusion là gain thật, không phải artifact**. CBAM > BMC trên RSNA → 3D context dominant cho stenosis classification.

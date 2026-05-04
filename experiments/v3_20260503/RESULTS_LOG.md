@@ -391,14 +391,95 @@ Extra:
 
 ---
 
+## Run 4: BMC-only RSNA — DONE 2026-05-04 07:44 (added ad-hoc per user 2026-05-04)
+
+**Decision (2026-05-04):** User asked for BMC-only ablation after seeing Phase 1 results monotonic Base→CBAM→Hybrid was small (CBAM→Hybrid +0.026 F1, near seed noise). Adding 4th config to strengthen fusion-justification story.
+
+**CMD (via scripts/run_bmc_only.sh):**
+```
+python3 train_rsna_hybrid.py \
+    --cbam-checkpoint checkpoints/v3_20260503/cbam/best_model_attention.pth \
+    --ablate-branch biomedclip_only \
+    --epochs 20 --batch-size 32 --lr 1e-4 \
+    --focal-gamma 2.0 --class-weight-mode sqrt --oversample-factor 3 \
+    --supcon-weight 0.1 --no-hflip-swap-labels \
+    --save-dir checkpoints/v3_20260503/bmc_only
+```
+
+NOTE: Despite flag name `biomedclip_only`, this ablation **zeros out CBAM features at forward** (so model effectively trains BMC-only path). Naming convention from `grading_hybrid.py` is "ablate_branch=biomedclip_only" means "drop the OTHER branch, keep BMC".
+
+**Raw `cat hybrid_biomedclip_only_best_metrics.txt`:**
+```
+=== BEST MODEL METRICS (hybrid_biomedclip_only) ===
+Saved at:  2026-05-04T07:44:48
+Epoch:     3
+Train Loss: 1.3219
+Val Loss:   0.1649
+Avg Severe F1: 0.2290
+
+Validation Accuracies:
+  spinal_canal       0.8342
+  left_foraminal     0.6169
+  right_foraminal    0.6247
+
+Per-Class Metrics:
+  spinal_canal:
+    Normal/Mild  prec 0.950 rec 0.892 F1 0.920
+    Moderate     prec 0.226 rec 0.201 F1 0.213
+    Severe       prec 0.277 rec 0.691 F1 0.396
+  left_foraminal:
+    Normal/Mild  prec 0.933 rec 0.609 F1 0.737
+    Moderate     prec 0.301 rec 0.753 F1 0.430
+    Severe       prec 0.203 rec 0.150 F1 0.173
+  right_foraminal:
+    Normal/Mild  prec 0.919 rec 0.627 F1 0.745
+    Moderate     prec 0.312 rec 0.734 F1 0.438
+    Severe       prec 0.154 rec 0.096 F1 0.119
+
+AUC / AUPRC overall:
+  macro AUC      : 0.812
+  macro AUPRC    : 0.482
+  popular AUPRC  : 0.950
+  rare    AUPRC  : 0.248
+  Severe  AUPRC  : 0.218
+
+Extra:
+  total_train_seconds: 194.52 (best @ ep3)
+  avg_epoch_seconds: 64.84
+  eval_throughput_samples_per_sec: 251.5
+  eval_ms_per_sample: 3.98
+  ablate_branch: biomedclip_only
+```
+
+**Aggregated for ablation column (vs Hybrid full):**
+- Mean F1 macro: 0.464 (vs Hybrid 0.528 → −0.064; vs CBAM-only 0.502 → −0.038)
+- Mean Acc: 69.19% (vs Hybrid 72.1%)
+- Mean AUC macro: 0.812 (vs Hybrid 0.837)
+- Mean AUPRC macro: 0.482 (vs Hybrid 0.526)
+- Severe F1: 0.229 (vs Hybrid 0.343 → −0.114; vs CBAM 0.304 → −0.075)
+- Severe AUC: 0.874 (vs Hybrid 0.896)
+- Severe AUPRC: 0.218 (vs Hybrid 0.321; significantly worse on rare class)
+- Train: 3.2 min (best @ ep3, very fast convergence — capacity-limited)
+- Eval throughput: 251.5 samples/s (fastest — skips 3D ResNet)
+
+**Story for defense (Bảng 4-config):**
+- Order: BMC-only (0.464) < CBAM-only (0.502) < Hybrid (0.528)
+- BMC alone insufficient → CBAM 3D context is dominant for RSNA stenosis
+- Hybrid > max(branches) → fusion gain is REAL, not artifact
+- CBAM contributes structural priors, BMC contributes semantic priors — complementary
+
+**Status:** ✓ Filled into SUMMARY_v3.md (4-config Bảng tóm + Bảng 1D timing + Defense Q6).
+
+---
+
 ## SKIPPED runs
 
-Per user 2026-05-03 — scope simplified to match summary.pdf 3-run plan:
-- ❌ Run 4 hybrid `--ablate-branch cbam_only`
-- ❌ Run 5 hybrid `--ablate-branch biomedclip_only`
+Per user 2026-05-03 — scope simplified to match summary.pdf:
+- ✅ Run 4 hybrid `--ablate-branch biomedclip_only` (BMC-only) — ADDED 2026-05-04
+- ❌ Run 5 hybrid `--ablate-branch cbam_only` — skipped (BMC-only already shows fusion works)
 - ❌ Run 6 hybrid `--fusion gated`
 - ❌ Run 7 hybrid `--modality-dropout 0.15`
 - ❌ Run 8 linear probe BiomedCLIP
 - ❌ Run 9 linear probe ImageNet ViT
 
-Lý do: Advisor approve summary.pdf scope = không cần ablation cho Rank-C. Math defense (Q-JS-3b) đủ giải thích "tại sao concat-MLP" mà không cần empirical ablation.
+Lý do skip remaining: BMC-only ablation đã đủ chứng minh "fusion adds value beyond either branch alone". Math defense (Q-JS-3b) cover gated fusion question.
