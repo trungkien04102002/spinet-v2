@@ -10,13 +10,21 @@ set -e
 
 mkdir -p checkpoints/v3_spider experiments/v3_spider
 
-RSNA_CKPT="checkpoints/v3_20260503/baseline/best_model.pth"
+V3_CKPT="checkpoints/v3_20260503/baseline/best_model.pth"
+V2_CKPT="checkpoints/fresh_baseline/best_model_baseline_full_e25.pth"
 
-if [ ! -f "$RSNA_CKPT" ]; then
-    echo "ERROR: missing v3 RSNA baseline ckpt at $RSNA_CKPT"
+if [ -f "$V3_CKPT" ]; then
+    RSNA_CKPT="$V3_CKPT"
+    echo "Using v3 RSNA baseline init: $V3_CKPT"
+elif [ -f "$V2_CKPT" ]; then
+    RSNA_CKPT="$V2_CKPT"
+    echo "v3 baseline ckpt not found, falling back to v2: $V2_CKPT"
+else
+    echo "ERROR: No RSNA baseline checkpoint found"
+    echo "  Tried: $V3_CKPT"
+    echo "  Tried: $V2_CKPT"
     exit 1
 fi
-echo "Using v3 RSNA baseline init: $RSNA_CKPT"
 
 python3 train_spider.py \
     --model baseline \
