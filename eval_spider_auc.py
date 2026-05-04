@@ -144,15 +144,15 @@ def infer_baseline_or_cbam(model, loader, device):
 def infer_hybrid(model, loader, text_db, device):
     model.eval()
     buf = _collect_init()
+    logit_scale = model.logit_scale.exp().clamp(max=100.0).item()
     with torch.no_grad():
         for volumes, labels in tqdm(loader, desc="Inference", leave=False):
             volumes = volumes.unsqueeze(1).to(device)
-            image_emb = model(volumes)  # [B, 512] L2-normalized
+            image_emb = model.encode_image(volumes)  # [B, 512] L2-normalized
             for c in SPIDER_CONDITIONS:
-                # cosine sim with text embedding -> softmax over classes
                 text = text_db[c].to(device)  # [num_classes, 512]
-                logits = image_emb @ text.T  # [B, num_classes]
-                probs = F.softmax(logits / 0.07, dim=1).cpu().numpy()  # temperature 0.07
+                logits = logit_scale * (image_emb @ text.T)  # [B, num_classes]
+                probs = F.softmax(logits, dim=1).cpu().numpy()
                 buf[c]["probs"].append(probs)
                 buf[c]["labels"].append(labels[c].numpy())
     return _stack(buf)
@@ -223,8 +223,6 @@ def build_model(args, device):
             raise ValueError("--cbam-checkpoint required for hybrid")
         m = SpineNetHybrid(
             cbam_checkpoint_path=args.cbam_checkpoint,
-            freeze_cbam=True,
-            freeze_biomedclip=True,
             slice_strategy=args.slice_strategy,
         )
     else:
