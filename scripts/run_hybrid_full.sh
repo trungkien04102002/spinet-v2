@@ -29,4 +29,5 @@ python3 train_rsna_hybrid.py \
     --epochs 20 \
     --batch-size 32 \
     --lr 1e-4 \
+    --no-hflip-swap-labels \
     --save-dir checkpoints/v3_20260503/hybrid 2>&1 | tee experiments/v3_20260503/run_hybrid_full.log
