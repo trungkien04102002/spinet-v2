@@ -296,7 +296,26 @@ def main():
                              'inverse=strong boost (may drop overall acc). '
                              'effective=class-balanced (Cui et al. 2019).')
 
+    # Reproducibility
+    parser.add_argument('--seed', type=int, default=42,
+                        help='Random seed for split + torch + numpy + cudnn')
+
     args = parser.parse_args()
+
+    # Reproducibility — must come BEFORE any DataLoader / model construction
+    import random as _random
+    import numpy as _np
+    _random.seed(args.seed)
+    _np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(args.seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+    # Tag output filenames by seed so multi-seed runs don't overwrite.
+    # Default seed=42 → no tag (backward compat with v3 results).
+    run_tag = "" if args.seed == 42 else f"_seed{args.seed}"
 
     # Create save directory
     save_dir = Path(args.save_dir)
@@ -330,7 +349,7 @@ def main():
     train_patients, val_patients = train_test_split(
         unique_patients,
         test_size=args.val_split,
-        random_state=42
+        random_state=args.seed
     )
 
     train_indices = dataset.metadata[dataset.metadata['study_id'].isin(train_patients)].index.tolist()
@@ -438,7 +457,7 @@ def main():
 
     best_epoch = 0
     epochs_without_improvement = 0
-    metrics_logger = MetricsLogger(save_dir=save_dir, prefix="baseline")
+    metrics_logger = MetricsLogger(save_dir=save_dir, prefix=f"baseline{run_tag}")
 
     # Total wall-clock from first training step (for paper Table: train time)
     total_train_start = time.time()
@@ -537,7 +556,7 @@ def main():
             epochs_without_improvement = 0
 
             # Save best model
-            best_path = save_dir / 'best_model.pth'
+            best_path = save_dir / f'best_model{run_tag}.pth'
             torch.save({
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
@@ -625,7 +644,7 @@ def main():
     print(f"\nBest model:")
     print(f"  Epoch: {best_epoch}")
     print(f"  Validation Loss: {best_val_loss:.4f}")
-    print(f"  Saved at: {save_dir / 'best_model.pth'}")
+    print(f"  Saved at: {save_dir / f'best_model{run_tag}.pth'}")
 
     print("\nNext steps:")
     print("  1. Evaluate on test set: python3 test_rsna_preprocessed.py --model checkpoints/best_model.pth")

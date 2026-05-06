@@ -104,7 +104,24 @@ def parse_args():
     parser.add_argument('--metrics-dir', type=str, default='experiments/spider_phase4',
                         help='Where to save best_metrics_<model>.{json,txt} (default: experiments/spider_phase4)')
 
+    # Reproducibility
+    parser.add_argument('--seed', type=int, default=42,
+                        help='Random seed for split + torch + numpy + cudnn')
+
     return parser.parse_args()
+
+
+def set_seed(seed: int):
+    """Make training as deterministic as possible across torch/numpy/python."""
+    import random as _random
+    import numpy as _np
+    import torch as _torch
+    _random.seed(seed)
+    _np.random.seed(seed)
+    _torch.manual_seed(seed)
+    _torch.cuda.manual_seed_all(seed)
+    _torch.backends.cudnn.deterministic = True
+    _torch.backends.cudnn.benchmark = False
 
 
 SPIDER_CONDITIONS = ['pfirrmann', 'modic', 'disc_narrowing', 'spondylolisthesis']
@@ -226,6 +243,13 @@ def print_per_class_metrics(per_class_metrics):
 def main():
     args = parse_args()
 
+    # Reproducibility — must come BEFORE any DataLoader / model construction
+    set_seed(args.seed)
+
+    # Tag output filenames by seed so multi-seed runs don't overwrite.
+    # Default seed=42 → no tag (backward compat with v3 results).
+    run_tag = "" if args.seed == 42 else f"_seed{args.seed}"
+
     # Set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
@@ -256,7 +280,7 @@ def main():
     train_indices, val_indices = train_test_split(
         list(range(len(full_dataset))),
         test_size=args.val_split,
-        random_state=42
+        random_state=args.seed
     )
 
     train_dataset = Subset(full_dataset, train_indices)
@@ -436,7 +460,7 @@ def main():
 
         # Persist running CSV every epoch (so partial runs are recoverable)
         import csv as _csv
-        log_path = metrics_dir / f'training_log_{args.model}.csv'
+        log_path = metrics_dir / f'training_log_{args.model}{run_tag}.csv'
         with open(log_path, 'w', newline='') as f:
             writer = _csv.DictWriter(f, fieldnames=list(row.keys()))
             writer.writeheader()
@@ -446,7 +470,7 @@ def main():
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             epochs_no_improve = 0
-            checkpoint_path = checkpoint_dir / f'best_model_{args.model}.pth'
+            checkpoint_path = checkpoint_dir / f'best_model_{args.model}{run_tag}.pth'
             torch.save({
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
@@ -460,7 +484,7 @@ def main():
 
             # Persist best metrics txt + json (human + machine readable)
             from datetime import datetime as _dt
-            best_txt = metrics_dir / f'best_metrics_{args.model}.txt'
+            best_txt = metrics_dir / f'best_metrics_{args.model}{run_tag}.txt'
             with open(best_txt, 'w') as f:
                 f.write(f"=== BEST {args.model.upper()} SPIDER MODEL ===\n")
                 f.write(f"Saved at: {_dt.now().isoformat(timespec='seconds')}\n")
@@ -476,7 +500,7 @@ def main():
                     f.write(f"{'':>20s}  precision={[round(float(x), 3) for x in per_class_metrics[c]['precision']]}  "
                             f"recall={[round(float(x), 3) for x in per_class_metrics[c]['recall']]}\n")
 
-            best_json = metrics_dir / f'best_metrics_{args.model}.json'
+            best_json = metrics_dir / f'best_metrics_{args.model}{run_tag}.json'
             import json as _json
             with open(best_json, 'w') as f:
                 _json.dump({
@@ -520,7 +544,7 @@ def main():
     print("Training completed!")
     print("="*70)
     print(f"Best validation loss: {best_val_loss:.4f}")
-    print(f"Model saved to: checkpoints_spider/best_model_{args.model}.pth")
+    print(f"Model saved to: {checkpoint_dir}/best_model_{args.model}{run_tag}.pth")
     print("="*70)
 
 

@@ -120,7 +120,24 @@ def parse_args():
     parser.add_argument('--resume', type=str, default=None,
                         help='Path to checkpoint to resume from')
 
+    # Reproducibility
+    parser.add_argument('--seed', type=int, default=42,
+                        help='Random seed for split + torch + numpy + cudnn')
+
     return parser.parse_args()
+
+
+def set_seed(seed: int):
+    """Make training as deterministic as possible across torch/numpy/python."""
+    import random as _random
+    import numpy as _np
+    import torch as _torch
+    _random.seed(seed)
+    _np.random.seed(seed)
+    _torch.manual_seed(seed)
+    _torch.cuda.manual_seed_all(seed)
+    _torch.backends.cudnn.deterministic = True
+    _torch.backends.cudnn.benchmark = False
 
 
 def evaluate(model, dataloader, criterion, uncertainty_loss, device):
@@ -253,6 +270,9 @@ def print_per_class_metrics(per_class_metrics):
 def main():
     args = parse_args()
 
+    # Reproducibility — must come BEFORE any DataLoader / model construction
+    set_seed(args.seed)
+
     # Set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -293,7 +313,7 @@ def main():
     train_patients, val_patients = train_test_split(
         unique_patients,
         test_size=args.val_split,
-        random_state=42
+        random_state=args.seed
     )
 
     train_indices = full_dataset.metadata[full_dataset.metadata['study_id'].isin(train_patients)].index.tolist()
@@ -465,7 +485,10 @@ def main():
 
     best_epoch = 0
     epochs_without_improvement = 0
-    metrics_logger = MetricsLogger(save_dir=save_dir, prefix="attention")
+    # Tag output filenames by seed so multi-seed runs don't overwrite.
+    # Default seed=42 → no tag (backward compat with v3 results).
+    run_tag = "" if args.seed == 42 else f"_seed{args.seed}"
+    metrics_logger = MetricsLogger(save_dir=save_dir, prefix=f"attention{run_tag}")
 
     # Total wall-clock from first training step (for paper Table: train time)
     total_train_start = time.time()
@@ -576,7 +599,7 @@ def main():
             epochs_without_improvement = 0
 
             # Save best model
-            best_path = save_dir / 'best_model_attention.pth'
+            best_path = save_dir / f'best_model_attention{run_tag}.pth'
             torch.save({
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
@@ -634,7 +657,7 @@ def main():
 
         # Save periodic checkpoint
         if (epoch + 1) % args.save_freq == 0:
-            checkpoint_path = save_dir / f'checkpoint_attention_epoch_{epoch+1}.pth'
+            checkpoint_path = save_dir / f'checkpoint_attention{run_tag}_epoch_{epoch+1}.pth'
             torch.save({
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
@@ -662,7 +685,7 @@ def main():
     print("[7/7] Training Complete!")
     print("="*70)
     print(f"Best Model: Epoch {best_epoch} (Val Loss: {best_val_loss:.4f})")
-    print(f"Saved to: {save_dir / 'best_model_attention.pth'}")
+    print(f"Saved to: {save_dir / f'best_model_attention{run_tag}.pth'}")
     print("="*70)
 
 
