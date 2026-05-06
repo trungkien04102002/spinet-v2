@@ -48,6 +48,26 @@ inverse-square-root frequency. Only the projection MLP, attention pool,
 $\mathrm{logit\_scale}$, and (optionally) the CBAM 3D backbone are updated;
 the BiomedCLIP image and text encoders remain frozen throughout.
 
+\subsection{Fusion Design Rationale}
+\label{sec:fusion-rationale}
+We integrate BiomedCLIP~\cite{zhang2023biomedclip} as a frozen visual
+feature extractor rather than fine-tuning it end-to-end. This design
+follows the emerging consensus that, on small and class-imbalanced
+clinical datasets, freezing large-scale pretrained vision-language
+backbones and training only a lightweight task-specific head outperforms
+full fine-tuning, which tends to overfit and induce catastrophic
+forgetting~\cite{liu2024frozenvlmbreast,benchmarkfm2025,whyfmpathology2025}.
+We pair the frozen BiomedCLIP visual stream with a learnable
+3D-CBAM-ResNet34~\cite{woo2018cbam,he2016resnet} that captures volumetric,
+anatomy-specific features that 2D pretrained encoders necessarily miss;
+the two streams are combined through late concat-MLP fusion, an
+architecture analogous to that of~\cite{liu2024frozenvlmbreast} for
+multimodal breast cancer prediction. Recent analyses of BiomedCLIP under
+high class imbalance~\cite{biomedclipImbalance2025} confirm that
+BiomedCLIP features alone are brittle on the long tail (relevant to our
+Severe class), motivating the additional 3D CNN branch with focal loss
+and oversampling.
+
 \subsection{Implementation Details}
 % TODO: AdamW, lr, batch size, epochs, augmentation, hardware.
 Trained on a single consumer GPU. Total parameters: ${\sim}218$M;

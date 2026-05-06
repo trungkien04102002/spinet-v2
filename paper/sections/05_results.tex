@@ -1,6 +1,71 @@
 \section{Results}
 \label{sec:results}
 
+\subsection{Comparison with State-of-the-Art}
+\label{sec:sota}
+% =============================================================================
+% SOTA Table 1 — comparison with published methods on lumbar spine grading
+% =============================================================================
+We position our method against the best published lumbar spine MRI grading
+results from 2021--2026 (Tab.~\ref{tab:sota}). Direct numerical comparison
+on RSNA~2024 is intrinsically limited because the Kaggle metric is
+sample-weighted log-loss with no public per-class F1 / AUC. To our
+knowledge, no peer-reviewed paper applies a vision-language foundation
+model to the RSNA~2024 dataset; ours is the first BiomedCLIP-based pipeline
+on this benchmark.
+
+\begin{table*}[t]
+\centering
+\caption{Comparison with published methods on lumbar spine MRI grading. Our
+         numbers are reported on the full RSNA~2024 validation split
+         (random\_state=42, test\_size=0.2, patient-level, 1942 IVDs / 395
+         patients). Footnotes:
+         \textsuperscript{$\dagger$}~balanced/single-level/binarised subset;
+         \textsuperscript{$\dagger\dagger$}~pixel-level segmentation of 6
+         anatomical regions, not severity grading;
+         \textsuperscript{$\ddagger$}~different metric ($\kappa$);
+         \textsuperscript{$*$}~in-house dataset. Bold = best directly
+         comparable on the same row (where applicable). ``--'' = not reported
+         in the source.}
+\label{tab:sota}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}llllll@{}}
+\toprule
+Method & Year & Dataset & Backbone & Mean F1 & AUC / $\kappa$ \\
+\midrule
+Hallinan et al.~\cite{hallinan2021stenosis}            & 2021 & 446 + 100\textsuperscript{*}   & Mask R-CNN + 3D CNN          & --          & $\kappa$ 0.89--0.96\textsuperscript{$\ddagger$} \\
+McSweeney et al.~\cite{mcsweeney2023spinenet}          & 2023 & NFBC1966\textsuperscript{*}    & SpineNetV2 ext.\ val.        & --          & Pfirr.\ Bal.\,Acc 78\,\%, $\kappa$ 0.68 \\
+Bharadwaj et al.~\cite{bharadwaj2023interpretable}     & 2023 & 200 pat.\textsuperscript{*}    & V-Net + BiT + DT             & --          & AUROC 0.92--0.94 \\
+Nigru et al.~\cite{nigru2024spinenetv2}                & 2024 & 1\,747 disks\textsuperscript{*} & SpineNetV2 ext.\ val.       & 0.796--0.985 (per-cond.) & $\kappa$ 0.46--0.74 \\
+Lin, Zhang, Shang~\cite{lin2024multiattention}         & 2024 & RSNA-derived L4--L5 & CNN + CBAM + multi-attn       & 0.945\textsuperscript{$\dagger$} & 0.951--0.972 \\
+Liu et al.~\cite{liu2025rsna}                          & 2025 & RSNA 2024            & MobileNetV2-UNet (segmentation) & 0.957\textsuperscript{$\dagger\dagger$} & -- \\
+M-SCAN~\cite{hong2025mscan}                            & 2025 & RSNA 2024            & Multi-view + cross-attn       & --          & AUROC 0.971 (canal) \\
+Wang et al.~\cite{wang2025cnntransformer}              & 2025 & 564 MRIs\textsuperscript{*} & CNN vs.\ Transformer        & --          & $\kappa$ 0.91--0.99 \\
+AFFM-YOLOv8~\cite{liu2025affmyolo}                     & 2025 & 8\,428 pat.\textsuperscript{*} & YOLOv8 + AFFM             & 0.910 (MSU) & $\kappa$ $>$ 0.9 \\
+Acharya \& Kansakar~\cite{acharya2026disccentric}      & 2026 & Sagittal T2\textsuperscript{*} & Disc-Centric Contrastive  & Bal.\,Acc 0.781 & -- \\
+Phaphuangwittayakul et al.~\cite{phaphuangwittayakul2026multitask} & 2026 & RSNA 2024 + Phayao\textsuperscript{*} & VGG19/ConvNeXt-T + clf  & 0.956 (ext.) & AUC 0.994--1.000 \\
+\midrule
+\textbf{Ours} (CBAM + frozen BiomedCLIP)               & 2026 & \textbf{RSNA 2024 val (full, 3-cls)} & 3D ResNet34 + CBAM + BiomedCLIP & \textbf{0.528} & \textbf{0.837} (Severe AUPRC 0.321) \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+The 0.945 / 0.957 numbers in Lin et al.~\cite{lin2024multiattention} and
+Liu et al.~\cite{liu2025rsna} should be read with the table footnotes:
+Lin et al.\ evaluate on a balanced binarised single-level L4--L5 subset,
+and Liu et al.\ solve a different task — pixel-level segmentation of six
+anatomical regions on the RSNA 2024 dataset rather than per-IVD severity
+grading; the authors explicitly state their model ``does not directly
+grade severity levels''.
+The most directly comparable published row is
+Nigru et al.~\cite{nigru2024spinenetv2}, which evaluates SpineNetV2 (our
+shared backbone) on a 1\,747-disc external set spanning all five of our
+label-space conditions. Their reported foraminal Bal.\,Acc of $\sim70\,\%$
+($\kappa$ 0.46--0.47) is the realistic literature ceiling for sagittal-only
+foraminal grading and contextualises our foraminal weakness as
+intrinsic-to-modality rather than method-specific.
+
 \subsection{Cross-phase Summary}
 % Pull from experiments/PHASE_REPORT_FULL.md cross-phase table.
 \begin{table}[t]

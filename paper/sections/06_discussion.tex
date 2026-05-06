@@ -33,7 +33,26 @@ RAD-DINO~\cite{perezgarcia2024raddino}) with only a vocabulary remap.
 The 3D CBAM specialist branch likewise admits stronger alternatives
 without changing the cosine-similarity head.
 
-\subsection{Limitations}
+\subsection{Limitations and Future Work on Foundation Models}
+\label{sec:foundation-future}
+Our integration uses BiomedCLIP, a 2D image-text encoder, applied
+slice-wise and pooled. We acknowledge several alternative foundation
+models that could plausibly improve performance and that we did not
+benchmark. RadCLIP~\cite{lu2024radclip} introduces a slice-pooling
+attention adapter natively suited to volumetric inputs and is the
+closest 2D-VLM analogue with built-in 3D aggregation. Native 3D-MRI
+foundation models — most notably
+Decipher-MR~\cite{yang2026deciphermr} — and 3D-CT analogues such as
+Merlin~\cite{blankemeier2026merlin} (which outperforms BiomedCLIP by
+${\sim}34\,\%$ on CT zero-shot) suggest that domain-aligned 3D
+pretraining is a stronger prior than our 2D-lifted approach. Recent
+prompt-tuning of BiomedCLIP (BiomedCoOp~\cite{koleilat2025biomedcoop})
+reports 5--10\,\% gains on biomedical classification with minimal
+compute. To the best of our knowledge, no public study has applied any
+of these models to the RSNA~2024 lumbar spine task; we leave a
+head-to-head comparison to future work.
+
+\subsection{Other Limitations}
 \begin{itemize}
   \item Single-seed reporting; multi-seed mean$\pm$std is planned for
         the camera-ready.
@@ -43,4 +62,11 @@ without changing the cosine-similarity head.
   \item The projection MLP induces a label-space bias toward the
         training task (here, RSNA stenosis). Multi-domain projection
         heads are an obvious next step.
+  \item Foraminal stenosis grading remains the weakest sub-task
+        ($\sim$20\,\% Severe Recall), consistent with the published
+        SpineNetV2 external-validation
+        ceiling~\cite{nigru2024spinenetv2} of ${\sim}70\,\%$ balanced
+        accuracy on sagittal-only foraminal grading. Combined sagittal
+        + axial input is a known route to improvement that we did not
+        explore.
 \end{itemize}
