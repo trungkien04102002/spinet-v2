@@ -1,0 +1,4 @@
+model,condition,n_pos,n_total,auprc
+cbam,spinal_canal,81,1942,0.6026121662075685
+cbam,left_foraminal,80,1937,0.17425990574405437
+cbam,right_foraminal,83,1937,0.18074889639347186
