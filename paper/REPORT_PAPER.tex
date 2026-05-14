@@ -36,13 +36,14 @@
        Embeddings for Lumbar Intervertebral Disc Grading\\
        with Cross-Dataset Zero-Shot Transfer}
 
-% TODO(USER): Verify institutional affiliation before submission.
+% TODO(USER): Fill in institutional affiliation before submission.
 \author{\IEEEauthorblockN{Trung Kien Ha\IEEEauthorrefmark{1},
                          Nh\^an Phan\IEEEauthorrefmark{1}}
-        \IEEEauthorblockA{\IEEEauthorrefmark{1}[Faculty / Department],
-                          [Institution]\\
-                          [City, Country]\\
-                          Email: \{[author1], [author2]\}@[domain]}}
+        \IEEEauthorblockA{\IEEEauthorrefmark{1}TODO Faculty / Department,
+                          TODO Institution,
+                          TODO City, Country.\\
+                          Email: TODO\,author1@example.org,\,
+                          TODO\,author2@example.org}}
 
 \maketitle
 
@@ -166,6 +167,64 @@ a slice-pooling adapter for volumetric input and is the closest
 architectural alternative to ours; native 3D MRI VLMs such as
 Decipher-MR~\cite{yang2026deciphermr} were not publicly available
 during this work and are noted as a future-work direction.
+
+\textbf{Positioning against prior RSNA 2024 methods.}
+Table~\ref{tab:sota} summarizes published methods reporting on RSNA
+2024 or closely related lumbar spine MRI grading tasks. Direct
+numerical comparison is not possible across rows because each prior
+method targets a different problem setup. Specifically: (i)
+binarization of the original 3-class severity grading into
+normal-vs-abnormal collapses the clinically critical Moderate--Severe
+boundary~\cite{lin2024cbam,aktan2025}; (ii) single-level evaluation,
+typically L4--L5 only, ignores spatial heterogeneity across the lumbar
+spine~\cite{lin2024cbam}; (iii) balanced-subset construction
+eliminates the very class imbalance that motivates the
+problem~\cite{lin2024cbam,aktan2025,phaphuangwittayakul2026}; and (iv)
+Kaggle competition entries report only weighted log-loss on ensembles
+of 10--20 backbones with extensive test-time augmentation, which is
+neither a single-model evaluation nor convertible to F1. Our setup is
+intentionally the more difficult variant: full 3-class severity
+grading across all five intervertebral disc levels on the natively
+imbalanced distribution, evaluated as a single model. We report our
+numbers alongside the published values in Table~\ref{tab:sota} with
+explicit setup footnotes; absolute-number comparisons should be
+interpreted under those caveats.
+
+\begin{table}[t]
+\centering
+\caption{Reported metrics from prior work on RSNA 2024 or closely
+related lumbar spine MRI grading. Setups are inconsistent across
+columns; see footnotes. ``—'' = not reported in the cited form.}
+\label{tab:sota}
+\renewcommand{\arraystretch}{1.05}
+\setlength{\tabcolsep}{4pt}
+\footnotesize
+\begin{tabular}{@{}lcccl@{}}
+\toprule
+Method & Yr & Data & F1\,/\,AUC & Setup\,$^\dagger$ \\
+\midrule
+Hallinan~et~al.~\cite{hallinan2021}      & '21 & Priv.   & $\kappa$ .89--.96 & Bin., diff.\,metric \\
+Nigru~et~al.~\cite{nigru2024}            & '24 & Priv.   & .84\,/\,$\kappa$.46--.74 & Foram.\,binary \\
+Lin~et~al.~\cite{lin2024cbam}            & '24 & RSNA\,sub & \best{.945}\,/\,.97 & Bin., bal., 1-lvl \\
+Aktan~et~al.~\cite{aktan2025}            & '25 & RSNA    & \best{.957}\,/\,—   & Bin., bal., joint seg \\
+M-SCAN~\cite{hong2025mscan}              & '25 & RSNA    & —\,/\,.971 (canal) & Multi-view (sag.\,+\,ax.) \\
+Phaphuang.~\cite{phaphuangwittayakul2026}& '26 & RSNA+ext. & \best{.956}\,/\,.99 & Bin., ext.\,bal. \\
+nshen7~\cite{nshen2024}                  & '24 & RSNA & Sev.\,F1 \best{.501} & 3-cls, public split \\
+Kaggle Top-3\,$^\ddagger$ \cite{kaggle2024} & '24 & RSNA & log-loss only & Ensemble $\geq$ 10 \\
+\midrule
+\textbf{Ours} (Hybrid)                   & '26 & RSNA    & \textbf{.528\,/\,.837} (Sev.\,F1 \textbf{.343}) & \textbf{3-cls, full multi-lvl, single model} \\
+\bottomrule
+\end{tabular}
+
+\vspace{2pt}
+\par
+{\raggedright\scriptsize
+$^\dagger$Setup abbreviations: Bin.~=~binarized to 2-class;
+bal.~=~class-balanced subset; 1-lvl~=~single level (typically L4--L5);
+ext.~=~external dataset. $^\ddagger$Kaggle log-loss does not convert
+to F1; ensembles of 10--20 backbones are not single-model.\par}
+\end{table}
+
 
 % =============================================================================
 \section{Method}
@@ -746,6 +805,35 @@ N.~Boos,
 ``Magnetic resonance classification of lumbar intervertebral disc
 degeneration,''
 \textit{Spine}, vol.~26, no.~17, pp.~1873--1878, 2001.
+
+\bibitem{aktan2025}
+S.~Aktan, F.~Khan \textit{et al.},
+``A deep learning approach to lumbar spine degenerative classification
+on the RSNA 2024 dataset,''
+\textit{International Journal of Computational Intelligence Systems},
+2025.
+
+\bibitem{hong2025mscan}
+J.~Hong \textit{et al.},
+``M-SCAN: multi-view scan attention network for lumbar spine
+degenerative classification,''
+\textit{arXiv:2503.01634}, 2025.
+
+\bibitem{phaphuangwittayakul2026}
+A.~Phaphuangwittayakul \textit{et al.},
+``Multi-task deep learning for lumbar spine degenerative
+classification with external validation,''
+\textit{Diseases}, 2026.
+
+\bibitem{nshen2024}
+N.~Shen,
+``RSNA 2024 lumbar spine degenerative classification baseline,''
+GitHub repository, 2024.
+
+\bibitem{kaggle2024}
+RSNA, ``RSNA 2024 Lumbar Spine Degenerative Classification
+competition leaderboard,''
+Kaggle, 2024.
 
 \end{thebibliography}
 
