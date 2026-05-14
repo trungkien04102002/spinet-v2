@@ -2,11 +2,15 @@
 Grading Models for SPIDER Dataset Transfer Learning.
 
 Contains both Baseline and CBAM models with SPIDER-specific output heads.
-Four representative SPIDER labels covering disc / vertebra / alignment categories:
+Eight SPIDER labels covering disc / vertebra / alignment / endplate categories:
     - pfirrmann:         5 classes (grades 1-5, stored as 0-4)  — disc degeneration
     - modic:             4 classes (types 0-3)                  — vertebra inflammation
     - disc_narrowing:    2 classes (No/Yes)                     — disc structure
     - spondylolisthesis: 2 classes (No/Yes)                     — spinal alignment
+    - up_endplate:       2 classes (No/Yes)                     — upper endplate damage
+    - low_endplate:      2 classes (No/Yes)                     — lower endplate damage
+    - disc_herniation:   2 classes (No/Yes)                     — disc herniation
+    - disc_bulging:      2 classes (No/Yes)                     — disc bulging
 
 These models support loading pretrained RSNA weights (backbone + CBAM)
 and only retraining the classification heads.
@@ -32,12 +36,20 @@ SPIDER_CONDITIONS: List[str] = [
     "modic",
     "disc_narrowing",
     "spondylolisthesis",
+    "up_endplate",
+    "low_endplate",
+    "disc_herniation",
+    "disc_bulging",
 ]
 SPIDER_NUM_CLASSES = {
     "pfirrmann": 5,
     "modic": 4,
     "disc_narrowing": 2,
     "spondylolisthesis": 2,
+    "up_endplate": 2,
+    "low_endplate": 2,
+    "disc_herniation": 2,
+    "disc_bulging": 2,
 }
 
 
@@ -99,12 +111,16 @@ class GradingModelSPIDERBaseline(nn.Module):
         # Global average pooling
         self.avgpool = nn.AdaptiveAvgPool3d((1, 1, 1))
 
-        # === CLASSIFICATION HEADS (SPIDER-specific, 4 representative tasks) ===
+        # === CLASSIFICATION HEADS (8 SPIDER labels) ===
         feat_dim = 512 * block.expansion
         self.fc_pfirrmann         = nn.Linear(feat_dim, SPIDER_NUM_CLASSES["pfirrmann"])
         self.fc_modic             = nn.Linear(feat_dim, SPIDER_NUM_CLASSES["modic"])
         self.fc_disc_narrowing    = nn.Linear(feat_dim, SPIDER_NUM_CLASSES["disc_narrowing"])
         self.fc_spondylolisthesis = nn.Linear(feat_dim, SPIDER_NUM_CLASSES["spondylolisthesis"])
+        self.fc_up_endplate       = nn.Linear(feat_dim, SPIDER_NUM_CLASSES["up_endplate"])
+        self.fc_low_endplate      = nn.Linear(feat_dim, SPIDER_NUM_CLASSES["low_endplate"])
+        self.fc_disc_herniation   = nn.Linear(feat_dim, SPIDER_NUM_CLASSES["disc_herniation"])
+        self.fc_disc_bulging      = nn.Linear(feat_dim, SPIDER_NUM_CLASSES["disc_bulging"])
 
         # === INITIALIZATION ===
         self._initialize_weights(zero_init_residual)
@@ -176,11 +192,7 @@ class GradingModelSPIDERBaseline(nn.Module):
             x: [B, 1, 9, 112, 224]
 
         Returns:
-            dict with one entry per SPIDER condition (see SPIDER_CONDITIONS):
-            - 'pfirrmann':         [B, 5]
-            - 'modic':             [B, 4]
-            - 'disc_narrowing':    [B, 2]
-            - 'spondylolisthesis': [B, 2]
+            dict with one entry per SPIDER condition (see SPIDER_CONDITIONS).
         """
         # Backbone
         x = self.conv1(x)
@@ -202,6 +214,10 @@ class GradingModelSPIDERBaseline(nn.Module):
             "modic":             self.fc_modic(x),
             "disc_narrowing":    self.fc_disc_narrowing(x),
             "spondylolisthesis": self.fc_spondylolisthesis(x),
+            "up_endplate":       self.fc_up_endplate(x),
+            "low_endplate":      self.fc_low_endplate(x),
+            "disc_herniation":   self.fc_disc_herniation(x),
+            "disc_bulging":      self.fc_disc_bulging(x),
         }
 
     def load_pretrained_rsna_backbone(self, checkpoint_path: str, strict: bool = False, verbose: bool = True):
@@ -323,12 +339,16 @@ class GradingModelSPIDERCBAM(nn.Module):
         # Global average pooling
         self.avgpool = nn.AdaptiveAvgPool3d((1, 1, 1))
 
-        # === CLASSIFICATION HEADS (SPIDER-specific, 4 representative tasks) ===
+        # === CLASSIFICATION HEADS (8 SPIDER labels) ===
         feat_dim = 512 * block.expansion
         self.fc_pfirrmann         = nn.Linear(feat_dim, SPIDER_NUM_CLASSES["pfirrmann"])
         self.fc_modic             = nn.Linear(feat_dim, SPIDER_NUM_CLASSES["modic"])
         self.fc_disc_narrowing    = nn.Linear(feat_dim, SPIDER_NUM_CLASSES["disc_narrowing"])
         self.fc_spondylolisthesis = nn.Linear(feat_dim, SPIDER_NUM_CLASSES["spondylolisthesis"])
+        self.fc_up_endplate       = nn.Linear(feat_dim, SPIDER_NUM_CLASSES["up_endplate"])
+        self.fc_low_endplate      = nn.Linear(feat_dim, SPIDER_NUM_CLASSES["low_endplate"])
+        self.fc_disc_herniation   = nn.Linear(feat_dim, SPIDER_NUM_CLASSES["disc_herniation"])
+        self.fc_disc_bulging      = nn.Linear(feat_dim, SPIDER_NUM_CLASSES["disc_bulging"])
 
         # === INITIALIZATION ===
         self._initialize_weights(zero_init_residual)
@@ -400,11 +420,7 @@ class GradingModelSPIDERCBAM(nn.Module):
             x: [B, 1, 9, 112, 224]
 
         Returns:
-            dict with one entry per SPIDER condition (see SPIDER_CONDITIONS):
-            - 'pfirrmann':         [B, 5]
-            - 'modic':             [B, 4]
-            - 'disc_narrowing':    [B, 2]
-            - 'spondylolisthesis': [B, 2]
+            dict with one entry per SPIDER condition (see SPIDER_CONDITIONS).
         """
         # Backbone
         x = self.conv1(x)
@@ -427,6 +443,10 @@ class GradingModelSPIDERCBAM(nn.Module):
             "modic":             self.fc_modic(x),
             "disc_narrowing":    self.fc_disc_narrowing(x),
             "spondylolisthesis": self.fc_spondylolisthesis(x),
+            "up_endplate":       self.fc_up_endplate(x),
+            "low_endplate":      self.fc_low_endplate(x),
+            "disc_herniation":   self.fc_disc_herniation(x),
+            "disc_bulging":      self.fc_disc_bulging(x),
         }
 
     def load_pretrained_rsna_backbone(self, checkpoint_path: str, strict: bool = False, verbose: bool = True):

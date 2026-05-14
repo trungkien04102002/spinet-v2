@@ -8,11 +8,15 @@ SpineNet V2 Original (RSNA):
 - 3 conditions: spinal_canal, left_foraminal, right_foraminal
 - Each: 3 classes (0: Normal/Mild, 1: Moderate, 2: Severe)
 
-SPIDER Transfer Learning (Phase 4 — 4 representative conditions):
+SPIDER Transfer Learning (Phase 4 — 8 conditions, all SPIDER labels):
 - pfirrmann:         5 classes (0-4, originally 1-5)  — disc degeneration
 - modic:             4 classes (0-3)                  — vertebra inflammation
 - disc_narrowing:    2 classes (0: No, 1: Yes)        — disc structure
 - spondylolisthesis: 2 classes (0: No, 1: Yes)        — spinal alignment
+- up_endplate:       2 classes (0: No, 1: Yes)        — upper endplate damage
+- low_endplate:      2 classes (0: No, 1: Yes)        — lower endplate damage
+- disc_herniation:   2 classes (0: No, 1: Yes)        — disc herniation
+- disc_bulging:      2 classes (0: No, 1: Yes)        — disc bulging
 
 Usage:
     from spider_dataloader import SPIDERDataset
@@ -105,7 +109,7 @@ class SPIDERDataset(Dataset):
         print(f"  - Modality: {modality}")
         print(f"  - Samples: {len(self.samples)} IVDs")
         print(f"  - Patients: {len(self.overview)}")
-        print(f"  - Format: 4 conditions (pfirrmann, modic, disc_narrowing, spondylolisthesis)")
+        print(f"  - Format: 8 conditions (pfirrmann, modic, disc_narrowing, spondylolisthesis, up_endplate, low_endplate, disc_herniation, disc_bulging)")
         print(f"  - Output shape: ({num_slices}, {height}, {width})")
 
     def _build_sample_list(self) -> List[Tuple[int, int]]:
@@ -141,7 +145,7 @@ class SPIDERDataset(Dataset):
 
         Returns:
             volume: torch.Tensor of shape (9, 112, 224)
-            labels: dict with keys 'pfirrmann', 'spondylolisthesis', 'disc_herniation'
+            labels: dict with 8 keys — see _get_labels() for full list
         """
         patient_id, ivd_level = self.samples[idx]
 
@@ -328,7 +332,7 @@ class SPIDERDataset(Dataset):
 
     def _get_labels(self, patient_id: int, ivd_level: int) -> Dict[str, int]:
         """
-        Get 4 SPIDER condition labels for Phase 4 transfer learning.
+        Get 8 SPIDER condition labels for transfer learning.
 
         Returns:
             {
@@ -336,6 +340,10 @@ class SPIDERDataset(Dataset):
                 'modic':             0-3 (4 classes),
                 'disc_narrowing':    0 or 1 (binary),
                 'spondylolisthesis': 0 or 1 (binary),
+                'up_endplate':       0 or 1 (binary),
+                'low_endplate':      0 or 1 (binary),
+                'disc_herniation':   0 or 1 (binary),
+                'disc_bulging':      0 or 1 (binary),
             }
         """
         grading = self.gradings[
@@ -353,6 +361,10 @@ class SPIDERDataset(Dataset):
             'modic':             int(grading['Modic']),
             'disc_narrowing':    int(grading['Disc narrowing']),
             'spondylolisthesis': int(grading['Spondylolisthesis']),
+            'up_endplate':       int(grading['UP endplate']),
+            'low_endplate':      int(grading['LOW endplate']),
+            'disc_herniation':   int(grading['Disc herniation']),
+            'disc_bulging':      int(grading['Disc bulging']),
         }
 
 
@@ -428,12 +440,13 @@ if __name__ == "__main__":
     print("\nRSNA (original):")
     print("  - Conditions: spinal_canal, left_foraminal, right_foraminal")
     print("  - Classes: 3 each (0: Normal/Mild, 1: Moderate, 2: Severe)")
-    print("\nSPIDER (transfer learning):")
-    print("  - Conditions: pfirrmann, spondylolisthesis, disc_herniation")
-    print("  - Classes: 5, 2, 2 respectively")
+    print("\nSPIDER (transfer learning, 8 labels):")
+    print("  - Conditions: pfirrmann, modic, disc_narrowing, spondylolisthesis,")
+    print("                up_endplate, low_endplate, disc_herniation, disc_bulging")
+    print("  - Classes: 5, 4, 2, 2, 2, 2, 2, 2 respectively")
     print("\nBoth return same structure:")
     print("  - volume: (9, 112, 224)")
-    print("  - labels: dict with 3 conditions")
+    print("  - labels: dict (3 keys for RSNA / 8 keys for SPIDER)")
 
     print("\n" + "="*70)
     print("✓ DATASET READY FOR TRANSFER LEARNING!")

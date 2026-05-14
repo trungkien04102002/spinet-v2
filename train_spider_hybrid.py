@@ -2,8 +2,8 @@
 Phase 4 — Train Hybrid (CBAM + BiomedCLIP) on SPIDER with text-aligned heads.
 
 Same architecture as train_rsna_hybrid.py but:
-  - 4 SPIDER conditions instead of 3 RSNA conditions
-  - 13 SPIDER text prompts (pfirrmann 5 + modic 4 + disc_narrowing 2 + spondylolisthesis 2)
+  - 8 SPIDER conditions (all labels in dataset)
+  - 21 SPIDER text prompts (pfirrmann 5 + modic 4 + disc_narrowing 2 + spondylolisthesis 2 + up_endplate 2 + low_endplate 2 + disc_herniation 2 + disc_bulging 2)
   - Init from RSNA Hybrid checkpoint (carries projection MLP + slice_pool + logit_scale)
   - Preserves zero-shot capability: model still uses cosine sim with text prompts;
     new SPIDER labels can be added at eval time by encoding new prompts.
@@ -67,6 +67,22 @@ SPIDER_PROMPTS = {
         "no spondylolisthesis",
         "spondylolisthesis with vertebral slippage",
     ],
+    "up_endplate": [
+        "normal upper endplate",
+        "upper endplate degeneration",
+    ],
+    "low_endplate": [
+        "normal lower endplate",
+        "lower endplate degeneration",
+    ],
+    "disc_herniation": [
+        "no disc herniation",
+        "lumbar disc herniation",
+    ],
+    "disc_bulging": [
+        "no disc bulging",
+        "lumbar disc bulging",
+    ],
 }
 SPIDER_CONDITIONS = list(SPIDER_PROMPTS.keys())
 SPIDER_NUM_CLASSES = {c: len(SPIDER_PROMPTS[c]) for c in SPIDER_CONDITIONS}
@@ -75,12 +91,20 @@ DISPLAY_NAMES = {
     "modic": "Modic",
     "disc_narrowing": "Disc Narrowing",
     "spondylolisthesis": "Spondylolisthesis",
+    "up_endplate": "UP Endplate",
+    "low_endplate": "LOW Endplate",
+    "disc_herniation": "Disc Herniation",
+    "disc_bulging": "Disc Bulging",
 }
 CLASS_NAMES = {
     "pfirrmann": ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5"],
     "modic": ["Type 0", "Type 1", "Type 2", "Type 3"],
     "disc_narrowing": ["No", "Yes"],
     "spondylolisthesis": ["No", "Yes"],
+    "up_endplate": ["No", "Yes"],
+    "low_endplate": ["No", "Yes"],
+    "disc_herniation": ["No", "Yes"],
+    "disc_bulging": ["No", "Yes"],
 }
 PROMPT_TEMPLATE = "a magnetic resonance image of {label}"
 

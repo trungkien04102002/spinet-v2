@@ -124,8 +124,14 @@ def set_seed(seed: int):
     _torch.backends.cudnn.benchmark = False
 
 
-SPIDER_CONDITIONS = ['pfirrmann', 'modic', 'disc_narrowing', 'spondylolisthesis']
-SPIDER_NUM_CLASSES = {'pfirrmann': 5, 'modic': 4, 'disc_narrowing': 2, 'spondylolisthesis': 2}
+SPIDER_CONDITIONS = [
+    'pfirrmann', 'modic', 'disc_narrowing', 'spondylolisthesis',
+    'up_endplate', 'low_endplate', 'disc_herniation', 'disc_bulging',
+]
+SPIDER_NUM_CLASSES = {
+    'pfirrmann': 5, 'modic': 4, 'disc_narrowing': 2, 'spondylolisthesis': 2,
+    'up_endplate': 2, 'low_endplate': 2, 'disc_herniation': 2, 'disc_bulging': 2,
+}
 
 
 def compute_class_weights_spider(dataset):
@@ -210,12 +216,20 @@ CLASS_NAMES = {
     'modic':             ['Type 0',  'Type 1',  'Type 2',  'Type 3'],
     'disc_narrowing':    ['No', 'Yes'],
     'spondylolisthesis': ['No', 'Yes'],
+    'up_endplate':       ['No', 'Yes'],
+    'low_endplate':      ['No', 'Yes'],
+    'disc_herniation':   ['No', 'Yes'],
+    'disc_bulging':      ['No', 'Yes'],
 }
 DISPLAY_NAMES = {
     'pfirrmann':         'Pfirrmann Grading',
     'modic':             'Modic',
     'disc_narrowing':    'Disc Narrowing',
     'spondylolisthesis': 'Spondylolisthesis',
+    'up_endplate':       'UP Endplate',
+    'low_endplate':      'LOW Endplate',
+    'disc_herniation':   'Disc Herniation',
+    'disc_bulging':      'Disc Bulging',
 }
 
 
