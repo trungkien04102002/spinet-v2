@@ -25,7 +25,13 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+from sklearn.metrics import (
+    accuracy_score,
+    precision_recall_fscore_support,
+    roc_auc_score,
+    average_precision_score,
+)
+from sklearn.preprocessing import label_binarize
 from sklearn.model_selection import train_test_split
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -40,6 +46,38 @@ def _slim_state_dict(state):
     """Drop frozen biomedclip.* keys before saving — they're re-loadable from
     the HF hub and would otherwise add ~750 MB to every checkpoint file."""
     return {k: v for k, v in state.items() if not k.startswith("biomedclip.")}
+
+
+def compute_auc_auprc_safe(y_true, y_proba, n_classes):
+    """
+    Compute macro-AUC + macro-AUPRC with safe fallbacks for imbalanced subsets.
+    Returns (None, None) when not enough classes are present in y_true.
+    """
+    y_true = np.asarray(y_true)
+    y_proba = np.asarray(y_proba)
+    if y_true.size == 0 or y_proba.size == 0:
+        return None, None
+    try:
+        if n_classes == 2:
+            if len(np.unique(y_true)) < 2:
+                return None, None
+            auc = roc_auc_score(y_true, y_proba[:, 1])
+            auprc = average_precision_score(y_true, y_proba[:, 1])
+            return float(auc), float(auprc)
+        y_bin = label_binarize(y_true, classes=list(range(n_classes)))
+        present = [i for i in range(n_classes) if y_bin[:, i].sum() > 0]
+        if len(present) < 2:
+            return None, None
+        auc = roc_auc_score(
+            y_bin[:, present], y_proba[:, present],
+            average='macro', multi_class='ovr',
+        )
+        auprc = average_precision_score(
+            y_bin[:, present], y_proba[:, present], average='macro',
+        )
+        return float(auc), float(auprc)
+    except (ValueError, Exception):
+        return None, None
 
 
 # ============================ SPIDER text prompts ============================
@@ -197,28 +235,47 @@ def cosine_logits(image_emb: torch.Tensor, text_emb: torch.Tensor,
 
 
 def evaluate(model: SpineNetHybrid, dataloader, text_db, criteria, device):
+    """Returns:
+        avg_loss, val_accuracies, per_class_metrics,
+        auc_per_cond, auprc_per_cond, inference_time_per_sample_ms
+    """
     model.eval()
     all_losses = {c: [] for c in SPIDER_CONDITIONS}
     all_preds  = {c: [] for c in SPIDER_CONDITIONS}
+    all_probs  = {c: [] for c in SPIDER_CONDITIONS}
     all_labels = {c: [] for c in SPIDER_CONDITIONS}
+
+    inference_start = time.time()
+    n_samples = 0
 
     with torch.no_grad():
         for volumes, labels in tqdm(dataloader, desc="Validating", leave=False):
             volumes = volumes.unsqueeze(1).to(device)
+            n_samples += volumes.size(0)
             image_emb = model.encode_image(volumes)  # [B, 512]
             for c in SPIDER_CONDITIONS:
                 logits = cosine_logits(image_emb, text_db[c], model.logit_scale)
                 target = labels[c].to(device)
                 loss = criteria[c](logits, target)
                 all_losses[c].append(loss.item())
-                all_preds[c].extend(torch.argmax(logits, dim=1).cpu().numpy())
+                probs = torch.softmax(logits, dim=1)
+                all_preds[c].extend(torch.argmax(probs, dim=1).cpu().numpy())
+                all_probs[c].append(probs.cpu().numpy())
                 all_labels[c].extend(labels[c].numpy())
+
+    inference_time_total = time.time() - inference_start
+    inference_time_per_sample_ms = (inference_time_total / max(n_samples, 1)) * 1000.0
 
     val_accuracies = {}
     per_class_metrics = {}
+    auc_per_cond = {}
+    auprc_per_cond = {}
     for c in SPIDER_CONDITIONS:
         y_true = np.array(all_labels[c])
         y_pred = np.array(all_preds[c])
+        y_proba = (np.concatenate(all_probs[c], axis=0)
+                   if all_probs[c]
+                   else np.zeros((0, SPIDER_NUM_CLASSES[c])))
         val_accuracies[c] = accuracy_score(y_true, y_pred)
 
         precision, recall, f1, support = precision_recall_fscore_support(
@@ -230,8 +287,15 @@ def evaluate(model: SpineNetHybrid, dataloader, text_db, criteria, device):
             "precision": precision, "recall": recall, "f1": f1, "support": support,
         }
 
+        auc, auprc = compute_auc_auprc_safe(
+            y_true, y_proba, SPIDER_NUM_CLASSES[c],
+        )
+        auc_per_cond[c] = auc
+        auprc_per_cond[c] = auprc
+
     avg_loss = float(np.mean([np.mean(all_losses[c]) for c in SPIDER_CONDITIONS]))
-    return avg_loss, val_accuracies, per_class_metrics
+    return (avg_loss, val_accuracies, per_class_metrics,
+            auc_per_cond, auprc_per_cond, inference_time_per_sample_ms)
 
 
 def print_per_class_metrics(per_class_metrics):
@@ -377,6 +441,8 @@ def main():
     best_val_loss = float("inf")
     epochs_no_improve = 0
     history = []
+    total_train_start = time.time()
+    cumulative_train_time = 0.0
 
     for epoch in range(args.epochs):
         t0 = time.time()
@@ -409,36 +475,59 @@ def main():
         avg_train_loss = epoch_train_loss / max(1, len(train_loader))
 
         # Validation
-        val_loss, val_acc, per_class = evaluate(
+        (val_loss, val_acc, per_class,
+         auc_per_cond, auprc_per_cond,
+         inference_time_per_sample_ms) = evaluate(
             model, val_loader, text_db, criteria, device,
         )
         scheduler.step(val_loss)
 
         mean_acc = float(np.mean(list(val_acc.values())))
         elapsed = time.time() - t0
+        cumulative_train_time += elapsed
 
         # Per-condition F1 macro (mean of per-class F1) — primary metric on
         # imbalanced classes where accuracy is misleading.
         f1_macro = {c: float(np.mean(per_class[c]['f1'])) for c in SPIDER_CONDITIONS}
         mean_f1 = float(np.mean(list(f1_macro.values())))
 
-        print(f"\nEpoch {epoch+1}/{args.epochs} ({elapsed:.1f}s):")
+        # Mean AUC / AUPRC across conditions where defined
+        _valid_aucs = [v for v in auc_per_cond.values() if v is not None]
+        _valid_auprcs = [v for v in auprc_per_cond.values() if v is not None]
+        mean_auc = float(np.mean(_valid_aucs)) if _valid_aucs else None
+        mean_auprc = float(np.mean(_valid_auprcs)) if _valid_auprcs else None
+
+        print(f"\nEpoch {epoch+1}/{args.epochs} ({elapsed:.1f}s, cum {cumulative_train_time/60:.1f}min):")
         print(f"  Train Loss: {avg_train_loss:.4f}")
         print(f"  Val   Loss: {val_loss:.4f}")
-        print(f"  Val per-condition (accuracy | F1 macro):")
+        print(f"  Val per-condition (acc | F1 | AUC | AUPRC):")
         for c in SPIDER_CONDITIONS:
-            print(f"    - {DISPLAY_NAMES[c]:<20s}  acc={val_acc[c]*100:6.2f}%  F1={f1_macro[c]:.3f}")
-        print(f"    - {'Mean':<20s}  acc={mean_acc*100:6.2f}%  F1={mean_f1:.3f}")
+            _auc_s = f"{auc_per_cond[c]:.3f}" if auc_per_cond[c] is not None else "  N/A"
+            _aup_s = f"{auprc_per_cond[c]:.3f}" if auprc_per_cond[c] is not None else "  N/A"
+            print(f"    - {DISPLAY_NAMES[c]:<20s}  acc={val_acc[c]*100:6.2f}%  "
+                  f"F1={f1_macro[c]:.3f}  AUC={_auc_s}  AUPRC={_aup_s}")
+        _mean_auc_s = f"{mean_auc:.3f}" if mean_auc is not None else "  N/A"
+        _mean_aup_s = f"{mean_auprc:.3f}" if mean_auprc is not None else "  N/A"
+        print(f"    - {'Mean':<20s}  acc={mean_acc*100:6.2f}%  F1={mean_f1:.3f}  "
+              f"AUC={_mean_auc_s}  AUPRC={_mean_aup_s}")
+        print(f"  Val inference: {inference_time_per_sample_ms:.2f} ms/sample")
         if (epoch + 1) % 5 == 0:
             print_per_class_metrics(per_class)
 
         # Track history (CSV row per epoch)
         row = {"epoch": epoch + 1, "train_loss": avg_train_loss,
                "val_loss": val_loss, "val_mean_acc": mean_acc,
-               "val_mean_f1_macro": mean_f1}
+               "val_mean_f1_macro": mean_f1,
+               "val_mean_auc": mean_auc,
+               "val_mean_auprc": mean_auprc,
+               "epoch_time_sec": float(elapsed),
+               "cumulative_train_time_sec": float(cumulative_train_time),
+               "val_inference_time_ms_per_sample": float(inference_time_per_sample_ms)}
         for c in SPIDER_CONDITIONS:
             row[f"val_acc_{c}"] = float(val_acc[c])
             row[f"val_f1_macro_{c}"] = f1_macro[c]
+            row[f"val_auc_{c}"] = auc_per_cond[c]
+            row[f"val_auprc_{c}"] = auprc_per_cond[c]
             for i, f in enumerate(per_class[c]["f1"]):
                 row[f"f1_{c}_class{i}"] = float(f)
             for i, p in enumerate(per_class[c]["precision"]):
@@ -473,11 +562,17 @@ def main():
                 f.write(f"Epoch: {epoch + 1}\n")
                 f.write(f"Val loss: {val_loss:.4f}\n")
                 f.write(f"Val mean acc:      {mean_acc*100:.2f}%\n")
-                f.write(f"Val mean F1 macro: {mean_f1:.3f}\n\n")
+                f.write(f"Val mean F1 macro: {mean_f1:.3f}\n")
+                f.write(f"Val mean AUC:      {mean_auc:.3f}\n" if mean_auc is not None else "Val mean AUC:      N/A\n")
+                f.write(f"Val mean AUPRC:    {mean_auprc:.3f}\n" if mean_auprc is not None else "Val mean AUPRC:    N/A\n")
+                f.write(f"Cumulative train time: {cumulative_train_time:.1f}s ({cumulative_train_time/60:.2f} min)\n")
+                f.write(f"Val inference time:    {inference_time_per_sample_ms:.2f} ms/sample\n\n")
                 for c in SPIDER_CONDITIONS:
+                    _auc_s = f"{auc_per_cond[c]:.3f}" if auc_per_cond[c] is not None else "N/A"
+                    _aup_s = f"{auprc_per_cond[c]:.3f}" if auprc_per_cond[c] is not None else "N/A"
                     f.write(f"{DISPLAY_NAMES[c]:<20s}  acc={val_acc[c]*100:6.2f}%  "
-                            f"F1_macro={f1_macro[c]:.3f}  "
-                            f"per-class F1={[round(float(x), 3) for x in per_class[c]['f1']]}\n")
+                            f"F1_macro={f1_macro[c]:.3f}  AUC={_auc_s}  AUPRC={_aup_s}\n")
+                    f.write(f"{'':>20s}  per-class F1={[round(float(x), 3) for x in per_class[c]['f1']]}\n")
                     f.write(f"{'':>20s}  precision={[round(float(x), 3) for x in per_class[c]['precision']]}  "
                             f"recall={[round(float(x), 3) for x in per_class[c]['recall']]}\n")
 
@@ -491,8 +586,14 @@ def main():
                     'val_loss': float(val_loss),
                     'val_mean_acc': float(mean_acc),
                     'val_mean_f1_macro': mean_f1,
+                    'val_mean_auc': mean_auc,
+                    'val_mean_auprc': mean_auprc,
+                    'cumulative_train_time_sec': float(cumulative_train_time),
+                    'val_inference_time_ms_per_sample': float(inference_time_per_sample_ms),
                     'val_accuracies': {c: float(val_acc[c]) for c in SPIDER_CONDITIONS},
                     'val_f1_macro': f1_macro,
+                    'val_auc':   {c: auc_per_cond[c]   for c in SPIDER_CONDITIONS},
+                    'val_auprc': {c: auprc_per_cond[c] for c in SPIDER_CONDITIONS},
                     'per_class_f1':       {c: [float(x) for x in per_class[c]['f1']]        for c in SPIDER_CONDITIONS},
                     'per_class_precision':{c: [float(x) for x in per_class[c]['precision']] for c in SPIDER_CONDITIONS},
                     'per_class_recall':   {c: [float(x) for x in per_class[c]['recall']]    for c in SPIDER_CONDITIONS},
@@ -522,11 +623,29 @@ def main():
 
         print("-" * 72)
 
+    total_train_time = time.time() - total_train_start
+
+    # Write final training summary
+    summary_path = metrics_dir / f"training_summary_hybrid_spider_{tag}.txt"
+    with open(summary_path, "w") as f:
+        f.write(f"=== TRAINING SUMMARY HYBRID SPIDER ({tag}) ===\n")
+        f.write(f"Completed at:          {datetime.now().isoformat(timespec='seconds')}\n")
+        f.write(f"Total wall-clock time: {total_train_time:.1f}s "
+                f"({total_train_time/60:.2f} min)\n")
+        f.write(f"Cumulative train time: {cumulative_train_time:.1f}s "
+                f"({cumulative_train_time/60:.2f} min)\n")
+        f.write(f"Epochs completed:      {len(history)}\n")
+        f.write(f"Best val loss:         {best_val_loss:.4f}\n")
+        f.write(f"Last val inference:    {inference_time_per_sample_ms:.2f} ms/sample\n")
+        f.write(f"Final args: {vars(args)}\n")
+
     print("\n" + "=" * 72)
     print("Training complete.")
     print(f"Best val loss: {best_val_loss:.4f}")
     print(f"Best checkpoint: {ckpt_dir}/best_model_hybrid_spider_{tag}.pth")
     print(f"Metrics: {metrics_dir}/")
+    print(f"Total wall-clock time: {total_train_time/60:.2f} min")
+    print(f"Summary: {summary_path}")
     print("=" * 72)
 
 
