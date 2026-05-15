@@ -91,8 +91,8 @@ export PYTHONPATH=$PYTHONPATH:$(pwd)
 python3 -c "
 import sys
 try:
-    from spider_dataloader import SpiderDataset
-    d = SpiderDataset(split='train')
+    from spider_dataloader import SPIDERDataset
+    d = SPIDERDataset(split='training')
     print(f'    OK Samples: {len(d)}')
     vol, labels = d[0]
     print(f'    OK Volume shape: {tuple(vol.shape)}')
