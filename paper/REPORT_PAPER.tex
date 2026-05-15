@@ -112,23 +112,36 @@ substantial progress, but two open problems persist:
       herniation schema) without retraining a fixed-class head.
 \end{enumerate}
 
-We address both problems with a single hybrid model. Our three
-contributions are:
+We address both problems with a single hybrid model. Our four
+contributions, ordered by strength of multi-seed evidence, are:
 \begin{itemize}
-\item A \textbf{class-imbalance handling pipeline} (focal
-      loss~\cite{lin2017focal} + square-root class weights + minority
-      oversampling + medical augmentation) that lifts Severe-class
-      recall from 11.5\% to 46.4\% on RSNA 2024.
+\item A \textbf{cross-dataset regularization finding}: in a 3-seed
+      SPIDER transfer experiment, adding CBAM to the ResNet-34
+      backbone degrades aggregate F1 by $-0.027$ (exceeds pooled
+      seed $\sigma$), revealing that the same attention module which
+      helps in-domain RSNA Severe metrics hurts cross-center
+      generalization. The proposed Hybrid (CBAM~+~frozen BiomedCLIP)
+      recovers above the CBAM-only configuration by $+0.034$
+      ($> 2\sigma$, significant), establishing the BiomedCLIP branch
+      as a regularizer.
 \item A \textbf{two-branch hybrid architecture} that combines a CBAM-3D
       ResNet-34~\cite{woo2018cbam,he2016resnet} with frozen
       BiomedCLIP~\cite{zhang2023biomedclip} and a learned concat-MLP
-      fusion head. Ablation confirms that both branches contribute
-      and that fusion outperforms either branch alone.
-\item \textbf{Cross-dataset zero-shot transfer}: by routing the fused
+      fusion head. Ablation confirms both branches contribute on
+      complementary axes (in-domain Severe metrics vs.\ cross-center
+      robustness).
+\item \textbf{Cross-dataset label-space extension}: by routing the fused
       embedding through cosine similarity against text-prompt
       embeddings, the same RSNA-trained model transfers to SPIDER's
       eight unseen labels without any SPIDER fine-tuning, achieving
-      mean F1~=~0.362.
+      mean F1~=~0.362 zero-shot; with lightweight supervised transfer
+      (3 seeds), Hybrid leads on rare-class recall (Disc Herniation
+      Yes $0.36~\pm~0.08$ vs.\ $0$ for Baseline/CBAM).
+\item A \textbf{class-imbalance handling pipeline} (focal
+      loss~\cite{lin2017focal} + square-root class weights + minority
+      oversampling + medical augmentation) that lifts Severe-class
+      recall from 11.5\% to 46.4\% on RSNA 2024 (single-seed; 3-seed
+      RSNA evaluation pending, see \S\ref{sec:disc}).
 \end{itemize}
 
 To our knowledge no prior peer-reviewed work has applied BiomedCLIP to
@@ -459,7 +472,16 @@ Table~\ref{tab:main} reports nine metrics on the RSNA 2024 validation
 split for four configurations: a 3D ResNet-34 baseline, CBAM-only
 (no BiomedCLIP branch), BMC-only (no CBAM branch), and the full
 hybrid. The hybrid wins 8/9 metrics; the only metric on which it does
-not win is Mean Accuracy, which we discuss below.
+not win is Mean Accuracy, which we discuss below. We note that the
+nshen7~\cite{nshen2024} Severe F1 of $0.501$ in Table~\ref{tab:sota}
+appears higher than our $0.343$, but reflects a per-condition
+evaluation (likely canal-only) on a different validation split; our
+$0.343$ is the macro-averaged Severe F1 over all three RSNA
+conditions (canal, left foraminal, right foraminal), where the two
+foraminal conditions are known to exhibit a sagittal-only ceiling
+near $0.18$--$0.20$ (\S\ref{sec:disc}). A like-for-like comparison
+under matched evaluation protocol is not currently possible from
+public artifacts.
 
 \begin{table}[t]
 \centering
@@ -662,7 +684,15 @@ positive class ($\leq 5\%$ prevalence). For Spondylolisthesis
 positive cases vs.\ Baseline $20.0\% \pm 9.8$, CBAM $0.0\%$, and
 BMC-only $5.6\% \pm 7.9$. For Disc Herniation (positive prevalence
 $4.7\%$), Hybrid achieves $35.6\% \pm 7.9$ recall while Baseline and
-CBAM both fail to recall any positive cases ($0.0\%$). For Pfirrmann
+CBAM both fail to recall any positive cases ($0.0\%$). We highlight
+that BMC-only (BiomedCLIP branch without CBAM) already achieves
+$27.0\% \pm 15.4$ recall on this label; the BiomedCLIP semantic
+prior is responsible for the bulk of the herniation recovery, while
+the CBAM volumetric branch contributes an incremental
+$+0.086~\pm~17.3$ when fused into the Hybrid. The two branches
+therefore play complementary roles: BiomedCLIP enables minority-class
+recovery via dataset-agnostic semantic features, and CBAM contributes
+volumetric refinement on top. For Pfirrmann
 Grade~4, Hybrid leads with $0.534 \pm 0.043$ vs.\ Baseline
 $0.473 \pm 0.062$. Modic Types~1 and 3 (population prevalence $0.3\%$
 and $0.5\%$ respectively) remain at $0\%$ recall across all four
@@ -796,11 +826,26 @@ classification F1 and Severe-class metrics; the gain over the better
 single branch ($+0.026$ F1, $+0.039$ Severe F1) is small in absolute
 terms but consistent across nearly every metric.
 
+\textbf{Why CBAM, given the cross-dataset cost?} A natural question
+arises from the 3-seed SPIDER analysis: if CBAM hurts cross-dataset
+F1 (Baseline 0.646 vs.\ CBAM 0.619, a regression of $-0.027$ that
+exceeds pooled seed $\sigma$), why include CBAM at all? Two empirical
+facts justify CBAM as a necessary component rather than a flaw.
+First, on the in-domain RSNA task, CBAM is the single largest source
+of Severe-class improvement: Severe F1 rises from $0.149$ (Baseline) to
+$0.304$ (CBAM-only), a $+0.155$ absolute gain that the BiomedCLIP
+branch alone cannot match (BMC-only Severe F1 $0.229$). The Hybrid
+inherits this RSNA-side gain and adds a further $+0.039$ to reach
+Severe F1 $0.343$. Second, the cross-dataset asymmetry is itself a
+finding: rather than a design flaw, it documents the cost of strong
+in-domain feature specialization. The Hybrid is therefore best
+understood as combining CBAM's in-domain selectivity with BiomedCLIP's
+distribution-invariant semantic prior --- not as repairing a CBAM
+defect, but as deliberately combining components with complementary
+strengths.
+
 \textbf{CBAM helps in-domain but hurts cross-dataset transfer; BiomedCLIP
-restores robustness.} The 3-seed SPIDER transfer learning results in
-\S\ref{sec:spider_transfer} reveal an asymmetry. On RSNA, CBAM
-improves Severe F1 (0.149 $\to$ 0.304) by sharpening attention on
-small lesions in the same imaging distribution. On SPIDER (different
+restores robustness.} On SPIDER (different
 sites, scanners, label schema), CBAM Mean F1 ($0.619 \pm 0.010$)
 \emph{drops below} the plain ResNet-34 Baseline ($0.646 \pm 0.002$),
 a $\Delta = -0.027$ regression that exceeds the pooled CBAM--Baseline
@@ -816,7 +861,12 @@ with the target distribution. The same pattern explains why CBAM-only
 fails on the SPIDER Spondylolisthesis minority class (Recall
 $0.000 \pm 0.000$) while Hybrid recovers $0.300 \pm 0.098$ via
 text-guided generalization, and why Disc Herniation positive recall
-goes from $0$ for Baseline/CBAM to $0.356 \pm 0.079$ for Hybrid.
+goes from $0$ for Baseline/CBAM to $0.356 \pm 0.079$ for Hybrid. A
+trivial-ensemble alternative explanation --- that the regularization
+effect reduces to logit averaging of Baseline and BMC-only branches
+--- cannot be fully ruled out from the current experiments; a direct
+comparison to a Baseline+BMC-only logit-average ensemble is deferred
+to future work.
 
 \textbf{Severe Recall remains below clinical deployment thresholds.}
 The reported Severe Recall of $46.4\%$ on RSNA, while a 4.0$\times$
@@ -848,7 +898,12 @@ streams) is the natural next step.
 \textbf{Limitations.} (i) RSNA results are reported from a single
 seed (42); the SPIDER transfer learning experiments use 3 seeds
 ($\{42, 123, 456\}$). A 3-seed RSNA sweep is pending and will be
-included in the camera-ready version. (ii) BiomedCLIP is
+included in the camera-ready version. We additionally commit to
+reporting bootstrap 95\% confidence intervals on the RSNA Severe F1,
+Severe Recall, and Severe AUPRC by resampling the validation set
+($n = 1000$ resamples), which provides uncertainty quantification on
+the headline numbers independently of the multi-seed effort.
+(ii) BiomedCLIP is
 frozen and 2D, processing slices independently before
 attention pooling; native-3D MRI VLMs such as
 Decipher-MR~\cite{yang2026deciphermr} and Merlin~\cite{blankemeier2026merlin}
