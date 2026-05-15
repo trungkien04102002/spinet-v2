@@ -93,9 +93,9 @@ run_one_seed() {
     if [[ -f "$CBAM_CKPT" ]]; then
         echo "[2/4] CBAM seed=$SEED already done, skipping"
     else
-        echo "[2/4] CBAM RSNA seed=$SEED (15 epochs - intentionally undertrained vs v3 seed=42 which used 25 epochs)..."
+        echo "[2/4] CBAM RSNA seed=$SEED (25 epochs - matches v3 seed=42 config)..."
         python3 train_rsna_attention.py \
-            --epochs 15 --batch-size 32 --lr 1e-3 \
+            --epochs 25 --batch-size 32 --lr 1e-3 \
             --focal-gamma 1.8 \
             --class-weight-mode sqrt \
             --oversample-factor 5 \
