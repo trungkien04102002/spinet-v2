@@ -502,6 +502,13 @@ costly than a false alert.
 
 \subsection{Cross-Dataset Zero-Shot Transfer to SPIDER}
 
+Prior published work on the SPIDER dataset has focused predominantly
+on segmentation~\cite{vandergraaf2024spider}; multi-task classification
+benchmarks reporting per-condition F1 across the full 8-label schema
+remain limited. To our knowledge, this is the first reported
+evaluation of cross-dataset zero-shot transfer (RSNA $\to$ SPIDER)
+using text-prompt-based label-space extension.
+
 We freeze the RSNA-trained hybrid and evaluate on SPIDER directly,
 replacing the classification heads with cosine similarity against
 text prompts of the eight SPIDER label categories. No SPIDER training
