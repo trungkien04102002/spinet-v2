@@ -64,13 +64,15 @@ python3 train_spider.py --model cbam \
     --metrics-dir $METRICS_DIR
 
 # ---------- 3. BMC-only ----------
+# Note: train_spider_hybrid.py freezes CBAM by default (use --unfreeze-cbam to
+# enable gradients). No --freeze-backbone flag here.
 echo ""
 echo "[3/4] BMC-only 8-label..."
 echo "--------------------------------------------------------------"
 python3 train_spider_hybrid.py \
     --hybrid-checkpoint $RSNA_HYBRID_CKPT \
     --cbam-checkpoint $RSNA_CBAM_CKPT \
-    --ablate-branch biomedclip_only --freeze-backbone \
+    --ablate-branch biomedclip_only \
     --epochs 15 --batch-size 16 --lr 1e-3 \
     --checkpoint-dir $CKPT_DIR \
     --metrics-dir $METRICS_DIR
@@ -82,7 +84,6 @@ echo "--------------------------------------------------------------"
 python3 train_spider_hybrid.py \
     --hybrid-checkpoint $RSNA_HYBRID_CKPT \
     --cbam-checkpoint $RSNA_CBAM_CKPT \
-    --freeze-backbone \
     --epochs 15 --batch-size 16 --lr 1e-3 \
     --checkpoint-dir $CKPT_DIR \
     --metrics-dir $METRICS_DIR
