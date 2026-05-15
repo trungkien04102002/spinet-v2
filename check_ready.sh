@@ -41,14 +41,18 @@ else
     echo "    FAIL MISSING: checkpoints/v3_20260503/hybrid/best_model_hybrid.pth"
 fi
 
-# 3. Base backbone
+# 3. Base backbone (OPTIONAL for SPIDER transfer learning - rsna-checkpoint already has backbone)
 echo ""
-echo "[3] Base 3D ResNet34 backbone (~/.spinenet/weights/ckpt1.pt):"
-if [ -f ~/.spinenet/weights/ckpt1.pt ]; then
+echo "[3] Base 3D ResNet34 backbone (OPTIONAL for SPIDER - rsna-checkpoint covers this):"
+if [ -f ~/.spinenet/weights/weights.pt ]; then
+    SIZE=$(ls -lh ~/.spinenet/weights/weights.pt | awk '{print $5}')
+    echo "    OK weights.pt ($SIZE)"
+elif [ -f ~/.spinenet/weights/ckpt1.pt ]; then
     SIZE=$(ls -lh ~/.spinenet/weights/ckpt1.pt | awk '{print $5}')
     echo "    OK ckpt1.pt ($SIZE)"
 else
-    echo "    FAIL MISSING - run: ./3_download_weights.sh 1GCmJ0OuNdw9c1E4giLwyA9EK4uwWL6HT"
+    echo "    INFO: weights.pt / ckpt1.pt not found - NOT REQUIRED for SPIDER transfer"
+    echo "    (only train_rsna_*.py needs it; train_spider.py uses --rsna-checkpoint)"
 fi
 
 # 4. SPIDER dataset
