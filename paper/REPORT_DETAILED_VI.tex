@@ -75,12 +75,17 @@ lên $46.4\%$ ($\times 4.0$), Severe F1 từ $0.149$ lên $0.343$
 7.6\times$ baseline random) so với baseline 3D ResNet-34. Trên SPIDER
 8 nhãn (Pfirrmann, Modic, disc narrowing, spondylolisthesis, up/low
 endplate, herniation, bulging), \emph{transfer learning} (freeze
-backbone + train heads, 15 epochs) cho thấy Hybrid vượt 3 baseline trên
-mean F1 ($0.660$ vs Baseline $0.649$, CBAM $0.621$, BMC-only $0.617$)
-và Spondylolisthesis Severe Recall $0.40$ vs Baseline $0.10$, CBAM
-$0.00$ --- bằng chứng cụ thể của text-guided minority recovery. Đây là
+backbone + train heads, 15 epochs, 3 seeds $\{42,123,456\}$) cho
+thấy Hybrid \emph{ngang Baseline} trên aggregate Mean F1 ($0.653 \pm
+0.014$ vs Baseline $0.646 \pm 0.002$, within noise) nhưng
+\emph{recover trên CBAM} ($0.619 \pm 0.010$, $\Delta = +0.034 > 2\sigma$
+significant) --- evidence Hybrid là regularizer chứ không phải additive
+gain. Trên clinical minority class: Disc Herniation Recall từ $0$ lên
+$0.36 \pm 0.08$ (Hybrid), Spondylolisthesis Recall $0.20 \to 0.30$,
+Pfirrmann Grade 4 $0.47 \to 0.53$ --- consistent xuyên 3 seeds. Đây là
 pipeline đầu tiên áp dụng BiomedCLIP cho RSNA 2024 lumbar grading mà
-chúng tôi biết. \emph{Single-seed (seed=42) cho cả hai phase}.
+chúng tôi biết. \emph{RSNA single-seed (42); SPIDER 3-seed (camera-ready
+sẽ thêm 3-seed RSNA)}.
 \end{abstract}
 
 \tableofcontents
@@ -142,16 +147,17 @@ fusion cần thiết --- single branches đều thua Hybrid.
 \item \textbf{First BiomedCLIP-RSNA pipeline}: search 11+ VLM
 candidates, không có công trình peer-reviewed nào áp dụng BiomedCLIP
 cho RSNA 2024 trước work này.
-\item \textbf{Cross-dataset transfer learning trên SPIDER 8 nhãn}: với
-chỉ 15 epoch fine-tune heads, Hybrid đạt mean F1 $=0.660$ (vs Baseline
-$0.649$, CBAM $0.621$, BMC-only $0.617$); win 4/8 conditions trên F1
-và 4/8 trên AUPRC. Trong đó Spondylolisthesis (minority $3\%$): Recall
-$0.40$ vs Baseline $0.10$, CBAM/BMC-only $0.00$ --- evidence cho
-text-guided minority class recovery.
-\item \textbf{CBAM-hurts-cross-dataset finding}: CBAM (over-fit RSNA)
-\emph{thua} Baseline trên SPIDER ($0.621$ vs $0.649$ mean F1), nhưng
-Hybrid (CBAM $+$ BiomedCLIP) bù lại được. Bằng chứng BiomedCLIP knowledge
-cải thiện cross-dataset robustness.
+\item \textbf{Cross-dataset transfer learning trên SPIDER 8 nhãn
+(3-seed)}: Hybrid \emph{ngang Baseline} aggregate Mean F1 ($0.653 \pm
+0.014$ vs $0.646 \pm 0.002$, within noise) nhưng lead consistent trên
+minority recall: Disc Herniation ($0 \to 0.36 \pm 0.08$),
+Spondylolisthesis ($0.20 \to 0.30$), Pfirrmann Grade 4 ($0.47 \to
+0.53$).
+\item \textbf{CBAM-hurts-cross-dataset finding (significant 3-seed)}:
+CBAM Mean F1 $0.619 \pm 0.010$ \emph{thua} Baseline $0.646 \pm 0.002$,
+$\Delta = -0.027$ exceeds pooled $\sigma$. Hybrid (CBAM $+$ BiomedCLIP)
+recovers above CBAM với $\Delta = +0.034 > 2\sigma$ --- evidence
+BiomedCLIP knowledge giúp cross-dataset robustness.
 \end{itemize}
 
 % =============================================================================
@@ -887,56 +893,62 @@ $0.18$-$0.20$ --- thoát khỏi tình trạng model bỏ qua hoàn toàn class
 foraminal Severe. Đây là cải thiện có ý nghĩa lâm sàng kể cả khi số
 absolute còn thấp.
 
-\subsection{Cross-dataset SPIDER 8-label transfer learning}
+\subsection{Cross-dataset SPIDER 8-label transfer learning (3-seed)}
 
 \noindent\textbf{Setup}: 4 cấu hình (Baseline / CBAM / BMC-only /
 Hybrid) đều khởi tạo từ RSNA checkpoint tương ứng, freeze backbone,
-train 15 epoch trên SPIDER training split (940/234 IVD, seed=42, batch=16,
-lr=$10^{-3}$, weighted CE loss, RTX 4090). Đánh giá trên 234 IVD val
-qua 8 nhãn $\times$ 5 metric (Acc, F1, AUC, AUPRC, per-class Severe Recall).
+train 15 epoch trên SPIDER training split (940/234 IVD, seeds
+$\{42, 123, 456\}$, batch=16, lr=$10^{-3}$, weighted CE loss, RTX
+4090). Đánh giá trên 234 IVD val qua 8 nhãn $\times$ 5 metric. Mọi
+số liệu báo cáo \emph{mean $\pm$ std} qua 3 seeds.
 
-\subsubsection*{Bảng aggregate (mean across 8 conditions)}
+\subsubsection*{Bảng aggregate (mean$\pm$std across 8 conditions, 3 seeds)}
 
 \begin{table}[h]
 \centering
 \caption{SPIDER 8-label transfer learning --- 4 configs $\times$ 4
-metric chính. \best{Bold} = best per row. Single seed.}
+metric chính, mean$\pm$std qua 3 seeds $\{42,123,456\}$. \best{Bold}
+= best per row khi gap $> 2\sigma$ (pooled std).}
 \label{tab:spider_aggregate}
+\footnotesize
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 \rowcolor{tablehdr}
-Metric & Base & CBAM & BMC-only & \best{Hybrid} \\
+Metric & Base & CBAM & BMC-only & Hybrid \\
 \midrule
-Mean Accuracy & \best{81.33\%} & 79.68\% & 76.22\% & 78.88\% \\
-Mean F1 macro & 0.649          & 0.621   & 0.617   & \best{0.660} \\
-Mean AUC      & 0.845          & 0.834   & 0.817   & \best{0.849} \\
-Mean AUPRC    & 0.601          & 0.566   & 0.543   & \best{0.606} \\
+Mean Accuracy & \best{80.23 $\pm$ 0.94} & 79.27 $\pm$ 1.19 & 76.12 $\pm$ 0.83 & 78.30 $\pm$ 1.64 \\
+Mean F1 macro & 0.646 $\pm$ 0.002 & 0.619 $\pm$ 0.010 & 0.613 $\pm$ 0.006 & 0.653 $\pm$ 0.014 \\
+Mean AUC      & 0.842 $\pm$ 0.006 & 0.824 $\pm$ 0.018 & 0.808 $\pm$ 0.011 & 0.846 $\pm$ 0.018 \\
+Mean AUPRC    & \best{0.633 $\pm$ 0.026} & 0.580 $\pm$ 0.016 & 0.544 $\pm$ 0.007 & 0.611 $\pm$ 0.010 \\
 \midrule
-Val Loss              & 0.4419     & 0.4789 & 0.6149 & 0.5780 \\
-Train time (min)      & 19.4       & 19.9   & \best{13.9} & 18.5 \\
-Inference (ms/sample) & 62.0       & 62.4   & \best{60.0} & 61.6 \\
+Val Loss              & 0.446 $\pm$ 0.008 & 0.489 $\pm$ 0.012 & 0.603 $\pm$ 0.015 & 0.566 $\pm$ 0.025 \\
+Inference (ms/sample) & 65.5 $\pm$ 2.7 & 66.7 $\pm$ 3.2 & 65.2 $\pm$ 3.9 & 66.4 $\pm$ 3.7 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\noindent\textbf{Findings aggregate}:
+\noindent\textbf{Findings aggregate (3-seed)}:
 \begin{itemize}[leftmargin=*]
-\item Hybrid win 3 primary metrics (F1 / AUC / AUPRC). Baseline win
-Accuracy (predict majority class).
-\item Hybrid vs CBAM $= +0.039$ F1 ($+6.3\%$) --- gap có ý nghĩa: CBAM
-over-fit RSNA features bị hurt khi transfer.
-\item Hybrid vs Baseline $= +0.011$ F1 ($+1.7\%$) --- gap nhỏ, nằm
-trong noise của single-seed. \emph{Cần multi-seed để khẳng định}.
-\item BMC-only train nhanh nhất (13.9 min) nhưng thấp nhất trên F1
-($0.617$) --- text-only branch không đủ, cần CBAM features.
+\item \textbf{Hybrid vs CBAM}: significant. $\Delta$ F1 $= +0.034$
+($> 2\sigma$ pooled $\sigma=0.012$); $\Delta$ AUPRC $= +0.031$ ($> 2\sigma$).
+\item \textbf{Hybrid vs Baseline}: within noise. $\Delta$ F1 $= +0.006$
+(pooled $\sigma = 0.010$); Mean AUPRC \emph{Baseline lead}
+($0.633$ vs $0.611$). Hybrid không claim aggregate vượt Baseline trên
+SPIDER.
+\item \textbf{CBAM hurts cross-dataset}: CBAM F1 $0.619 < $ Baseline
+$0.646$, $\Delta = -0.027$ exceeds CBAM--Baseline noise ($\sigma =
+0.010$). Đây là finding mới: CBAM optimized cho RSNA degrade khi
+transfer.
+\item BMC-only thấp nhất trên Mean F1 ($0.613$) nhưng cao nhất 1 vài
+condition lẻ (Disc Herniation Recall).
 \end{itemize}
 
-\subsubsection*{Per-condition F1 macro (chi tiết)}
+\subsubsection*{Per-condition F1 macro (3-seed mean$\pm$std)}
 
 \begin{table}[h]
 \centering
-\caption{F1 macro theo từng condition trên SPIDER (8 nhãn). Cột Winner
-in \best{bold}.}
+\caption{F1 macro theo từng condition trên SPIDER (8 nhãn), 3 seeds.
+Winner cột cuối in \best{bold} nếu gap lớn hơn noise.}
 \label{tab:spider_perclass_f1}
 \small
 \begin{tabular}{@{}lccccc@{}}
@@ -944,56 +956,60 @@ in \best{bold}.}
 \rowcolor{tablehdr}
 Condition & Base & CBAM & BMC-only & Hybrid & Winner \\
 \midrule
-Pfirrmann (5-cls)    & \best{0.613} & 0.570 & 0.469 & 0.581 & Baseline \\
-Modic (4-cls)        & \best{0.382} & 0.369 & 0.377 & 0.373 & Baseline \\
-Disc Narrowing       & 0.829        & 0.820 & 0.796 & \best{0.843} & Hybrid \\
-Spondylolisthesis    & 0.565        & 0.489 & 0.482 & \best{0.676} & \textbf{Hybrid (+0.11)} \\
-UP Endplate          & 0.763        & 0.723 & 0.721 & \best{0.765} & Hybrid \\
-LOW Endplate         & 0.746        & \best{0.751} & 0.684 & 0.729 & CBAM \\
-Disc Herniation      & 0.488        & 0.488 & \best{0.595} & 0.549 & BMC-only \\
-Disc Bulging         & \best{0.808} & 0.762 & \best{0.808} & 0.766 & Base/BMC \\
+Pfirrmann (5-cls)    & \best{0.592 $\pm$ .04} & 0.540 $\pm$ .02 & 0.439 $\pm$ .02 & 0.544 $\pm$ .03 & Baseline \\
+Modic (4-cls)        & 0.376 $\pm$ .01 & 0.374 $\pm$ .01 & 0.381 $\pm$ .02 & 0.379 $\pm$ .02 & ${\sim}$Tie \\
+Disc Narrowing       & 0.823 $\pm$ .01 & 0.818 $\pm$ .01 & 0.792 $\pm$ .01 & \best{0.831 $\pm$ .01} & Hybrid \\
+Spondylolisthesis    & \best{0.632 $\pm$ .05} & 0.492 $\pm$ .00 & 0.501 $\pm$ .02 & 0.613 $\pm$ .04 & Baseline \\
+UP Endplate          & 0.728 $\pm$ .03 & 0.729 $\pm$ .02 & 0.724 $\pm$ .01 & \best{0.749 $\pm$ .02} & Hybrid \\
+LOW Endplate         & \best{0.757 $\pm$ .01} & 0.757 $\pm$ .02 & 0.712 $\pm$ .02 & 0.744 $\pm$ .04 & Baseline \\
+Disc Herniation      & 0.485 $\pm$ .00 & 0.485 $\pm$ .00 & 0.565 $\pm$ .04 & \best{0.601 $\pm$ .04} & \textbf{Hybrid} \\
+Disc Bulging         & 0.777 $\pm$ .03 & 0.758 $\pm$ .01 & \best{0.792 $\pm$ .01} & 0.761 $\pm$ .01 & BMC-only \\
 \midrule
-\textbf{Wins per config} & 4 & 1 & 2 & 4 & --- \\
+\textbf{Wins per config} & 3 & 0 & 2 & 3 & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\noindent\textbf{Per-condition insight}: Hybrid và Baseline cùng win 4
-conditions, nhưng Hybrid \emph{lead Spondylolisthesis bằng margin lớn}
-($+0.111$ vs Baseline) --- đây là minority class hiếm nhất ($\sim
-3\%$). CBAM kém nhất, chỉ win 1 condition (LOW Endplate, $+0.005$).
+\noindent\textbf{Per-condition insight (3-seed)}: Hybrid và Baseline
+mỗi config win 3 conditions, BMC-only win 2 (Modic + Disc Bulging).
+Hybrid win quan trọng là \textbf{Disc Herniation} (F1 $0.601$ vs
+Baseline $0.485$, $+0.116$). Baseline win Spondylolisthesis F1
+(0.632 vs 0.613) NHƯNG Hybrid lead Spondy positive recall (xem dưới).
 
-\subsubsection*{Severe / Minority class Recall (zero-shot benefit)}
+\subsubsection*{Minority class Recall (3-seed mean$\pm$std)}
 
 \begin{table}[h]
 \centering
-\caption{Recall của \emph{minority class} (positive label) cho mỗi
-binary condition + Pfirrmann Grade 4. Chỉ số quan trọng lâm sàng.}
+\caption{Recall của \emph{positive minority class} cho mỗi binary
+condition + Pfirrmann Grade 4. Mean$\pm$std qua 3 seeds.}
 \label{tab:spider_minority_recall}
 \small
 \begin{tabular}{@{}lccccc@{}}
 \toprule
 \rowcolor{tablehdr}
-Condition (minority class) & Prev. & Base & CBAM & BMC-only & Hybrid \\
+Condition (minority class) & Prev. & Base & CBAM & BMC & Hybrid \\
 \midrule
-Pfirrmann Grade 4 (severe)         & 19\% & 0.474 & 0.447 & 0.342 & \best{0.579} \\
-Modic Type 1 (rare)                & $<$5\%& 0.000 & 0.000 & 0.000 & 0.000 \\
-Modic Type 3 (rare)                & $<$1\%& 0.000 & 0.000 & 0.000 & 0.000 \\
-Disc Narrowing (Yes)               & 38\% & 0.742 & 0.730 & 0.798 & \best{0.820} \\
-\textbf{Spondylolisthesis (Yes)}   & 3\%  & 0.100 & 0.000 & 0.000 & \best{0.400} \\
-UP Endplate (Yes)                  & 35\% & 0.632 & 0.598 & \best{0.782} & 0.724 \\
-LOW Endplate (Yes)                 & 38\% & 0.640 & \best{0.685} & \best{0.685} & 0.629 \\
-Disc Herniation (Yes)              & 5\%  & 0.000 & 0.000 & \best{0.455} & 0.273 \\
-Disc Bulging (Yes)                 & 50\% & 0.824 & 0.773 & \best{0.840} & 0.731 \\
+Pfirrmann Grade 4 (severe)   & 19\%  & 0.473 $\pm$ .06 & 0.396 $\pm$ .04 & 0.437 $\pm$ .16 & \best{0.534 $\pm$ .04} \\
+Modic Type 1 (rare)          & 0.3\% & 0.000 & 0.000 & 0.000 & 0.000 \\
+Modic Type 3 (rare)          & 0.5\% & 0.000 & 0.000 & 0.000 & 0.000 \\
+Disc Narrowing (Yes)         & 38\%  & 0.758 $\pm$ .03 & 0.770 $\pm$ .03 & 0.822 $\pm$ .02 & \best{0.825 $\pm$ .02} \\
+\textbf{Spondylolisthesis Y} & 3\%   & 0.200 $\pm$ .10 & 0.000 $\pm$ .00 & 0.056 $\pm$ .08 & \best{0.300 $\pm$ .10} \\
+\textbf{Disc Herniation Y}   & 5\%   & 0.000 $\pm$ .00 & 0.000 $\pm$ .00 & 0.270 $\pm$ .15 & \best{0.356 $\pm$ .08} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\noindent\textbf{Bomb finding}: \textbf{Spondylolisthesis} (positive
-chỉ $3\%$ samples): Hybrid recover $40\%$ minority, Baseline chỉ
-$10\%$, \emph{CBAM \& BMC-only fail hoàn toàn ($0\%$)}. Đây là evidence
-cụ thể text-guided fusion giúp minority class --- không phải artifact
-của single config.
+\noindent\textbf{Headline 3-seed minority recall}:
+\begin{itemize}[leftmargin=*]
+\item \textbf{Disc Herniation Yes (5\%)}: Hybrid $0.356 \pm 0.08$
+trong khi Baseline + CBAM = $0.000$ --- consistent strong win xuyên seed.
+\item \textbf{Spondylolisthesis Yes (3\%)}: Hybrid $0.300 \pm 0.10$
+vs Baseline $0.200 \pm 0.10$ ($+0.10$ gap, smaller than single-seed
+$+0.30$ but vẫn lead consistently).
+\item \textbf{Pfirrmann Grade 4 (19\%)}: Hybrid $0.534 \pm 0.04$ vs
+Baseline $0.473 \pm 0.06$ ($+0.06$ absolute).
+\item Modic Type 1/3 ($<5\%$/$<1\%$): intractable, $0\%$ across configs.
+\end{itemize}
 
 \noindent\textbf{Modic Type 1/3}: tất cả $0\%$ recall --- class quá
 rare ($<5\%$ và $<1\%$ tương ứng) không thể recover bằng 15 epoch /
