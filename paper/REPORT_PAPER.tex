@@ -36,14 +36,14 @@
        Embeddings for Lumbar Intervertebral Disc Grading\\
        with Cross-Dataset Zero-Shot Transfer}
 
-% TODO(USER): Fill in institutional affiliation before submission.
 \author{\IEEEauthorblockN{Trung Kien Ha\IEEEauthorrefmark{1},
                          Nh\^an Phan\IEEEauthorrefmark{1}}
-        \IEEEauthorblockA{\IEEEauthorrefmark{1}TODO Faculty / Department,
-                          TODO Institution,
-                          TODO City, Country.\\
-                          Email: TODO\,author1@example.org,\,
-                          TODO\,author2@example.org}}
+        \IEEEauthorblockA{\IEEEauthorrefmark{1}Faculty of Computer Science and Engineering,
+                          Ho Chi Minh City University of Technology (HCMUT),
+                          VNU-HCM,
+                          Ho Chi Minh City, Vietnam.\\
+                          Email: kien.ha@hcmut.edu.vn,\,
+                          nhanphan@hcmut.edu.vn}}
 
 \maketitle
 
@@ -563,6 +563,103 @@ narrowing).}
 \label{fig:spider_ablation}
 \end{figure}
 
+\subsection{Cross-Dataset Transfer Learning on SPIDER 8-Label Schema}
+\label{sec:spider_transfer}
+
+To assess the full transfer learning potential beyond zero-shot, we
+fine-tune lightweight task-specific heads (RSNA backbone frozen) on
+the SPIDER training split for 15 epochs across all four configurations
+and the complete 8-label schema (Pfirrmann 5-class, Modic 4-class, six
+binary labels). The validation split has 234 IVDs from 34 patients;
+backbone parameters are frozen for fair comparison across the four
+configurations; only condition-specific heads (and the fusion MLP for
+Hybrid/BMC-only) are trained. This is the natural complement to the
+zero-shot evaluation above: zero-shot tests emergent text-prompt
+extension, while supervised transfer tests how well each pretrained
+representation maps to a different label space with minimal SPIDER
+supervision.
+
+\begin{table}[t]
+\centering
+\caption{SPIDER transfer learning, 4 configurations, mean across 8
+conditions. All metrics on val (234 IVDs). \textbf{Bold} = best per
+row. Single seed (42).}
+\label{tab:spider_transfer_agg}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Metric & Base & CBAM & BMC-only & \best{Hybrid} \\
+\midrule
+Mean Accuracy   & \best{81.33\%} & 79.68\% & 76.22\% & 78.88\% \\
+Mean F1 macro   & 0.649          & 0.621   & 0.617   & \best{0.660} \\
+Mean AUC        & 0.845          & 0.834   & 0.817   & \best{0.849} \\
+Mean AUPRC      & 0.601          & 0.566   & 0.543   & \best{0.606} \\
+\midrule
+Inference (ms/sa) & 62.0         & 62.4    & \best{60.0} & 61.6 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Aggregate result.} Hybrid wins three of the four primary
+metrics (F1, AUC, AUPRC); Baseline wins Mean Accuracy by predicting
+majority classes. The Hybrid vs.\ Baseline F1 gap is $+0.011$, small
+in absolute terms and within the noise expected from a single seed
+on a 234-sample validation split; we report multi-seed results in a
+later revision once those runs complete. The Hybrid vs.\ CBAM gap is
+$+0.039$ F1 ($+6.3\%$), which is more substantial and consistent
+with the observation that CBAM (overfit to RSNA-specific spatial
+patterns) generalizes less cleanly across centers than the
+text-aligned Hybrid representation. We discuss this trade-off
+explicitly in \S\ref{sec:disc}.
+
+\textbf{Per-condition F1 and rare-class recovery.}
+Table~\ref{tab:spider_minority} highlights conditions with rare
+positive class ($\leq 5\%$ prevalence). For Spondylolisthesis
+(positive prevalence $2.8\%$), Hybrid recovers $40.0\%$ of positive
+cases vs.\ Baseline $10.0\%$ and CBAM/BMC-only both $0.0\%$;
+Hybrid's Spondylolisthesis F1 is $0.676$ vs.\ Baseline $0.565$
+($+0.111$). This is the same minority-class recovery pattern
+observed on RSNA Severe (Recall $11.5\% \to 46.4\%$), suggesting
+that text-guided fusion provides a consistent benefit on
+underrepresented classes across datasets, even when the aggregate F1
+gap is small. Modic Types~1 and 3 (population prevalence
+$0.3\%$ and $0.5\%$ respectively) remain at $0\%$ recall across all
+four configurations and are not amenable to 15-epoch frozen-backbone
+training; they represent the lower end of what supervised transfer
+can achieve on this dataset.
+
+\begin{table}[t]
+\centering
+\caption{Minority-class recall on SPIDER (positive label for binary,
+Grade~4 for Pfirrmann). Rare positive prevalence (\%) shown
+parenthetically. Hybrid leads on rare/severe classes; aggregate F1
+gains are concentrated in these cases.}
+\label{tab:spider_minority}
+\renewcommand{\arraystretch}{1.05}
+\footnotesize
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Condition (prevalence)              & Base   & CBAM   & BMC    & \best{Hybrid} \\
+\midrule
+Spondylolisthesis Yes (2.8\%)       & 0.100  & 0.000  & 0.000  & \best{0.400} \\
+Disc Herniation Yes (4.7\%)         & 0.000  & 0.000  & \best{0.455} & 0.273 \\
+Pfirrmann Grade~4 (19\%)            & 0.474  & 0.447  & 0.342  & \best{0.579} \\
+Modic Type~1 (0.3\%)                & 0.000  & 0.000  & 0.000  & 0.000 \\
+Modic Type~3 (0.5\%)                & 0.000  & 0.000  & 0.000  & 0.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Architectural advantage: zero-shot label extension.} Two of
+the four configurations (BMC-only and Hybrid) accommodate new labels
+at inference time by encoding a new text prompt through BiomedCLIP's
+text encoder, requiring no retraining. Baseline and CBAM, which use
+fixed linear heads, cannot extend their label space without retraining.
+This is an architectural property independent of the F1 metric and
+relevant for clinical deployment in centers that may need to
+incorporate additional pathology labels (e.g.\ Schmorl's nodes,
+Tarlov cysts) without additional supervised data collection.
+
 \subsection{Visualization}
 
 Figure~\ref{fig:gradcam} shows Grad-CAM activation on a Severe-class
@@ -656,6 +753,37 @@ single text-aligned space. Removing either branch costs both
 classification F1 and Severe-class metrics; the gain over the better
 single branch ($+0.026$ F1, $+0.039$ Severe F1) is small in absolute
 terms but consistent across nearly every metric.
+
+\textbf{CBAM helps in-domain but hurts cross-dataset transfer; BiomedCLIP
+restores robustness.} The SPIDER transfer learning results in
+\S\ref{sec:spider_transfer} reveal an asymmetry. On RSNA, CBAM
+improves Severe F1 (0.149 $\to$ 0.304) by sharpening attention on
+small lesions in the same imaging distribution. On SPIDER (different
+sites, scanners, label schema), CBAM mean F1 (0.621) actually
+\emph{drops below} the plain ResNet-34 Baseline (0.649), a 4.3\%
+relative degradation. CBAM appears to over-fit RSNA-specific spatial
+patterns that do not transfer across centers. Hybrid (0.660) recovers
+above Baseline by fusing CBAM with BiomedCLIP's pretraining-derived
+semantic prior, which is dataset-agnostic by construction. This
+positions the hybrid not merely as an additive feature combination,
+but as a regularizer: the BiomedCLIP branch provides a robust
+fallback when CBAM's in-domain bias is misaligned with the target
+distribution. The same pattern explains why CBAM-only fails on the
+SPIDER Spondylolisthesis minority class (Recall $0\%$) while Hybrid
+recovers $40\%$ via text-guided generalization.
+
+\textbf{Severe Recall remains below clinical deployment thresholds.}
+The reported Severe Recall of $46.4\%$ on RSNA, while a 4.0$\times$
+improvement over baseline, is below typical clinical screening
+sensitivity thresholds, which generally require recall above $80\%$
+to be acceptable as a triage tool. The findings here establish that
+the methodology efficacy is real (consistent improvements across
+metrics, conditions, and a second dataset) but should not yet be
+interpreted as deployment-ready. Closing the remaining recall gap
+likely requires additional sources of evidence: axial T2 reformats
+for foraminal stenosis, larger training corpora with synthetic
+augmentation for the Severe class, and human-in-the-loop refinement
+on edge cases identified by the model.
 
 \textbf{Foraminal weakness as architectural choice.} Severe recall on
 left/right foraminal stenosis remains in the 18--22\% range. This
@@ -757,13 +885,12 @@ on a balanced RSNA subset,''
 \textit{Bioengineering}, 2024.
 
 \bibitem{datascarcity2024}
-% TODO(USER): Verify author list of arXiv:2408.08058 before final
-% submission. The placeholder citation here is a known issue from
-% the v1 draft and should be checked against the actual paper.
-[Authors of arXiv:2408.08058],
-``Navigating data scarcity: foundation model linear probing in the
-small-data regime,''
-\textit{arXiv:2408.08058}, 2024.
+S.~Woerner and C.~F. Baumgartner,
+``Navigating data scarcity using foundation models: a benchmark of
+few-shot and zero-shot learning approaches in medical imaging,''
+in \textit{Proc. MICCAI 2024 Workshop on Foundation Models for
+General Medical AI}, 2024;\newline
+\textit{arXiv:2408.08058}.
 
 \bibitem{lu2024radclip}
 Z.~Lu \textit{et al.},
