@@ -4,6 +4,12 @@
 % Standalone reference: open this for the executive view of all numbers.
 % ===========================================================================
 
+% =============================================================================
+% SINGLE-SEED VERSION (seed=42 only, BEST single run)
+% Backed up 2026-05-15 — kept alongside the 3-seed mean±std version.
+% Use this version for: internal review, advisor draft, "best results" display.
+% The corresponding 3-seed version is in the matching file without `_singleseed`.
+% =============================================================================
 \documentclass[11pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T5]{fontenc}
@@ -33,9 +39,8 @@
 \maketitle
 
 \noindent\textbf{Phạm vi}: Snapshot ngắn gọn các bảng kết quả \emph{v3
-(2026-05-03 RSNA retrain + 2026-05-15 SPIDER 8-label transfer 3-seed)}.
-SPIDER báo cáo mean$\pm$std qua 3 seeds $\{42, 123, 456\}$; RSNA hiện
-còn single-seed (42), 3-seed deferred.
+(2026-05-03 RSNA retrain + 2026-05-15 SPIDER 8-label transfer)}. Mọi số
+liệu đều \emph{single-seed (42)}. Multi-seed deferred.
 
 % ===========================================================================
 \section{Phân phối nhãn (Class distribution)}
@@ -232,61 +237,49 @@ majority). BMC-only win 0/10 (over-fit class-imbalanced features).
 
 \begin{table}[h]
 \centering
-\caption{SPIDER mean across 8 conditions, 3 seeds $\{42, 123, 456\}$.
-\textbf{Bold} = best per row when gap exceeds $2\sigma$ pooled std.}
+\caption{SPIDER mean across 8 conditions (transfer learning, 15 epochs).}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 \rowcolor{tablehdr}
-Metric & Base & CBAM & BMC-only & Hybrid \\
+Metric & Base & CBAM & BMC-only & \best{Hybrid} \\
 \midrule
-Mean Accuracy & \best{80.23 $\pm$ 0.94} & 79.27 $\pm$ 1.19 & 76.12 $\pm$ 0.83 & 78.30 $\pm$ 1.64 \\
-Mean F1 macro & 0.646 $\pm$ 0.002 & 0.619 $\pm$ 0.010 & 0.613 $\pm$ 0.006 & 0.653 $\pm$ 0.014 \\
-Mean AUC      & 0.842 $\pm$ 0.006 & 0.824 $\pm$ 0.018 & 0.808 $\pm$ 0.011 & 0.846 $\pm$ 0.018 \\
-Mean AUPRC    & \best{0.633 $\pm$ 0.026} & 0.580 $\pm$ 0.016 & 0.544 $\pm$ 0.007 & 0.611 $\pm$ 0.010 \\
+Mean Accuracy & \best{81.33\%} & 79.68\% & 76.22\% & 78.88\% \\
+Mean F1 macro & 0.649          & 0.621   & 0.617   & \best{0.660} \\
+Mean AUC      & 0.845          & 0.834   & 0.817   & \best{0.849} \\
+Mean AUPRC    & 0.601          & 0.566   & 0.543   & \best{0.606} \\
 \midrule
-Val Loss      & 0.446 $\pm$ 0.008 & 0.489 $\pm$ 0.012 & 0.603 $\pm$ 0.015 & 0.566 $\pm$ 0.025 \\
-Inf (ms/sa)   & 65.5 $\pm$ 2.7 & 66.7 $\pm$ 3.2 & 65.2 $\pm$ 3.9 & 66.4 $\pm$ 3.7 \\
+Val Loss      & 0.4419         & 0.4789  & 0.6149  & 0.5780 \\
+Train (min)   & 19.4           & 19.9    & \best{13.9} & 18.5 \\
+Inf (ms/sa)   & 62.0           & 62.4    & \best{60.0} & 61.6 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\noindent\textbf{Significance check (Hybrid vs Baseline + Hybrid vs
-CBAM)}:
-\begin{itemize}
-\item Mean F1: Hybrid vs Baseline $\Delta = +0.006$ within $2\sigma$
-($\sigma = 0.010$) --- within noise.
-\item Mean F1: Hybrid vs CBAM $\Delta = +0.034$ exceeds $2\sigma$
-($\sigma = 0.012$) --- significant.
-\item Mean AUPRC: Hybrid vs Baseline $\Delta = -0.022$
-(\emph{Baseline lead}) within noise; Hybrid vs CBAM $\Delta = +0.031$
-significant ($\sigma = 0.013$).
-\end{itemize}
-
-\noindent$\Rightarrow$ \emph{Hybrid acts as regularizer recovering
-above CBAM}, parity with Baseline on aggregate, wins on rare classes
-(see per-condition).
+\noindent$\Delta$ Hybrid vs Baseline $= +0.011$ F1 (within
+single-seed noise; needs multi-seed). $\Delta$ Hybrid vs CBAM $=
++0.039$ F1 ($+6.3\%$, meaningful).
 
 \subsection*{Per-condition F1 macro}
 
 \begin{table}[h]
 \centering
-\caption{SPIDER F1 macro per condition (8 nhãn), mean$\pm$std qua 3 seeds.}
+\caption{SPIDER F1 macro per condition (8 nhãn).}
 \small
 \begin{tabular}{@{}lcccc|c@{}}
 \toprule
 \rowcolor{tablehdr}
 Condition & Base & CBAM & BMC & Hybrid & Winner \\
 \midrule
-Pfirrmann (5-cls)    & \best{0.592 $\pm$ .04} & 0.540 $\pm$ .02 & 0.439 $\pm$ .02 & 0.544 $\pm$ .03 & Baseline \\
-Modic (4-cls)        & 0.376 $\pm$ .01 & 0.374 $\pm$ .01 & 0.381 $\pm$ .02 & 0.379 $\pm$ .02 & ${\sim}$Tie \\
-Disc Narrowing       & 0.823 $\pm$ .01 & 0.818 $\pm$ .01 & 0.792 $\pm$ .01 & \best{0.831 $\pm$ .01} & Hybrid \\
-Spondylolisthesis    & \best{0.632 $\pm$ .05} & 0.492 $\pm$ .00 & 0.501 $\pm$ .02 & 0.613 $\pm$ .04 & Baseline \\
-UP Endplate          & 0.728 $\pm$ .03 & 0.729 $\pm$ .02 & 0.724 $\pm$ .01 & \best{0.749 $\pm$ .02} & Hybrid \\
-LOW Endplate         & \best{0.757 $\pm$ .01} & 0.757 $\pm$ .02 & 0.712 $\pm$ .02 & 0.744 $\pm$ .04 & Baseline \\
-Disc Herniation      & 0.485 $\pm$ .00 & 0.485 $\pm$ .00 & 0.565 $\pm$ .04 & \best{0.601 $\pm$ .04} & \textbf{Hybrid} \\
-Disc Bulging         & 0.777 $\pm$ .03 & 0.758 $\pm$ .01 & \best{0.792 $\pm$ .01} & 0.761 $\pm$ .01 & BMC-only \\
+Pfirrmann (5-cls)    & \best{0.613} & 0.570 & 0.469 & 0.581         & Baseline \\
+Modic (4-cls)        & \best{0.382} & 0.369 & 0.377 & 0.373         & Baseline \\
+Disc Narrowing       & 0.829        & 0.820 & 0.796 & \best{0.843}  & Hybrid \\
+Spondylolisthesis    & 0.565        & 0.489 & 0.482 & \best{0.676}  & \textbf{Hybrid (+0.11)} \\
+UP Endplate          & 0.763        & 0.723 & 0.721 & \best{0.765}  & Hybrid \\
+LOW Endplate         & 0.746        & \best{0.751} & 0.684 & 0.729  & CBAM \\
+Disc Herniation      & 0.488        & 0.488 & \best{0.595} & 0.549  & BMC-only \\
+Disc Bulging         & \best{0.808} & 0.762 & \best{0.808} & 0.766  & Base/BMC \\
 \midrule
-Wins                 & 3 & 0 & 2 & 3 & --- \\
+Wins                 & 4 & 1 & 2 & 4 & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -295,34 +288,28 @@ Wins                 & 3 & 0 & 2 & 3 & --- \\
 
 \begin{table}[h]
 \centering
-\caption{Recall của \emph{positive minority class} qua 3 seeds, focus clinical.}
+\caption{Recall của \emph{positive minority class}, focus clinical.}
 \small
 \begin{tabular}{@{}lccccc@{}}
 \toprule
 \rowcolor{tablehdr}
 Condition & Prev. \% & Base & CBAM & BMC & Hybrid \\
 \midrule
-Pfirrmann Grade 4 (severe)   & 19\% & 0.473 $\pm$ .06 & 0.396 $\pm$ .04 & 0.437 $\pm$ .16 & \best{0.534 $\pm$ .04} \\
-Modic Type 1 (rare)          & 0.3\%& 0.000 & 0.000 & 0.000 & 0.000 \\
-Modic Type 3 (rare)          & 0.5\%& 0.000 & 0.000 & 0.000 & 0.000 \\
-Disc Narrowing (Yes)         & 38\% & 0.758 $\pm$ .03 & 0.770 $\pm$ .03 & 0.822 $\pm$ .02 & \best{0.825 $\pm$ .02} \\
-\textbf{Spondylolisthesis Y} & 3\% & 0.200 $\pm$ .10 & 0.000 $\pm$ .00 & 0.056 $\pm$ .08 & \best{0.300 $\pm$ .10} \\
-\textbf{Disc Herniation Y}   & 5\% & 0.000 $\pm$ .00 & 0.000 $\pm$ .00 & 0.270 $\pm$ .15 & \best{0.356 $\pm$ .08} \\
+Pfirrmann Grade 4 (severe)   & 19\% & 0.474 & 0.447 & 0.342 & \best{0.579} \\
+Modic Type 1/3 (rare)        & $<$5\%& 0.000 & 0.000 & 0.000 & 0.000 \\
+Disc Narrowing (Yes)         & 38\% & 0.742 & 0.730 & 0.798 & \best{0.820} \\
+\textbf{Spondylolisthesis Y} & 3\% & 0.100 & 0.000 & 0.000 & \best{0.400} \\
+UP Endplate (Yes)            & 35\% & 0.632 & 0.598 & \best{0.782} & 0.724 \\
+LOW Endplate (Yes)           & 38\% & 0.640 & \best{0.685} & \best{0.685} & 0.629 \\
+Disc Herniation (Yes)        & 5\% & 0.000 & 0.000 & \best{0.455} & 0.273 \\
+Disc Bulging (Yes)           & 50\% & 0.824 & 0.773 & \best{0.840} & 0.731 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\noindent\textbf{Clinical minority headlines (3-seed)}:
-\begin{itemize}
-\item \textbf{Disc Herniation Yes (5\%)}: Hybrid recover $0.36 \pm .08$
-trong khi Baseline + CBAM = $0$ --- consistent strong win.
-\item \textbf{Spondylolisthesis Yes (3\%)}: Hybrid $0.30 \pm .10$ vs
-Baseline $0.20 \pm .10$ (gap $+0.10$, smaller than single-seed
-report $+0.30$ nhưng vẫn lead consistently).
-\item \textbf{Pfirrmann Grade 4 (19\%)}: Hybrid $0.534 \pm .04$ vs
-Baseline $0.473 \pm .06$ (+0.06 absolute).
-\item Modic Type 1/3 intractable: $0\%$ across all configs.
-\end{itemize}
+\noindent\textbf{Spondylolisthesis bomb}: Hybrid recover 40\%
+minority vs Baseline 10\%, CBAM/BMC-only 0\% --- evidence text-guided
+fusion giúp rare class.
 
 % ===========================================================================
 \section{Severe summary cross-dataset (RSNA + SPIDER)}

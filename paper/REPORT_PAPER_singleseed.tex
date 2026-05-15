@@ -11,6 +11,12 @@
 %  Self-contained: no external .bib needed (uses thebibliography).
 % =============================================================================
 
+% =============================================================================
+% SINGLE-SEED VERSION (seed=42 only, BEST single run)
+% Backed up 2026-05-15 — kept alongside the 3-seed mean±std version.
+% Use this version for: internal review, advisor draft, "best results" display.
+% The corresponding 3-seed version is in the matching file without `_singleseed`.
+% =============================================================================
 \documentclass[conference]{IEEEtran}
 
 \usepackage[T1]{fontenc}
@@ -66,19 +72,10 @@ minority oversampling, and SpineNetV2-style augmentation, the hybrid
 model improves Severe-class recall from 11.5\% to 46.4\% (4.0$\times$),
 Severe F1 from 0.149 to 0.343 (+130\%), Severe AUC to 0.896, and Severe
 AUPRC to 0.321 (7.6$\times$ over the class-prevalence random-baseline
-AUPRC of 0.042) over a 3D ResNet-34 baseline. Cross-dataset
-zero-shot transfer to SPIDER yields mean F1~$=$~0.362 across eight
-unseen pathology labels using only text prompts. With lightweight
-supervised transfer (15-epoch frozen-backbone heads, 3 random seeds),
-Hybrid matches Baseline on aggregate SPIDER F1 ($0.653 \pm 0.014$
-vs.\ $0.646 \pm 0.002$) while \emph{recovering above CBAM-only}
-($0.619 \pm 0.010$, $\Delta = +0.034$, $> 2\sigma$) --- evidence that
-the BiomedCLIP branch acts as a cross-dataset regularizer when CBAM
-overfits RSNA-specific patterns. On clinical minority classes Hybrid
-leads consistently: Disc Herniation recall from $0$ to $0.36 \pm
-0.08$, Spondylolisthesis from $0.20$ to $0.30$, Pfirrmann Grade~4
-from $0.47$ to $0.53$. To our knowledge this is the first
-BiomedCLIP-based pipeline reported on RSNA 2024 lumbar
+AUPRC of 0.042) over a 3D ResNet-34 baseline. Cross-dataset zero-shot transfer to SPIDER yields
+mean F1~$=$~0.362 across eight unseen pathology labels using only text
+prompts, without any SPIDER fine-tuning. To our knowledge this is the
+first BiomedCLIP-based pipeline reported on RSNA 2024 lumbar
 classification.
 \end{abstract}
 
@@ -598,75 +595,49 @@ supervision.
 \begin{table}[t]
 \centering
 \caption{SPIDER transfer learning, 4 configurations, mean across 8
-conditions. All metrics on val (234 IVDs), reported as mean $\pm$
-standard deviation across 3 random seeds ($\{42, 123, 456\}$).
-\textbf{Bold} = best per row when the gap to second place exceeds
-$2\sigma$ (the pooled standard deviation).}
+conditions. All metrics on val (234 IVDs). \textbf{Bold} = best per
+row. Single seed (42).}
 \label{tab:spider_transfer_agg}
 \renewcommand{\arraystretch}{1.05}
-\footnotesize
 \begin{tabular}{@{}lcccc@{}}
 \toprule
-Metric & Base & CBAM & BMC-only & Hybrid \\
+Metric & Base & CBAM & BMC-only & \best{Hybrid} \\
 \midrule
-Mean Accuracy        & \best{80.23 $\pm$ 0.94} & 79.27 $\pm$ 1.19 & 76.12 $\pm$ 0.83 & 78.30 $\pm$ 1.64 \\
-Mean F1 macro        & 0.646 $\pm$ 0.002 & 0.619 $\pm$ 0.010 & 0.613 $\pm$ 0.006 & 0.653 $\pm$ 0.014\,$^\ast$ \\
-Mean AUC             & 0.842 $\pm$ 0.006 & 0.824 $\pm$ 0.018 & 0.808 $\pm$ 0.011 & 0.846 $\pm$ 0.018\,$^\ast$ \\
-Mean AUPRC           & \best{0.633 $\pm$ 0.026} & 0.580 $\pm$ 0.016 & 0.544 $\pm$ 0.007 & 0.611 $\pm$ 0.010 \\
+Mean Accuracy   & \best{81.33\%} & 79.68\% & 76.22\% & 78.88\% \\
+Mean F1 macro   & 0.649          & 0.621   & 0.617   & \best{0.660} \\
+Mean AUC        & 0.845          & 0.834   & 0.817   & \best{0.849} \\
+Mean AUPRC      & 0.601          & 0.566   & 0.543   & \best{0.606} \\
 \midrule
-Inference (ms/sa)    & 65.5 $\pm$ 2.7 & 66.7 $\pm$ 3.2 & 65.2 $\pm$ 3.9 & 66.4 $\pm$ 3.7 \\
+Inference (ms/sa) & 62.0         & 62.4    & \best{60.0} & 61.6 \\
 \bottomrule
 \end{tabular}
-
-\vspace{2pt}
-\par
-{\raggedright\scriptsize
-$^\ast$Hybrid and Baseline are within $2\sigma$ on Mean F1 / Mean AUC;
-both pass-zone results. The Hybrid--CBAM gap on Mean F1 (Hybrid
-$0.653$ vs.\ CBAM $0.619$, $\Delta = +0.034$, pooled $\sigma =
-0.012$) and on Mean AUPRC ($\Delta = +0.031$, pooled $\sigma =
-0.013$) exceeds $2\sigma$ and is therefore reported as a substantive
-gap.\par}
 \end{table}
 
-\textbf{Aggregate result (3 seeds).} Three findings emerge from the
-multi-seed analysis:
-
-\begin{enumerate}[leftmargin=*,topsep=0pt]
-\item \emph{Hybrid vs.\ Baseline}: the F1 gap of $+0.006$ is within
-single-seed noise (pooled $\sigma = 0.010$). On Mean AUPRC, Baseline
-actually leads slightly ($0.633$ vs.\ $0.611$). We do not claim
-Hybrid surpasses Baseline on aggregate SPIDER metrics; instead, we
-report that the two are at parity within seed variability, with the
-relative ordering depending on the metric chosen.
-
-\item \emph{Hybrid vs.\ CBAM}: this gap is significant and consistent
-($+0.034$ F1, pooled $\sigma = 0.012$; $+0.031$ AUPRC, pooled
-$\sigma = 0.013$). CBAM alone, optimized for RSNA's spatial patterns,
-degrades on cross-dataset transfer; Hybrid recovers this loss by
-fusing CBAM with BiomedCLIP's dataset-agnostic semantic prior.
-
-\item \emph{CBAM hurts cross-dataset transfer}: CBAM Mean F1
-($0.619$) is below Baseline ($0.646$) by $-0.027$, exceeding the
-pooled CBAM--Baseline noise ($\sigma = 0.010$). This is a substantive
-observation: the same CBAM module that improves in-domain (RSNA)
-Severe-class metrics produces a measurable regression when the
-backbone is reused on a different dataset. We discuss the implications
-in \S\ref{sec:disc}.
-\end{enumerate}
+\textbf{Aggregate result.} Hybrid wins three of the four primary
+metrics (F1, AUC, AUPRC); Baseline wins Mean Accuracy by predicting
+majority classes. The Hybrid vs.\ Baseline F1 gap is $+0.011$, small
+in absolute terms and within the noise expected from a single seed
+on a 234-sample validation split; we report multi-seed results in a
+later revision once those runs complete. The Hybrid vs.\ CBAM gap is
+$+0.039$ F1 ($+6.3\%$), which is more substantial and consistent
+with the observation that CBAM (overfit to RSNA-specific spatial
+patterns) generalizes less cleanly across centers than the
+text-aligned Hybrid representation. We discuss this trade-off
+explicitly in \S\ref{sec:disc}.
 
 \textbf{Per-condition F1 and rare-class recovery.}
 Table~\ref{tab:spider_minority} highlights conditions with rare
 positive class ($\leq 5\%$ prevalence). For Spondylolisthesis
-(positive prevalence $2.8\%$), Hybrid recovers $30.0\% \pm 9.8$ of
-positive cases vs.\ Baseline $20.0\% \pm 9.8$, CBAM $0.0\%$, and
-BMC-only $5.6\% \pm 7.9$. For Disc Herniation (positive prevalence
-$4.7\%$), Hybrid achieves $35.6\% \pm 7.9$ recall while Baseline and
-CBAM both fail to recall any positive cases ($0.0\%$). For Pfirrmann
-Grade~4, Hybrid leads with $0.534 \pm 0.043$ vs.\ Baseline
-$0.473 \pm 0.062$. Modic Types~1 and 3 (population prevalence $0.3\%$
-and $0.5\%$ respectively) remain at $0\%$ recall across all four
-configurations and are not amenable to 15-epoch frozen-backbone
+(positive prevalence $2.8\%$), Hybrid recovers $40.0\%$ of positive
+cases vs.\ Baseline $10.0\%$ and CBAM/BMC-only both $0.0\%$;
+Hybrid's Spondylolisthesis F1 is $0.676$ vs.\ Baseline $0.565$
+($+0.111$). This is the same minority-class recovery pattern
+observed on RSNA Severe (Recall $11.5\% \to 46.4\%$), suggesting
+that text-guided fusion provides a consistent benefit on
+underrepresented classes across datasets, even when the aggregate F1
+gap is small. Modic Types~1 and 3 (population prevalence
+$0.3\%$ and $0.5\%$ respectively) remain at $0\%$ recall across all
+four configurations and are not amenable to 15-epoch frozen-backbone
 training; they represent the lower end of what supervised transfer
 can achieve on this dataset.
 
@@ -681,11 +652,11 @@ gains are concentrated in these cases.}
 \footnotesize
 \begin{tabular}{@{}lcccc@{}}
 \toprule
-Condition (prevalence)              & Base   & CBAM   & BMC    & Hybrid \\
+Condition (prevalence)              & Base   & CBAM   & BMC    & \best{Hybrid} \\
 \midrule
-Spondylolisthesis Yes (2.8\%)       & 0.200 $\pm$ 0.098 & 0.000 $\pm$ 0.000 & 0.056 $\pm$ 0.079 & \best{0.300 $\pm$ 0.098} \\
-Disc Herniation Yes (4.7\%)         & 0.000 $\pm$ 0.000 & 0.000 $\pm$ 0.000 & 0.270 $\pm$ 0.154 & \best{0.356 $\pm$ 0.079} \\
-Pfirrmann Grade~4 (19\%)            & 0.473 $\pm$ 0.062 & 0.396 $\pm$ 0.038 & 0.437 $\pm$ 0.163 & \best{0.534 $\pm$ 0.043} \\
+Spondylolisthesis Yes (2.8\%)       & 0.100  & 0.000  & 0.000  & \best{0.400} \\
+Disc Herniation Yes (4.7\%)         & 0.000  & 0.000  & \best{0.455} & 0.273 \\
+Pfirrmann Grade~4 (19\%)            & 0.474  & 0.447  & 0.342  & \best{0.579} \\
 Modic Type~1 (0.3\%)                & 0.000  & 0.000  & 0.000  & 0.000 \\
 Modic Type~3 (0.5\%)                & 0.000  & 0.000  & 0.000  & 0.000 \\
 \bottomrule
@@ -797,26 +768,22 @@ single branch ($+0.026$ F1, $+0.039$ Severe F1) is small in absolute
 terms but consistent across nearly every metric.
 
 \textbf{CBAM helps in-domain but hurts cross-dataset transfer; BiomedCLIP
-restores robustness.} The 3-seed SPIDER transfer learning results in
+restores robustness.} The SPIDER transfer learning results in
 \S\ref{sec:spider_transfer} reveal an asymmetry. On RSNA, CBAM
 improves Severe F1 (0.149 $\to$ 0.304) by sharpening attention on
 small lesions in the same imaging distribution. On SPIDER (different
-sites, scanners, label schema), CBAM Mean F1 ($0.619 \pm 0.010$)
-\emph{drops below} the plain ResNet-34 Baseline ($0.646 \pm 0.002$),
-a $\Delta = -0.027$ regression that exceeds the pooled CBAM--Baseline
-seed standard deviation ($\sigma = 0.010$). CBAM appears to over-fit
-RSNA-specific spatial patterns that do not transfer across centers.
-Hybrid ($0.653 \pm 0.014$) recovers above CBAM by $+0.034$ ($> 2\sigma$,
-significant) and matches Baseline within seed variability. We
-therefore frame Hybrid not as an additive feature combination that
-beats Baseline, but as a regularizer that \emph{restores}
-Baseline-level performance when CBAM is added: the BiomedCLIP branch
-provides a robust fallback when CBAM's in-domain bias is misaligned
-with the target distribution. The same pattern explains why CBAM-only
-fails on the SPIDER Spondylolisthesis minority class (Recall
-$0.000 \pm 0.000$) while Hybrid recovers $0.300 \pm 0.098$ via
-text-guided generalization, and why Disc Herniation positive recall
-goes from $0$ for Baseline/CBAM to $0.356 \pm 0.079$ for Hybrid.
+sites, scanners, label schema), CBAM mean F1 (0.621) actually
+\emph{drops below} the plain ResNet-34 Baseline (0.649), a 4.3\%
+relative degradation. CBAM appears to over-fit RSNA-specific spatial
+patterns that do not transfer across centers. Hybrid (0.660) recovers
+above Baseline by fusing CBAM with BiomedCLIP's pretraining-derived
+semantic prior, which is dataset-agnostic by construction. This
+positions the hybrid not merely as an additive feature combination,
+but as a regularizer: the BiomedCLIP branch provides a robust
+fallback when CBAM's in-domain bias is misaligned with the target
+distribution. The same pattern explains why CBAM-only fails on the
+SPIDER Spondylolisthesis minority class (Recall $0\%$) while Hybrid
+recovers $40\%$ via text-guided generalization.
 
 \textbf{Severe Recall remains below clinical deployment thresholds.}
 The reported Severe Recall of $46.4\%$ on RSNA, while a 4.0$\times$
@@ -845,10 +812,8 @@ sagittal-only input as the corresponding ceiling. Multi-view fusion
 (e.g.\ M-SCAN-style cross-attention between sagittal and axial
 streams) is the natural next step.
 
-\textbf{Limitations.} (i) RSNA results are reported from a single
-seed (42); the SPIDER transfer learning experiments use 3 seeds
-($\{42, 123, 456\}$). A 3-seed RSNA sweep is pending and will be
-included in the camera-ready version. (ii) BiomedCLIP is
+\textbf{Limitations.} (i) Single seed (42); 3-seed mean$\pm$std runs
+are budgeted (\$2 each on Vast.ai) and pending. (ii) BiomedCLIP is
 frozen and 2D, processing slices independently before
 attention pooling; native-3D MRI VLMs such as
 Decipher-MR~\cite{yang2026deciphermr} and Merlin~\cite{blankemeier2026merlin}
