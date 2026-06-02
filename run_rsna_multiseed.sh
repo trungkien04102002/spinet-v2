@@ -51,7 +51,7 @@ mkdir -p "$LOG_DIR" \
 
 # ---- sanity checks ----------------------------------------------------------
 [[ -d rsna_preprocessed ]] || { echo "ERROR: rsna_preprocessed/ missing (./2_download_preprocessed.sh)"; exit 1; }
-[[ -f "$HOME/.spinenet/weights/ckpt1.pt" ]] || { echo "ERROR: ~/.spinenet/weights/ckpt1.pt missing (./3_download_weights.sh)"; exit 1; }
+ls "$HOME/.spinenet/weights"/*.pt >/dev/null 2>&1 || { echo "ERROR: no *.pt backbone in ~/.spinenet/weights/ (./3_download_weights.sh)"; exit 1; }
 
 echo "=============================================================="
 echo "RSNA multi-seed  | seeds: $SEEDS  | configs: ${WANT[*]}"
