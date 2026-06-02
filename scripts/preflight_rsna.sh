@@ -28,8 +28,17 @@ echo "-- data & weights --"
     || no "rsna_preprocessed/volumes/  -> ./2_download_preprocessed.sh <id>"
 ls rsna_preprocessed/*metadata*.csv >/dev/null 2>&1 && ok "metadata csv" \
     || no "rsna_preprocessed metadata csv missing"
-[ -f "$HOME/.spinenet/weights/ckpt1.pt" ] && ok "~/.spinenet/weights/ckpt1.pt" \
-    || no "ckpt1.pt backbone  -> ./3_download_weights.sh <id>"
+# The training code globs ~/.spinenet/weights/*.pt (any name, extension .pt).
+PT_FOUND=$(ls "$HOME/.spinenet/weights"/*.pt 2>/dev/null | head -1)
+if [ -n "$PT_FOUND" ]; then
+    ok "backbone *.pt -> $(basename "$PT_FOUND")"
+else
+    if ls "$HOME/.spinenet/weights"/*.pth >/dev/null 2>&1; then
+        no "found *.pth but code needs *.pt  -> rename: mv ~/.spinenet/weights/*.pth ~/.spinenet/weights/weights.pt"
+    else
+        no "no *.pt in ~/.spinenet/weights/  -> ./3_download_weights.sh <id>"
+    fi
+fi
 
 echo "-- scripts --"
 [ -f run_rsna_multiseed.sh ]            && ok "run_rsna_multiseed.sh"        || no "run_rsna_multiseed.sh (git pull)"
