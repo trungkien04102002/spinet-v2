@@ -36,8 +36,9 @@ if [ ${#ITEMS[@]} -eq 0 ]; then
 fi
 
 echo "Archiving: ${ITEMS[*]}"
-# only keep the lightweight + checkpoint files (skip nothing here; dirs are small)
-tar czf "$OUT" "${ITEMS[@]}"
+# Exclude periodic per-epoch snapshots (checkpoint_*_epoch_N.pth) — only the
+# best_model*.pth are needed. This keeps the archive ~700MB instead of ~3GB.
+tar czf "$OUT" --exclude='*epoch*.pth' "${ITEMS[@]}"
 echo
 echo "=================================================================="
 echo " Backup created: $OUT"
