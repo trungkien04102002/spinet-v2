@@ -29,7 +29,12 @@ Example (seed 42):
 """
 import argparse
 import json
+import sys
 from pathlib import Path
+
+# This script lives in scripts/; put the repo root on sys.path so the root-level
+# modules (eval_rsna_auc, train_rsna_hybrid) import regardless of PYTHONPATH.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import numpy as np
 import torch
