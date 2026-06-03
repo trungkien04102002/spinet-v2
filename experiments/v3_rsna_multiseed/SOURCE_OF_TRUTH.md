@@ -87,7 +87,24 @@ Verdict: learned concat-MLP fusion beats trivial averaging on F1/Severe-F1/Recal
 - Limitations -> dropped the single-seed sentence; Summary -> dropped "trivial-ensemble control" + "three-seed RSNA sweep" from future work (both done).
 - Build: 12/12 pages, 0 undefined.
 
-Still open (lower priority): **C3** zero-shot prompt strings not printed in §4.3; **C4** "Naked BiomedCLIP" numbers prose-only. Both are doc-only (no GPU). See `reviews/EDITORIAL_DECISION.md`.
+### Zero-shot Table 2 (tab:spider) — REBUILT 2026-06-03 from reproducible source
+The OLD Table 2 per-label F1/AUC (bulging 0.709, AUC 0.806, Pfirrmann AUC 0.492...) did NOT reproduce from any artifact (only the mean F1 0.362 matched). Rebuilt from `experiments/paper_results/spider_zeroshot/predictions.csv` (raw cosine sims). Recompute snippet: per disease, sklearn macro-F1 on (true,pred) + one-vs-rest macro AUC from softmax(sims). Authoritative hybrid numbers now in paper:
+| Label | Hybrid F1 | Hybrid AUC | Naked F1 |
+|---|---|---|---|
+| Disc bulging | 0.613 | 0.829 | 0.363 |
+| Disc herniation | 0.563 | 0.772 | 0.532 |
+| Disc narrowing | 0.586 | 0.834 | 0.403 |
+| Upper endplate | 0.467 | 0.740 | 0.569 |
+| Lower endplate | 0.468 | 0.738 | 0.558 |
+| Pfirrmann | 0.155 | 0.687 | 0.152 |
+| Modic | 0.018 | 0.454 | 0.071 |
+| Spondylolisthesis | 0.028 | 0.807 | 0.500 |
+| **Mean** | **0.362** | 0.733 | **0.394** |
+Naked = `experiments/paper_results/spider_zeroshot_naked_biomedclip/results.csv` (f1_macro). KEY honest finding: hybrid beats naked on the 3 disc-morphology labels (RSNA-aligned) but naked mean F1 (0.394) > hybrid (0.362) overall — paper says so. The old "Pfirrmann below-chance 0.492" claim was WRONG (real AUC 0.687); removed.
+
+**C3 + C4 CLOSED (2026-06-03):** C3 = prompt strings printed in §4.3 ("a magnetic resonance image of [label]", a-priori, no leakage); prompts defined in `prepare_spider_zeroshot.py`. C4 = Naked-BiomedCLIP F1 column added to Table 2. All four reviewer concerns (C1/C2/C3/C4) now addressed. Build 12/12 pages.
+
+Still open (lower priority): bootstrap CIs / more seeds (future work). See `reviews/EDITORIAL_DECISION.md`.
 
 ---
 

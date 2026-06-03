@@ -1,0 +1,50 @@
+{
+  "seed": 456,
+  "n_val": 1955,
+  "results": {
+    "SpineNetV2": {
+      "Mean Accuracy": 80.39215686274511,
+      "Mean F1 macro": 0.4220609737954559,
+      "Mean Recall macro": 0.41324009647276005,
+      "Mean Precision macro": 0.5219624470079544,
+      "Mean AUC macro": 0.8457488602836761,
+      "Mean AUPRC macro": 0.5440050405098232,
+      "Severe F1": 0.16104868913857678,
+      "Severe AUC": 0.8788107617525215,
+      "Severe AUPRC": 0.30579299793736
+    },
+    "BMC-only": {
+      "Mean Accuracy": 72.27621483375958,
+      "Mean F1 macro": 0.5018060949063593,
+      "Mean Recall macro": 0.5331685156597991,
+      "Mean Precision macro": 0.5480853240724214,
+      "Mean AUC macro": 0.8411520813360188,
+      "Mean AUPRC macro": 0.5422444946298127,
+      "Severe F1": 0.28561329091551785,
+      "Severe AUC": 0.8934419386120581,
+      "Severe AUPRC": 0.3181679774957191
+    },
+    "Ensemble(Base+BMC)": {
+      "Mean Accuracy": 80.49445865302643,
+      "Mean F1 macro": 0.4567782445006743,
+      "Mean Recall macro": 0.44507954653929116,
+      "Mean Precision macro": 0.5763814398711616,
+      "Mean AUC macro": 0.8648865269247548,
+      "Mean AUPRC macro": 0.5692592131621742,
+      "Severe F1": 0.17962713243006057,
+      "Severe AUC": 0.907757646557389,
+      "Severe AUPRC": 0.3576029059515
+    },
+    "Hybrid(learned)": {
+      "Mean Accuracy": 72.68542199488492,
+      "Mean F1 macro": 0.5525165484961833,
+      "Mean Recall macro": 0.6186457976680734,
+      "Mean Precision macro": 0.5411457502133554,
+      "Mean AUC macro": 0.8567950265883625,
+      "Mean AUPRC macro": 0.5598812444447753,
+      "Severe F1": 0.3753123498725403,
+      "Severe AUC": 0.9112345419904267,
+      "Severe AUPRC": 0.3796380511968738
+    }
+  }
+}
