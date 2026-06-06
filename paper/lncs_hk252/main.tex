@@ -53,7 +53,7 @@
 \maketitle
 %
 \begin{abstract}
-Automated grading of lumbar intervertebral disc (IVD) pathology on MRI is clinically useful but hard: severity classes are heavily imbalanced and large labelled volumetric corpora are scarce. We present a two-branch hybrid model that fuses a 3D ResNet-34 with Convolutional Block Attention Modules (CBAM) and a frozen BiomedCLIP image-text encoder, trained on the RSNA 2024 Lumbar Degenerative Classification dataset. The CBAM-3D branch captures cross-slice anatomical context, while the BiomedCLIP branch supplies a semantic prior from large-scale biomedical pretraining; a small trainable concat-MLP merges the two streams into a text-aligned embedding for both supervised classification and zero-shot label-space extension. With focal loss, square-root class weights, minority oversampling, and SpineNetV2-style augmentation, across three seeds the hybrid lifts Severe-class recall from 12.3\% to 48.6\%, Severe F1 from 0.152 to 0.356, and Severe AUC to 0.899 over the SpineNetV2 baseline. Without any SPIDER fine-tuning, the same model extends zero-shot to eight unseen SPIDER labels via text prompts (mean F1 = 0.362), with gains concentrated on disc-morphology labels semantically close to the training schema. Under three-seed supervised transfer the hybrid matches SpineNetV2 on aggregate SPIDER F1 ($0.653$ vs.\ $0.646$) and exceeds the CBAM-only variant ($0.619$) by $+0.034$ (paired $t$-test over three seeds, $p=0.011$); this positions the frozen BiomedCLIP branch as a cross-dataset regularizer that offsets CBAM's tendency to overfit RSNA-specific patterns.
+Automated grading of lumbar intervertebral disc (IVD) pathology on MRI is clinically useful but hard: severity classes are heavily imbalanced and large labelled volumetric corpora are scarce. We present a two-branch hybrid model that fuses a 3D ResNet-34 with Convolutional Block Attention Modules (CBAM) and a frozen BiomedCLIP image-text encoder, trained on the RSNA 2024 Lumbar Degenerative Classification dataset. The CBAM-3D branch captures cross-slice anatomical context, while the BiomedCLIP branch supplies a semantic prior from large-scale biomedical pretraining; a small trainable concat-MLP merges the two streams into a text-aligned embedding for both supervised classification and zero-shot label-space extension. With focal loss, square-root class weights, minority oversampling, and SpineNetV2-style augmentation, across three seeds the hybrid lifts Severe-class recall from 12.3\% to 48.6\%, Severe F1 from 0.152 to 0.356, and Severe AUC from 0.872 to 0.899. Without any SPIDER fine-tuning, the same model extends zero-shot to eight unseen SPIDER labels via text prompts (mean F1 = 0.362), with gains concentrated on disc-morphology labels semantically close to the training schema. Under three-seed supervised transfer the hybrid matches SpineNetV2 on aggregate SPIDER F1 ($0.653$ vs.\ $0.646$) and exceeds the CBAM-only variant ($0.619$) by $+0.034$ (paired $t$-test over three seeds, $p=0.011$); this positions the frozen BiomedCLIP branch as a cross-dataset regularizer that offsets CBAM's tendency to overfit RSNA-specific patterns.
 
 \keywords{spine MRI \and intervertebral disc grading \and attention \and vision-language models \and BiomedCLIP \and zero-shot classification \and class imbalance.}
 \end{abstract}
@@ -65,7 +65,7 @@ Low back pain is the leading cause of disability worldwide, and lumbar disc dege
 
 Automated systems built on 3D convolutional networks such as SpineNet~\cite{jamaludin2017} and SpineNetV2~\cite{windsor2022} have made real progress, yet two problems remain open. The first is class imbalance. Clinically, the most important class (Severe) is usually fewer than 5\% of the training samples, and ordinary cross-entropy training produces models that ignore the minority class almost completely, with Severe recall close to zero. The second is a fixed label space. A model trained on one labelling schema, for example the 3-condition $\times$ 3-severity grid of RSNA 2024, cannot answer a query phrased in another schema, such as the Pfirrmann, spondylolisthesis, and herniation labels of SPIDER, without retraining a new fixed-class head.
 
-We tackle both problems with a single hybrid model. Our main contributions, ordered by the strength of the multi-seed evidence behind them, are as follows.
+We tackle both problems with a single hybrid model. Our main contributions, centered on the cross-dataset transfer finding, are as follows.
 \begin{itemize}
     \item A \textbf{cross-dataset regularization finding}. In a three-seed SPIDER transfer experiment, adding CBAM to the ResNet-34 backbone lowers aggregate F1 by $0.027$ (beyond the pooled seed standard deviation), indicating that the attention module that helps in-domain RSNA Severe metrics hurts cross-center generalization. The proposed hybrid (CBAM with frozen BiomedCLIP) recovers above the CBAM-only configuration by $+0.034$ (paired $t$-test over three seeds, $p=0.011$), evidence that the BiomedCLIP branch acts as a regularizer.
     \item A \textbf{two-branch hybrid architecture} that combines a CBAM-3D ResNet-34~\cite{woo2018cbam,he2016resnet} with a frozen BiomedCLIP~\cite{zhang2023biomedclip} encoder and a learned concat-MLP fusion head. The ablation confirms that the two branches contribute along complementary axes: in-domain Severe metrics versus cross-center robustness.
@@ -274,7 +274,7 @@ To assess transfer beyond zero-shot, we fine-tune lightweight task-specific head
 
 \begin{table}[t]
 \centering
-\caption{SPIDER transfer learning, four configurations, mean across 8 conditions on validation (234 IVDs), reported as mean $\pm$ standard deviation over 3 seeds $\{42, 123, 456\}$. \textbf{Bold} = best per row across the four metrics (inference times are within seed noise); $^\ast$ marks a significant gain over CBAM (paired $t$-test, see footnote).}
+\caption{SPIDER transfer learning, four configurations, mean across 8 conditions on validation (234 IVDs), reported as mean $\pm$ standard deviation over 3 seeds $\{42, 123, 456\}$. \textbf{Bold} = best per row (co-bolded when the top pair is statistically tied, $p>0.05$); inference is within seed noise. $^\ast$ = significant gain over CBAM (footnote).}
 \label{tab:spider_transfer_agg}
 \footnotesize
 \begin{tabular}{@{}lcccc@{}}
@@ -282,8 +282,8 @@ To assess transfer beyond zero-shot, we fine-tune lightweight task-specific head
 Metric & SpineNetV2 & CBAM & BMC-only & Hybrid \\
 \midrule
 Mean Accuracy & \best{80.23 $\pm$ 0.94} & 79.27 $\pm$ 1.19 & 76.12 $\pm$ 0.83 & 78.30 $\pm$ 1.64 \\
-Mean F1 macro & 0.646 $\pm$ 0.002 & 0.619 $\pm$ 0.010 & 0.613 $\pm$ 0.006 & \best{0.653 $\pm$ 0.014}$^\ast$ \\
-Mean AUC      & 0.842 $\pm$ 0.006 & 0.824 $\pm$ 0.018 & 0.808 $\pm$ 0.011 & \best{0.846 $\pm$ 0.018}$^\ast$ \\
+Mean F1 macro & \best{0.646 $\pm$ 0.002} & 0.619 $\pm$ 0.010 & 0.613 $\pm$ 0.006 & \best{0.653 $\pm$ 0.014}$^\ast$ \\
+Mean AUC      & \best{0.842 $\pm$ 0.006} & 0.824 $\pm$ 0.018 & 0.808 $\pm$ 0.011 & \best{0.846 $\pm$ 0.018}$^\ast$ \\
 Mean AUPRC    & \best{0.633 $\pm$ 0.026} & 0.580 $\pm$ 0.016 & 0.544 $\pm$ 0.007 & 0.611 $\pm$ 0.010 \\
 \midrule
 Inference (ms/sa) & 65.5 $\pm$ 2.7 & 66.7 $\pm$ 3.2 & 65.2 $\pm$ 3.9 & 66.4 $\pm$ 3.7 \\
@@ -292,7 +292,7 @@ Inference (ms/sa) & 65.5 $\pm$ 2.7 & 66.7 $\pm$ 3.2 & 65.2 $\pm$ 3.9 & 66.4 $\pm
 
 \vspace{2pt}
 {\raggedright\scriptsize
-$^\ast$Paired $t$-test over three seeds: Hybrid vs.\ SpineNetV2 is parity (Mean F1 $p=0.57$); Hybrid vs.\ CBAM is significant (Mean F1 $\Delta=+0.034$, $p=0.011$, 95\% CI $[0.018,0.049]$; AUPRC $\Delta=+0.031$).\par}
+$^\ast$Paired $t$-test over three seeds (per-seed Mean F1, Hybrid: 0.660/0.665/0.633, CBAM: 0.621/0.630/0.606): Hybrid vs.\ CBAM is significant ($\Delta=+0.034$, $p=0.011$, 95\% CI $[0.018,0.049]$); Hybrid vs.\ SpineNetV2 is parity ($p=0.57$).\par}
 \end{table}
 
 Two findings stand out. The hybrid and SpineNetV2 are at parity on aggregate SPIDER metrics: the F1 gap of $+0.006$ sits within seed noise and SpineNetV2 even leads slightly on AUPRC, so we do not claim the hybrid surpasses it here. The more telling result is that CBAM-only drops below plain SpineNetV2 on transfer (Mean F1 $0.619$ vs.\ $0.646$, $|\Delta|/\sigma = 3.8$), while the hybrid recovers above CBAM by $+0.034$ (paired $t$-test $p=0.011$). We analyze this asymmetry in Section~\ref{sec:disc}.
