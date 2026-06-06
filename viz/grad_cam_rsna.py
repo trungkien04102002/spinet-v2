@@ -193,7 +193,7 @@ def upsample_cam(cam: np.ndarray, target_hw: tuple) -> np.ndarray:
 def overlay_heatmap(ax, slice_img: np.ndarray, cam_2d: np.ndarray, title: str):
     ax.imshow(slice_img, cmap="gray")
     ax.imshow(cam_2d, cmap="jet", alpha=0.45)
-    ax.set_title(title, fontsize=10)
+    ax.set_title(title, fontsize=17)
     ax.set_xticks([])
     ax.set_yticks([])
 
@@ -281,7 +281,7 @@ def main():
 
         ax_orig = axes[row, 0]
         ax_orig.imshow(mid_slice, cmap="gray")
-        ax_orig.set_title(case["title"], fontsize=10)
+        ax_orig.set_title(case["title"], fontsize=17)
         ax_orig.set_xticks([])
         ax_orig.set_yticks([])
 
@@ -289,22 +289,18 @@ def main():
             axes[row, 1],
             mid_slice,
             cam_cbam_2d,
-            f"CBAM-only — Severe p={cbam_prob:.2f}",
+            f"CBAM-only (Severe p={cbam_prob:.2f})",
         )
         overlay_heatmap(
             axes[row, 2],
             mid_slice,
             cam_hybrid_2d,
-            f"Hybrid — Severe p={hybrid_prob:.2f}",
+            f"Hybrid (Severe p={hybrid_prob:.2f})",
         )
 
         if row == 0:
-            axes[row, 0].set_ylabel("Original (slice 4/9)", fontsize=10)
+            axes[row, 0].set_ylabel("Original (slice 4/9)", fontsize=17)
 
-    fig.suptitle(
-        "Grad-CAM on RSNA val Severe cases (target = Severe class logit, last CBAM layer)",
-        fontsize=12,
-    )
     fig.tight_layout()
     fig.savefig(args.output, dpi=150, bbox_inches="tight")
     print(f"\n[done] saved {args.output}")

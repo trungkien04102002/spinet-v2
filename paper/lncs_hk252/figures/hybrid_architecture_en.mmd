@@ -1,0 +1,29 @@
+%% Hybrid two-branch architecture (English, compact) for the LNCS paper
+%% Render: mmdc -i hybrid_architecture_en.mmd -o hybrid_architecture_en.png -w 1900 -H 1150 -s 3 --backgroundColor white
+flowchart TB
+    Input["Per-IVD MRI volume (1 x 9 x 112 x 224)"]
+
+    Input --> CBAM["<b>Branch 1 (Trainable)</b><br/>3D ResNet-34 + CBAM<br/>channel & spatial attention<br/>-> f_cnn in R^512"]
+    Input --> BMC["<b>Branch 2 (Frozen)</b><br/>9 sagittal slices -> BiomedCLIP ViT-B/16<br/>+ learned attention slice pool<br/>-> f_vlm in R^512"]
+
+    CBAM --> Fusion["<b>Fusion MLP (Trainable)</b><br/>concat 1024 -> 768 -> 512 + L2 norm<br/>-> embedding f_img on sphere S^511"]
+    BMC --> Fusion
+
+    Fusion --> Sup["<b>Supervised heads</b><br/>3 x 3-class linear"]
+    Fusion --> ZS["<b>Zero-shot head</b><br/>cosine similarity"]
+    Prompt["BiomedCLIP text encoder<br/>label prompts {q_k}"] --> ZS
+
+    Sup --> OutR["<b>RSNA severity</b><br/>Normal/Mild | Moderate | Severe"]
+    ZS --> OutS["<b>SPIDER unseen labels</b><br/>Pfirrmann | Modic | herniation ..."]
+
+    classDef trainable fill:#4a90e2,stroke:#1c5a99,color:#fff,font-weight:bold;
+    classDef frozen fill:#9b9b9b,stroke:#555,color:#fff,font-weight:bold;
+    classDef io fill:#f5a623,stroke:#a86e0c,color:#fff,font-weight:bold;
+    classDef text fill:#50c8c8,stroke:#2a8080,color:#fff,font-weight:bold;
+    classDef output fill:#7ed321,stroke:#3f8b0c,color:#fff,font-weight:bold;
+
+    class CBAM,Fusion,Sup trainable;
+    class BMC frozen;
+    class Input io;
+    class ZS,Prompt text;
+    class OutR,OutS output;
