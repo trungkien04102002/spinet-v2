@@ -233,7 +233,7 @@ Mean AUPRC macro     & 0.530 $\pm$ 0.012 & 0.498 $\pm$ 0.051 & 0.513 $\pm$ 0.030
 \end{tabular}
 \end{table}
 
-\textbf{Hybrid exceeds either branch alone.} The hybrid F1 (0.527) exceeds both single branches (CBAM-only 0.477, BMC-only 0.482), a 4.5-point gain over the better branch that indicates the two sources are complementary rather than redundant.
+\textbf{Complementarity of the two branches.} The hybrid F1 (0.527) exceeds both single branches (CBAM-only 0.477, BMC-only 0.482), a 4.5-point gain over the better branch that indicates the two sources are complementary rather than redundant.
 
 \textbf{The largest gains are on the Severe class.} Severe F1 rises 2.3$\times$ (0.152 to 0.356), Severe Recall about 4$\times$ (12.3\% to 48.6\%), and Severe AUC to 0.899; the Severe AUPRC of 0.333 against the $\approx$0.05 prevalence baseline is a 6.7$\times$ gain over chance. The 8.6-point Mean Accuracy drop is the cost of this rebalancing: SpineNetV2 scores high accuracy only by predicting Normal/Mild almost everywhere, so the hybrid trades majority-class accuracy for minority-class recall, a trade-off that is clinically reasonable at operating points where missing a Severe case costs more than a false alert.
 
@@ -265,7 +265,7 @@ Mean (all 8)              & \best{0.394} & 0.362 & 0.733 \\
 \end{tabular}
 \end{table}
 
-The transfer is selective. On the three disc-morphology labels closest to the RSNA training schema (bulging, herniation, narrowing) the RSNA-trained hybrid clearly beats the off-the-shelf BiomedCLIP baseline (Table~\ref{tab:spider}), confirming the RSNA-supervised fusion adds transferable features. On labels far from that schema (endplate, spondylolisthesis) the off-the-shelf baseline is competitive or better, so its mean F1 over all eight labels (0.394) edges the hybrid (0.362): RSNA supervision helps only where the label is semantically close. Ranking and thresholding also diverge: spondylolisthesis reaches AUC 0.807 yet F1 0.03, so the embedding orders cases while the fixed cosine threshold mis-calibrates them. The Modic gap (AUC 0.45) is a task-input limit: SPIDER's fat-suppressed T2-FS lacks the paired T1 sequence Modic grading conventionally needs.
+Transfer is uneven across labels. On the three disc-morphology labels closest to the RSNA training schema (bulging, herniation, narrowing) the RSNA-trained hybrid clearly outperforms the off-the-shelf BiomedCLIP baseline (Table~\ref{tab:spider}), confirming the RSNA-supervised fusion adds transferable features. On labels far from that schema (endplate, spondylolisthesis) the off-the-shelf baseline is competitive or better, so its mean F1 over all eight labels (0.394) edges the hybrid (0.362): RSNA supervision helps only where the label is semantically close. Ranking and thresholding also diverge: spondylolisthesis reaches AUC 0.807 yet F1 0.03, so the embedding orders cases while the fixed cosine threshold mis-calibrates them. The Modic gap (AUC 0.45) is a task-input limit: SPIDER's fat-suppressed T2-FS lacks the paired T1 sequence Modic grading conventionally needs.
 
 \subsection{Supervised Transfer on the SPIDER 8-Label Schema}
 \label{sec:spider_transfer}
@@ -295,7 +295,7 @@ Inference (ms/sa) & 65.5 $\pm$ 2.7 & 66.7 $\pm$ 3.2 & 65.2 $\pm$ 3.9 & 66.4 $\pm
 $^\ast$Paired $t$-test over three seeds (per-seed Mean F1, Hybrid: 0.660/0.665/0.633, CBAM: 0.621/0.630/0.606): Hybrid vs.\ CBAM is significant ($\Delta=+0.034$, $p=0.011$, 95\% CI $[0.018,0.049]$); Hybrid vs.\ SpineNetV2 is parity ($p=0.57$).\par}
 \end{table}
 
-Two findings stand out. The hybrid and SpineNetV2 are at parity on aggregate SPIDER metrics: the F1 gap of $+0.006$ sits within seed noise and SpineNetV2 even leads slightly on AUPRC, so we do not claim the hybrid surpasses it here. The more telling result is that CBAM-only drops below plain SpineNetV2 on transfer (Mean F1 $0.619$ vs.\ $0.646$, $|\Delta|/\sigma = 3.8$), while the hybrid recovers above CBAM by $+0.034$ (paired $t$-test $p=0.011$). We analyze this asymmetry in Section~\ref{sec:disc}.
+We make two observations. The hybrid and SpineNetV2 are at parity on aggregate SPIDER metrics: the F1 gap of $+0.006$ sits within seed noise and SpineNetV2 even leads slightly on AUPRC, so we do not claim the hybrid surpasses it here. The more telling result is that CBAM-only drops below plain SpineNetV2 on transfer (Mean F1 $0.619$ vs.\ $0.646$, $|\Delta|/\sigma = 3.8$), while the hybrid recovers above CBAM by $+0.034$ (paired $t$-test $p=0.011$). We analyze this asymmetry in Section~\ref{sec:disc}.
 
 \textbf{Per-condition recovery on rare classes.}
 The aggregate gains concentrate in the rare positive classes ($\leq 5\%$ prevalence). On Disc Herniation, SpineNetV2 and CBAM recall no positive case ($0\%$) while BMC-only and the hybrid recover $27.0\%$ and $35.6\%$; the BiomedCLIP prior drives most of this, with CBAM adding an incremental gain when fused. The same ordering holds for Spondylolisthesis and Pfirrmann Grade~4.
