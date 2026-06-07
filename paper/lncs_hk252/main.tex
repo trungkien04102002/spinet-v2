@@ -181,7 +181,7 @@ where $p_t$ is the predicted probability of the ground-truth class, the factor $
 
 \textbf{RSNA 2024 LumbarDISC.}~\cite{kaggle2024} About 2{,}000 patients with sagittal T2 stacks. We use a patient-level 80/20 train/validation split (\verb|random_state = 42|), which gives 1{,}942 validation IVDs from 395 patients. Labels span 5 levels $\times$ 5 conditions $\times$ 3 severities. We restrict evaluation to three of the five conditions (canal stenosis, left and right neural foraminal narrowing) for which sagittal-only input is most clinically appropriate; left and right subarticular stenosis, which are best read on axial reformats, are left to future work. The class distribution per evaluated condition averages Normal/Mild $\approx 85\%$, Moderate $\approx 10\%$, and Severe $\approx 5\%$.
 
-\textbf{SPIDER.}~\cite{vandergraaf2024spider} About 1{,}400 IVDs from 218 patients across four Dutch hospitals (T1 and T2-FS sagittal sequences). For consistency with the RSNA-trained encoder we use the T2-FS sagittal series only. The label schema differs from RSNA: Pfirrmann grades 1--5~\cite{pfirrmann2001}, Modic changes 0--3 (4 classes)~\cite{modic1988}, spondylolisthesis, disc herniation, disc narrowing, disc bulging, and upper/lower endplate damage (all binary). SPIDER is used for cross-dataset evaluation only; no SPIDER image is seen during RSNA training.
+\textbf{SPIDER.}~\cite{vandergraaf2024spider} About 1{,}400 IVDs from 218 patients across four Dutch hospitals (T1 and T2-FS sagittal sequences). For consistency with the RSNA-trained encoder we use the T2-FS sagittal series only. The label schema, taken from the per-IVD radiological gradings released with SPIDER, differs from RSNA: Pfirrmann grades 1--5~\cite{pfirrmann2001}, Modic changes 0--3 (4 classes)~\cite{modic1988}, spondylolisthesis, disc herniation, disc narrowing, disc bulging, and upper/lower endplate damage (all binary). SPIDER is used for cross-dataset evaluation only; no SPIDER image is seen during RSNA training.
 
 Figure~\ref{fig:dist} reports the class distribution of both datasets: the RSNA Severe class stays under 5\%, and several SPIDER labels are similarly skewed. This imbalance is the central difficulty the training pipeline must handle.
 
@@ -274,7 +274,7 @@ To assess transfer beyond zero-shot, we fine-tune lightweight task-specific head
 
 \begin{table}[t]
 \centering
-\caption{SPIDER transfer learning, four configurations, mean across 8 conditions on validation (234 IVDs), reported as mean $\pm$ standard deviation over 3 seeds $\{42, 123, 456\}$. \textbf{Bold} = best per row (co-bolded when the top pair is statistically tied, $p>0.05$); inference is within seed noise. $^\ast$ = significant gain over CBAM (footnote).}
+\caption{SPIDER transfer learning, four configurations, mean across 8 conditions on validation (234 IVDs), reported as mean $\pm$ standard deviation over 3 seeds $\{42, 123, 456\}$. \textbf{Bold} = best per row; inference is within seed noise. $^\ast$ = significant gain over CBAM, but Hybrid vs.\ SpineNetV2 is statistical parity ($p=0.57$, footnote).}
 \label{tab:spider_transfer_agg}
 \footnotesize
 \begin{tabular}{@{}lcccc@{}}
@@ -282,8 +282,8 @@ To assess transfer beyond zero-shot, we fine-tune lightweight task-specific head
 Metric & SpineNetV2 & CBAM & BMC-only & Hybrid \\
 \midrule
 Mean Accuracy & \best{80.23 $\pm$ 0.94} & 79.27 $\pm$ 1.19 & 76.12 $\pm$ 0.83 & 78.30 $\pm$ 1.64 \\
-Mean F1 macro & \best{0.646 $\pm$ 0.002} & 0.619 $\pm$ 0.010 & 0.613 $\pm$ 0.006 & \best{0.653 $\pm$ 0.014}$^\ast$ \\
-Mean AUC      & \best{0.842 $\pm$ 0.006} & 0.824 $\pm$ 0.018 & 0.808 $\pm$ 0.011 & \best{0.846 $\pm$ 0.018}$^\ast$ \\
+Mean F1 macro & 0.646 $\pm$ 0.002 & 0.619 $\pm$ 0.010 & 0.613 $\pm$ 0.006 & \best{0.653 $\pm$ 0.014}$^\ast$ \\
+Mean AUC      & 0.842 $\pm$ 0.006 & 0.824 $\pm$ 0.018 & 0.808 $\pm$ 0.011 & \best{0.846 $\pm$ 0.018}$^\ast$ \\
 Mean AUPRC    & \best{0.633 $\pm$ 0.026} & 0.580 $\pm$ 0.016 & 0.544 $\pm$ 0.007 & 0.611 $\pm$ 0.010 \\
 \midrule
 Inference (ms/sa) & 65.5 $\pm$ 2.7 & 66.7 $\pm$ 3.2 & 65.2 $\pm$ 3.9 & 66.4 $\pm$ 3.7 \\
@@ -302,7 +302,7 @@ The aggregate gains concentrate in the rare positive classes ($\leq 5\%$ prevale
 
 \subsection{Visualization and Discussion}\label{sec:disc}
 
-Figure~\ref{fig:gradcam} shows Grad-CAM activation for three Severe validation cases (one per evaluated condition), comparing the CBAM-only and Hybrid branches against the final CBAM stage of the trainable branch. On the canal case the activation concentrates on the central canal narrowing rather than spreading across the whole disc, which gives qualitative support to the CBAM spatial-attention hypothesis. On the foraminal conditions Severe recall settles at 18--22\%, matching the sagittal-only literature ceiling reported by Nigru et al.~\cite{nigru2024} (balanced accuracy about 0.69--0.70); these conditions are best read on axial reformats, which we leave to future work.
+Figure~\ref{fig:gradcam} shows Grad-CAM activation for three Severe validation cases (one per evaluated condition), comparing the CBAM-only and Hybrid branches against the final CBAM stage of the RSNA-pretrained CBAM-3D branch. On the canal case the activation concentrates on the central canal narrowing rather than spreading across the whole disc, which gives qualitative support to the CBAM spatial-attention hypothesis. On the foraminal conditions Severe recall settles at 18--22\%, matching the sagittal-only literature ceiling reported by Nigru et al.~\cite{nigru2024} (balanced accuracy about 0.69--0.70); these conditions are best read on axial reformats, which we leave to future work.
 
 \begin{figure}[t]
 \centering

@@ -1,0 +1,634 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[utf8]{vietnam}
+\usepackage[T5]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{breakable}
+\usepackage{titlesec}
+\usepackage[colorlinks=true,linkcolor=blue!55!black,urlcolor=blue!55!black,bookmarks=true]{hyperref}
+
+\titleformat{\section}{\Large\bfseries\color{blue!40!black}}{\thesection.}{0.5em}{}
+\titleformat{\subsection}{\large\bfseries\color{blue!30!black}}{\thesubsection}{0.5em}{}
+\setlength{\parskip}{0.5em}
+
+\newtcolorbox{keybox}[1]{colback=yellow!8,colframe=orange!60!black,title={#1},fonttitle=\bfseries,breakable}
+\newtcolorbox{qabox}[1]{colback=blue!4,colframe=blue!40!black,title={#1},fonttitle=\bfseries,breakable}
+\newtcolorbox{ctbox}[1]{colback=green!4,colframe=green!45!black,title={#1},fonttitle=\bfseries,breakable}
+\newtcolorbox{dichbox}[1]{colback=gray!6,colframe=gray!55!black,title={#1},fonttitle=\bfseries,breakable}
+
+\title{\textbf{Giải thích \& dịch chi tiết bài báo MIWAI 2026}\\[4pt]
+\large Hybrid CBAM-3D + BiomedCLIP cho phân độ thoái hóa đĩa đệm thắt lưng}
+\author{Tài liệu nội bộ --- đọc để hiểu và trình bày lại}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent Tài liệu này có \textbf{hai lớp}: (1) \emph{bản dịch--giải thích theo từng mục của paper} (Abstract, Introduction, Related Work, Method, Experiments, Conclusion) để bạn đọc lại toàn bộ bài bằng tiếng Việt; (2) các hộp \emph{``Mổ xẻ công thức''} (mỗi công thức: làm gì / từng ký hiệu / trực giác). Cuối cùng là bộ \textbf{câu hỏi--trả lời phòng thủ} và bảng thuật ngữ. Quy ước hộp màu: \colorbox{gray!12}{xám = bản dịch ý chính của paper}, \colorbox{green!10}{xanh lá = mổ xẻ công thức}, \colorbox{yellow!15}{vàng = điểm cần nhớ}, \colorbox{blue!8}{xanh dương = Q\&A}.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+%==========================================================
+\section{Tổng quan nhanh (đọc 1 phút là nắm)}
+Bài huấn luyện mô hình học sâu \textbf{chấm mức độ bệnh đĩa đệm thắt lưng} trên MRI: 3 điều kiện (hẹp ống sống, hẹp lỗ liên hợp trái/phải) $\times$ 3 mức (Bình thường/Nhẹ, Vừa, Nặng). Hai khó khăn: lớp \emph{Nặng} cực hiếm ($<$5\%) và hệ nhãn cố định (đổi bộ dữ liệu phải huấn luyện lại). Giải pháp: mô hình \textbf{2 nhánh} = CNN-3D + CBAM (đã pretrain trên RSNA, đông cứng) trộn với \textbf{BiomedCLIP} (đóng băng) qua MLP nhỏ; \emph{chỉ MLP trộn được huấn luyện}. Ba kết quả: (1) in-domain Recall Nặng 12.3\%$\to$48.6\%; (2) zero-shot sang 8 nhãn SPIDER bằng prompt chữ; (3) BiomedCLIP đông cứng điều hòa chống học vẹt khi đổi bệnh viện.
+
+%==========================================================
+\section{Tiêu đề \& Tóm tắt (Abstract)}
+
+\textbf{Tiêu đề:} \emph{``A Frozen BiomedCLIP Branch as a Cross-Dataset Regularizer for Imbalanced Lumbar Disc Grading and Zero-Shot Label-Space Extension''}
+\\ = ``Một nhánh BiomedCLIP đông cứng đóng vai bộ điều hòa xuyên-dữ-liệu cho bài phân độ đĩa đệm thắt lưng mất cân bằng và mở rộng không gian nhãn theo kiểu zero-shot''.
+
+\begin{dichbox}{Bản dịch ý chính của Abstract}
+Phân độ tự động bệnh lý đĩa đệm thắt lưng trên MRI rất hữu ích trên lâm sàng nhưng khó: các lớp mức độ \emph{mất cân bằng nặng} và \emph{thiếu dữ liệu khối có nhãn}. Chúng tôi đề xuất mô hình lai hai nhánh: trộn 3D ResNet-34 + CBAM với encoder ảnh--chữ BiomedCLIP \emph{đông cứng}, huấn luyện trên RSNA 2024. Nhánh CBAM-3D nắm bối cảnh giải phẫu xuyên-lát; nhánh BiomedCLIP cung cấp \emph{tiên nghiệm ngữ nghĩa} từ tiền-huấn-luyện y sinh quy mô lớn; một MLP-trộn nhỏ gộp hai luồng thành embedding căn-chỉnh-với-chữ, dùng cho cả phân loại có giám sát lẫn mở rộng nhãn zero-shot. Với focal loss, trọng số lớp căn-bậc-hai, oversampling lớp hiếm và augmentation kiểu SpineNetV2, qua 3 seed mô hình lai nâng Recall lớp Nặng từ 12.3\% lên 48.6\%, F1 Nặng 0.152$\to$0.356, AUC Nặng 0.872$\to$0.899. Không cần tinh chỉnh trên SPIDER, cùng mô hình đó mở rộng zero-shot sang 8 nhãn SPIDER chưa từng thấy qua prompt chữ (trung bình F1 = 0.362), với phần cải thiện tập trung ở các nhãn hình thái đĩa gần với hệ huấn luyện. Khi chuyển giao có giám sát qua 3 seed, mô hình lai \emph{ngang} SpineNetV2 về F1 tổng hợp (0.653 vs 0.646) và \emph{vượt} bản chỉ-CBAM (0.619) $+0.034$ ($t$-test bắt cặp, $p=0.011$); chúng tôi diễn giải đây là bằng chứng nhánh BiomedCLIP đông cứng cung cấp \emph{tín hiệu điều hòa} dưới chuyển giao xuyên-dữ-liệu.
+\end{dichbox}
+
+\begin{keybox}{Vì sao Abstract viết theo thứ tự này}
+Theo quy tắc: \emph{vấn đề $\to$ phương pháp $\to$ kết quả}. Chú ý các từ ``hedge'' (we interpret, regularizing signal) -- nói \emph{đúng mức bằng chứng}, không khẳng định cơ chế.
+\end{keybox}
+
+%==========================================================
+\section{Mục 1 -- Introduction (Giới thiệu)}
+
+\begin{dichbox}{Bản dịch ý chính §1}
+Đau lưng dưới là nguyên nhân hàng đầu gây tàn tật; thoái hóa đĩa đệm thắt lưng dẫn tới phần lớn can thiệp. Chấm mức độ trên MRI hiện vẫn chủ yếu làm thủ công, sai khác giữa người đọc lớn. Các hệ tự động (SpineNet, SpineNetV2) đã tiến bộ nhưng còn 2 vấn đề mở: (1) \emph{mất cân bằng lớp} -- lớp Nặng thường $<$5\%, huấn luyện cross-entropy thường bỏ quên gần hết; (2) \emph{không gian nhãn cố định} -- mô hình học hệ nhãn này không trả lời được hệ nhãn khác mà không huấn luyện lại.
+Chúng tôi giải quyết cả hai bằng một mô hình lai. Bốn đóng góp (theo trọng tâm là quan sát chuyển giao):
+\begin{enumerate}[leftmargin=1.5em,itemsep=1pt]
+\item \textbf{Quan sát thực nghiệm về điều hòa xuyên-dữ-liệu}: thêm CBAM làm tụt F1 chuyển giao $0.027$ (vượt biến thiên giữa các seed) $\Rightarrow$ CBAM giúp in-domain nhưng hại tổng quát hóa; mô hình lai phục hồi trên CBAM $+0.034$ ($p=0.011$).
+\item \textbf{Kiến trúc lai hai nhánh}: CBAM-3D ResNet-34 + BiomedCLIP đông cứng + MLP-trộn; hai nhánh bổ trợ (in-domain vs robust xuyên-trung-tâm).
+\item \textbf{Mở rộng không gian nhãn xuyên-dữ-liệu}: định tuyến embedding trộn qua so-cosine với prompt chữ $\Rightarrow$ chuyển sang 8 nhãn SPIDER không cần tinh chỉnh (F1 0.362); với tinh chỉnh nhẹ, dẫn đầu ở lớp hiếm.
+\item \textbf{Pipeline xử lý mất cân bằng} (focal loss, trọng số căn, oversampling, augmentation) nâng Recall Nặng 12.3\%$\to$48.6\%.
+\end{enumerate}
+Theo hiểu biết của nhóm, chưa có công trình peer-review nào áp BiomedCLIP cho RSNA 2024, cũng chưa ai báo cáo mở rộng nhãn zero-shot trên cùng kiến trúc cho MRI cột sống thắt lưng.
+\end{dichbox}
+
+\textbf{Giải thích thêm:} ``inter-rater variability'' = hai bác sĩ chấm cùng ảnh ra điểm khác nhau $\Rightarrow$ nhãn vốn đã ``nhiễu''. Đây cũng là lý do trần hiệu năng có giới hạn (mục Hạn chế).
+
+%==========================================================
+\section{Mục 2 -- Related Work (Công trình liên quan)}
+
+\begin{dichbox}{Bản dịch ý chính §2 (4 nhóm)}
+\textbf{(a) Phân độ đĩa đệm thắt lưng.} Jamaludin et al.\ giới thiệu SpineNet (CNN 2D kiểu VGG). Windsor et al.\ nâng lên 3D ResNet-34 chạy trên khối $(9,112,224)$ -- đây là nền kiến trúc ta dùng. Nigru et al.\ kiểm định ngoại SpineNetV2 đa trung tâm, báo F1 lỗ liên hợp $\approx$0.84, balanced accuracy $\approx$0.69--0.70 (ta coi là ``trần'' của ảnh chỉ-đứng-dọc).
+
+\textbf{(b) Chú ý cho ảnh y khoa.} CBAM (Woo et al.) được dùng rộng cho bài 2D. Lin et al.\ kết hợp chú ý kênh--không-gian với multi-head self-attention để phân loại \emph{hẹp ống sống thắt lưng} (F1 0.945 trên bộ của họ). Ta mở rộng chú ý kênh--không-gian sang 3D đầy đủ và ghép với nhánh mô hình nền để xử lý phân độ 3-lớp đa-mức dưới mất cân bằng.
+
+\textbf{(c) Mô hình ảnh--ngôn ngữ y khoa.} BiomedCLIP tiền-huấn-luyện kiểu CLIP trên PMC-15M (15 triệu cặp ảnh--chú-thích PubMed). Ảnh X-quang chỉ là thiểu số trong corpus nhưng BiomedCLIP vẫn vượt BioViL trên RSNA Pneumonia. Benchmark gần đây cho thấy linear-probe BiomedCLIP vượt huấn luyện có giám sát ở chế độ few-shot $\Rightarrow$ động lực dùng nó làm bộ trích đặc trưng đông cứng cho bộ dữ liệu nhỏ. RadCLIP mở rộng CLIP với adapter gộp-lát cho ảnh khối -- gần kiến trúc của ta nhất. Mô hình vision-language 3D MRI thuần chưa public lúc làm.
+
+\textbf{(d) Định vị so với các phương pháp RSNA 2024 trước.} Các kết quả RSNA 2024 đã công bố không so trực tiếp được vì thiết lập khác: Liu et al.\ báo F1 0.957 bằng MobileNetV2-UNet gộp phân-đoạn+phân-loại, đánh giá 5-fold (điểm gộp, không tách phân độ 3-lớp). Các bài Kaggle chỉ báo weighted log-loss trên ensemble 10--20 backbone (không quy ra F1). Thiết lập của ta cố tình khó hơn: phân độ 3-lớp đầy đủ, cả 5 tầng, phân bố mất cân bằng gốc, đánh giá một mô hình đơn với metric macro (Mean F1 0.527, Severe F1 0.356). Mốc tham chiếu tương đương nhất là baseline 3-lớp công khai của nshen7.
+\end{dichbox}
+
+\begin{keybox}{Mẹo đọc Related Work}
+Mỗi đoạn theo công thức ``họ làm X $\to$ ta khác/mở rộng thế nào''. Câu cuối mỗi đoạn thường là ``điểm khác biệt'' của bài mình.
+\end{keybox}
+
+%==========================================================
+\section{Mục 3 -- Proposed Method (Phương pháp) + MỔ XẺ CÔNG THỨC}
+
+\begin{dichbox}{Bản dịch ý chính §3 (đầy đủ, theo đúng mạch paper)}
+\textbf{3.1 Mô hình hóa bài toán.} Ta gói cả hai chế độ vào một dạng chung: một bộ mã hóa học được $\Phi$ ánh xạ mỗi khối ảnh thành embedding chuẩn hóa L2 trên mặt cầu đơn vị ($d=512$), rồi một ``đầu'' $c$ biến embedding đó thành xác suất lớp. \emph{Cùng một $\Phi$ dùng chung cho mọi tác vụ}; chỉ đầu $c$ và tập nhãn $\mathcal{Y}$ thay đổi giữa các chế độ. \emph{Chế độ có giám sát (RSNA):} trên 3 điều kiện (ống sống, lỗ liên hợp trái/phải) với 3 mức {Bình thường/Nhẹ, Vừa, Nặng}, mỗi điều kiện dùng một đầu tuyến tính softmax, và mô hình tối thiểu hóa rủi ro \emph{có nhận biết mất cân bằng} (dùng focal loss + trọng số lớp ở §3.4). \emph{Chế độ zero-shot (mở rộng không gian nhãn):} vì $\Phi$ tạo embedding nằm \emph{cùng không gian đo} với encoder text $\psi$ của BiomedCLIP, với bất kỳ tập nhãn mới $\mathcal{Y}'$ mô tả bằng prompt $\{q_k\}$ ta tạo ``mỏ neo chữ'' $t_k=\psi(q_k)/\|\psi(q_k)\|$ và thay đầu tuyến tính bằng bộ phân loại cosine \emph{không tham số} ở nhiệt độ cố định $s$. Vì $\Phi$ không đổi, chuyển từ RSNA sang SPIDER chỉ là \emph{đổi bộ prompt} -- không gian nhãn trở thành \emph{đầu vào} của suy luận chứ không phải hằng số cứng trong kiến trúc. Đây là cơ sở hình thức cho chuyển giao xuyên-dữ-liệu ở Mục 4.
+
+\textbf{3.2 Cắt khối từng đĩa đệm.} Từ một lần quét sagittal T2, ta cắt một vùng quan tâm thể tích cho mỗi đĩa đệm (L1--L2 đến L5--S1) bằng điểm mốc đi kèm RSNA 2024. Mỗi vùng là tensor $V\in\mathbb{R}^{1\times9\times112\times224}$ tâm tại trung điểm đĩa, phủ trọn bề dày giải phẫu một đĩa. Cường độ điểm ảnh được cắt ngưỡng ở khoảng phân vị 1--99 rồi co về $[0,1]$. Ta theo quy ước SpineNetV2 để trọng số 3D ResNet-34 pretrained nạp được không cần chỉnh.
+
+\textbf{3.3 Khung lai hai nhánh.} Hai nhánh mã hóa cùng một khối đĩa theo hai cách bổ sung. \emph{(Nhánh A) CBAM-3D ResNet-34:} một 3D ResNet-34 (tích chập $3\times3\times3$, BatchNorm3D) trích đặc trưng thể tích; nhánh này \emph{nạp trọng số CBAM-3D đã pretrain trên RSNA} (cấu hình CBAM-only ở Bảng 1) và \emph{giữ đông cứng} trong khi huấn luyện đầu trộn. Sau mỗi trong 4 tầng ResNet, một khối CBAM tinh chỉnh đặc trưng bằng chú ý kênh $M_c$ (MLP 2 lớp dùng chung, tỉ lệ nút thắt $r=16$, trên thống kê average- và max-pool theo không gian) rồi chú ý không gian $M_s$ (tích chập 3D $7\times7\times7$ trên bản đồ pool theo kênh) -- cả hai mở rộng sang dạng thể tích (công thức 2--3). Sau global average pooling, nhánh xuất $f_{\text{cbam}}\in\mathbb{R}^{512}$. \emph{(Nhánh B) BiomedCLIP:} ta tách khối thành 9 lát sagittal, nhân mỗi lát thành 3 kênh, resize $224\times224$, và mã hóa từng lát bằng encoder ViT-B/16 BiomedCLIP \emph{đông cứng}. 9 embedding lát được gộp bằng một \emph{attention pool học được} (công thức 4): trọng số $\alpha_i$ là softmax của $w_a^\top z_i$, trong đó $w_a\in\mathbb{R}^{512}$ là \emph{tham số học được duy nhất của nhánh này}. Thay mean-pool bằng attention-pool cho phép nhánh tăng trọng số những lát thấy rõ tổn thương nhất. \emph{Đầu trộn (fusion head):} hai embedding được \emph{nối} rồi đưa qua MLP 2 lớp (công thức 5): $W_1\in\mathbb{R}^{768\times1024}$, $W_2\in\mathbb{R}^{512\times768}$, kích hoạt ReLU, dropout 0.1, rồi chuẩn hóa L2 thành $\hat f_{\text{img}}$. \emph{Đầu phân loại:} với RSNA gắn 3 đầu tuyến tính 3-lớp theo tác vụ; với zero-shot thay mỗi đầu bằng so-cosine với embedding prompt chữ $\{t_k\}$ (cũng chuẩn hóa L2) và dự đoán $\arg\max_k s\cdot\hat f_{\text{img}}^\top t_k$ (công thức 6), với $s$ là logit-scale pretrained của BiomedCLIP (chặn ở 100). Đổi từ vựng prompt = đổi không gian nhãn, không huấn luyện lại. \emph{Ngân sách tham số học được $\approx$1.18 triệu} (attention pool + MLP trộn); cả backbone CBAM-3D lẫn BiomedCLIP giữ đông cứng, nên chỉ $\approx$1.18\,M trong tổng $\approx$260\,M tham số được cập nhật.
+
+\textbf{3.4 Hàm mục tiêu \& xử lý mất cân bằng.} Hàm mất mát chính là \emph{focal loss}: nhân tử $(1-p_t)^\gamma$ giảm trọng số mẫu dễ; nhãn thiếu ($-1$) bị loại qua \texttt{ignore\_index}; tổng focal loss trên 3 điều kiện. Ba thành phần bù mất cân bằng: (1) \emph{trọng số lớp} $w_c\propto1/\sqrt{n_c}$ (chuẩn hóa trung bình 1) kéo tỉ lệ gradient Nặng/Bình-thường từ $\approx$15$\times$ (kiểu $1/n_c$ tuyến tính) xuống $\approx$4$\times$, ổn định huấn luyện; (2) \emph{oversampling lớp hiếm} (hệ số 3--5) ở khâu sampler -- bổ sung cho trọng số lớp: nó đổi \emph{cơ hội} một mẫu Nặng vào batch, còn $w_c$ chỉnh \emph{gradient} khi đã vào; (3) \emph{augmentation y khoa} theo SpineNetV2: lật ngang kèm swap nhãn trái/phải, xoay $\pm10^\circ$, đổi sáng/tương phản $\pm20\%$, nhiễu Gauss $\sigma=0.05$ xác suất 0.3. Huấn luyện bằng AdamW (lr $10^{-4}$, batch 32, weight decay $10^{-4}$) tối đa 20 epoch, early-stopping patience 5.
+\end{dichbox}
+
+\subsection{3.1 Mô hình hóa bài toán -- công thức (1)}
+Dùng ký hiệu để gói cả hai chế độ (giám sát + zero-shot) chung một dạng.
+\begin{equation}
+h = c \circ \Phi, \qquad \Phi:\mathcal{V}\to\mathbb{S}^{d-1},\quad c:\mathbb{S}^{d-1}\to\Delta^{|\mathcal{Y}|-1}.
+\label{eq:comp}
+\end{equation}
+\begin{ctbox}{Mổ xẻ công thức (1)}
+\textbf{Là gì:} định nghĩa mô hình (hàm hợp). \quad\textbf{Vào:} khối ảnh đĩa đệm $V$ $(1{\times}9{\times}112{\times}224)$ $\to$ \textbf{Ra:} phân phối xác suất các lớp.
+
+\textbf{Tại sao dùng:} tách ``phần nhìn'' ($\Phi$, dùng chung) khỏi ``phần trả lời'' ($c$, thay được) $\Rightarrow$ một encoder phục vụ cả supervised lẫn zero-shot, đổi nhãn không phải train lại.
+
+\textbf{Làm gì:} định nghĩa mô hình $h$ = ``mã hóa rồi phân loại''. $\circ$ là hợp hàm: $h(V)=c(\Phi(V))$.
+
+\textbf{Ký hiệu:}
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
+\item $V\in\mathcal{V}$: khối ảnh đĩa đệm, $\mathcal{V}=\mathbb{R}^{1\times9\times112\times224}$.
+\item $\Phi$ (``phi''): bộ mã hóa, ảnh $\to$ vector $d=512$ chiều.
+\item $\mathbb{S}^{d-1}$: mặt cầu đơn vị $\Rightarrow$ đầu ra \emph{chuẩn hóa độ dài 1} (để dùng cosine).
+\item $c$: đầu phân loại, vector $\to$ xác suất.
+\item $\Delta^{m}$: simplex = tập vector xác suất ($\ge0$, tổng 1); $\Delta^{|\mathcal{Y}|-1}$ trên $|\mathcal{Y}|$ lớp.
+\item $\mathcal{Y}$: tập nhãn.
+\end{itemize}
+\textbf{Trực giác:} $\Phi$ = ``đôi mắt'' (ảnh $\to$ tóm tắt số), $c$ = ``cái miệng'' (tóm tắt $\to$ câu trả lời). \textbf{Mấu chốt:} giữ nguyên $\Phi$, chỉ đổi $c$ và $\mathcal{Y}$ là chuyển chế độ.
+
+\textbf{Đọc bằng lời:} \emph{``h bằng c hợp $\Phi$'' -- tức đưa ảnh qua $\Phi$ trước rồi qua $c$. ``$\Phi$ ánh xạ từ không gian ảnh $\mathcal{V}$ vào mặt cầu đơn vị $d{-}1$ chiều'' (ra vector 512-D đã chuẩn hóa độ dài 1). ``$c$ ánh xạ từ mặt cầu đó vào simplex $|\mathcal{Y}|{-}1$ chiều'' (ra phân phối xác suất trên $|\mathcal{Y}|$ lớp).}
+
+\textbf{Nói khi thuyết trình:} \emph{``Mô hình của em gồm hai phần. Phần đầu là bộ mã hóa $\Phi$: đưa khối ảnh đĩa đệm vào, nó nhả ra một vector tóm tắt. Phần sau là đầu phân loại $c$: đọc vector đó ra câu trả lời. Điểm hay là em giữ nguyên bộ mã hóa, chỉ cần thay phần đọc kết quả là chuyển được giữa chế độ huấn luyện thường và chế độ zero-shot.''}
+\end{ctbox}
+
+\textbf{Chế độ có giám sát (RSNA)} -- đầu tuyến tính + softmax, tối thiểu rủi ro có trọng số:
+\begin{equation}
+c_t(\hat f)=\mathrm{softmax}(W_t\hat f+b_t),\qquad
+\min_{\Phi,\{c_t\}}\sum_{t\in\mathcal{T}}\mathbb{E}_{(V,y_t)}\big[\ell_t(c_t(\Phi(V)),y_t)\big].
+\label{eq:erm}
+\end{equation}
+\begin{ctbox}{Mổ xẻ công thức (2)}
+\textbf{Là gì:} đầu tuyến tính + softmax \& hàm mục tiêu huấn luyện (ERM). \quad\textbf{Vào:} vector đặc trưng $\hat f$ (và cặp ảnh--nhãn) $\to$ \textbf{Ra:} xác suất 3 lớp / giá trị mất mát để tối ưu.
+
+\textbf{Tại sao dùng:} softmax + cross-entropy/focal là chuẩn cho phân loại nhiều lớp; đầu tuyến tính đủ nhẹ vì $\Phi$ đã học đặc trưng tốt; ERM là khung huấn luyện có giám sát tiêu chuẩn.
+
+\textbf{Làm gì:} (trái) mỗi điều kiện $t$ có 1 đầu tuyến tính cho ra xác suất 3 lớp. (phải) huấn luyện = chỉnh $\Phi$ và $\{c_t\}$ để \emph{trung bình mất mát} nhỏ nhất.
+
+\textbf{Ký hiệu:}
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
+\item $t\in\mathcal{T}=\{$ống sống, lỗ liên hợp trái, phải$\}$.
+\item $\hat f=\Phi(V)$: vector đặc trưng.
+\item $W_t,b_t$: trọng số + bias đầu $t$; $W_t\hat f+b_t$ cho 3 ``điểm thô'' (logit).
+\item $\mathrm{softmax}(x)_k=\dfrac{e^{x_k}}{\sum_j e^{x_j}}$: điểm thô $\to$ xác suất.
+\item $\min_{\Phi,\{c_t\}}$: ``việc huấn luyện'' = tìm tham số tối thiểu vế sau.
+\item $\mathbb{E}_{(V,y_t)}[\cdot]$: trung bình trên các cặp (ảnh, nhãn đúng).
+\item $\ell_t$: focal loss (mục 6); $\sum_t$: cộng 3 điều kiện.
+\end{itemize}
+\textbf{Trực giác:} ``chỉnh đôi mắt + 3 miệng để trung bình đoán sai ít nhất'' -- nguyên lý ERM (tối thiểu rủi ro thực nghiệm).
+
+\textbf{Đọc bằng lời:} \emph{``$c$ chỉ số $t$ của $\hat f$ bằng softmax của (W chỉ số $t$ nhân $\hat f$, cộng b chỉ số $t$)''. Dòng tối ưu: ``tối thiểu hóa theo $\Phi$ và tập $\{c_t\}$, của tổng theo $t$ thuộc $\mathcal{T}$, của kỳ vọng -- lấy trên các cặp (ảnh $V$, nhãn $y_t$) rút từ phân phối dữ liệu RSNA -- của hàm mất mát $\ell_t$ áp lên dự đoán $c_t(\Phi(V))$ và nhãn thật $y_t$''.}
+
+\textbf{Nói khi thuyết trình:} \emph{``Huấn luyện ở đây nghĩa là em chỉnh bộ mã hóa cùng ba đầu phân loại sao cho trung bình mức đoán sai trên toàn bộ dữ liệu là thấp nhất. Mỗi điều kiện -- ống sống, lỗ liên hợp trái, phải -- có một đầu riêng, và em cộng mất mát của cả ba lại để tối ưu cùng lúc.''}
+\end{ctbox}
+
+\textbf{Chế độ zero-shot (SPIDER) -- viết đầy đủ.}
+Encoder $\Phi$ tạo embedding nằm \emph{cùng không gian đo} với encoder text $\psi$ của BiomedCLIP (vì nhánh BiomedCLIP đã kéo embedding ảnh về không gian chữ của CLIP). Nhờ vậy ta có thể ``hỏi'' mô hình bằng chữ. Với một tập nhãn mới $\mathcal{Y}'$ (vd 8 nhãn SPIDER) mô tả bằng các câu prompt $\{q_k\}$, làm 2 bước:
+\begin{enumerate}[leftmargin=1.6em,itemsep=1pt]
+\item Đưa mỗi câu $q_k$ (vd ``a magnetic resonance image of lumbar disc herniation'') qua encoder text $\psi$, rồi chuẩn hóa độ dài $\to$ \emph{vector mỏ neo chữ} $t_k$.
+\item Thay đầu tuyến tính bằng bộ phân loại cosine \emph{không tham số}:
+\end{enumerate}
+\[
+t_k=\frac{\psi(q_k)}{\|\psi(q_k)\|_2},\qquad
+c^{\text{zs}}_k(\hat f)=\mathrm{softmax}_k\!\big(s\,\hat f^{\top} t_k\big).
+\]
+
+\begin{ctbox}{Mổ xẻ: đầu zero-shot (so cosine) -- công thức không đánh số}
+\textbf{Là gì:} bộ phân loại \emph{không tham số} bằng độ giống cosine với chữ. \quad\textbf{Vào:} vector ảnh $\hat f$ + các câu prompt $\{q_k\}$ $\to$ \textbf{Ra:} xác suất / nhãn cho \emph{tập nhãn bất kỳ}.
+
+\textbf{Ký hiệu:}
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
+\item $\psi$: encoder \emph{text} của BiomedCLIP (biến câu chữ $\to$ vector 512-D).
+\item $q_k$: câu mô tả lớp $k$ (prompt).
+\item $t_k=\psi(q_k)/\|\psi(q_k)\|_2$: vector chữ đã chuẩn hóa = ``mỏ neo'' của lớp $k$.
+\item $\hat f^{\top}t_k$: cosine similarity giữa ảnh và chữ.
+\item $s$: hệ số nhiệt độ (logit scale) phóng đại khác biệt.
+\item $\mathrm{softmax}_k$: biến các điểm cosine thành xác suất trên các lớp.
+\end{itemize}
+
+\textbf{Đọc bằng lời:} \emph{``$t$ chỉ số $k$ bằng $\psi$ của $q_k$, chia cho chuẩn của $\psi$ của $q_k$'' (chuẩn hóa vector chữ). ``$c$ zero-shot chỉ số $k$ của $\hat f$ bằng softmax theo $k$ của đại lượng (s nhân tích vô hướng $\hat f$ với $t_k$)''.}
+
+\textbf{Tại sao quan trọng:} đây là thứ khiến mô hình \emph{độc nhất} so với đầu tuyến tính cố định -- thêm/đổi nhãn chỉ cần viết thêm câu chữ, không train lại. (Dạng cosine này cũng dùng cho RSNA, viết ở công thức~\ref{eq:cos}.)
+\end{ctbox}
+
+Vì $\Phi$ \emph{không đổi}, chuyển từ RSNA sang SPIDER chỉ là \emph{đổi bộ prompt} -- không huấn luyện lại gì cả. Đó là ý nghĩa câu ``tập nhãn trở thành \textbf{đầu vào} của suy luận, không phải hằng số cứng trong kiến trúc''.
+
+\subsection{3.2 Cắt khối từng đĩa đệm}
+Từ ảnh T2 đứng dọc, dùng điểm mốc RSNA cắt 1 khối/đĩa đệm (L1--L2 $\to$ L5--S1), chuẩn về $(9,112,224)$, cường độ co percentile 1--99 rồi về $[0,1]$. Theo quy ước SpineNetV2 để nạp được trọng số 3D ResNet-34 pretrained.
+
+\subsection{3.3 Khung lai hai nhánh -- công thức (2)--(5)}
+\textbf{Nhánh A -- CBAM-3D ResNet-34.} ResNet-34 = CNN sâu dùng skip-connection; bản 3D ($3\times3\times3$). \textbf{Lưu ý quan trọng:} nhánh này \emph{nạp trọng số CBAM-3D đã pretrain trên RSNA} (cấu hình CBAM-only ở Bảng 1) rồi \emph{đông cứng khi trộn} -- chỉ MLP trộn + attention pool được huấn luyện. CBAM = chú ý 2 bước: kênh $M_c$ rồi không gian $M_s$.
+\begin{align}
+F' &= M_c(F)\otimes F, \label{eq:cbamc}\\
+F'' &= M_s(F')\otimes F'. \label{eq:cbams}
+\end{align}
+\begin{ctbox}{Mổ xẻ công thức (3)--(4)}
+\textbf{Là gì:} phép biến đổi đặc trưng kiểu chú ý (attention). \quad\textbf{Vào:} bản đồ đặc trưng $F$ ($C{\times}D{\times}H{\times}W$) $\to$ \textbf{Ra:} bản đồ đã chú ý $F''$ (cùng kích thước).
+
+\textbf{Tại sao dùng:} tổn thương thường nhỏ + khu trú (vd ống sống hẹp); chú ý kênh+không-gian dạy mạng tập trung đúng chỗ thay vì nhìn dàn trải, lại rẻ và gắn thẳng được vào ResNet có sẵn $\Rightarrow$ tăng độ nhạy lớp Nặng in-domain.
+
+\textbf{Làm gì:} ``lọc'' đặc trưng $F$ 2 lần: nhấn kênh hữu ích ($\to F'$), rồi nhấn vị trí hữu ích ($\to F''$).
+
+\textbf{Ký hiệu:}
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
+\item $F\in\mathbb{R}^{C\times D\times H\times W}$: bản đồ đặc trưng ($C$ kênh, $D,H,W$ chiều khối).
+\item $M_c(F)$: trọng số chú ý \emph{kênh} (vector dài $C$, mỗi số trong $(0,1)$ qua sigmoid); tính từ pooling trung bình+max theo không gian rồi qua MLP chung (nút thắt $r=16$).
+\item $M_s(F')$: trọng số chú ý \emph{không gian} (bản đồ theo $D,H,W$); tính bằng conv 3D $7\times7\times7$ trên map gộp-kênh.
+\item $\otimes$: nhân từng phần tử có broadcast (nhân trọng số ra mọi chiều còn thiếu).
+\item sigmoid: ép về $(0,1)$ -- trọng số như ``van mở \%''.
+\end{itemize}
+\textbf{Trực giác:} $M_c$ vặn âm lượng \emph{từng kênh}; $M_s$ tô đậm \emph{vùng} đáng chú ý. Sau 4 tầng (4 CBAM) + gộp trung bình $\to f_{\text{cbam}}\in\mathbb{R}^{512}$.
+
+\textbf{Đọc bằng lời:} \emph{``$F'$ bằng $M_c$ của $F$, nhân từng phần tử với $F$'' (áp chú ý kênh). ``$F''$ bằng $M_s$ của $F'$, nhân từng phần tử với $F'$'' (áp chú ý không gian). $M_c$ = chú ý kênh, $M_s$ = chú ý không gian.}
+
+\textbf{Nói khi thuyết trình:} \emph{``Cơ chế chú ý CBAM làm hai bước. Đầu tiên nó hỏi `kênh đặc trưng nào quan trọng' rồi vặn to những kênh đó lên, ra $F'$. Sau đó hỏi `vùng nào trên ảnh quan trọng' rồi tô đậm vùng đó, ra $F''$. Nói nôm na, nó dạy mạng tập trung đúng chỗ -- ví dụ vùng ống sống bị hẹp -- thay vì nhìn dàn trải khắp ảnh.''}
+\end{ctbox}
+
+\textbf{Nhánh B -- BiomedCLIP (đông cứng, 2.5D).} Tách khối thành 9 lát 2D $\to$ 9 vector $z_i$; gộp bằng attention pool:
+\begin{equation}
+\alpha_i=\frac{\exp(w_a^\top z_i)}{\sum_{j=1}^{9}\exp(w_a^\top z_j)},\qquad
+f_{\text{bmc}}=\sum_{i=1}^{9}\alpha_i z_i.
+\label{eq:pool}
+\end{equation}
+\begin{ctbox}{Mổ xẻ công thức (5)}
+\textbf{Là gì:} phép gộp có trọng số (attention pooling). \quad\textbf{Vào:} 9 vector lát $z_i$ (mỗi cái 512-D) $\to$ \textbf{Ra:} 1 vector $f_{\text{bmc}}$ (512-D).
+
+\textbf{Tại sao dùng (thay vì trung bình đều):} tổn thương chỉ ở vài lát; lấy trung bình đều sẽ \emph{pha loãng} tín hiệu. Attention pool tự dồn trọng số vào lát quan trọng, chỉ tốn đúng 1 vector tham số $w_a$.
+
+\textbf{Làm gì:} gộp 9 vector lát thành 1, \emph{lát quan trọng hơn thì trọng số lớn hơn}.
+
+\textbf{Ký hiệu:}
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
+\item $z_i\in\mathbb{R}^{512}$: vector lát $i$ (do BiomedCLIP đông cứng tạo).
+\item $w_a\in\mathbb{R}^{512}$: \emph{tham số học được duy nhất} của nhánh; quyết định ``lát nào đáng chú ý''.
+\item $w_a^\top z_i$: tích vô hướng = điểm quan trọng thô của lát $i$ (một số).
+\item $\exp(\cdot)/\sum_j$: chính là \textbf{softmax} trên 9 lát $\Rightarrow \alpha_i\ge0,\ \sum_i\alpha_i=1$.
+\item $\sum_i\alpha_i z_i$: trung bình \emph{có trọng số}.
+\end{itemize}
+\textbf{Trực giác:} thay vì trung bình đều 9 lát, mô hình tự học cho điểm cao lát nhìn rõ tổn thương. $\alpha_i$ = ``tỉ lệ \% chú ý'', cộng lại 100\%.
+
+\textbf{Đọc bằng lời:} \emph{``alpha chỉ số $i$ bằng $e$ mũ ($w_a$ chuyển vị nhân $z_i$), chia cho tổng theo $j$ của $e$ mũ ($w_a$ chuyển vị nhân $z_j$)'' -- tức softmax trên 9 lát. ``$f_{\text{bmc}}$ bằng tổng theo $i$ của alpha-$i$ nhân $z_i$'' -- trung bình có trọng số của 9 vector lát.}
+
+\textbf{Nói khi thuyết trình:} \emph{``Một đĩa đệm có 9 lát cắt. Thay vì lấy trung bình đều cả 9, em cho mô hình tự chấm điểm cho từng lát: lát nào thấy tổn thương rõ thì trọng số cao, lát nào mờ thì gần như bỏ qua. Đây chính là cơ chế tự biết chọn lát quan trọng mà không cần cố định số lát.''}
+\end{ctbox}
+
+\begin{keybox}{Liên hệ góp ý của thầy: ``biết chọn slice nào?''}
+Thầy gợi ý: nên \emph{chọn được lát (slice) đủ đặc trưng} chứ đừng đưa bừa. \textbf{Attention pool ở trên CHÍNH LÀ cơ chế đó}, nhưng làm theo kiểu \emph{mềm}:
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
+\item \textbf{Chọn cứng (hard)} = cố định lấy 3 lát. Nhược: số lát cố định, ca khác nhau lát tổn thương ở vị trí khác nhau $\Rightarrow$ dễ bỏ sót.
+\item \textbf{Chọn mềm (soft) -- cách của bài}: học trọng số $\alpha_i$ cho \emph{cả 9 lát}. Lát có tổn thương rõ $\Rightarrow \alpha_i$ cao; lát mờ/rìa $\Rightarrow \alpha_i\approx 0$. Mô hình \emph{tự dồn trọng số} vào đúng vài lát quan trọng, khác nhau theo từng ca.
+\end{itemize}
+\textbf{Nói với thầy:} ``Dạ em không chọn cứng 3 lát, mà dùng attention pool: mô hình tự học trọng số $\alpha_i$ cho cả 9 lát -- lát tổn thương rõ thì trọng số cao, lát mờ thì gần 0. Đây chính là cơ chế tự chọn lát, linh hoạt theo từng ca thay vì cố định số lát.''
+\end{keybox}
+
+\textbf{Đầu trộn (fusion).}
+\begin{equation}
+f_{\text{img}}=W_2\,\phi\big(W_1[f_{\text{cbam}};f_{\text{bmc}}]+b_1\big)+b_2,\qquad
+\hat f_{\text{img}}=\frac{f_{\text{img}}}{\|f_{\text{img}}\|_2}.
+\label{eq:fuse}
+\end{equation}
+\begin{ctbox}{Mổ xẻ công thức (6)}
+\textbf{Là gì:} MLP trộn 2 lớp + chuẩn hóa L2. \quad\textbf{Vào:} 2 vector $f_{\text{cbam}},f_{\text{bmc}}$ (512+512) $\to$ \textbf{Ra:} 1 vector ảnh $\hat f_{\text{img}}$ (512-D, độ dài 1).
+
+\textbf{Tại sao dùng (thay vì cộng/nối thô):} concat+MLP để mạng \emph{tự học} cách pha trộn phi tuyến hình học (CBAM) + ngữ nghĩa (BiomedCLIP); đối chứng cho thấy trung bình thô thua xa $\Rightarrow$ cần học-trộn. Chuẩn L2 bắt buộc để bước cosine sau hoạt động đúng.
+
+\textbf{Làm gì:} trộn 2 vector 2 nhánh thành 1 vector ảnh chung, đặt cùng không gian với vector chữ BiomedCLIP.
+
+\textbf{Ký hiệu:}
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
+\item $[f_{\text{cbam}};f_{\text{bmc}}]$: nối 2 vector $512{+}512{=}1024$.
+\item $W_1\in\mathbb{R}^{768\times1024},b_1$: lớp tuyến tính 1 ($1024\to768$).
+\item $\phi$: ReLU $\phi(x)=\max(0,x)$ (phi tuyến); kèm dropout 0.1 (tắt ngẫu nhiên 10\% nơ-ron khi train, chống overfit).
+\item $W_2\in\mathbb{R}^{512\times768},b_2$: lớp tuyến tính 2 ($768\to512$).
+\item $\|f\|_2=\sqrt{\sum_k f_k^2}$: chuẩn L2; chia cho nó $\Rightarrow$ độ dài 1.
+\end{itemize}
+\textbf{Trực giác:} ``concat rồi MLP'' = để mạng \emph{tự học cách pha trộn} hình học (CBAM) + ngữ nghĩa (BiomedCLIP). Chuẩn L2 để cosine chỉ phụ thuộc \emph{hướng}.
+
+\textbf{Đọc bằng lời:} \emph{``$f_{\text{img}}$ bằng $W_2$ nhân $\phi$ của ($W_1$ nhân vector nối $[f_{\text{cbam}};f_{\text{bmc}}]$ cộng $b_1$), cộng $b_2$'' ($\phi$ là ReLU). ``$\hat f_{\text{img}}$ bằng $f_{\text{img}}$ chia cho chuẩn L2 của nó'' (chuẩn hóa độ dài về 1).}
+
+\textbf{Nói khi thuyết trình:} \emph{``Em có hai vector: một từ nhánh CBAM nắm thông tin hình học, một từ BiomedCLIP nắm thông tin ngữ nghĩa. Em nối chúng lại rồi cho qua một mạng nhỏ để mô hình tự học cách pha trộn hai nguồn -- chứ không cộng thô. Cuối cùng chuẩn hóa độ dài về 1 để bước so sánh sau chỉ phụ thuộc hướng của vector.''}
+\end{ctbox}
+
+\textbf{Đầu zero-shot (so cosine).}
+\begin{equation}
+\hat y=\arg\max_{k}\; s\cdot \hat f_{\text{img}}^{\top} t_k.
+\label{eq:cos}
+\end{equation}
+\begin{ctbox}{Mổ xẻ công thức (7)}
+\textbf{Là gì:} đầu phân loại không tham số (cosine). \quad\textbf{Vào:} vector ảnh $\hat f_{\text{img}}$ + các vector chữ $t_k$ $\to$ \textbf{Ra:} nhãn dự đoán $\hat y$.
+
+\textbf{Tại sao dùng (thay vì đầu tuyến tính):} đầu tuyến tính khóa cứng số lớp; cosine với vector chữ cho phép đổi/thêm nhãn chỉ bằng prompt $\Rightarrow$ \textbf{zero-shot}. Đây chính là lý do mô hình làm được điều mà các mô hình đầu-cố-định không làm được.
+
+\textbf{Làm gì:} dự đoán nhãn = xem ảnh \emph{gần} vector chữ nhãn nào nhất. Đổi nhãn = đổi danh sách câu chữ, không train lại.
+
+\textbf{Ký hiệu:}
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
+\item $\hat f_{\text{img}}$: vector ảnh (chuẩn L2).
+\item $t_k$: vector chữ lớp $k$ -- đưa câu mô tả (vd ``a magnetic resonance image of lumbar disc herniation'') qua encoder text BiomedCLIP rồi chuẩn L2.
+\item $\hat f_{\text{img}}^{\top}t_k$: tích vô hướng 2 vector chuẩn hóa = \emph{cosine similarity} (độ giống hướng, $[-1,1]$).
+\item $s$: hệ số nhiệt độ (logit scale) của BiomedCLIP, kẹp $\le100$; phóng đại khác biệt cosine.
+\item $\arg\max_k$: chọn lớp giống nhất.
+\end{itemize}
+\textbf{Trực giác:} mỗi nhãn = 1 ``mỏ neo'' bằng chữ; ảnh = 1 điểm; gán ảnh cho mỏ neo gần nhất. Thêm nhãn mới = viết thêm 1 câu mô tả.
+
+\textbf{Đọc bằng lời:} \emph{``$\hat y$ bằng argmax theo $k$ của ($s$ nhân tích vô hướng $\hat f_{\text{img}}$ với $t_k$)'' -- chọn lớp $k$ có điểm cosine (sau khi nhân nhiệt độ $s$) lớn nhất.}
+
+\textbf{Nói khi thuyết trình:} \emph{``Thay vì một đầu phân loại cố định số lớp, em biến mỗi nhãn thành một vector bằng cách mô tả nó bằng chữ. Ảnh cũng là một vector. Em gán ảnh cho nhãn nào gần nó nhất về hướng. Nhờ vậy muốn thêm hay đổi nhãn, em chỉ cần viết thêm một câu mô tả, hoàn toàn không phải huấn luyện lại -- đây là thứ mà các mô hình đầu-cố-định không làm được.''}
+\end{ctbox}
+
+\begin{keybox}{Số tham số}
+$\approx$1.18 triệu học được (\emph{chỉ} slice attention pool $w_a$ + MLP trộn) / tổng $\approx$260 triệu. \textbf{Cả hai backbone} (CBAM-3D và BiomedCLIP) đều đông cứng -- không có cái nào fine-tune.
+\end{keybox}
+
+\subsection{3.4 Hàm mục tiêu \& xử lý mất cân bằng -- công thức (6)--(7)}\label{sec:loss}
+\textbf{Focal loss:}
+\begin{equation}
+\mathrm{FL}_t(p_t)=-\,w_c\,(1-p_t)^{\gamma}\,\log(p_t),\qquad \gamma=2.
+\label{eq:focal}
+\end{equation}
+\begin{ctbox}{Mổ xẻ công thức (8)}
+\textbf{Là gì:} hàm mất mát (loss). \quad\textbf{Vào:} xác suất $p_t$ của lớp đúng (+ trọng số $w_c$) $\to$ \textbf{Ra:} một số = mức phạt.
+
+\textbf{Tại sao dùng (thay vì cross-entropy thường):} dữ liệu mất cân bằng nặng; cross-entropy để lớp đa số át, mô hình bỏ quên lớp Nặng. Focal giảm trọng số mẫu dễ $\Rightarrow$ ``cứu'' lớp hiếm.
+
+\textbf{Làm gì:} đo ``mức phạt''. So với cross-entropy ($-\log p_t$), focal \emph{giảm phạt mẫu dễ} để dồn sức học mẫu khó/hiếm (Nặng).
+
+\textbf{Ký hiệu:}
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
+\item $p_t$: xác suất gán cho lớp \emph{đúng} (đoán chắc+đúng $\Rightarrow$ gần 1).
+\item $-\log(p_t)$: phạt cross-entropy gốc (đúng chắc $\Rightarrow$ phạt $\to$0; sai $\Rightarrow$ phạt lớn).
+\item $(1-p_t)^{\gamma}$: \emph{hệ số điều biến}; mẫu dễ ($p_t$ cao) $\Rightarrow$ teo phạt; mẫu khó $\Rightarrow$ giữ phạt.
+\item $\gamma=2$: độ tập trung; $\gamma$ lớn càng bỏ qua mẫu dễ; $\gamma=0$ = cross-entropy.
+\item $w_c$: trọng số lớp (\ref{eq:weight}); nhãn thiếu ($-1$) bỏ qua.
+\end{itemize}
+\textbf{Trực giác:} ``câu đã trả lời tốt thì thôi, tập trung mắng câu còn sai'' -- câu sai hay rơi vào lớp hiếm.
+
+\textbf{Đọc bằng lời:} \emph{``FL chỉ số $t$ của $p_t$ bằng: trừ $w_c$, nhân (1 trừ $p_t$) mũ gamma, nhân log của $p_t$'', với gamma bằng 2.}
+
+\textbf{Nói khi thuyết trình:} \emph{``Focal loss giống cross-entropy nhưng thông minh hơn: những câu mô hình đã trả lời tốt rồi thì nó giảm phạt, để dồn sức học những câu còn sai -- mà câu sai thường rơi đúng vào lớp Nặng hiếm gặp. Nhờ vậy mô hình không bị lớp đa số `nuốt' mất.''}
+\end{ctbox}
+
+\textbf{Trọng số lớp:}
+\begin{equation}
+w_c \propto \frac{1}{\sqrt{n_c}}.
+\label{eq:weight}
+\end{equation}
+\begin{ctbox}{Mổ xẻ công thức (9)}
+\textbf{Là gì:} công thức tính trọng số lớp. \quad\textbf{Vào:} số mẫu mỗi lớp $n_c$ $\to$ \textbf{Ra:} trọng số $w_c$ cho lớp đó.
+
+\textbf{Tại sao dùng $1/\sqrt{n_c}$ (thay vì $1/n_c$):} $1/n_c$ ưu tiên lớp hiếm quá mạnh (tỉ lệ gradient $\sim$15$\times$) làm huấn luyện dao động; căn bậc hai dịu còn $\sim$4$\times$ -- đủ ưu tiên mà ổn định.
+
+\textbf{Làm gì:} lớp ít mẫu $\Rightarrow$ trọng số lớn hơn, để không bị lớp đa số át.
+
+\textbf{Ký hiệu:}
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
+\item $n_c$: số mẫu lớp $c$ (Nặng nhỏ $\Rightarrow w_c$ lớn).
+\item $\propto$: ``tỉ lệ với'' (rồi chuẩn hóa để trung bình $w_c=1$).
+\item Vì sao $\sqrt{n_c}$? Dùng $1/n_c$ ưu tiên quá mạnh (tỉ lệ gradient $\sim$15$\times$, dao động); $1/\sqrt{n_c}$ dịu còn $\sim$4$\times$ -- đủ mà ổn định.
+\end{itemize}
+\textbf{Trực giác:} ``lớp càng hiếm mỗi mẫu càng quý''; căn bậc hai = ưu tiên vừa phải.
+
+\textbf{Đọc bằng lời:} \emph{``$w_c$ tỉ lệ với 1 chia căn bậc hai của $n_c$'' -- với $n_c$ là số mẫu của lớp $c$.}
+
+\textbf{Nói khi thuyết trình:} \emph{``Vì lớp Nặng quá hiếm, em cho mỗi mẫu Nặng một trọng số lớn hơn khi tính lỗi. Nhưng em dùng nghịch đảo căn bậc hai số mẫu, chứ không phải nghịch đảo thẳng -- để ưu tiên vừa phải thôi, tránh việc mô hình quá thiên về lớp hiếm làm huấn luyện dao động.''}
+\end{ctbox}
+
+\textbf{Hai trợ thủ:} \emph{Oversampling} (lặp mẫu hiếm 3--5$\times$ -- đổi \emph{tần suất}, khác trọng số); \emph{Augmentation} (lật ngang kèm đổi nhãn T/P, xoay $\pm10^\circ$, sáng/tương phản $\pm20\%$, nhiễu Gauss). Huấn luyện: AdamW, lr $10^{-4}$, batch 32, $\le$20 epoch, patience 5.
+
+%==========================================================
+\section{Mục 4 -- Experiments (Thí nghiệm)}
+
+\begin{dichbox}{Bản dịch ý chính §4 (đầy đủ, theo đúng mạch paper)}
+\textbf{4.1 Bộ dữ liệu \& thiết lập.}
+\emph{RSNA 2024 LumbarDISC}~-- khoảng 2.000 bệnh nhân với chuỗi ảnh sagittal T2. Chúng tôi chia train/validation theo \emph{cấp bệnh nhân} 80/20 (\texttt{random\_state=42}), cho ra 1.942 đĩa đệm validation từ 395 bệnh nhân. Nhãn trải trên 5 tầng $\times$ 5 điều kiện $\times$ 3 mức độ. Chúng tôi giới hạn đánh giá ở 3 trong 5 điều kiện (hẹp ống sống, hẹp lỗ liên hợp trái và phải) -- những điều kiện mà ảnh sagittal là phù hợp nhất về lâm sàng; hẹp ngách bên trái/phải (đọc tốt nhất trên ảnh axial) để lại cho tương lai. Phân bố lớp mỗi điều kiện trung bình: Bình thường/Nhẹ $\approx$85\%, Vừa $\approx$10\%, Nặng $\approx$5\%.
+
+\emph{SPIDER}~-- khoảng 1.400 đĩa đệm từ 218 bệnh nhân ở 4 bệnh viện Hà Lan (chuỗi sagittal T1 và T2-FS). Để nhất quán với encoder huấn luyện trên RSNA, chúng tôi chỉ dùng chuỗi T2-FS. Bộ nhãn (lấy từ \emph{file gradings X-quang chính thức} đi kèm SPIDER) khác RSNA: Pfirrmann 1--5, Modic 0--3 (4 lớp), trượt đốt sống, thoát vị đĩa, hẹp đĩa, phồng đĩa, và tổn thương tấm tận trên/dưới (đều nhị phân). SPIDER chỉ dùng để đánh giá xuyên-dữ-liệu; \emph{không} ảnh SPIDER nào được thấy khi huấn luyện trên RSNA.
+
+\emph{Thước đo.} Chúng tôi báo cáo Recall/Precision/F1/AUC (một-đối-phần-còn-lại)/AUPRC kiểu macro, cộng chỉ số riêng cho lớp Nặng. Lấy trung bình macro trên $C=3$ mức độ giữ cho lớp đa số Bình thường/Nhẹ (85\%) không che lấp thất bại ở lớp Nặng. Chúng tôi để AUPRC cạnh AUC vì trên dữ liệu lệch nặng, AUC có thể vẫn cao trong khi mô hình xếp hạng lớp Nặng kém; mốc ngẫu nhiên của AUPRC bằng tỉ lệ lớp dương ($\approx$0.05 cho Nặng). \emph{Phần cứng:} 1 GPU RTX 4090, 16\,GB, $\approx$\$2 mỗi lần chạy hybrid; code + checkpoint + log công khai khi được nhận.
+
+\textbf{4.2 Kết quả in-domain RSNA (Bảng 1).}
+\emph{Hai nhánh bổ trợ nhau:} F1 của hybrid (0.527) vượt cả hai nhánh đơn (CBAM 0.477, BMC 0.482), hơn 4.5 điểm so với nhánh tốt hơn $\Rightarrow$ hai nguồn \emph{bổ sung} chứ không trùng lặp. \emph{Cải thiện lớn nhất ở lớp Nặng:} F1 Nặng tăng 2.3$\times$ (0.152$\to$0.356), Recall Nặng $\approx$4$\times$ (12.3\%$\to$48.6\%), AUC Nặng 0.899; AUPRC Nặng 0.333 so với mốc $\approx$0.05 là gấp 6.7$\times$ so với ngẫu nhiên. Việc Mean Accuracy giảm 8.6 điểm là \emph{cái giá có chủ đích}: SpineNetV2 đạt accuracy cao chỉ bằng cách đoán Bình thường/Nhẹ gần như mọi nơi, nên hybrid đánh đổi accuracy lớp đa số lấy recall lớp hiếm -- hợp lý lâm sàng khi bỏ sót một ca Nặng tốn kém hơn một báo động giả.
+
+\textbf{4.3 Chuyển giao zero-shot sang SPIDER (Bảng 2).}
+Theo hiểu biết của chúng tôi đây là báo cáo đầu tiên về chuyển giao zero-shot xuyên-dữ-liệu (RSNA$\to$SPIDER) qua mở rộng không gian nhãn bằng prompt chữ. Chúng tôi đông cứng mô hình hybrid đã huấn luyện trên RSNA và thay đầu phân loại bằng so-cosine với prompt chữ cho 8 nhóm SPIDER, \emph{không} dùng dữ liệu huấn luyện SPIDER. Mỗi lớp dùng prompt cố định ``a magnetic resonance image of [nhãn]'', viết trước, không tinh chỉnh trên SPIDER nên không rò rỉ nhãn. Trên \emph{toàn bộ} SPIDER (1.439 đĩa / 208 bệnh nhân), hybrid đạt F1 trung bình 0.362 trên 8 nhãn chưa từng thấy -- điều mà SpineNetV2 và CBAM \emph{không làm được} vì đầu 3-lớp cố định không nhận không gian nhãn mới nếu không huấn luyện lại.
+
+\emph{Chuyển giao không đều giữa các nhãn:} trên 3 nhãn hình thái đĩa gần hệ RSNA nhất (phồng, thoát vị, hẹp đĩa) hybrid huấn-luyện-RSNA vượt rõ BiomedCLIP nguyên bản (OTS), khẳng định việc trộn có giám sát trên RSNA bổ sung đặc trưng chuyển giao được. Trên nhãn xa hệ đó (tấm tận, trượt đốt sống) OTS ngang hoặc tốt hơn, nên F1 trung bình 8 nhãn của OTS (0.394) nhỉnh hơn hybrid (0.362): giám sát RSNA chỉ giúp ở nhãn gần về ngữ nghĩa. Xếp-hạng và ngưỡng cũng lệch nhau: trượt đốt sống đạt AUC 0.807 nhưng F1 chỉ 0.03 -- embedding xếp đúng thứ tự nhưng ngưỡng cosine cố định chấm sai. Khoảng cách Modic (AUC 0.45) là giới hạn \emph{đầu vào}: T2-FS của SPIDER thiếu chuỗi T1 ghép đôi mà chấm Modic vốn cần.
+
+\textbf{4.4 Chuyển giao có giám sát trên hệ 8 nhãn SPIDER (Bảng 3).}
+Để đánh giá ngoài zero-shot, chúng tôi tinh chỉnh các đầu nhẹ theo từng nhãn (đông cứng backbone) trên tập huấn luyện SPIDER 15 epoch, cho cả 4 cấu hình và đầy đủ 8 nhãn. Tập chia 80/20 theo cấp bệnh nhân (939 huấn luyện / 234 validation, 34 bệnh nhân validation); backbone giữ đông cứng để so sánh công bằng, chỉ huấn luyện các đầu theo điều kiện (và MLP trộn cho Hybrid/BMC). \emph{Hai quan sát:} (1) Hybrid và SpineNetV2 \emph{ngang nhau} về chỉ số tổng hợp SPIDER -- khoảng cách F1 $+0.006$ nằm trong nhiễu seed và SpineNetV2 còn nhỉnh hơn ở AUPRC, nên chúng tôi \emph{không} tuyên bố hybrid vượt nó. (2) Đáng nói hơn: CBAM một mình tụt xuống dưới SpineNetV2 thuần (Mean F1 0.619 vs 0.646, $|\Delta|/\sigma=3.8$), còn hybrid phục hồi lên trên CBAM $+0.034$ (paired $t$-test $p=0.011$). \emph{Phục hồi ở lớp hiếm:} các cải thiện tập trung ở lớp dương hiếm ($\leq$5\%). Với Thoát vị đĩa, SpineNetV2 và CBAM recall 0\% trong khi BMC và hybrid phục hồi 27.0\% và 35.6\%; tiên nghiệm BiomedCLIP đóng góp phần lớn, CBAM thêm phần tăng khi được trộn. Cùng thứ tự đó đúng cho Trượt đốt sống và Pfirrmann độ 4.
+
+\textbf{4.5 Trực quan hóa \& thảo luận.}
+\emph{Grad-CAM:} trên ca hẹp ống sống, nhiệt tập trung vào chỗ hẹp trung tâm thay vì lan khắp đĩa $\Rightarrow$ ủng hộ định tính giả thuyết chú ý không gian của CBAM. Ở điều kiện lỗ liên hợp, recall Nặng dừng ở 18--22\%, khớp trần của tài liệu chỉ-sagittal (Nigru et al., balanced accuracy $\approx$0.69--0.70); các điều kiện này đọc tốt nhất trên ảnh axial, để lại cho tương lai. \emph{Diễn giải đánh đổi của CBAM:} CBAM vừa giúp vừa hại tùy bối cảnh. In-domain, cả hai nhánh nâng F1 Nặng trên SpineNetV2 mức tương đương (CBAM 0.262, BMC 0.268), hybrid gộp lại đạt 0.356. Out-of-domain, CBAM tụt dưới SpineNetV2 thuần ($|\Delta|/\sigma=3.8$), phù hợp với việc học vẹt các mẫu riêng của RSNA không chuyển giao được, còn hybrid phục hồi lên trên CBAM ($p=0.011$) về ngang SpineNetV2. Do đó chúng tôi đọc hiện tượng này \emph{không} phải như một phép cộng thắng SpineNetV2, mà như \emph{hiệu ứng điều hòa} khôi phục mức chuyển giao ngang SpineNetV2 sau khi thêm CBAM, với BiomedCLIP làm điểm tựa khi thiên lệch in-domain của CBAM lệch pha với phân phối đích; chúng tôi không tuyên bố chứng minh cơ chế. Chúng tôi cũng kiểm tra trực tiếp giả thuyết ``ensemble tầm thường'': lấy trung bình softmax của SpineNetV2 và BMC chỉ đạt Mean F1 0.45 và Severe F1 0.18 (trung bình 2 seed), thấp hơn hẳn hybrid trộn-học-được (0.53 và 0.36), nên việc trộn bằng concat-MLP \emph{không} quy về phép trung bình logit (dù ensemble xếp hạng nhỉnh hơn chút ở AUC/AUPRC). \emph{Đọc lâm sàng:} recall Nặng 48.6\% ($\approx$4$\times$ baseline) vẫn dưới mức $\approx$80\% mà công cụ sàng lọc cần, nên mô hình hợp nhất với vai trò \emph{trợ lý đọc lần hai} đánh dấu ca nghi Nặng cho bác sĩ xác nhận, chưa thay thế độc lập. \emph{Giới hạn:} tuyên bố điều hòa dựa trên một \emph{mẫu hành vi} xuyên-dữ-liệu (bằng chứng hành vi), phân tích cơ chế qua biểu diễn để tương lai; dùng 3 seed nên $p$-value mang tính thăm dò; validation chuyển giao có giám sát nhỏ (34 bệnh nhân) dù zero-shot đánh giá trên toàn bộ 208 bệnh nhân; BiomedCLIP đông cứng và 2D; mô hình vision-language 3D MRI thuần chưa public lúc làm; và độ đồng thuận giữa người chấm cho lớp Nặng của RSNA không được công bố, nên trần lớp Nặng phản ánh cả nhiễu nhãn lẫn năng lực mô hình.
+\end{dichbox}
+
+\subsection{4.1 Thiết lập}
+\textbf{Metrics:} Accuracy (lừa khi lệch), Recall (bắt ca Nặng -- quan trọng nhất), Precision, F1 $=2PR/(P{+}R)$, \textbf{Macro-F1} (trung bình đều lớp -- metric chính), AUC (xếp hạng, không ngưỡng), AUPRC (cho dữ liệu lệch, cơ sở = tỉ lệ lớp dương $\approx$0.05). Phần cứng: 1 GPU RTX 4090; code + checkpoint + log sẽ công khai khi được nhận.
+
+\begin{ctbox}{Cách tính \& ý nghĩa từng metric -- ví dụ số cụ thể (hay bị hội đồng hỏi)}
+\textbf{Ví dụ xuyên suốt:} tập validation có \textbf{1000 đĩa đệm}, trong đó chỉ \textbf{50 ca Nặng} (5\% -- đúng kiểu mất cân bằng của RSNA). Xét riêng lớp ``Nặng vs không-Nặng'' (one-vs-rest), giả sử mô hình cho \emph{ma trận nhầm lẫn}:
+\begin{center}\small
+\begin{tabular}{lcc}
+\toprule
+ & Đoán Nặng & Đoán không-Nặng \\
+\midrule
+Thật Nặng (50)        & TP $=24$ & FN $=26$ \\
+Thật không-Nặng (950) & FP $=62$ & TN $=888$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+(TP = bắt đúng, FN = bỏ sót, FP = báo nhầm, TN = loại đúng.)
+
+\textbf{1) Recall (độ nhạy)} $=\dfrac{TP}{TP+FN}=\dfrac{24}{50}=0.48$. \emph{Đo:} trong tất cả ca Nặng \emph{thật}, bắt được bao nhiêu \%. \emph{Quan trọng nhất} ở bài này vì bỏ sót 1 ca Nặng (FN) là rủi ro lâm sàng. (Bài đạt 48.6\%.)
+
+\textbf{2) Precision (độ chính xác dương)} $=\dfrac{TP}{TP+FP}=\dfrac{24}{86}=0.28$. \emph{Đo:} trong các ca mô hình \emph{báo} Nặng, bao nhiêu \% đúng. Thấp = nhiều báo động giả.
+
+\textbf{3) F1} $=\dfrac{2PR}{P+R}=\dfrac{2(0.28)(0.48)}{0.28+0.48}=0.35$. \emph{Đo:} trung bình điều hòa của P và R -- chỉ cao khi \emph{cả hai} cùng khá, không ăn gian được bằng cách tối ưu một phía. Vì vậy F1 là thước đo công bằng cho lớp hiếm. (Bài đạt 0.356.)
+
+\textbf{4) Accuracy} $=\dfrac{TP+TN}{\text{tổng}}=\dfrac{24+888}{1000}=0.912$. \textbf{BẪY LỚN:} một mô hình ``lười'' luôn đoán \emph{không-Nặng} đạt Accuracy $=950/1000=\mathbf{0.95}$ -- CAO HƠN mô hình tốt ở trên, vì 95\% dữ liệu là không-Nặng! $\Rightarrow$ Accuracy \emph{đánh lừa} trên dữ liệu lệch; đó là lý do bài để nó là phụ.
+
+\textbf{5) Macro-F1 (thước đo CHÍNH)} = trung bình \emph{cộng đều} F1 của 3 lớp: $\frac{1}{3}(F1_{\text{BT/Nhẹ}}+F1_{\text{Vừa}}+F1_{\text{Nặng}})\approx\frac{1}{3}(0.88+0.34+0.35)=0.52$. \emph{Vì sao macro:} mỗi lớp trọng số bằng nhau bất kể đông/hiếm $\Rightarrow$ lớp Nặng (5\%) không bị lớp BT/Nhẹ (85\%) lấn át. (Bài đạt 0.527.)
+
+\textbf{6) AUC (diện tích dưới đường ROC)} $=0.899$. \emph{Đo:} xác suất mô hình \emph{xếp hạng} một ca Nặng thật cao hơn một ca không-Nặng bất kỳ. \textbf{Không cần ngưỡng} -- chỉ xét thứ tự điểm số. 0.5 = đoán mò, 1.0 = hoàn hảo; 0.899 = 89.9\% lần xếp đúng thứ tự.
+
+\textbf{7) AUPRC (diện tích dưới đường Precision--Recall)} $=0.333$. \emph{Đo:} như AUC nhưng dùng cặp (Precision, Recall) $\Rightarrow$ \emph{nhạy với lớp hiếm} vì không bị số TN khổng lồ thổi phồng. \textbf{Mốc ngẫu nhiên = tỉ lệ lớp dương $=0.05$}; bài đạt 0.333 $\Rightarrow$ gấp \textbf{6.7$\times$} đoán mò. AUC có thể vẫn cao trong khi AUPRC phơi bày việc xếp hạng lớp hiếm thực ra kém -- nên bài báo cáo cả hai.
+
+\textbf{Chốt khi hội đồng hỏi ``sao không dùng Accuracy?'':} \emph{``Dữ liệu lệch 95/5 nên Accuracy đánh lừa -- đoán bừa lớp đa số đã được 95\%. Em dùng Macro-F1 làm chính (cân đều 3 lớp) và AUPRC cho lớp hiếm (mốc ngẫu nhiên chỉ 0.05), cộng Recall lớp Nặng vì bỏ sót ca nặng là rủi ro lâm sàng.''}
+\end{ctbox}
+
+\subsection{4.2 Bảng 1 -- Ablation RSNA (in-domain, 3 seed)}
+\begin{center}\small
+\begin{tabular}{lcccc}
+\toprule
+Metric & SpineNetV2 & CBAM-only & BMC-only & Hybrid \\
+\midrule
+Mean Accuracy & \textbf{81.0} & 69.5 & 71.2 & 72.4 \\
+Mean F1 macro & 0.420 & 0.477 & 0.482 & \textbf{0.527} \\
+Mean Recall macro & 0.412 & 0.531 & 0.532 & \textbf{0.592} \\
+Severe F1 & 0.152 & 0.262 & 0.268 & \textbf{0.356} \\
+Severe Recall & 12.3\% & --- & --- & \textbf{48.6\%} \\
+Severe AUC & 0.872 & 0.865 & 0.885 & \textbf{0.899} \\
+Severe AUPRC & 0.284 & 0.278 & 0.275 & \textbf{0.333} \\
+\bottomrule
+\end{tabular}
+\end{center}
+\textbf{Đọc:} Hybrid thắng mọi metric trừ Accuracy; F1 0.527 $>$ 2 nhánh đơn $\Rightarrow$ bổ trợ. Nặng: Recall 12.3$\to$48.6\% ($\sim$4$\times$), AUPRC 0.333 vs cơ sở 0.05 ($\sim$6.7$\times$). Accuracy giảm 8.6 điểm là cái giá có chủ đích (đổi accuracy lớp đa số lấy recall lớp hiếm).
+
+\subsection{4.3 Bảng 2 -- Zero-shot SPIDER (eval 1439 IVD / 208 BN)}
+8 nhãn SPIDER lấy từ \emph{file gradings X-quang chính thức} đi kèm bộ dữ liệu SPIDER (\texttt{radiological\_gradings.csv}, công khai trên Zenodo) -- không phải nhãn tự gán. So OTS (BiomedCLIP chưa học RSNA) vs Hybrid. Trên 3 nhãn gần hệ RSNA (phồng/thoát vị/hẹp đĩa) Hybrid thắng rõ (0.587 vs 0.433). Trung bình cả 8 nhãn OTS (0.394) nhỉnh hơn Hybrid (0.362) vì nhãn xa OTS ngang/hơn. Có kết quả xấu thật (Modic 0.018, AUC 0.45) $\Rightarrow$ số liệu đáng tin. Trượt đốt sống AUC 0.807 nhưng F1 0.03: xếp hạng đúng, ngưỡng cosine cố định chấm lệch (giữ tính zero-shot thuần).
+
+\subsection{4.4 Bảng 3 -- Chuyển giao có giám sát (story regularizer)}
+Chia 80/20 theo BN: 939 train / 234 val (34 BN), 3 seed.
+\begin{center}\small
+\begin{tabular}{lcccc}
+\toprule
+Metric & SpineNetV2 & CBAM & BMC-only & Hybrid \\
+\midrule
+Mean F1 macro & 0.646 & 0.619 & 0.613 & \textbf{0.653}$^\ast$ \\
+Mean AUC & 0.842 & 0.824 & 0.808 & \textbf{0.846}$^\ast$ \\
+Mean AUPRC & \textbf{0.633} & 0.580 & 0.544 & 0.611 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\textbf{Đọc:} Hybrid $\approx$ SpineNetV2 (0.653 vs 0.646, $p=0.57$ -- ngang, không tuyên bố vượt). Điểm chính: \textbf{CBAM một mình TỤT dưới baseline} (0.619 vs 0.646) $\Rightarrow$ học vẹt RSNA. Hybrid kéo lại ($+0.034$, $p=0.011$) $\Rightarrow$ BiomedCLIP = tín hiệu điều hòa. Nhất quán 3 seed: Hybrid \{0.660,0.665,0.633\} $>$ CBAM \{0.621,0.630,0.606\}.
+
+\begin{ctbox}{Mổ xẻ: kiểm định t-test bắt cặp (paired $t$-test) -- vì sao cần \& đọc thế nào}
+\textbf{Vấn đề cần giải:} Bảng 3 nói ``Hybrid 0.653 $>$ CBAM 0.619''. Nhưng mỗi lần train với \emph{seed ngẫu nhiên} khác nhau, kết quả nhảy một chút. Vậy 0.034 này là \textbf{khác biệt thật} hay chỉ \textbf{may rủi} một lần chạy? Nếu chỉ ghi ``A $>$ B'' bằng 1 con số, reviewer sẽ nói \emph{``biết đâu là noise''} $\to$ trừ điểm. $t$-test trả lời đúng câu đó.
+
+\textbf{``Paired'' (bắt cặp) là gì \& vì sao:} em chạy \emph{cùng 3 seed} \{42,123,456\} cho cả hai mô hình, rồi so \emph{từng cặp cùng seed} và chỉ nhìn cột ``Hiệu'':
+\begin{center}\small
+\begin{tabular}{cccc}
+\toprule
+Seed & Hybrid & CBAM & Hiệu (H$-$C) \\
+\midrule
+42  & 0.660 & 0.621 & $+0.039$ \\
+123 & 0.665 & 0.630 & $+0.035$ \\
+456 & 0.633 & 0.606 & $+0.027$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+Bắt cặp \textbf{triệt tiêu biến động do seed} (seed nào ``khó'' thì cả hai model cùng khó) $\Rightarrow$ chỉ tập trung: \emph{Hybrid có hơn CBAM một cách nhất quán không?} Ở đây cả 3 hiệu đều \textbf{dương và sát nhau} $\Rightarrow$ tín hiệu mạnh.
+
+\textbf{Công thức (trực giác):} $t=\dfrac{\bar d}{s_d/\sqrt{n}}$, với $\bar d$ = trung bình các hiệu (ở đây $\approx0.034$), $s_d$ = độ lệch chuẩn của các hiệu (rất nhỏ vì 3 hiệu sát nhau), $n=3$. Hiệu trung bình lớn + dao động nhỏ $\Rightarrow$ $t$ lớn ($t=9.47$).
+
+\textbf{$p$-value nghĩa là gì:} từ $t$ tính ra $p=0.011$. Đọc: \emph{``nếu thực ra hai model không khác gì nhau, thì xác suất tình cờ thấy khoảng cách lớn như vậy chỉ $\approx$1.1\%''} $\Rightarrow$ quá hiếm để là ngẫu nhiên $\Rightarrow$ khác biệt là \textbf{thật}. Quy ước: $p<0.05$ = ``có ý nghĩa thống kê''.
+
+\textbf{Ngược lại -- vì sao parity:} Hybrid vs SpineNetV2 cho $p=0.57$ (57\%!) $\Rightarrow$ khác biệt rất dễ do ngẫu nhiên $\Rightarrow$ \emph{không dám} tuyên bố hơn $\Rightarrow$ bài ghi ``ngang nhau''. Đây là chỗ bài \textbf{trung thực}.
+
+\textbf{Điểm yếu (bài tự khai):} $n=3$ là ít (bậc tự do $=2$) $\Rightarrow$ $t$-test yếu. Nên bài ghi rõ $p$-value mang tính \emph{thăm dò (exploratory), không khẳng định}. Có test vẫn hơn không test, nhưng không vống lên.
+
+\textbf{Nói khi thuyết trình:} \emph{``Em chạy t-test bắt cặp trên 3 seed để chứng minh Hybrid hơn CBAM là nhất quán chứ không phải may rủi -- p bằng 0.011. Còn Hybrid với baseline thì p tới 0.57 nên em chỉ dám nói là ngang nhau, không tuyên bố vượt. Vì chỉ có 3 seed nên em ghi rõ p-value là thăm dò.''}
+\end{ctbox}
+
+\subsection{4.5 Trực quan hóa \& Thảo luận}
+Grad-CAM (bản đồ ``mô hình nhìn đâu''): trên ca Nặng hẹp ống sống, nhiệt tập trung đúng vùng hẹp $\Rightarrow$ minh chứng CBAM chú ý đúng chỗ. Thảo luận: CBAM giúp in-domain, hại cross-dataset; Hybrid điều hòa lại. Đối chứng ensemble tầm thường (trung bình softmax) chỉ 0.45/Severe 0.18, thua Hybrid 0.53/0.36 $\Rightarrow$ MLP-trộn có giá trị, không quy về phép trung bình.
+
+%==========================================================
+\section{Mục 5 -- Summary (Kết luận)}
+\begin{dichbox}{Bản dịch ý chính §5}
+Chúng tôi trình bày kiến trúc lai CBAM-3D + BiomedCLIP đông cứng cho phân độ đĩa đệm thắt lưng RSNA 2024. Nó cải thiện các chỉ số lớp Nặng (3 seed: Recall $\sim$4$\times$, F1 2.3$\times$, AUC 0.899) ở mức đánh đổi accuracy có kiểm soát, và cho phép mở rộng nhãn zero-shot sang 8 nhãn SPIDER chưa thấy qua prompt chữ. Nghiên cứu 3 seed trên SPIDER cho thấy CBAM giúp in-domain nhưng làm tụt F1 cross-dataset dưới SpineNetV2, còn nhánh BiomedCLIP đông cứng phục hồi mất mát đó -- hiệu ứng chúng tôi diễn giải là điều hòa xuyên-dữ-liệu. Hướng tương lai: phân tích biểu diễn (cơ chế), adapter gộp-lát kiểu RadCLIP, và hợp nhất đa-mặt-phẳng với ảnh axial.
+\end{dichbox}
+
+%==========================================================
+\section{Câu chuyện ``regularizer'' -- vì sao nói nhẹ}
+CBAM giúp cùng miền, hại đổi miền; BiomedCLIP đông cứng kéo lại. \emph{Hành vi} giống regularizer. \textbf{Nhưng chỉ là bằng chứng HÀNH VI, không phải CƠ CHẾ} (chưa phân tích biểu diễn/domain-shift). Nên dùng từ nhẹ (``we interpret'', ``regularizing signal'', ``no mechanistic proof''). Đây là điểm yếu học thuật lớn nhất, đã khai báo trung thực.
+
+%==========================================================
+\section{Hạn chế}
+\begin{enumerate}[leftmargin=1.5em,itemsep=2pt]
+\item Chỉ 3 seed $\Rightarrow p$-value \emph{thăm dò}.
+\item Val chuyển giao 34 BN nhỏ (bù: zero-shot 208 BN).
+\item Novelty: ghép component có sẵn; mới = quan sát chuyển giao + zero-shot.
+\item BiomedCLIP đông cứng \& 2D; mô hình 3D VLM thật chưa public.
+\item Recall Nặng 48.6\% $<$ ngưỡng lâm sàng $\sim$80\% $\Rightarrow$ dùng như ``trợ lý đọc thứ hai''.
+\end{enumerate}
+
+%==========================================================
+\section{Câu hỏi -- trả lời phòng thủ}
+\begin{qabox}{Q1. Đóng góp mới ở đâu khi toàn component có sẵn?}
+Không phải kiến trúc, mà là: (1) \emph{quan sát} CBAM giúp in-domain nhưng hại cross-dataset và BiomedCLIP điều hòa lại; (2) \emph{mở rộng zero-shot} sang hệ nhãn mới qua prompt -- chưa có peer-review nào làm cho MRI cột sống thắt lưng.
+\end{qabox}
+\begin{qabox}{Q2. Vì sao 3 seed? $p=0.011$ tin được?}
+Giới hạn tính toán; ghi rõ $p$ là \emph{exploratory}. Hiệu ứng nhất quán cả 3 seed (Hybrid$>$CBAM ở từng seed) $\Rightarrow$ không may rủi.
+\end{qabox}
+\begin{qabox}{Q3. Val 34 bệnh nhân quá nhỏ?}
+Đó là val của thí nghiệm \emph{có giám sát} (80/20). Chuyển giao \emph{chính} là zero-shot, eval 208 BN / 1439 IVD. Đã ghi limitation.
+\end{qabox}
+\begin{qabox}{Q4. Sao biết là ``regularizer''?}
+Không khẳng định cơ chế -- chỉ bằng chứng \emph{hành vi}: thêm nhánh đông cứng làm CBAM phục hồi. Phân tích cơ chế là tương lai.
+\end{qabox}
+\begin{qabox}{Q5. Accuracy giảm sao gọi là tốt?}
+Dữ liệu lệch: baseline cao nhờ đoán lớp đa số. Mục tiêu là bắt ca Nặng (Recall/Macro-F1) -- tăng mạnh. Đánh đổi hợp lý cho bài sàng lọc.
+\end{qabox}
+\begin{qabox}{Q6. Zero-shot 0.362 không ấn tượng?}
+Khiêm tốn; nói thẳng OTS (0.394) nhỉnh hơn. Điểm chính: Hybrid thắng rõ nhãn \emph{gần} (0.587 vs 0.433) $\Rightarrow$ đặc trưng RSNA chuyển giao được. Là kết quả định tính về \emph{khả năng}.
+\end{qabox}
+\begin{qabox}{Q7. Sao chỉ 3/5 điều kiện?}
+3 cái đọc được trên ảnh đứng dọc; 2 cái hẹp ngách bên cần ảnh axial $\Rightarrow$ tương lai. Lựa chọn phù hợp đầu vào.
+\end{qabox}
+\begin{qabox}{Q8. Baseline GitHub/Kaggle có yếu?}
+RSNA là cuộc thi Kaggle nên cite Kaggle cho dataset là chuẩn. Kết quả khác (Liu 0.957) thiết lập khác (seg+cls, 5-fold), không so trực tiếp. nshen7 là baseline 3-lớp công khai gần nhất.
+\end{qabox}
+\begin{qabox}{Q9. AUC 0.807 mà F1 0.03?}
+AUC đo xếp hạng (không ngưỡng); F1 phụ thuộc ngưỡng. Embedding xếp đúng nhưng ngưỡng cosine cố định (giữ zero-shot) chấm lệch.
+\end{qabox}
+\begin{qabox}{Q10. CBAM + BiomedCLIP có thừa nhau?}
+Không. Hybrid (0.527) $>$ 2 nhánh đơn. Đối chứng ensemble tầm thường (0.45/0.18) thua Hybrid học-trộn (0.53/0.36) $\Rightarrow$ MLP-trộn có giá trị.
+\end{qabox}
+
+%==========================================================
+\section{Trả lời câu hỏi của thầy (buổi họp 28/04)}
+\emph{Bản rút gọn. Câu trả lời chi tiết đầy đủ (kèm reference, code line, reading list) ở file \texttt{ANSWERS\_THAY\_20260428.md} tại thư mục gốc repo.}
+
+\begin{qabox}{T1. Tại sao dùng các augmentation này? Có phải của SpineNetV2?}
+Em dùng 4 augmentation: lật ngang (\textbf{kèm swap nhãn trái/phải}), xoay $\pm10^\circ$, đổi sáng/tương phản, nhiễu Gauss. Lý do: mô phỏng biến thiên tư thế bệnh nhân + máy MRI khác nhau giữa bệnh viện $\Rightarrow$ tăng tổng quát hóa. Nói chính xác: đây là set augmentation \emph{phù hợp MRI grading}, theo tinh thần SpineNetV2 (để nạp được weights pretrained), không copy nguyên xi. \textbf{Lưu ý:} lật ngang RSNA phải swap nhãn left/right foraminal, nếu không là làm hỏng dữ liệu.
+\end{qabox}
+
+\begin{qabox}{T2. Test 3 MedCLIP + 1 SOTA: chúng giải quyết kiểu gì, có giao nhau không?}
+3 biến thể CLIP y khoa khác \emph{corpus} nên bổ sung nhau, không trùng: \textbf{MedCLIP} (chest X-ray) -- domain xa, làm lower bound; \textbf{BiomedCLIP} (PMC-15M, 15tr cặp pan-biomedical) -- em chọn vì phủ rộng; \textbf{PubMedCLIP} (PubMed figures). SOTA RSNA = Liu et al.\ (MobileNetV2-UNet, seg+cls). Điểm chung: đều image--text contrastive; khác: corpus + cách dùng (frozen feature vs fine-tune). Bài em dùng BiomedCLIP \emph{frozen} làm nhánh semantic.
+\end{qabox}
+
+\begin{qabox}{T3. Thêm Recall + Precision + từng lớp popular/hiếm tăng giảm thế nào?}
+Đã thêm Recall, Precision, F1, AUC, AUPRC (Bảng 1). Theo lớp: lớp \emph{hiếm} (Nặng) tăng mạnh -- Recall 12.3\%$\to$48.6\%, F1 0.152$\to$0.356; lớp \emph{phổ biến} (Bình thường/Nhẹ) giảm nhẹ accuracy (đó là lý do Mean Accuracy tụt 8.6 điểm). Tổng quan: dùng \textbf{Macro-F1} (trung bình đều lớp) làm thước đo chính để lớp hiếm không bị lấn -- đây là cách đánh giá đúng cho dữ liệu mất cân bằng.
+\end{qabox}
+
+\begin{qabox}{T4. Slice: tại sao không lấy 3 lát?}
+Em không chọn cứng 3 lát mà dùng \textbf{attention pool} (công thức 5): mô hình tự học trọng số cho cả 9 lát -- lát tổn thương rõ thì trọng số cao, lát mờ gần 0. Đây là ``chọn lát mềm'', linh hoạt theo từng ca, tránh việc cố định số lát có thể bỏ sót. (Xem hộp ``Liên hệ góp ý của thầy'' ở mục 5.)
+\end{qabox}
+
+\begin{qabox}{T5. Concat rồi tại sao cần MLP? Sao không dùng projection sẵn của BiomedCLIP?}
+\textbf{Tại sao cần MLP:} hai nhánh được huấn luyện bằng mục tiêu khác nhau (CNN: cross-entropy có giám sát; CLIP: contrastive) $\Rightarrow$ \emph{geometry không gian đặc trưng lệch nhau}. Cần MLP phi tuyến để ``hòa giải'' hai không gian; classifier tuyến tính không đủ sức (SimCLR cho thấy MLP $>$ linear cho biểu diễn nối). \textbf{Sao không dùng projection của BMC:} projection bên trong BiomedCLIP chỉ chiếu \emph{một ảnh đơn} vào không gian CLIP, lại \emph{đông cứng} -- nó không được thiết kế để \emph{trộn hai nhánh khác geometry}. MLP của em là phần \emph{học được}, làm đúng việc fusion đó.
+\end{qabox}
+
+\begin{qabox}{T6. CBAM đã trích đặc trưng ảnh rồi mà -- sao còn cần BiomedCLIP (và ngược lại)?}
+Hai nhánh \textbf{không trùng}, bổ sung theo 4 trục: (1) \emph{Local vs Global} -- CBAM chú ý vùng/voxel cục bộ (disc nào bất thường), BiomedCLIP cho embedding ngữ nghĩa tổng thể; (2) \emph{Trainable vs Frozen} -- CBAM học pattern riêng RSNA, BiomedCLIP mang tiên nghiệm cố định; (3) \emph{3D vs 2D} -- CBAM khai thác xuyên-lát, BiomedCLIP xử lý từng lát 2D; (4) \emph{Domain} -- CBAM fine-tune thẳng trên spine, BiomedCLIP học pan-biomedical. \textbf{Bằng chứng:} ablation Bảng 1 cho Hybrid (0.527) $>$ cả CBAM-only (0.477) lẫn BMC-only (0.482) $\Rightarrow$ không redundant.
+\end{qabox}
+
+\begin{qabox}{T7. BiomedCLIP có train với xương sống không? Text ``đốt sống thắt lưng'' thì sao?}
+\textbf{Có nhưng thưa:} PMC-15M là corpus y sinh tổng hợp (PubMed) nên spine \emph{có hiện diện} nhưng tỉ lệ thấp (chest/brain chiếm đa số); không có bảng thống kê công khai theo bộ phận cơ thể. Bằng chứng spine dùng được: một paper 2025 (MDPI) áp BiomedCLIP cho scoliosis trên X-quang spine thành công. Em kiểm tra \emph{thực nghiệm} qua zero-shot SPIDER (F1 0.362) -- có tín hiệu nhưng không hoàn hảo, nên mới cần fine-tune. \textbf{Text:} dùng prompt tiếng Anh (``lumbar disc herniation''...) là chuẩn cho VLM y khoa; PubMedBERT (encoder text của BiomedCLIP) xử lý tốt thuật ngữ này.
+\end{qabox}
+
+\begin{qabox}{T8. Check lại frozen?}
+Đã verify trong code: cả CBAM backbone và BiomedCLIP đều \texttt{requires\_grad=False} + để \texttt{eval()} mode khi train. Chỉ $\approx$1.18 triệu tham số học được (MLP trộn + attention pool + logit scale), $\approx$0.45\% của $\approx$260 triệu tổng.
+\end{qabox}
+
+\begin{qabox}{T9. Concat kiểu gì hiệu quả? (thầy: BiomedCLIP nối theo trục đặc trưng, nối tiếp khó học)}
+Hiện em dùng \textbf{late fusion}: nối phẳng $[f_{\text{cbam}} \| f_{\text{bmc}}]\in\mathbb{R}^{1024}$ rồi MLP tự trộn (MLP mix tự do mọi cặp chiều). Ý thầy đúng: kiểu nối này không có ràng buộc cấu trúc ``chiều $k$ của CNN ứng với chiều $k$ của CLIP''. Các cách ``có cấu trúc'' hơn để thử (future work): \emph{cross-attention fusion} (CNN làm query, CLIP làm key/value -- định tuyến có cấu trúc), \emph{FiLM} (CLIP điều khiển scale/shift của CNN), \emph{GMU} (cổng trộn theo từng chiều). Code đã hỗ trợ gated fusion để thử.
+\end{qabox}
+
+\begin{qabox}{T10. BiomedCLIP cũng cho embedding text rồi -- sao không lấy 2 cosine luôn, cần CBAM + concat làm gì? Pipeline có đúng đắn không?}
+Nếu chỉ dùng BiomedCLIP + cosine (= cấu hình \emph{BMC-only}) thì thiếu: (a) đặc trưng 3D xuyên-lát, (b) khả năng học pattern riêng RSNA (vì BMC đông cứng). CBAM bù cả hai. \textbf{Sự đúng đắn = ablation:} Bảng 1 cho thấy thêm CBAM nâng F1 0.482$\to$0.527 và Severe F1 0.268$\to$0.356; còn đối chứng ``ensemble tầm thường'' (trung bình 2 softmax) chỉ đạt 0.45, thua hybrid học-trộn 0.53 $\Rightarrow$ pipeline CBAM+concat-MLP \emph{có giá trị thật}, không quy về phép cộng đơn giản. Phân tích lý thuyết cho ``tại sao tăng'': 4 trục bổ sung ở T6.
+\end{qabox}
+%==========================================================
+\section{Bảng thuật ngữ nhanh}
+\begin{center}\small
+\begin{tabular}{p{3.2cm}p{11cm}}
+\toprule
+Thuật ngữ & Nghĩa ngắn \\
+\midrule
+IVD & Intervertebral disc -- đĩa đệm gian đốt sống \\
+Encoder ($\Phi$) & Bộ mã hóa: ảnh $\to$ vector đặc trưng \\
+CBAM & Mô-đun chú ý kênh + không gian \\
+$\otimes$ & Nhân từng phần tử (element-wise) có broadcast \\
+softmax & Điểm thô $\to$ xác suất (dương, tổng 1) \\
+BiomedCLIP & Mô hình nền ảnh--chữ y sinh (15M cặp), dùng đông cứng \\
+Frozen & Không cập nhật trọng số khi huấn luyện \\
+Zero-shot & Phân loại nhãn mới không train thêm, bằng mô tả chữ \\
+OTS & Off-the-shelf = BiomedCLIP ``hộp đen'' chưa học RSNA \\
+Cosine similarity & Độ giống \emph{hướng} 2 vector chuẩn hóa, $[-1,1]$ \\
+Focal loss & Mất mát giảm trọng số mẫu dễ, tập trung mẫu khó \\
+$\gamma$ (gamma) & Độ tập trung focal ($\gamma=2$) \\
+Macro-F1 & Trung bình đều F1 các lớp \\
+AUC / AUPRC & Đo xếp hạng / xếp hạng cho dữ liệu lệch \\
+Regularizer & Cơ chế chống học vẹt (overfit), giúp tổng quát hóa \\
+ERM & Empirical Risk Minimization -- tối thiểu rủi ro thực nghiệm \\
+SpineNetV2 & Backbone 3D ResNet-34 nền (baseline) \\
+RSNA 2024 / SPIDER & Bộ dữ liệu huấn luyện / bộ kiểm tra chuyển giao \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{1em}
+\begin{center}\itshape\small
+Hết. Hộp xám = bản dịch từng mục paper; hộp xanh lá = mổ xẻ công thức; mục 13 = Q\&A phòng thủ.
+\end{center}
+
+\end{document}
