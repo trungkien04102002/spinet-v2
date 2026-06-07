@@ -123,15 +123,15 @@ Given a sagittal T2 lumbar scan, we extract one volumetric region of interest pe
 
 Figure~\ref{fig:arch} shows the architecture. Two branches encode the same per-IVD volume in complementary ways.
 
-\textbf{CBAM-3D ResNet-34 branch (trainable).}
-A 3D ResNet-34 with $3 \times 3 \times 3$ convolutions and BatchNorm3D extracts volumetric features. After each of the four ResNet stages, a CBAM block~\cite{woo2018cbam} refines an intermediate feature map $F \in \mathbb{R}^{C \times D \times H \times W}$ by applying a channel attention $M_c$ (a shared two-layer MLP, bottleneck ratio $r=16$, over average- and max-pooled spatial statistics) followed by a spatial attention $M_s$ (a $7\!\times\!7\!\times\!7$ 3D convolution over channel-pooled maps), both extended here to the volumetric case:
+\textbf{CBAM-3D ResNet-34 branch.}
+A 3D ResNet-34 with $3 \times 3 \times 3$ convolutions and BatchNorm3D extracts volumetric features; this branch loads CBAM-3D weights pretrained on RSNA (the CBAM-only configuration of Table~\ref{tab:main}) and is kept frozen while the fusion head is trained. After each of the four ResNet stages, a CBAM block~\cite{woo2018cbam} refines an intermediate feature map $F \in \mathbb{R}^{C \times D \times H \times W}$ by applying a channel attention $M_c$ (a shared two-layer MLP, bottleneck ratio $r=16$, over average- and max-pooled spatial statistics) followed by a spatial attention $M_s$ (a $7\!\times\!7\!\times\!7$ 3D convolution over channel-pooled maps), both extended here to the volumetric case:
 \begin{align}
 F' &= M_c(F) \otimes F, \label{eq:cbam_c}\\
 F'' &= M_s(F') \otimes F', \label{eq:cbam_s}
 \end{align}
 where $F'$ is the channel-refined feature, $\otimes$ is the element-wise product broadcast across the missing dimensions, and $M_c, M_s$ are passed through a sigmoid. After global average pooling the branch outputs $f_{\text{cbam}} \in \mathbb{R}^{512}$.
 
-\textbf{BiomedCLIP branch (frozen, 2.5D).}
+\textbf{BiomedCLIP branch.}
 We split the volume into its 9 sagittal slices $\{s_i\}_{i=1}^{9}$, replicate each slice to 3 channels, resize to $224 \times 224$, and encode each one with the frozen BiomedCLIP ViT-B/16 encoder $g_\theta : \mathbb{R}^{3 \times 224 \times 224} \to \mathbb{R}^{512}$. The 9 slice embeddings $z_i = g_\theta(s_i)$ are aggregated by a learned attention pool,
 \begin{equation}
 \alpha_i = \frac{\exp(w_a^\top z_i)}{\sum_{j=1}^{9} \exp(w_a^\top z_j)},
@@ -141,7 +141,7 @@ f_{\text{bmc}} = \sum_{i=1}^{9} \alpha_i \, z_i,
 \end{equation}
 where $w_a \in \mathbb{R}^{512}$ is the only trainable parameter of this branch. Replacing mean pooling with this attention pool lets the branch up-weight the slices in which a lesion is most clearly visible.
 
-\textbf{Fusion head (trainable).}
+\textbf{Fusion head.}
 The two embeddings are concatenated and projected through a two-layer MLP,
 \begin{equation}
 f_{\text{img}} = W_2\,\phi\!\big(W_1\,[f_{\text{cbam}};f_{\text{bmc}}] + b_1\big) + b_2,
@@ -155,7 +155,7 @@ For RSNA we attach three task-specific 3-class linear heads (canal, left foramin
 \hat{y} = \arg\max_{k}\; s \cdot \hat{f}_{\text{img}}^{\top}\, t_k,
 \label{eq:cosine}
 \end{equation}
-where $s$ is the BiomedCLIP-pretrained logit scale (clamped at 100). Changing the prompt vocabulary $\{t_k\}$ changes the label space with no retraining. The trainable parameter budget is about 1.18\,M (CBAM-3D fine-tuning, the slice attention pool, and the fusion MLP), against roughly 218\,M total parameters once the frozen backbones are counted.
+where $s$ is the BiomedCLIP-pretrained logit scale (clamped at 100). Changing the prompt vocabulary $\{t_k\}$ changes the label space with no retraining. The trainable parameter budget is about 1.18\,M (the slice attention pool and the fusion MLP); both the CBAM-3D and BiomedCLIP backbones stay frozen, so only about 1.18\,M of the roughly 260\,M total parameters are updated.
 
 \begin{figure}[t]
 \centering
