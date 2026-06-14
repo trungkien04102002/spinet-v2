@@ -123,6 +123,16 @@ Novelty nằm ở **thiết kế kiến trúc Hybrid hai nhánh giải quyết �
 
 `Khối ảnh per-IVD (9×112×224)` → **hai nhánh song song** → **hợp nhất** → **đối sánh cosine với prompt** → nhãn.
 
+**Vào gì → ra gì ở mỗi khối:**
+1. **Vào:** khối MRI 1 đĩa đệm `9 lát × 112 × 224`.
+2. **CBAM-3D (frozen):** trích đặc trưng cục bộ 3D → **`f_cbam` 512-d**.
+3. **BiomedCLIP image encoder (frozen):** mã hoá các lát + slice-pool → **`f_bmc` 512-d**.
+4. **Fusion MLP (học):** `concat=1024 → 768 → 512`, L2 → **`f_img` 512-d** (embedding ảnh).
+5. **Text encoder BiomedCLIP (frozen, chạy 1 lần/cache):** mỗi prompt nhãn (vd *"severe spinal canal stenosis"*) → **`t_k` 512-d** = prototype của lớp đó.
+6. **Cosine head:** `logit_k = scale·(f_img·t_kᵀ)` → softmax → **xác suất + nhãn** (Normal/Mild · Moderate · Severe).
+
+> **Nói 1 câu:** *"Ảnh MRI đĩa đệm vào hai nhánh song song — CBAM ra một vector 512-d mô tả tổn thương cục bộ, BiomedCLIP ra một vector 512-d mang tri thức y khoa nền; Fusion MLP ghép lại thành embedding ảnh 512-d, rồi so cosine với các vector prompt văn bản (mỗi nhãn một câu, mã hoá qua text encoder), nhãn nào giống nhất là kết quả."*
+
 | Thành phần | Làm gì | Giúp điều gì |
 |---|---|---|
 | **Nhánh 1: CBAM-3D ResNet-34** | Trích đặc trưng 3D cục bộ; CBAM dồn trọng số vào đúng kênh + vùng không gian tổn thương → vector `f_cbam ∈ R^512` | **Khu trú tổn thương nhỏ** của lớp Severe (vùng bệnh rất nhỏ trong khối ảnh) |
@@ -220,6 +230,35 @@ Novelty nằm ở **thiết kế kiến trúc Hybrid hai nhánh giải quyết �
 - **Ning Shen:** **pipeline đa tầng, chuyên biệt từng bệnh** — Faster R-CNN (ResNet-50-FPN) định vị từng tầng đĩa đệm + Swin Transformer phân loại độ nặng, **mỗi bệnh một mô hình riêng (5 bộ)**, lại cần **3 chuỗi MRI** (Sagittal T1 + T2/STIR + Axial T2). → mạnh trên RSNA nhưng **phức tạp để huấn luyện/triển khai/bảo trì**, **bám chặt giao thức dữ liệu RSNA** (khó tổng quát sang bộ khác như SPIDER), và **head đóng 5 bệnh → không mở nhãn mới**; thêm bệnh = thêm detector + classifier + train lại. Chưa qua bình duyệt.
 
 > **Trả lời:** *"Cái của em tốt hơn không phải vì một module mạnh, mà vì kết hợp được hai điểm mạnh bổ trợ — chú ý 3D cục bộ và tri thức nền tổng quát — cộng với đầu cosine–prompt cho thêm khả năng zero-shot mà không model đơn lẻ nào có. Đổi lại em chấp nhận một số điểm yếu như accuracy tổng giảm và zero-shot còn khiêm tốn, nhưng đó là đánh đổi hợp lý cho mục tiêu lâm sàng là không bỏ sót ca nặng và mở rộng được nhãn."*
+
+## 15. "Khối Fusion MLP để làm gì — sao không cộng trung bình (logit-average) hai nhánh là xong?" ⭐⭐
+
+**Trả lời ngắn:** Khối học được **duy nhất** trong Hybrid chính là **Fusion MLP** (concat $1024 \to 768 \to 512$, chuẩn hóa L2) + đầu cosine + slice-pool + logit-scale ($\sim$0.5M); hai backbone CBAM (21.3M) và BiomedCLIP (86.2M) đều **frozen**. (Đây cũng là "khối MLP nhỏ" nói ở câu hỏi #2 về tốc độ hội tụ.) Nó **cần** vì 2 lý do:
+1. **Căn (align) hai không gian đặc trưng khác nhau:** đặc trưng CBAM (512-d, không gian ảnh 3D) và BiomedCLIP (512-d, không gian ảnh--văn bản) nằm ở **hai không gian khác nhau**; MLP học cách chiếu chúng vào **một embedding 512-d chung**, khớp với embedding của prompt văn bản để tính cosine.
+2. **Fusion học được > cộng trung bình:** thử trực tiếp — lấy trung bình softmax của SpineNetV2 + BMC-only chỉ đạt Mean F1 **0.45** / Severe F1 **0.18**, kém xa Hybrid học-fusion **0.53 / 0.36**. → trộn KHÔNG quy về phép cộng tầm thường; MLP học được phần tương tác giữa hai nhánh.
+
+> **Câu chốt:** *"Fusion MLP là phần duy nhất em huấn luyện. Nó không chỉ nối hai vector lại mà học cách căn hai không gian đặc trưng khác nhau vào chung một embedding để đối sánh với prompt văn bản. Bằng chứng nó cần thiết: cộng trung bình logit hai nhánh chỉ đạt 0.45/0.18, còn fusion học được đạt 0.53/0.36."*
+
+## 16. "Contrastive learning (học tương phản) là gì?" ⭐
+
+**Trả lời ngắn:** Là cách huấn luyện để **kéo cặp khớp lại gần, đẩy cặp không khớp ra xa** trong một không gian embedding. BiomedCLIP học trên **15M cặp ảnh y khoa--chú thích**: với mỗi ảnh, embedding của ảnh được kéo gần embedding của đúng câu mô tả của nó, và đẩy xa các câu của ảnh khác (và ngược lại). Kết quả là **ảnh và văn bản cùng nằm trong MỘT không gian**, nên độ giống giữa chúng đo được bằng **cosine**.
+
+**Vì sao quan trọng với đề tài:** chính nhờ ảnh--văn bản chung không gian mà em **phân loại bằng cách so ảnh với prompt** (cosine), và **thêm nhãn mới chỉ bằng đổi prompt** (zero-shot) — không cần đầu phân loại cố định.
+
+> **Câu chốt:** *"Contrastive learning dạy mô hình đặt ảnh và mô tả văn bản của nó cạnh nhau trong cùng một không gian; nhờ vậy em chỉ cần so cosine giữa embedding ảnh và embedding của câu mô tả nhãn để dự đoán, và thêm bệnh mới chỉ là thêm một câu mô tả."*
+
+## 17. "Từ cosine ra nhãn thế nào — softmax/argmax là gì, và khác kiến trúc gốc (SpineNetV2) ở đâu?" ⭐⭐
+
+**Chuỗi ra nhãn của Hybrid (em):**
+1. Với mỗi nhãn `k` (mỗi prompt): `logit_k = scale · cosine(f_img, t_k)` → ví dụ 3 nhãn ra **điểm số** `[0.31, 0.28, 0.45]`.
+2. **Softmax** biến dãy điểm thô thành **xác suất** (mỗi giá trị $\in[0,1]$, tổng $=1$): $\mathrm{softmax}(z)_k = e^{z_k}/\sum_j e^{z_j}$ → `[0.30, 0.28, 0.42]`. Điểm cao → xác suất cao.
+3. **Argmax** = chọn **vị trí có xác suất lớn nhất** → **nhãn dự đoán** (ở đây = Severe, độ tin cậy 0.42).
+
+**Khác kiến trúc gốc SpineNetV2 ở chỗ nào:** phần **softmax → argmax giống hệt nhau**; chỉ khác **cách tính `logit_k`**:
+- **SpineNetV2 (gốc):** `logit_k = w_k \cdot \text{feature}` — mỗi lớp có **một hàng trọng số `w_k` học cứng** trong ma trận Linear head. Muốn thêm lớp = thêm hàng `w_k` mới + **train lại**.
+- **Hybrid (em):** `logit_k = scale \cdot \cos(f_{img}, t_k)` — "hàng trọng số của lớp `k`" được **thay bằng embedding văn bản `t_k`** của nhãn đó. Muốn thêm lớp = thêm **một prompt** → có ngay `t_k` mới, **không train lại** (zero-shot).
+
+> **Câu chốt:** *"Về bản chất, head softmax thông thường tính điểm mỗi lớp bằng một vector trọng số học cứng. Em chỉ thay vector trọng số đó bằng embedding văn bản của tên lớp — phần softmax/argmax phía sau y hệt. Nhờ vậy 'trọng số lớp' giờ đến từ câu mô tả, thêm bệnh mới chỉ là thêm một câu, không phải huấn luyện lại."*
 
 ---
 

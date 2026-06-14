@@ -511,6 +511,49 @@ ASSD = ( Σ d(p, S_gt) + Σ d(q, S_pred) ) / (|S_pred| + |S_gt|)
 
 ---
 
+## PHẦN C — Khái niệm mô hình (đọc kèm Q&A #9, #15--#17)
+
+> Mục này giải thích các thuật ngữ trong kiến trúc Hybrid để khi đọc lại Q&A defense dễ hiểu hơn.
+
+### C1. Embedding vector (vector nhúng / vector đặc trưng)
+- **Là gì:** kết quả encoder nén một đầu vào (ảnh hoặc câu chữ) thành **một dãy số có độ dài cố định** — ở đây **512 số**, đã chuẩn hóa L2 (độ dài vector = 1).
+- **Ý nghĩa:** mỗi đầu vào trở thành **một điểm trong không gian 512 chiều**; điểm gần nhau = nội dung giống nhau.
+- **Trong đề tài:** ảnh → `f_img` (512-d); mỗi prompt nhãn → `t_k` (512-d). Cùng số chiều nên so sánh được.
+
+### C2. Cosine similarity (độ giống cosine)
+- **Là gì:** đo **góc giữa 2 vector**: $\cos(a,b) = \frac{a\cdot b}{\|a\|\,\|b\|}$. Với vector đã chuẩn hóa L2 thì chỉ còn tích vô hướng $a\cdot b$.
+- **Đọc số:** gần **1** = cùng hướng (rất giống); **0** = vuông góc (không liên quan); âm = ngược hướng.
+- **Trong đề tài:** đo `f_img` giống prompt nào nhất → nhãn đó.
+
+### C3. Logit
+- **Là gì:** **điểm số thô** của mỗi lớp trước khi đổi sang xác suất (có thể âm/dương bất kỳ).
+- **Trong đề tài:** `logit_k = scale · cosine(f_img, t_k)`. Baseline SpineNetV2: `logit_k = w_k · feature` (w_k = trọng số học cứng).
+
+### C4. Softmax
+- **Là gì:** biến dãy logit thô thành **xác suất**: $\mathrm{softmax}(z)_k = e^{z_k}/\sum_j e^{z_j}$, mỗi giá trị $\in[0,1]$, **tổng = 1**.
+- **Ví dụ:** logit `[0.31, 0.28, 0.45]` → xác suất `[0.30, 0.28, 0.42]`. Logit cao → xác suất cao.
+
+### C5. Argmax
+- **Là gì:** chọn **vị trí (nhãn) có giá trị lớn nhất**.
+- **Ví dụ:** `[0.30, 0.28, 0.42]` → argmax = vị trí 3 = **Severe** (độ tin cậy 0.42). Đây là **nhãn dự đoán cuối cùng**.
+
+### C6. Contrastive learning (học tương phản)
+- **Là gì:** cách huấn luyện **kéo cặp khớp lại gần, đẩy cặp không khớp ra xa** trong không gian embedding.
+- **BiomedCLIP:** học trên 15M cặp ảnh y khoa--chú thích; ảnh được kéo gần đúng câu mô tả của nó, đẩy xa câu của ảnh khác → **ảnh và văn bản chung một không gian** → so được bằng cosine → cho phép zero-shot.
+
+### C7. val_loss (mất mát trên tập kiểm định) + early stopping
+- **loss là gì:** **hàm mất mát** = số đo mô hình dự đoán **sai bao nhiêu** (càng nhỏ = càng khớp nhãn đúng).
+- **train_loss vs val_loss:** train_loss đo trên **dữ liệu mô hình đang học**; val_loss đo trên **tập kiểm định (validation) — dữ liệu mô hình KHÔNG học trực tiếp**.
+- **Tại sao dùng val_loss để check (không dùng train_loss):** train_loss gần như **luôn giảm** (mô hình "học thuộc" tập train), không cho biết tổng quát hóa. val_loss đo trên dữ liệu chưa thấy nên **phản ánh khả năng tổng quát thật** → dùng nó để biết khi nào nên dừng.
+- **Đọc đường val_loss:** giảm dần → **chạm đáy** → đi ngang hoặc **tăng lại**. val_loss **THẤP hơn = mô hình tốt hơn**. Khi val_loss **ngừng giảm (đi ngang/tăng) vài epoch liên tiếp** → mô hình **hết cải thiện** (nếu tăng = bắt đầu overfit, học thuộc nhiễu).
+- **Early stopping:** lấy **checkpoint tại đáy val_loss** (epoch tốt nhất), KHÔNG lấy epoch cuối → tránh overfit.
+- **Trong đề tài:** Hybrid val_loss đáy **ep9** (thấp nhất, 0.139) → **hội tụ nhanh + tốt nhất**; Baseline tới ep25 vẫn còn giảm chậm (hội tụ chậm). → đây là dẫn chứng "Hybrid hội tụ nhanh hơn" (Q&A #2).
+
+### C8. Flow tổng thể (vào gì → ra gì)
+`Khối MRI 9×112×224` → **CBAM-3D** ra `f_cbam` (512-d, đặc trưng tổn thương cục bộ) **+** **BiomedCLIP image encoder** ra `f_bmc` (512-d, tri thức y khoa nền) → **concat = 1024** → **Fusion MLP** (1024→768→512, L2) ra `f_img` → **cosine** với `t_k` (text encoder mã hóa mỗi prompt nhãn) → **logit mỗi nhãn → softmax → xác suất → argmax → nhãn + độ tin cậy**.
+
+---
+
 ## Tham khảo
 
 - **Sklearn metric docs**: https://scikit-learn.org/stable/modules/model_evaluation.html
