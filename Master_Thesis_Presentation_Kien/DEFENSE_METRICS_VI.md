@@ -552,6 +552,37 @@ ASSD = ( Σ d(p, S_gt) + Σ d(q, S_pred) ) / (|S_pred| + |S_gt|)
 ### C8. Flow tổng thể (vào gì → ra gì)
 `Khối MRI 9×112×224` → **CBAM-3D** ra `f_cbam` (512-d, đặc trưng tổn thương cục bộ) **+** **BiomedCLIP image encoder** ra `f_bmc` (512-d, tri thức y khoa nền) → **concat = 1024** → **Fusion MLP** (1024→768→512, L2) ra `f_img` → **cosine** với `t_k` (text encoder mã hóa mỗi prompt nhãn) → **logit mỗi nhãn → softmax → xác suất → argmax → nhãn + độ tin cậy**.
 
+### C9. Chuẩn hóa L2 (chữ "L2" trong "Fusion MLP 1024→768→512, L2")
+- **Là gì:** chia vector cho độ dài Euclid của nó: $\hat v = v/\|v\|_2$ với $\|v\|_2=\sqrt{x_1^2+\dots+x_{512}^2}$ → vector mới có **độ dài = 1**, **giữ nguyên hướng**. Mọi `f_img` nằm trên **mặt cầu đơn vị** → chỉ còn quan trọng **hướng (góc)**, không quan trọng độ lớn.
+- **Áp ở đâu (chính xác theo code):** lên **`f_img` — đầu ra cuối của Fusion MLP** (`F.normalize(image_projection(concat))`), KHÔNG normalize riêng từng nhánh trước khi ghép. Text encoder cũng xuất `t_k` đã L2.
+- **Vì sao chỉ L2 ở fusion output, KHÔNG ở 2 nhánh (đừng nhầm "chiều" với "độ dài"):**
+  - **Cùng 512 chiều** = điều kiện để **CONCAT** (512+512=1024) — đây là chuyện *kích thước*, KHÔNG liên quan L2.
+  - **L2** = chuyện *độ dài = 1*, chỉ cần cho **vector đem so cosine**. Mà chỉ `f_img` mới so cosine với `t_k` (cả hai phía cosine phải dài 1) → nên chỉ chuẩn hóa `f_img`.
+  - `f_cbam`, `f_bmc` chỉ là đặc trưng **trung gian**, không trực tiếp so với văn bản → không cần L2; để MLP (có trọng số/BatchNorm học được) tự co giãn từ giá trị thô, rồi L2 cuối ép output về độ dài 1.
+  - → Vị trí L2 quyết định bởi **"vector nào đi vào cosine"**, KHÔNG phải bởi 2 nhánh cùng chiều hay không.
+- **Vì sao cần (lý do CHÍNH, chắc chắn):** để **cosine = tích vô hướng**. Khi $\|f_{img}\|=\|t_k\|=1$ thì $\cos(f_{img},t_k)=f_{img}\cdot t_k$ → tính nhanh, và **khớp đúng cách BiomedCLIP/CLIP được huấn luyện** (CLIP học trên embedding đã chuẩn hóa + cosine). Không chuẩn hóa thì độ lớn vector sẽ bóp méo điểm cosine.
+- **Lý do phụ (đúng mức):** đưa `f_img` về thang cố định (độ dài 1) nên `logit = scale·cosine` $\in[-scale, scale]$; cùng **temperature học được (logit_scale)** giúp **softmax/huấn luyện ổn định** (không bùng nổ logit). Đây là setup chuẩn của CLIP.
+- **⚠️ KHÔNG nên nói (dễ bị phản biện bắt):** (a) "L2 cân bằng biên độ giữa 2 nhánh" — SAI vì L2 áp **sau** khi đã ghép, không normalize riêng `f_cbam`/`f_bmc`; (b) "L2 chống overfitting lớp Severe" — overclaim, mất cân bằng do **Focal loss + oversampling** xử lý, không phải L2.
+
+> **Câu chốt:** *"L2 ép embedding ảnh về độ dài 1, nên cosine với prompt rút gọn thành tích vô hướng — đúng cách CLIP/BiomedCLIP hoạt động, tính nhanh và ổn định. Em chuẩn hóa ở đầu ra fusion để khớp không gian với vector văn bản."*
+
+### C10. Hàm mất mát huấn luyện của đề tài: Focal Loss + Uncertainty Loss
+**Dùng loss gì:** kết hợp 2 thành phần (sơ đồ ghi "Loss: Focal + Uncertainty"):
+
+**① Focal Loss~(Lin 2017) — cho từng tác vụ phân loại**
+- Công thức: $FL(p_t) = -\alpha_t (1-p_t)^{\gamma}\log(p_t)$, với $\gamma=2$, $\alpha_t$ = trọng số lớp, `ignore_index=-1` (bỏ qua nhãn thiếu).
+- **Cơ chế:** thừa số $(1-p_t)^{\gamma}$ làm mẫu **dễ** ($p_t\to1$) → hệ số $\to 0$ (gần như bỏ qua); mẫu **khó/hiếm** ($p_t$ nhỏ) → hệ số $\to 1$ (giữ nguyên trọng lượng).
+- **Vì sao dùng:** lớp Severe ~4% → cross-entropy thường bị lớp đa số (Normal/Mild ~85%) **lấn át**. Focal **ép mô hình tập trung vào ca khó/hiếm** + $\alpha_t$ tăng trọng số lớp hiếm → **nâng Recall lớp Severe** (mục tiêu lâm sàng).
+
+**② Uncertainty Loss~(Kendall 2018) — gộp 3 tác vụ (canal / foraminal trái / phải)**
+- Công thức: $L = \sum_i \big[\frac{1}{2\sigma_i^2} L_i + \log\sigma_i\big]$, $\sigma_i$ = **độ bất định học được** cho mỗi tác vụ.
+- **Cơ chế:** tác vụ **khó** ($\sigma$ lớn) → tự **giảm trọng số**; tác vụ **dễ** ($\sigma$ nhỏ) → **tăng trọng số**; số hạng $\log\sigma_i$ chặn $\sigma\to\infty$.
+- **Vì sao dùng:** 3 bệnh độ khó khác nhau → **tự cân bằng trọng số 3 tác vụ**, không phải dò tay (manual weight).
+
+**Tóm lại:** mỗi tác vụ tính Focal (xử lý mất cân bằng *trong* lớp) → Uncertainty gộp 3 tác vụ (cân bằng *giữa* các bệnh). **`val_loss` em theo dõi (C7) chính là tổng hàm mất mát này đo trên tập kiểm định.**
+
+> **Câu chốt:** *"Em dùng Focal Loss để mô hình tập trung vào ca Severe hiếm/khó thay vì bị lớp đa số lấn át, cộng Uncertainty Loss của Kendall để tự cân bằng trọng số giữa ba bệnh thay vì chỉnh tay. val_loss theo dõi chính là tổng loss này trên tập validation."*
+
 ---
 
 ## Tham khảo

@@ -260,6 +260,19 @@ Novelty nằm ở **thiết kế kiến trúc Hybrid hai nhánh giải quyết �
 
 > **Câu chốt:** *"Về bản chất, head softmax thông thường tính điểm mỗi lớp bằng một vector trọng số học cứng. Em chỉ thay vector trọng số đó bằng embedding văn bản của tên lớp — phần softmax/argmax phía sau y hệt. Nhờ vậy 'trọng số lớp' giờ đến từ câu mô tả, thêm bệnh mới chỉ là thêm một câu, không phải huấn luyện lại."*
 
+## 18. "Sao chỉ train 25--30 epoch — ít vậy có đủ hội tụ không?" ⭐
+
+**Trả lời ngắn — hợp lý, vì 4 lý do:**
+1. **Không train from scratch:** tất cả khởi tạo từ **pretrained** (3D ResNet-34 backbone pretrained + BiomedCLIP pretrained) → đây là **fine-tuning**, cần ít epoch hơn nhiều so với train từ đầu (vốn cần hàng trăm).
+2. **Hybrid chỉ train ~0.5M** (fusion head, hai backbone frozen) → hội tụ rất nhanh, **val_loss đáy ep9**.
+3. **Báo cáo best-checkpoint (early stopping)**, không lấy epoch cuối. Best epoch đều **nằm trong ngân sách**: Hybrid ~ep9--10, CBAM ep14--23, Baseline ep16--18 → 25--30 epoch phủ dư.
+4. val_loss đã **chạm đáy/đi ngang** trong ngân sách (Hybrid ep9, CBAM ep20) → train thêm không cải thiện, dễ overfit.
+
+**Follow-up dễ bị hỏi: "Baseline val_loss còn giảm tới ep25 — có train thiếu baseline (so sánh thiếu công bằng) không?"**
+→ Dùng **CÙNG ngân sách cho cả 4 cấu hình** để công bằng; best severe-F1 của baseline đã đạt ở **ep16--18** (trong ngân sách). Kể cả train lâu hơn, baseline chỉ cải thiện **lớp đa số** chứ không cứu được lớp **Severe hiếm** — vì đó là bài toán **mất cân bằng**, giải bằng Focal/attention/BiomedCLIP, **không phải bằng thêm epoch** → kết luận không đổi.
+
+> **Câu chốt:** *"Em fine-tune từ trọng số pretrained chứ không train từ đầu, lại báo cáo theo best-checkpoint trên validation chứ không phải epoch cuối; val_loss đã chạm đáy trong ngân sách (Hybrid ep9) nên 25--30 epoch là đủ, train thêm chỉ overfit. Em dùng cùng ngân sách cho cả bốn cấu hình để so sánh công bằng."*
+
 ---
 
 ## Bảng số liệu nhanh (để khỏi lật nhiều)
