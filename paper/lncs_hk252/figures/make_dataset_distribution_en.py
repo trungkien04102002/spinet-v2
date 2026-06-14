@@ -13,12 +13,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 plt.rcParams.update({
-    "font.size": 15,
-    "axes.titlesize": 16,
-    "axes.labelsize": 16,
-    "xtick.labelsize": 14,
-    "ytick.labelsize": 14,
-    "legend.fontsize": 14,
+    "font.size": 19,
+    "axes.titlesize": 21,
+    "axes.labelsize": 20,
+    "xtick.labelsize": 18,
+    "ytick.labelsize": 18,
+    "legend.fontsize": 17,
     "font.family": "DejaVu Sans",
 })
 
@@ -53,7 +53,8 @@ ax.set_xlabel("Conditions")
 ax.set_xticks(x)
 ax.set_xticklabels(conditions)
 ax.set_ylim(0, 100)
-ax.legend(title="Severity", loc="upper right", frameon=True)
+ax.legend(title="Severity", loc="lower center", bbox_to_anchor=(0.5, 1.01),
+          ncol=3, frameon=False, columnspacing=1.3, handletextpad=0.4)
 ax.spines[["top", "right"]].set_visible(False)
 ax.grid(axis="y", linestyle="--", alpha=0.35)
 fig.tight_layout()

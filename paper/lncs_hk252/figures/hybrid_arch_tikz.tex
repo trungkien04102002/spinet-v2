@@ -43,7 +43,7 @@
 \foreach \i in {0,1,2,3}{
   \node[cnn] (c\i) at (2.7+\i*0.62,1.95) {};
 }
-\node[sub] (cbamlab) at (3.63,2.95) {3D ResNet-34 $+$ CBAM};
+\node[sub] (cbamlab) at (3.63,3.05) {\textbf{Volumetric attention branch}\\(CBAM-3D ResNet-34)};
 
 % ---- bottom branch: BiomedCLIP ----
 \begin{scope}
@@ -52,19 +52,19 @@
   \draw[draw=black!55,fill=white,rounded corners=1pt]   (2.52,-2.19) rectangle (3.12,-0.99);
 \end{scope}
 \node[sub] at (2.8,-2.7) {9 slices};
-\node[vit] (vit) at (4.55,-1.6) {BiomedCLIP\\ViT-B/16};
-\node[proc] (pool) at (6.35,-1.6) {slice\\attention\\pool};
+\node[vit] (vit) at (4.5,-1.6) {\textbf{Multimodal}\\\textbf{branch}\\\scriptsize(BiomedCLIP\\ViT-B/16)};
+\node[proc] (pool) at (6.7,-1.6) {slice\\attention\\pool};
 
 % ---- fusion ----
 \node[op] (cat) at (8.7,0.18) {$\oplus$};
 \node[sub,left=1mm of cat] {concat\\\scriptsize$1024$};
-\node[fuse] (mlp) at (10.8,0.18) {fusion MLP\\\scriptsize$1024{\to}768{\to}512$, L2};
+\node[fuse] (mlp) at (11.35,0.18) {\textbf{Fusion head}\\\scriptsize(MLP $1024{\to}768{\to}512$, L2)};
 
 % ---- cosine head + prompts + outputs ----
-\node[head] (cos) at (13.6,0.18) {cosine\\similarity};
-\node[txt] (prompt) at (13.6,2.4) {text prompts $\{q_k\}$\\$\to$ BiomedCLIP text enc.};
-\node[outbox] (rsna) at (16.9,1.5) {RSNA severity\\\scriptsize(Normal/Mild,\\Moderate, Severe)};
-\node[outbox] (spider) at (16.9,-1.15) {SPIDER unseen labels\\\scriptsize(Pfirrmann, Modic,\\herniation,\,$\dots$)};
+\node[head] (cos) at (14.5,0.18) {cosine\\similarity};
+\node[txt] (prompt) at (14.5,2.4) {text prompts $\{q_k\}$\\$\to$ multimodal text encoder};
+\node[outbox] (rsna) at (16.9,1.5) {Trained label set\\\scriptsize(e.g.\ RSNA severity)};
+\node[outbox] (spider) at (16.9,-1.15) {New label set,\\zero-shot\\\scriptsize(e.g.\ SPIDER)};
 
 % ---- arrows (panel a) ----
 \draw[semithick,black!70] (1.2,0.5) -- (1.75,0.5);
@@ -75,7 +75,7 @@
 \draw[arr] (c3.east) -- (8.7,1.95) -- (cat.north);
 \draw[arr] (pool.east) -- (8.7,-1.6) -- (cat.south);
 \node[feat,above] at (6.3,1.95) {$f_{\mathrm{cbam}}{\in}\mathbb{R}^{512}$};
-\node[feat,above] at (7.7,-1.6) {$f_{\mathrm{bmc}}{\in}\mathbb{R}^{512}$};
+\node[feat,above] at (8.05,-1.6) {$f_{\mathrm{bmc}}{\in}\mathbb{R}^{512}$};
 \draw[arr] (cat.east) -- (mlp.west);
 \draw[arr] (mlp.east) -- node[feat,above=-1pt]{$\hat f_{\mathrm{img}}$} (cos.west);
 \draw[arr] (prompt.south) -- (cos.north);
