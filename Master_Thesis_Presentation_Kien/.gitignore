@@ -1,0 +1,16 @@
+# LaTeX build artifacts
+*.aux
+*.log
+*.nav
+*.out
+*.snm
+*.toc
+*.bcf
+*.blg
+*.bbl
+*.fls
+*.fdb_latexmk
+*.run.xml
+# Redundant copies
+presentation_spine copy.pdf
+presentation_spine_BACKUP.pdf

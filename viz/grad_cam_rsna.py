@@ -190,10 +190,11 @@ def upsample_cam(cam: np.ndarray, target_hw: tuple) -> np.ndarray:
     return t.squeeze(0).squeeze(0).numpy()
 
 
-def overlay_heatmap(ax, slice_img: np.ndarray, cam_2d: np.ndarray, title: str):
+def overlay_heatmap(ax, slice_img: np.ndarray, cam_2d: np.ndarray, title: str,
+                    fontsize: int = 17):
     ax.imshow(slice_img, cmap="gray")
     ax.imshow(cam_2d, cmap="jet", alpha=0.45)
-    ax.set_title(title, fontsize=17)
+    ax.set_title(title, fontsize=fontsize)
     ax.set_xticks([])
     ax.set_yticks([])
 
@@ -219,7 +220,15 @@ def main():
         default=REPO_ROOT / "experiments/v3_20260503/figures/grad_cam_severe.png",
     )
     ap.add_argument("--device", type=str, default="cpu")
+    ap.add_argument(
+        "--canal-only",
+        action="store_true",
+        help="Render only the spinal-canal Severe case (one row, larger fonts) "
+        "as the single representative example for the paper.",
+    )
     args = ap.parse_args()
+
+    cases = CASES[:1] if args.canal_only else CASES
 
     device = torch.device(args.device)
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -242,9 +251,13 @@ def main():
             print(f"  {cond}: {text_dbs[cond].shape}")
 
     print("\n[4/4] Computing Grad-CAM for each case...")
-    fig, axes = plt.subplots(len(CASES), 3, figsize=(11, 11))
+    fs = 15 if args.canal_only else 17
+    fig, axes = plt.subplots(
+        len(cases), 3, figsize=(13, 4.4 if args.canal_only else 11),
+        squeeze=False,
+    )
 
-    for row, case in enumerate(CASES):
+    for row, case in enumerate(cases):
         cond = case["condition"]
         vol_path = args.data_dir / "volumes" / case["filepath"]
         print(f"\n  Case {row + 1}: {case['title']}")
@@ -281,7 +294,7 @@ def main():
 
         ax_orig = axes[row, 0]
         ax_orig.imshow(mid_slice, cmap="gray")
-        ax_orig.set_title(case["title"], fontsize=17)
+        ax_orig.set_title(case["title"], fontsize=fs)
         ax_orig.set_xticks([])
         ax_orig.set_yticks([])
 
@@ -290,16 +303,18 @@ def main():
             mid_slice,
             cam_cbam_2d,
             f"CBAM-only (Severe p={cbam_prob:.2f})",
+            fontsize=fs,
         )
         overlay_heatmap(
             axes[row, 2],
             mid_slice,
             cam_hybrid_2d,
             f"Hybrid (Severe p={hybrid_prob:.2f})",
+            fontsize=fs,
         )
 
         if row == 0:
-            axes[row, 0].set_ylabel("Original (slice 4/9)", fontsize=17)
+            axes[row, 0].set_ylabel("Original (slice 4/9)", fontsize=fs)
 
     fig.tight_layout()
     fig.savefig(args.output, dpi=150, bbox_inches="tight")
