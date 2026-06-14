@@ -241,18 +241,19 @@ Novelty nằm ở **thiết kế kiến trúc Hybrid hai nhánh giải quyết �
 
 > **Câu chốt:** *"Fusion MLP là phần duy nhất em huấn luyện. Nó không chỉ nối hai vector lại mà học cách căn hai không gian đặc trưng khác nhau vào chung một embedding để đối sánh với prompt văn bản. Bằng chứng nó cần thiết: cộng trung bình logit hai nhánh chỉ đạt 0.45/0.18, còn fusion học được đạt 0.53/0.36."*
 
-**15b. "Sao không Cộng (Add) / Nhân (Multiply) hai vector cho nhanh, mà bày thêm Fusion MLP?"** ⭐
-- **Cộng/Nhân (element-wise) bắt buộc hai vector cùng chiều VÀ từng chiều cùng ý nghĩa (aligned).** CBAM (cấu trúc 3D cục bộ) và BiomedCLIP (ngữ nghĩa ảnh--văn bản) ở **hai không gian khác nhau** → cộng/nhân thẳng = trộn các chiều vô nghĩa, dễ gây nhiễu, và **mặc định coi hai nguồn ngang vai + tuyến tính**.
-- **Fusion MLP có trọng số học được (phi tuyến)** → tự học cách **gán trọng số và hòa trộn** hai nhánh tối ưu, thay vì ép một quy tắc cố định.
+**15b. "Trước Fusion MLP em Concat (ghép nối) 2 vector — sao không Add (cộng) / Multiply (nhân) cho nhanh, đỡ tăng tham số?"** ⭐⭐ (câu rất dễ bị xoáy)
 
-> **Câu chốt:** *"Hai nhánh ở hai không gian khác nhau, nên nếu chỉ Cộng/Nhân thì mô hình mặc định coi chúng ngang vai và tuyến tính, dễ nhiễu. Em để Fusion MLP với trọng số học được tự học cách hòa trộn phi tuyến và gán trọng số tối ưu trước khi đưa về không gian chung với nhánh văn bản. Bằng chứng: trộn học được đạt 0.53/0.36, còn cộng trung bình chỉ 0.45/0.18."*
+| Phép | Cách làm | Bản chất | Hệ quả với mô hình |
+|---|---|---|---|
+| **Add** | $f_{cbam}+f_{bmc}$ | cưỡng ép cộng từng chiều | ❌ hai nhánh ở **2 không gian khác nhau** (3D cục bộ vs ngữ nghĩa CLIP) → cộng thẳng làm **triệt tiêu / nhiễu loạn** thông tin của nhau |
+| **Multiply** | $f_{cbam}\odot f_{bmc}$ | gating (chỉ giữ chỗ cả hai cùng cao) | ❌ một nhánh $\approx 0$ sẽ **xóa sổ** thông tin nhánh kia → mất đặc trưng quý của lớp Severe |
+| **Concat** | $[f_{cbam}, f_{bmc}]{\to}1024$ | **bảo toàn 100%** thông tin cả hai | ✅ giữ trọn tri thức thô, **để MLP tự học chắt lọc + tương quan phi tuyến** |
 
-**15c. "Bước Concat (nối) trước Fusion MLP là gì — có thể bị hỏi?"** ⭐
-- **Concat = đặt hai vector 512-d cạnh nhau → một vector 1024-d.** Bước này **giữ NGUYÊN toàn bộ thông tin** của cả hai nhánh, **KHÔNG trộn/mất mát gì** — việc trộn để dành cho MLP phía sau.
-- Concat **không ép hai không gian phải khớp chiều** (khác Cộng/Nhân) → giữ nguyên cả hai rồi để MLP học trộn.
-- *(Follow-up: "concat tăng chiều → tăng tham số?" → MLP 1024→768→512 chỉ ~0.5M, không đáng kể. "Thứ tự concat có quan trọng?" → không, MLP học trọng số cho mọi chiều miễn nhất quán giữa train và test.)*
+- Add/Multiply còn **bắt buộc 2 vector cùng chiều VÀ từng chiều cùng ý nghĩa** (aligned) — không đúng vì 2 nhánh khác không gian. Concat **không ép gán tương ứng**.
+- **"Tiết kiệm tham số" không đáng lo:** MLP $1024{\to}768{\to}512$ chỉ **~0.5M**, không đáng kể; đổi lại được **trộn có học, phi tuyến**.
+- **Bằng chứng:** trộn học được (concat+MLP) đạt **0.53 / 0.36**; cộng trung bình logit chỉ **0.45 / 0.18** → fusion học được hơn hẳn.
 
-> **Câu chốt:** *"Concat chỉ là nối hai vector lại để giữ trọn thông tin của cả hai nhánh; nó không trộn gì cả — phần trộn thông minh (có học) là do Fusion MLP ngay sau đó làm."*
+> **Câu chốt:** *"Add ép cộng hai không gian khác nhau nên dễ triệt tiêu/nhiễu; Multiply như cổng nhân, một nhánh gần 0 là xóa luôn thông tin nhánh kia. Concat giữ nguyên 100% thông tin cả hai rồi để Fusion MLP tự học cách trộn phi tuyến — chỉ tốn thêm ~0.5M tham số nhưng đổi lại 0.53/0.36 so với 0.45/0.18 của cộng trung bình."*
 
 ## 16. "Contrastive learning (học tương phản) là gì?" ⭐
 
