@@ -79,9 +79,11 @@ Novelty nằm ở **thiết kế kiến trúc Hybrid hai nhánh giải quyết �
 1. **Kết hợp nhánh chú ý thể tích (đặc trưng 3D cục bộ vùng tổn thương nhỏ) với nhánh nền đa phương thức frozen (tri thức y khoa tổng quát học sẵn)** — nhằm trực tiếp vào **lớp Severe quá ít dữ liệu**: nhánh nền bù đặc trưng tổng quát, nhánh chú ý khu trú tổn thương.
 2. **Thay đầu phân loại softmax cố định bằng đầu đối sánh cosine với prompt văn bản** → **mở rộng nhãn bệnh mới chỉ bằng đổi prompt, không huấn luyện lại (zero-shot)**. Softmax cố định không làm được điều này.
 
-→ Điểm mới = **(a) cách phối hợp hai nguồn đặc trưng để trị mất cân bằng + (b) cơ chế mở nhãn zero-shot**, áp dụng cho **đánh giá thoái hóa cột sống thắt lưng**. Theo hiểu biết của em, đây là lần đầu áp dụng zero-shot theo prompt văn bản (BiomedCLIP) cho bài toán grading thoái hóa cột sống thắt lưng.
+→ Điểm mới = **(a)** cách phối hợp hai nguồn đặc trưng để trị mất cân bằng + **(b)** cơ chế mở nhãn zero-shot bằng prompt + **(c)** *phát hiện thực nghiệm*: nhánh nền frozen đóng vai trò như **bộ điều hòa (regularizer)** giúp ổn định khi chuyển dữ liệu (CBAM đơn nhánh overfit RSNA → suy giảm trên SPIDER; Hybrid **khôi phục về mức SpineNetV2**) — áp dụng cho **đánh giá thoái hóa cột sống thắt lưng**.
 
-> Câu chốt: *"Cái mới không phải là dùng module nào, mà là thiết kế phối hợp chúng để vừa cứu lớp bệnh nặng vừa mở rộng được nhãn mà không cần train lại."*
+**⚠️ An toàn khi bị vặn "CBAM/BiomedCLIP đâu phải em phát minh?":** KHÔNG claim phát minh module mới hay phương pháp pretrain mới. Đóng góp là **nghiên cứu thiết kế có kiểm soát (controlled design study)**: *cách tích hợp* + *bằng chứng thực nghiệm* hai nhánh đổi hành vi mô hình ra sao dưới mất cân bằng và dịch chuyển nhãn liên tập. Tránh nói "lần đầu trên thế giới"; chỉ nói **"theo hiểu biết của em, áp dụng zero-shot prompt cho grading thoái hóa cột sống thắt lưng còn rất ít"**.
+
+> Câu chốt: *"Cái mới không phải là dùng module nào, mà là thiết kế phối hợp chúng để vừa cứu lớp bệnh nặng, vừa mở rộng được nhãn không cần train lại, và em chỉ ra được bằng thực nghiệm rằng nhánh nền frozen còn giúp ổn định khi đổi bộ dữ liệu."*
 
 ---
 
@@ -239,6 +241,19 @@ Novelty nằm ở **thiết kế kiến trúc Hybrid hai nhánh giải quyết �
 
 > **Câu chốt:** *"Fusion MLP là phần duy nhất em huấn luyện. Nó không chỉ nối hai vector lại mà học cách căn hai không gian đặc trưng khác nhau vào chung một embedding để đối sánh với prompt văn bản. Bằng chứng nó cần thiết: cộng trung bình logit hai nhánh chỉ đạt 0.45/0.18, còn fusion học được đạt 0.53/0.36."*
 
+**15b. "Sao không Cộng (Add) / Nhân (Multiply) hai vector cho nhanh, mà bày thêm Fusion MLP?"** ⭐
+- **Cộng/Nhân (element-wise) bắt buộc hai vector cùng chiều VÀ từng chiều cùng ý nghĩa (aligned).** CBAM (cấu trúc 3D cục bộ) và BiomedCLIP (ngữ nghĩa ảnh--văn bản) ở **hai không gian khác nhau** → cộng/nhân thẳng = trộn các chiều vô nghĩa, dễ gây nhiễu, và **mặc định coi hai nguồn ngang vai + tuyến tính**.
+- **Fusion MLP có trọng số học được (phi tuyến)** → tự học cách **gán trọng số và hòa trộn** hai nhánh tối ưu, thay vì ép một quy tắc cố định.
+
+> **Câu chốt:** *"Hai nhánh ở hai không gian khác nhau, nên nếu chỉ Cộng/Nhân thì mô hình mặc định coi chúng ngang vai và tuyến tính, dễ nhiễu. Em để Fusion MLP với trọng số học được tự học cách hòa trộn phi tuyến và gán trọng số tối ưu trước khi đưa về không gian chung với nhánh văn bản. Bằng chứng: trộn học được đạt 0.53/0.36, còn cộng trung bình chỉ 0.45/0.18."*
+
+**15c. "Bước Concat (nối) trước Fusion MLP là gì — có thể bị hỏi?"** ⭐
+- **Concat = đặt hai vector 512-d cạnh nhau → một vector 1024-d.** Bước này **giữ NGUYÊN toàn bộ thông tin** của cả hai nhánh, **KHÔNG trộn/mất mát gì** — việc trộn để dành cho MLP phía sau.
+- Concat **không ép hai không gian phải khớp chiều** (khác Cộng/Nhân) → giữ nguyên cả hai rồi để MLP học trộn.
+- *(Follow-up: "concat tăng chiều → tăng tham số?" → MLP 1024→768→512 chỉ ~0.5M, không đáng kể. "Thứ tự concat có quan trọng?" → không, MLP học trọng số cho mọi chiều miễn nhất quán giữa train và test.)*
+
+> **Câu chốt:** *"Concat chỉ là nối hai vector lại để giữ trọn thông tin của cả hai nhánh; nó không trộn gì cả — phần trộn thông minh (có học) là do Fusion MLP ngay sau đó làm."*
+
 ## 16. "Contrastive learning (học tương phản) là gì?" ⭐
 
 **Trả lời ngắn:** Là cách huấn luyện để **kéo cặp khớp lại gần, đẩy cặp không khớp ra xa** trong một không gian embedding. BiomedCLIP học trên **15M cặp ảnh y khoa--chú thích**: với mỗi ảnh, embedding của ảnh được kéo gần embedding của đúng câu mô tả của nó, và đẩy xa các câu của ảnh khác (và ngược lại). Kết quả là **ảnh và văn bản cùng nằm trong MỘT không gian**, nên độ giống giữa chúng đo được bằng **cosine**.
@@ -272,6 +287,32 @@ Novelty nằm ở **thiết kế kiến trúc Hybrid hai nhánh giải quyết �
 → Dùng **CÙNG ngân sách cho cả 4 cấu hình** để công bằng; best severe-F1 của baseline đã đạt ở **ep16--18** (trong ngân sách). Kể cả train lâu hơn, baseline chỉ cải thiện **lớp đa số** chứ không cứu được lớp **Severe hiếm** — vì đó là bài toán **mất cân bằng**, giải bằng Focal/attention/BiomedCLIP, **không phải bằng thêm epoch** → kết luận không đổi.
 
 > **Câu chốt:** *"Em fine-tune từ trọng số pretrained chứ không train từ đầu, lại báo cáo theo best-checkpoint trên validation chứ không phải epoch cuối; val_loss đã chạm đáy trong ngân sách (Hybrid ep9) nên 25--30 epoch là đủ, train thêm chỉ overfit. Em dùng cùng ngân sách cho cả bốn cấu hình để so sánh công bằng."*
+
+## 19. "Vì sao chọn model nền này mà không chọn model kia?" (lựa chọn cho 2 mô-đun) ⭐⭐
+
+### 19a. Mô-đun PHÂN VÙNG: chọn **TotalSpineSeg**, không chọn SPINEPS / MedCLIP-SAMv2 / SpineNetV2
+| Mô hình | Dice | Precision | Recall | ASSD |
+|---|---|---|---|---|
+| **TotalSpineSeg** | **70.81%** | **97.87%** | 56.49% | **6.85 mm** |
+| SPINEPS | 58.68% | 52.17% | 68.34% | 7.48 mm |
+| MedCLIP-SAMv2 | 40.55% | 29.16% | **91.98%** | 19.50 mm |
+| SpineNetV2 | 67.82% | 51.76% | 91.79% | 8.04 mm |
+
+- **Chọn TotalSpineSeg vì: Precision 97.87% (cao nhất) + ASSD 6.85 mm (thấp nhất)** → biên sạch, bám giải phẫu → **cắt khối liên đốt sống (IVV) chính xác** để đưa vào grading.
+- **Vì sao KHÔNG chọn loại Recall cao** (MedCLIP-SAMv2 92%, SpineNetV2 92%): Precision chỉ ~29--52% → **phân vùng thừa, lan sang đốt lân cận** → sai vùng ROI, hỏng đầu vào grading. Với bài định vị ROI, **Precision/ASSD quan trọng hơn Recall**.
+
+### 19b. Mô-đun ĐÁNH GIÁ (grading backbone): chọn **SpineNetV2**, không chọn Ning Shen / MedGemma
+| Mô hình | Accuracy | Precision | Recall | F1 |
+|---|---|---|---|---|
+| Ning Shen | **80.8%** | **77.7%** | **84.2%** | **80.7%** |
+| **SpineNetV2** | 76.5% | 74.9% | 80.4% | 77.5% |
+| MedGemma | 38.7% | 50.1% | 11.8% | 18.6% |
+
+- **Chọn SpineNetV2 dù F1 thấp hơn Ning Shen ~3%**, vì: **chuyên biệt cột sống, đa nhãn (9--10 nhãn lâm sàng), mã nguồn mở** → dễ tinh chỉnh sâu + gắn CBAM/BiomedCLIP + mở nhãn zero-shot (đúng mục tiêu đề tài).
+- **Vì sao KHÔNG chọn Ning Shen** (mạnh hơn): pipeline **đa tầng, chuyên biệt từng bệnh** (Faster R-CNN + Swin, 5 model riêng, cần 3 chuỗi MRI), **bám chặt RSNA → khó tổng quát hóa**, **head đóng 5 bệnh → không mở nhãn mới**, chưa bình duyệt → phức tạp, khó mở rộng. *(chi tiết kiến trúc: #14)*
+- **Vì sao KHÔNG chọn MedGemma:** Recall chỉ 11.8% (bỏ sót ~88% ca bệnh), VLM zero-shot thiên về "bình thường" → không tin cậy cho sàng lọc. *(chi tiết: #10)*
+
+> **Câu chốt:** *"Em chọn theo mục tiêu chứ không chọn theo điểm cao nhất: phân vùng thì ưu tiên Precision/ASSD để cắt ROI chính xác (TotalSpineSeg); grading thì ưu tiên một backbone chuyên biệt, mã nguồn mở, dễ mở rộng (SpineNetV2) để có thể gắn thêm attention, foundation model và zero-shot — thứ mà giải mạnh hơn như Ning Shen (đóng, đa tầng) không cho phép."*
 
 ---
 
