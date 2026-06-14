@@ -162,6 +162,8 @@ def main():
     ap.add_argument("--slice", type=int, default=4, help="display slice index (0-8)")
     ap.add_argument("--no-original", action="store_true",
                     help="only 2 panels: Without CBAM | With CBAM")
+    ap.add_argument("--no-pvalue", action="store_true",
+                    help="omit Severe probability from panel titles (cleaner for paper)")
     args = ap.parse_args()
 
     cases = CASES[:1] if args.canal_only else CASES
@@ -207,8 +209,10 @@ def main():
         sl = args.slice
         mid = vol_np[sl]
         if args.no_original:
-            overlay(axes[row, 0], mid, hb[sl], f"Without CBAM (Severe p={pb:.2f})", fs)
-            overlay(axes[row, 1], mid, hc[sl], f"With CBAM (Severe p={pc:.2f})", fs)
+            tb = "Without CBAM" if args.no_pvalue else f"Without CBAM (Severe p={pb:.2f})"
+            tc = "With CBAM" if args.no_pvalue else f"With CBAM (Severe p={pc:.2f})"
+            overlay(axes[row, 0], mid, hb[sl], tb, fs)
+            overlay(axes[row, 1], mid, hc[sl], tc, fs)
         else:
             axes[row, 0].imshow(mid, cmap="gray")
             axes[row, 0].set_title(case["title"], fontsize=fs)
