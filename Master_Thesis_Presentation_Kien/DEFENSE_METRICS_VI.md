@@ -583,6 +583,13 @@ ASSD = ( Σ d(p, S_gt) + Σ d(q, S_pred) ) / (|S_pred| + |S_gt|)
 
 > **Câu chốt:** *"Em dùng Focal Loss để mô hình tập trung vào ca Severe hiếm/khó thay vì bị lớp đa số lấn át, cộng Uncertainty Loss của Kendall để tự cân bằng trọng số giữa ba bệnh thay vì chỉnh tay. val_loss theo dõi chính là tổng loss này trên tập validation."*
 
+### C11. Convergence analysis (phân tích hội tụ) là gì?
+- **Là gì:** phân tích **quá trình huấn luyện hội tụ ra sao** qua các epoch — không chỉ kết quả cuối, mà cả "đường đi" của loss/metric.
+- **Trả lời 4 câu:** (1) **đã hội tụ chưa?** val_loss chạm đáy + đi ngang; (2) **nhanh hay chậm?** đáy ở epoch nào; (3) **tới điểm tốt thế nào?** val_loss đáy thấp/cao; (4) **có overfit không?** sau đáy val_loss tăng lại, hoặc gap train--val rộng.
+- **Công cụ:** **learning curve** (train_loss & val_loss theo epoch) + cột best-epoch + early stopping (xem [[C7]]).
+- **Trong đề tài:** Hybrid đáy **ep9 (0.139)**, CBAM ep20 (0.158), Baseline ep25 (vẫn giảm chậm) → Hybrid **hội tụ nhanh nhất + val_loss thấp nhất**. *(Q&A #1, #2; nếu hội đồng cần, có log per-epoch để vẽ learning curve ngay — Q&A #4.)*
+- **Cụm câu hỏi liên quan:** Q&A #1 (đã hội tụ chưa) · #2 (tốc độ vs baseline) · #4 (report thiếu phân tích) · #18 (sao 25--30 epoch).
+
 ---
 
 ## Tham khảo
