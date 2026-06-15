@@ -315,6 +315,24 @@ Novelty nằm ở **thiết kế kiến trúc Hybrid hai nhánh giải quyết �
 
 > **Câu chốt:** *"Em chọn theo mục tiêu chứ không chọn theo điểm cao nhất: phân vùng thì ưu tiên Precision/ASSD để cắt ROI chính xác (TotalSpineSeg); grading thì ưu tiên một backbone chuyên biệt, mã nguồn mở, dễ mở rộng (SpineNetV2) để có thể gắn thêm attention, foundation model và zero-shot — thứ mà giải mạnh hơn như Ning Shen (đóng, đa tầng) không cho phép."*
 
+## 20. "Augmentation + Oversampling + Focal + Uncertainty loss — làm gì, vì sao cần cho pipeline mất cân bằng?" ⭐⭐
+
+**Bài toán:** Severe ~4% → mô hình dễ sụp về lớp đa số (baseline Severe recall chỉ 11.5%). Em xử lý mất cân bằng ở **3 tầng**, mỗi tầng một góc:
+
+**Tầng dữ liệu**
+1. **Augmentation (tăng cường dữ liệu):** sinh mẫu mới bằng biến đổi — lật/xoay (hình học) + đổi sáng/tương phản + nhiễu Gaussian (cường độ) → tăng đa dạng, **chống overfit**, giúp lớp hiếm tổng quát hơn. *(Lật ngang phải đổi nhãn trái↔phải cho foraminal.)*
+2. **Oversampling lớp hiếm:** lặp lại mẫu lớp thiểu số (Moderate/Severe) nhiều lần hơn mỗi epoch (factor ~5) → mô hình **gặp ca hiếm thường xuyên hơn**, không bị lớp đa số nhấn chìm.
+
+**Tầng hàm mất mát**
+3. **Focal Loss** ($\gamma=2$ + trọng số lớp, `ignore_index=-1`): giảm trọng số ca **dễ** (lớp đa số đã đúng), **dồn học vào ca khó/hiếm** → trực tiếp nâng Severe. *(công thức: DEFENSE\_METRICS\_VI C10)*
+
+**Tầng đa nhiệm**
+4. **Uncertainty Loss (Kendall):** tự cân bằng trọng số 3 bệnh (canal / foraminal trái / phải) thay vì chỉnh tay.
+
+→ **Vì sao cần cả 4:** mỗi kỹ thuật trị mất cân bằng từ một góc khác nhau (dữ liệu vào · tần suất gặp · cách phạt lỗi · cân bằng nhiệm vụ); cộng lại mới đẩy được Severe recall **11.5% → 46.4%**. Đây là phần đóng góp "xử lý mất cân bằng" bên cạnh hai nhánh (Đóng góp #1).
+
+> **Câu chốt:** *"Em không chỉ dựa vào kiến trúc hai nhánh — em còn dựng một pipeline chống mất cân bằng ở ba tầng: augmentation và oversampling để cân lại dữ liệu, Focal Loss để mô hình tập trung vào ca nặng hiếm, và Uncertainty Loss để tự cân bằng ba bệnh. Bốn kỹ thuật bổ trợ nhau, cùng kéo Severe recall từ 11.5% lên 46.4%."*
+
 ---
 
 ## Bảng số liệu nhanh (để khỏi lật nhiều)
