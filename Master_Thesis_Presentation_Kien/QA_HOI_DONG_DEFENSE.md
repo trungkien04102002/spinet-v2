@@ -327,7 +327,13 @@ Novelty nằm ở **thiết kế kiến trúc Hybrid hai nhánh giải quyết �
 3. **Focal Loss** ($\gamma=2$ + trọng số lớp, `ignore_index=-1`): giảm trọng số ca **dễ** (lớp đa số đã đúng), **dồn học vào ca khó/hiếm** → trực tiếp nâng Severe. *(công thức: DEFENSE\_METRICS\_VI C10)*
 
 **Tầng đa nhiệm**
-4. **Uncertainty Loss (Kendall):** tự cân bằng trọng số 3 bệnh (canal / foraminal trái / phải) thay vì chỉnh tay.
+4. **Uncertainty Loss (Kendall 2018) — tự cân bằng trọng số giữa 3 nhiệm vụ:**
+   - **Vấn đề:** mô hình học **3 bệnh cùng lúc** (canal / foraminal trái / phải), mỗi bệnh một loss riêng. Gộp 3 loss thành 1 bằng cách nào? Cộng đều hoặc chỉnh tay trọng số → khó dò, dễ để bệnh "dễ / loss to" **lấn át** bệnh khác.
+   - **Cơ chế:** mỗi nhiệm vụ $i$ có một **độ bất định học được** $\sigma_i$; tổng loss $=\sum_i\big[\frac{1}{2\sigma_i^2}L_i + \log\sigma_i\big]$.
+     - $\frac{1}{2\sigma_i^2}$ = **trọng số theo độ chắc chắn (precision)**: bệnh **khó / nhiễu nhãn** ($\sigma_i$ lớn) → trọng số **nhỏ** → bớt lấn át; bệnh **dễ / chắc** ($\sigma_i$ nhỏ) → trọng số **lớn**.
+     - $\log\sigma_i$ = **số hạng điều hòa** chặn $\sigma_i\to\infty$ (không có nó, mô hình sẽ "né" bằng cách đẩy mọi $\sigma$ lên cao cho loss về 0).
+   - $\sigma_i$ được **tối ưu chung với mô hình** (là tham số học được) → tự khám phá tỉ lệ cân bằng, **không cần chỉnh tay**.
+   - **Vì sao cần ở đây:** 3 bệnh có độ khó / nhiễu nhãn khác nhau (canal dễ hơn; foraminal trên sagittal-only khó hơn) → cần tự cân bằng để không bệnh nào nuốt hết gradient. **Bổ trợ với Focal:** Focal trị mất cân bằng *trong* một bệnh (giữa các lớp), Uncertainty cân bằng *giữa* ba bệnh.
 
 → **Vì sao cần cả 4:** mỗi kỹ thuật trị mất cân bằng từ một góc khác nhau (dữ liệu vào · tần suất gặp · cách phạt lỗi · cân bằng nhiệm vụ); cộng lại mới đẩy được Severe recall **11.5% → 46.4%**. Đây là phần đóng góp "xử lý mất cân bằng" bên cạnh hai nhánh (Đóng góp #1).
 
