@@ -196,9 +196,28 @@ Figure~\ref{fig:dist} reports the class distribution of both datasets: the RSNA 
 
 We compare four configurations sharing the same 3D ResNet-34 backbone and per-IVD input: \emph{SpineNetV2}, denoting the reused 3D ResNet-34 grading backbone of~\cite{windsor2022} (not the full official pipeline); \emph{CBAM-only}, that backbone with channel-spatial attention; \emph{Multimodal-only}, the frozen multimodal branch (BiomedCLIP) alone; and the full \emph{Hybrid} (our proposed model). This lets us separate each branch's contribution.
 
-For evaluation we report macro-averaged Recall, Precision, F1, AUC (one-vs-rest), and AUPRC, plus per-class Severe metrics. Macro averaging over the $C=3$ severities keeps the dominant Normal/Mild class (85\%) from masking Severe failure. We add AUPRC because AUC can stay high on imbalanced data while a model fails to rank Severe cases (random baseline $\approx$0.05 for Severe).
+For evaluation we report macro-averaged Recall, Precision, F1, AUC (one-vs-rest), and AUPRC, plus per-class Severe metrics. Macro averaging over the $C=3$ severities keeps the dominant Normal/Mild class from masking Severe failure; we add AUPRC because AUC can stay high on imbalanced data while a model still fails to rank Severe cases.
 
-We form one crop per disc (L1--L2 through L5--S1) from the keypoint annotations, clip intensities to the 1st--99th percentile, and rescale to $[0,1]$ following the SpineNetV2~\cite{windsor2022} convention. Each per-IVD crop is thus a $1 \times 9 \times 112 \times 224$ tensor, and all encoders output $d = 512$-dimensional embeddings. Only the slice-attention pool and the fusion MLP are trained (about 1.18\,M of the roughly 260\,M total parameters); both backbones stay frozen. We train with AdamW (learning rate $10^{-4}$, weight decay $10^{-4}$, batch size 32) for up to 20 epochs with patience-5 early stopping. Augmentation follows common spinal-MRI practice~\cite{windsor2022}: horizontal flip with left/right label swap, rotation $\pm 10^{\circ}$, brightness/contrast $\pm 20\%$, and Gaussian noise ($\sigma = 0.05$, $p = 0.3$). All runs use one NVIDIA RTX 4090 ($\approx$16\,GB peak memory); code, three-seed checkpoints, and per-run logs will be released on acceptance.
+We form one crop per disc (L1--L2 through L5--S1) from the keypoint annotations, clip intensities to the 1st--99th percentile, and rescale to $[0,1]$ following the SpineNetV2~\cite{windsor2022} convention. Table~\ref{tab:config} summarizes the training configuration; code, three-seed checkpoints, and per-run logs will be released on acceptance.
+
+\begin{table}[t]
+\centering
+\caption{Training configuration. Both backbones stay frozen; only the fusion MLP and slice-attention pool are trained.}
+\label{tab:config}
+\footnotesize
+\begin{tabular}{@{}l p{8.1cm}@{}}
+\toprule
+Setting & Value \\
+\midrule
+Per-IVD input & $1\times9\times112\times224$ tensor; embedding dim $d=512$ \\
+Trainable / total params & 1.18\,M / 260\,M \\
+Optimizer & AdamW, lr $10^{-4}$, weight decay $10^{-4}$ \\
+Batch / epochs & 32 / $\leq$20, early stopping (patience 5) \\
+Augmentation & h-flip + L/R swap, rotate $\pm10^{\circ}$, bright./contrast $\pm20\%$, noise $\sigma{=}0.05$ ($p{=}0.3$) \\
+Hardware & 1$\times$ NVIDIA RTX 4090 ($\approx$16\,GB) \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{In-Domain Results and Ablation on RSNA 2024}\label{exp2}
 
