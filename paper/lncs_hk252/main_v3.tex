@@ -133,8 +133,8 @@ Only the slice-attention pool and the fusion MLP are trained; both backbones sta
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{hybrid_arch_tikz.pdf}
-\caption{(a) Two-branch hybrid architecture: a frozen RSNA-pretrained volumetric attention branch (CBAM-3D ResNet-34) and a frozen multimodal branch (BiomedCLIP ViT-B/16) encode each per-IVD volume, and a small MLP fuses their embeddings for supervised classification or zero-shot text-prompt matching. (b) The 3D CBAM block applies channel then spatial attention. Only the fusion MLP and slice-attention pool are trained.}
+\includegraphics[width=\linewidth]{hybrid_arch_generic.pdf}
+\caption{Two-branch hybrid architecture. A frozen volumetric attention branch and a frozen multimodal branch encode each per-IVD volume; a small MLP fuses their embeddings into a text-aligned vector scored by cosine similarity against text prompts, so the label set, whether a trained set or a new one (zero-shot), becomes an input at inference. Only the fusion MLP and slice-attention pool are trained.}
 \label{fig:arch}
 \end{figure}
 
@@ -194,7 +194,7 @@ Figure~\ref{fig:dist} reports the class distribution of both datasets: the RSNA 
 \label{fig:dist}
 \end{figure}
 
-We compare four configurations sharing the same 3D ResNet-34 backbone and per-IVD input: \emph{SpineNetV2}, denoting the reused 3D ResNet-34 grading backbone of~\cite{windsor2022} (not the full official pipeline); \emph{CBAM-only}, that backbone with channel-spatial attention; \emph{Multimodal-only}, the frozen multimodal branch (BiomedCLIP) alone; and the full \emph{Hybrid}. This lets us separate each branch's contribution.
+We compare four configurations sharing the same 3D ResNet-34 backbone and per-IVD input: \emph{SpineNetV2}, denoting the reused 3D ResNet-34 grading backbone of~\cite{windsor2022} (not the full official pipeline); \emph{CBAM-only}, that backbone with channel-spatial attention; \emph{Multimodal-only}, the frozen multimodal branch (BiomedCLIP) alone; and the full \emph{Hybrid} (our proposed model). This lets us separate each branch's contribution.
 
 For evaluation we report macro-averaged Recall, Precision, F1, AUC (one-vs-rest), and AUPRC, plus per-class Severe metrics. Macro averaging over the $C=3$ severities keeps the dominant Normal/Mild class (85\%) from masking Severe failure. We add AUPRC because AUC can stay high on imbalanced data while a model fails to rank Severe cases (random baseline $\approx$0.05 for Severe).
 
