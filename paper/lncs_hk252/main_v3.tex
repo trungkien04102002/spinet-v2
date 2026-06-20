@@ -298,7 +298,7 @@ The aggregate gains concentrate in the rare positive classes ($\leq 5\%$). On Di
 
 Figure~\ref{fig:gradcam} contrasts Grad-CAM~\cite{selvaraju2017gradcam} activation without and with CBAM on a representative Severe spinal-canal case. Attention concentrates the activation on the central canal narrowing rather than the whole slice, giving qualitative support to the spatial-attention hypothesis. On the foraminal conditions Severe recall settles lower (18--22\%), consistent with sagittal-only limits~\cite{nigru2024} and pointing to axial information as future work.
 
-\begin{figure}[tb]
+\begin{figure}[!ht]
 \centering
 \includegraphics[width=0.6\linewidth]{grad_cam_nocbam_vs_cbam.png}
 \caption{Grad-CAM (Severe-class logit, upsampled to input resolution) on a Severe spinal-canal case, without vs.\ with CBAM.}
