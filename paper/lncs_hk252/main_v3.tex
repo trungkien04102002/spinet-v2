@@ -257,24 +257,24 @@ Published work on SPIDER is mostly segmentation~\cite{vandergraaf2024spider}; we
 
 \begin{table}[ht]
 \centering
-\caption{Zero-shot transfer to SPIDER (no fine-tuning), recomputed from cosine predictions. \emph{OTS} = off-the-shelf BiomedCLIP (no RSNA training); \emph{Hybrid} = our RSNA-trained model. AUC = Hybrid one-vs-rest macro. \textbf{Bold} = higher F1.}
+\caption{Zero-shot transfer to SPIDER (macro-F1, no fine-tuning), recomputed from cosine predictions. \emph{Off-the-shelf} = BiomedCLIP scored zero-shot with no RSNA training; \emph{Hybrid} = our RSNA-trained model. \textbf{Bold} = higher F1.}
 \label{tab:spider}
-\begin{tabular}{@{}lccc@{}}
+\begin{tabular}{@{}lcc@{}}
 \toprule
-SPIDER label              & OTS F1 & Hybrid F1 & Hybrid AUC \\
+SPIDER label              & Off-the-shelf & Hybrid (Ours) \\
 \midrule
-Disc bulging              & 0.363 & \best{0.613} & 0.829 \\
-Disc herniation           & 0.532 & \best{0.563} & 0.772 \\
-Disc narrowing            & 0.403 & \best{0.586} & 0.834 \\
+Disc bulging              & 0.363 & \best{0.613} \\
+Disc herniation           & 0.532 & \best{0.563} \\
+Disc narrowing            & 0.403 & \best{0.586} \\
 \midrule
-Upper endplate            & \best{0.569} & 0.467 & 0.740 \\
-Lower endplate            & \best{0.558} & 0.468 & 0.738 \\
-Pfirrmann (5-class)       & 0.152 & \best{0.155} & 0.687 \\
-Modic (4-class)           & \best{0.071} & 0.018 & 0.454 \\
-Spondylolisthesis         & \best{0.500} & 0.028 & 0.807 \\
+Upper endplate            & \best{0.569} & 0.467 \\
+Lower endplate            & \best{0.558} & 0.468 \\
+Pfirrmann (5-class)       & 0.152 & \best{0.155} \\
+Modic (4-class)           & \best{0.071} & 0.018 \\
+Spondylolisthesis         & \best{0.500} & 0.028 \\
 \midrule
-Mean (disc-morphology)    & 0.433 & \best{0.587} & 0.812 \\
-Mean (all 8)              & \best{0.394} & 0.362 & 0.733 \\
+Mean (disc-morphology)    & 0.433 & \best{0.587} \\
+Mean (all 8)              & \best{0.394} & 0.362 \\
 \bottomrule
 \end{tabular}
 \end{table}
