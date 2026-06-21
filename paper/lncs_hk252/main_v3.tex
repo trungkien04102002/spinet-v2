@@ -198,7 +198,7 @@ We compare four configurations sharing the same 3D ResNet-34 backbone and per-IV
 
 For evaluation we report macro-averaged Recall, Precision, F1, AUC (one-vs-rest), and AUPRC, plus per-class Severe metrics. Macro averaging over the $C=3$ severities keeps the dominant Normal/Mild class from masking Severe failure; we add AUPRC because AUC can stay high on imbalanced data while a model still fails to rank Severe cases.
 
-We form one volumetric crop per disc (L1--L2 through L5--S1) from the keypoint annotations, clip intensities to the 1st--99th percentile, and rescale to $[0,1]$. Table~\ref{tab:config} summarizes the training configuration; code, three-seed checkpoints, and per-run logs will be released on acceptance.
+We form one volumetric crop per disc (L1--L2 through L5--S1) from the keypoint annotations, clip intensities to the 1st--99th percentile, and rescale to $[0,1]$. Table~\ref{tab:config} summarizes the training configuration.
 
 \begin{table}[t]
 \centering
