@@ -2,6 +2,8 @@
 
 > **For agentic workers:** Use superpowers:subagent-driven-development or superpowers:executing-plans to implement task-by-task. Steps use checkbox (`- [ ]`) syntax.
 
+> **SCOPE UPDATE 2026-07-06:** MIWAI paper submitted. Final-semester scope = **software (P1–P3, priority 1) + external SOTA comparison for grading (new work item) + optional result improvement (priority 2)**. The **doctor-feedback loop (P4) is moved to FUTURE WORK** (too large for one semester; advisor ranked it priority 2). Official timeline: hand-off 15–17 Jul, **15 weeks 20 Jul → 31 Oct 2026**, defense 02–06 Nov 2026. Rough split: software P1–P3 ~6–8 wks, SOTA ~2 wks (parallel on Vast), report + slides + demo video ~3–4 wks (interleaved), ~1 wk buffer. English title: "AI-Assisted Medical Image Annotation for Low Back Pain".
+
 **Goal:** Build a local web app where a doctor opens a lumbar MRI, sees AI segmentation + abnormality grading overlays, corrects them, and exports the result.
 
 **Architecture:** Separate repo `spine-labeling-app`. FastAPI backend orchestrates two independent models (TotalSpineSeg for anatomy masks, the Phase-2 CBAM+BiomedCLIP model for per-disc grading + Grad-CAM), returning one JSON "results contract". React + Cornerstone3D frontend renders/edits overlays. MySQL stores metadata + annotations; filesystem stores volumes + masks. Inference runs locally or on a remote Vast.ai server via a config switch.
