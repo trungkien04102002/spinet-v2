@@ -28,7 +28,7 @@ Thầy cho 7 ý, làm đổi trọng tâm cải tiến model:
 | Workstream | Trạng thái | Ghi chú |
 |---|---|---|
 | **Software** (spine-labeling-app) | 🟢 ~90% | P0–P3 gần xong hết (build trước cả kì). Còn: check P2 viewer đầy đủ, polish UI, quay demo video. Repo public. |
-| **SOTA comparison** | 🟡 Code xong, chờ GPU | 2 baseline (brendanartley 2.5D+LSTM, transformer-agg) + run_all.sh + make_table.py đã verify. Chạy 1 lượt `bash experiments/sota_comparison/run_all.sh` trên 4090. |
+| **SOTA comparison** | 🟢 Code xong, HOÃN chạy | Thầy không nhắc SOTA trong meeting → hạ ưu tiên, làm SAU multi-view (để so với model tốt nhất). Ready: `bash experiments/sota_comparison/run_all.sh` (default seed 42; 1 lệnh, chạy lúc nào cũng được). |
 | **Improve F1** | 🟡 Plan xong, chưa làm | Move #1 (threshold/calibration) gần như free, chưa chạy. Xem §2–§3. |
 | **Feedback-loop** | ⚪ Future work | Capture đã xong+tested (thỏa thầy). Không build phần retrain. Optional: dataset-builder ~1 ngày. |
 | **Report luận văn** | 🔴 Chưa bắt đầu | Viết sau khi có số SOTA + F1. |

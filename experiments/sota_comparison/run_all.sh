@@ -3,18 +3,18 @@
 # One-shot GPU run script for the external SOTA comparison.
 #
 # Trains BOTH external baseline models (brendanartley, transformer) for
-# seeds 42, 123, 456 (6 runs total, sequential, one GPU), then builds the
-# comparison table.
+# seed 42 by default (2 runs, sequential, one GPU), then builds the comparison
+# table. Override seeds with e.g. SOTA_SEEDS="42 123 456" for a 3-seed sweep.
 #
 # WALL-CLOCK CAVEAT: both models train FROM SCRATCH (no pretrained weights,
 # torchvision resnet18(weights=None)) for 30 epochs each on the full RSNA
 # preprocessed dataset. On an RTX-4090 this is expected to take roughly
-# 20-40 minutes PER RUN (model/data-loader dependent) -> ballpark 2-4 hours
-# for all 6 runs. Budget accordingly; this script does not parallelize runs
-# (single GPU, sequential) to keep memory/behavior predictable.
+# 20-40 minutes PER RUN (model/data-loader dependent) -> ~40-80 min for the
+# default 2 runs. Single GPU, sequential (no parallelism) for predictable mem.
 #
 # Usage (run ONCE, from the repo root, on the RTX-4090 box):
-#   bash experiments/sota_comparison/run_all.sh
+#   bash experiments/sota_comparison/run_all.sh                 # seed 42 only
+#   SOTA_SEEDS="42 123 456" bash experiments/sota_comparison/run_all.sh
 #
 set -uo pipefail  # NOTE: no -e — a failed run must not kill the remaining runs
 
@@ -26,7 +26,9 @@ LOG_DIR="${THIS_DIR}/logs"
 mkdir -p "${LOG_DIR}"
 
 MODELS=(brendanartley transformer)
-SEEDS=(42 123 456)
+# Default: seed 42 only (per decision to not run full 3-seed sweeps for new work).
+# Override: SOTA_SEEDS="42 123 456" bash run_all.sh
+read -r -a SEEDS <<< "${SOTA_SEEDS:-42}"
 
 declare -a RESULTS=()  # "model seed status"
 
