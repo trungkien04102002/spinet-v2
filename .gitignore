@@ -196,3 +196,8 @@ experiments/sota_comparison/checkpoints/
 experiments/sota_comparison/logs/
 experiments/sota_comparison/splits/*_manifest.csv
 experiments/sota_comparison/**/__pycache__/
+
+# F1 improvement experiment outputs
+experiments/f1_improvement/logits/
+experiments/f1_improvement/results/
+experiments/f1_improvement/**/__pycache__/
