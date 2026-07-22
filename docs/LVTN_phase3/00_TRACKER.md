@@ -27,7 +27,7 @@ Thầy cho 7 ý, làm đổi trọng tâm cải tiến model:
 
 | Workstream | Trạng thái | Ghi chú |
 |---|---|---|
-| **Software** (spine-labeling-app) | 🟢 ~90% | P0–P3 gần xong hết (build trước cả kì). Còn: check P2 viewer đầy đủ, polish UI, quay demo video. Repo public. |
+| **Software** (spine-labeling-app) | 🟢 ~95% | P0–P3 XONG (FE+BE, các session trước): P2 viewer Cornerstone3D (CornerstoneViewport + Legend + GradeTable + lib/history undo/redo), seg∥grading /infer, sửa+export. Còn: polish UI + quay demo video. Repo public. |
 | **SOTA comparison** | 🟢 Code xong, HOÃN chạy | Thầy không nhắc SOTA trong meeting → hạ ưu tiên, làm SAU multi-view (để so với model tốt nhất). Ready: `bash experiments/sota_comparison/run_all.sh` (default seed 42; 1 lệnh, chạy lúc nào cũng được). |
 | **Improve F1** | 🟡 Plan xong, chưa làm | Move #1 (threshold/calibration) gần như free, chưa chạy. Xem §2–§3. |
 | **Feedback-loop** | ⚪ Future work | Capture đã xong+tested (thỏa thầy). Không build phần retrain. Optional: dataset-builder ~1 ngày. |

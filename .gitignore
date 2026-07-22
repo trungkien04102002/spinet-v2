@@ -9,6 +9,7 @@ spider/
 rsna-2024-lumbar-spine-degenerative-classification/
 rsna_preprocessed/
 rsna_preprocessed.zip
+rsna_preprocessed_t1/
 example_scans/
 *.npy
 
