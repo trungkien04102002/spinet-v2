@@ -70,6 +70,9 @@ Thầy cho 7 ý, làm đổi trọng tâm cải tiến model:
 | **Buffer** | ~26–31/10 (T15) | Dự phòng, nộp cuối |
 | **Bảo vệ** | 02–06/11 | |
 
+## ⚠️ KNOWN ISSUE (fix trước — 2026-07-20)
+App chạy local OK (BE :8000 + FE :5173), NHƯNG bấm **"Full grading"** lỗi `Failed to fetch`. Nguyên nhân (từ `.run/backend.log`): `/grade_full → run_cbam_grading → run_segmentation → subprocess 'totalspineseg'` → **FileNotFoundError: 'totalspineseg'** (CLI ở env riêng tss-venv, không trên PATH backend). **Fix:** set `Settings.totalspineseg_bin` = đường dẫn binary trong tss-venv (hoặc export PATH có tss-venv khi chạy backend); hoặc để grade_full dùng crop có sẵn thay vì chạy seg mỗi lần. Không phải CORS (preflight :5173 OK). Chạy app: `cd spine-labeling-app && ./run.sh both` · tắt: `./run.sh stop`.
+
 ## 5. Việc tiếp theo (ordered checklist)
 - [ ] **#0 Threshold (free):** dump logits val 1 lần/checkpoint → sweep threshold/logit-adjustment/τ-norm → bảng F1 mới (+ cost 1:2:4). *(Claude làm được ngay.)*
 - [ ] **#1 T1-foraminal fix:** thêm filter `is_sagittal_t1`, prep crop T1 cho foraminal, train nhẹ, so vs T2. *(ứng viên win lớn nhất.)*
