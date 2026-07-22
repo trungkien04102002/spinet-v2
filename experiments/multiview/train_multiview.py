@@ -86,7 +86,8 @@ def compute_weighted_log_loss(outputs_dict, labels_dict):
 
 def evaluate(model, dataloader, device):
     """Evaluate model on validation set. Mirrors train_rsna_baseline.py's
-    evaluate(), adapted for the two-input (T2, T1) forward signature."""
+    evaluate(), adapted for the three-input (T2, T1-left, T1-right) forward
+    signature."""
     model.eval()
 
     all_preds = {cond: [] for cond in CONDITIONS}
@@ -99,15 +100,16 @@ def evaluate(model, dataloader, device):
 
     with torch.no_grad():
         val_pbar = tqdm(dataloader, desc="Validating", leave=False)
-        for t2_vol, t1_vol, labels in val_pbar:
+        for t2_vol, t1_left_vol, t1_right_vol, labels in val_pbar:
             t2_vol = t2_vol.unsqueeze(1).to(device)  # [B, 1, 9, 112, 224]
-            t1_vol = t1_vol.unsqueeze(1).to(device)
+            t1_left_vol = t1_left_vol.unsqueeze(1).to(device)
+            t1_right_vol = t1_right_vol.unsqueeze(1).to(device)
 
             labels_device = {
                 cond: labels[cond].to(device) for cond in CONDITIONS
             }
 
-            outputs = model(t2_vol, t1_vol)
+            outputs = model(t2_vol, t1_left_vol, t1_right_vol)
 
             loss = 0.0
             for cond in CONDITIONS:
@@ -356,14 +358,15 @@ def main():
         num_batches = 0
 
         train_pbar = tqdm(train_loader, desc=f"Epoch {epoch + 1}/{args.epochs} [Train]", leave=False)
-        for t2_vol, t1_vol, labels in train_pbar:
+        for t2_vol, t1_left_vol, t1_right_vol, labels in train_pbar:
             t2_vol = t2_vol.unsqueeze(1).to(device)
-            t1_vol = t1_vol.unsqueeze(1).to(device)
+            t1_left_vol = t1_left_vol.unsqueeze(1).to(device)
+            t1_right_vol = t1_right_vol.unsqueeze(1).to(device)
 
             labels_device = {cond: labels[cond].to(device) for cond in CONDITIONS}
 
             optimizer.zero_grad()
-            outputs = model(t2_vol, t1_vol)
+            outputs = model(t2_vol, t1_left_vol, t1_right_vol)
 
             loss = 0.0
             for cond in CONDITIONS:

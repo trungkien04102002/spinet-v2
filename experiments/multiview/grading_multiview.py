@@ -1,33 +1,46 @@
 """
-GradingMultiView — two-branch (T2 + T1) fusion model for RSNA lumbar grading.
+GradingMultiView — T2 + per-side-T1 fusion model for RSNA lumbar grading.
 
 Reuses the existing 3D-ResNet34(+CBAM) encoder from
 `spinenet.models.grading_attention.GradingModelWithCBAM` as TWO independent
-per-sequence branches (one for Sagittal T2, one for Sagittal T1), then fuses
-their 512-dim embeddings before the per-condition heads. This implements
-Week-2/3 of the staged plan in `docs/LVTN_phase3/MULTIVIEW_RESEARCH.md`
-(#2 late fusion, #3 gated leader/supporter).
+branches:
+  - `encoder_t2`  — Sagittal T2 midline crop (one embedding per sample).
+  - `encoder_t1`  — Sagittal T1 foraminal crop, applied TWICE per sample
+    (once on the LEFT crop, once on the RIGHT crop) — the SAME weights are
+    reused for both sides, since it's the same modality/anatomy just
+    imaged on a different lateral slice. See reconciliation note below.
+
+Reconciled 2026-07-22 against the actual sibling-task output
+(`experiments/f1_improvement/prep_t1_crops.py`): T1 foraminal crops are
+PER-SIDE — left/right neural foraminal narrowing live on DIFFERENT T1
+slices, so there is no single midline T1 crop the way there is for T2.
+Consequently:
+  - `spinal_canal` uses **T2 only** (no T1 input at all — there's no
+    canal-relevant T1 crop in this design).
+  - `left_foraminal` fuses (T2, T1-LEFT).
+  - `right_foraminal` fuses (T2, T1-RIGHT).
 
 Output contract (same as the single-view models):
-    forward(t2_vol, t1_vol) -> {
-        'spinal_canal':    (B, 3),
-        'left_foraminal':  (B, 3),
-        'right_foraminal': (B, 3),
+    forward(t2_vol, t1_left_vol, t1_right_vol) -> {
+        'spinal_canal':    (B, 3),   # T2-only head, no fusion
+        'left_foraminal':  (B, 3),   # fusion(T2, T1-left)
+        'right_foraminal': (B, 3),   # fusion(T2, T1-right)
     }
 
-Two fusion modes:
-    fusion='concat' — flat concat of [emb_t2 ; emb_t1] (1024-dim) ->
-        per-condition linear head. This is the Week-1/2 baseline (MULTIVIEW
-        _RESEARCH.md §(2).1 "late fusion").
+Two fusion modes (apply only to the two foraminal heads; spinal_canal is
+always a plain linear head on the T2 embedding):
+    fusion='concat' — flat concat of [emb_t2 ; emb_t1_side] (1024-dim) ->
+        per-condition linear head. This is the Week-1/2 baseline
+        (MULTIVIEW_RESEARCH.md §(2).1 "late fusion").
 
     fusion='gated' — per-condition GMU-style gate (MULTIVIEW_RESEARCH.md §3):
         a_{c,s} = MLP([e_c ; emb_s])         # e_c = learnable per-condition query
-        w_{c,s} = softmax_s(a_{c,s})         # softmax over sequences {T2, T1}
+        w_{c,s} = softmax_s(a_{c,s})         # softmax over sequences {T2, T1-side}
         fused_c = sum_s w_{c,s} * emb_s
         logits_c = head_c(fused_c)
-    Gate bias is initialized toward the clinical prior (T1-heavy for
-    foraminal, T2-heavy for spinal_canal) but stays learnable (plain
-    nn.Parameter, no detach/freeze).
+    Gate bias is initialized toward the clinical prior (T1-heavy for both
+    foraminal conditions — see MULTIVIEW_RESEARCH.md (a) table) but stays
+    learnable (plain nn.Parameter, no detach/freeze).
 """
 
 from typing import Dict, List, Optional
@@ -39,16 +52,19 @@ from spinenet.models.grading_attention import GradingModelWithCBAM
 
 
 CONDITIONS = ["spinal_canal", "left_foraminal", "right_foraminal"]
-SEQUENCES = ["t2", "t1"]  # fixed order used everywhere below
+# Only these two conditions have a T1 counterpart (per-side) and are
+# actually fused/gated. spinal_canal is T2-only — see module docstring.
+FORAMINAL_CONDITIONS = ["left_foraminal", "right_foraminal"]
+CONDITION_SIDE = {"left_foraminal": "left", "right_foraminal": "right"}
+
+SEQUENCES = ["t2", "t1"]  # fixed order used everywhere below (per foraminal head)
 
 # Clinical prior used only to INITIALIZE the gated-fusion gate bias (kept
-# learnable afterwards) — see MULTIVIEW_RESEARCH.md (a) table:
-#   spinal_canal      -> Sagittal T2 leader
-#   left/right foram. -> Sagittal T1 leader
+# learnable afterwards) — see MULTIVIEW_RESEARCH.md (a) table: neural
+# foraminal narrowing (both sides) is graded primarily on Sagittal T1.
 # Values are pre-softmax logit offsets (T2 first, T1 second) — a modest
-# nudge, not a hard gate.
+# nudge, not a hard gate. (spinal_canal has no gate — T2-only head.)
 _GATE_PRIOR_LOGITS = {
-    "spinal_canal": [1.0, 0.0],       # T2 leader
     "left_foraminal": [0.0, 1.0],     # T1 leader
     "right_foraminal": [0.0, 1.0],    # T1 leader
 }
@@ -95,7 +111,7 @@ class GMUConditionGate(nn.Module):
         """
         Args:
             embeddings: list of (B, embed_dim) tensors, one per sequence,
-                in SEQUENCES order (t2, t1).
+                in SEQUENCES order (t2, t1[-side]).
 
         Returns:
             fused: (B, embed_dim)
@@ -122,16 +138,15 @@ class GMUConditionGate(nn.Module):
 
 
 class GradingMultiView(nn.Module):
-    """Two-branch (T2 + T1) multi-view grading model.
+    """T2 (+ per-side T1) multi-view grading model.
 
     Args:
-        fusion: 'concat' (flat late fusion) or 'gated' (GMU leader/supporter).
-        use_cbam: passed through to both per-sequence CBAM/ResNet34 encoders.
+        fusion: 'concat' (flat late fusion) or 'gated' (GMU leader/supporter)
+            — applies to the two foraminal heads only; spinal_canal is
+            always a plain T2-only linear head (see module docstring).
+        use_cbam: passed through to both encoders.
         embed_dim: encoder output dim (512 for the ResNet34 backbone used
             here — do not change unless the backbone changes).
-        share_encoder: if True, T1 and T2 branches share ONE encoder's
-            weights (useful as a lightweight ablation); default False (two
-            independent encoders, matching the spec).
     """
 
     def __init__(
@@ -140,7 +155,6 @@ class GradingMultiView(nn.Module):
         use_cbam: bool = True,
         cbam_reduction: int = 16,
         embed_dim: int = 512,
-        share_encoder: bool = False,
         gate_hidden_dim: int = 128,
     ):
         super().__init__()
@@ -149,27 +163,31 @@ class GradingMultiView(nn.Module):
 
         self.fusion = fusion
         self.embed_dim = embed_dim
-        self.share_encoder = share_encoder
 
-        # === PER-SEQUENCE ENCODERS ===
+        # === ENCODERS ===
         # Reuse the existing CBAM/ResNet34 3D backbone as-is (format='rsna'
         # only matters for its own heads, which we never call — we use
         # `.encode()` to get the pre-head 512-dim embedding).
+        # encoder_t2: T2 midline crop (spinal_canal + supporter for both
+        #             foraminal heads).
+        # encoder_t1: T1 foraminal crop, applied to LEFT and RIGHT crops
+        #             separately (same weights both times — same modality,
+        #             just a different lateral slice per side).
         self.encoder_t2 = GradingModelWithCBAM(
             format="rsna", use_cbam=use_cbam, cbam_reduction=cbam_reduction
         )
-        if share_encoder:
-            self.encoder_t1 = self.encoder_t2
-        else:
-            self.encoder_t1 = GradingModelWithCBAM(
-                format="rsna", use_cbam=use_cbam, cbam_reduction=cbam_reduction
-            )
+        self.encoder_t1 = GradingModelWithCBAM(
+            format="rsna", use_cbam=use_cbam, cbam_reduction=cbam_reduction
+        )
 
-        # === FUSION + HEADS ===
+        # === HEADS ===
+        # spinal_canal: T2-only, no fusion, same for both fusion modes.
+        self.head_spinal_canal = nn.Linear(embed_dim, 3)
+
         if fusion == "concat":
             fused_dim = embed_dim * 2
             self.heads = nn.ModuleDict(
-                {cond: nn.Linear(fused_dim, 3) for cond in CONDITIONS}
+                {cond: nn.Linear(fused_dim, 3) for cond in FORAMINAL_CONDITIONS}
             )
             self.gates = None
         else:  # fusion == "gated"
@@ -181,69 +199,77 @@ class GradingMultiView(nn.Module):
                         num_sequences=len(SEQUENCES),
                         hidden_dim=gate_hidden_dim,
                     )
-                    for cond in CONDITIONS
+                    for cond in FORAMINAL_CONDITIONS
                 }
             )
             self.heads = nn.ModuleDict(
-                {cond: nn.Linear(embed_dim, 3) for cond in CONDITIONS}
+                {cond: nn.Linear(embed_dim, 3) for cond in FORAMINAL_CONDITIONS}
             )
 
         # Populated on the most recent forward() call when fusion='gated' —
-        # {condition: (B, num_sequences) tensor} — exposed so callers can
-        # visualize the learned leader/supporter split without re-running
-        # the gate.
+        # {condition: (B, num_sequences) tensor}, ONLY for the two foraminal
+        # conditions (spinal_canal has no gate — T2-only) — exposed so
+        # callers can visualize the learned leader/supporter split without
+        # re-running the gate.
         self.last_gate_weights: Optional[Dict[str, torch.Tensor]] = None
 
     def load_pretrained_backbones(self, weights_dir: str, verbose: bool = True):
-        """Load the shared pretrained 3D-ResNet34 backbone into BOTH branches
-        (T2 and T1 start from the same pretrained weights; they diverge
-        during fine-tuning). No-ops the second call if share_encoder=True.
-        """
+        """Load the shared pretrained 3D-ResNet34 backbone into BOTH
+        branches (T2 and T1 start from the same pretrained weights; they
+        diverge during fine-tuning)."""
         self.encoder_t2.load_pretrained_backbone(weights_dir, verbose=verbose)
-        if not self.share_encoder:
-            self.encoder_t1.load_pretrained_backbone(weights_dir, verbose=verbose)
+        self.encoder_t1.load_pretrained_backbone(weights_dir, verbose=verbose)
 
     def freeze_backbones(self, freeze: bool = True):
         self.encoder_t2.freeze_backbone(freeze=freeze)
-        if not self.share_encoder:
-            self.encoder_t1.freeze_backbone(freeze=freeze)
+        self.encoder_t1.freeze_backbone(freeze=freeze)
 
     def forward(
-        self, t2_vol: torch.Tensor, t1_vol: torch.Tensor
+        self,
+        t2_vol: torch.Tensor,
+        t1_left_vol: torch.Tensor,
+        t1_right_vol: torch.Tensor,
     ) -> Dict[str, torch.Tensor]:
         """
         Args:
-            t2_vol: (B, 1, 9, 112, 224)
-            t1_vol: (B, 1, 9, 112, 224)
+            t2_vol:       (B, 1, 9, 112, 224) — Sagittal T2 midline crop
+            t1_left_vol:  (B, 1, 9, 112, 224) — Sagittal T1 LEFT crop
+            t1_right_vol: (B, 1, 9, 112, 224) — Sagittal T1 RIGHT crop
 
         Returns:
             dict {spinal_canal, left_foraminal, right_foraminal} each (B, 3)
         """
-        emb_t2 = self.encoder_t2.encode(t2_vol)  # (B, embed_dim)
-        emb_t1 = self.encoder_t1.encode(t1_vol)  # (B, embed_dim)
+        emb_t2 = self.encoder_t2.encode(t2_vol)              # (B, embed_dim)
+        emb_t1_left = self.encoder_t1.encode(t1_left_vol)    # (B, embed_dim)
+        emb_t1_right = self.encoder_t1.encode(t1_right_vol)  # (B, embed_dim)
+
+        emb_by_side = {"left": emb_t1_left, "right": emb_t1_right}
 
         outputs = {}
+        # spinal_canal: T2-only, no fusion.
+        outputs["spinal_canal"] = self.head_spinal_canal(emb_t2)
 
-        if self.fusion == "concat":
-            fused = torch.cat([emb_t2, emb_t1], dim=1)  # (B, 2*embed_dim)
-            for cond in CONDITIONS:
-                outputs[cond] = self.heads[cond](fused)
-            self.last_gate_weights = None
-        else:  # gated
-            embeddings = [emb_t2, emb_t1]  # SEQUENCES order
-            gate_weights = {}
-            for cond in CONDITIONS:
-                fused_c, weights_c = self.gates[cond](embeddings)
+        gate_weights = {}
+        for cond in FORAMINAL_CONDITIONS:
+            emb_t1_side = emb_by_side[CONDITION_SIDE[cond]]
+
+            if self.fusion == "concat":
+                fused_c = torch.cat([emb_t2, emb_t1_side], dim=1)  # (B, 2*embed_dim)
+                outputs[cond] = self.heads[cond](fused_c)
+            else:  # gated
+                fused_c, weights_c = self.gates[cond]([emb_t2, emb_t1_side])
                 outputs[cond] = self.heads[cond](fused_c)
                 gate_weights[cond] = weights_c
-            self.last_gate_weights = gate_weights
+
+        self.last_gate_weights = gate_weights if self.fusion == "gated" else None
 
         return outputs
 
     def get_gate_weights(self) -> Optional[Dict[str, torch.Tensor]]:
-        """Per-condition softmax weights over [T2, T1] from the last forward
-        call (fusion='gated' only) — for the leader/supporter viz. Returns
-        None for fusion='concat'.
+        """Per-condition softmax weights over [T2, T1-side] from the last
+        forward call (fusion='gated' only) — for the leader/supporter viz.
+        Keys are ONLY the two foraminal conditions (spinal_canal has no
+        gate — T2-only head). Returns None for fusion='concat'.
         """
         return self.last_gate_weights
 
@@ -254,14 +280,15 @@ if __name__ == "__main__":
 
     batch_size = 2
     t2 = torch.randn(batch_size, 1, 9, 112, 224)
-    t1 = torch.randn(batch_size, 1, 9, 112, 224)
+    t1_left = torch.randn(batch_size, 1, 9, 112, 224)
+    t1_right = torch.randn(batch_size, 1, 9, 112, 224)
 
     for fusion in ("concat", "gated"):
         print(f"\n--- fusion={fusion} ---")
         model = GradingMultiView(fusion=fusion)
         model.eval()
         with torch.no_grad():
-            outputs = model(t2, t1)
+            outputs = model(t2, t1_left, t1_right)
 
         for cond in CONDITIONS:
             assert outputs[cond].shape == (batch_size, 3), (
@@ -269,14 +296,17 @@ if __name__ == "__main__":
             )
             print(f"  {cond}: {outputs[cond].shape} OK")
 
+        gw = model.get_gate_weights()
         if fusion == "gated":
-            gw = model.get_gate_weights()
             assert gw is not None
-            for cond in CONDITIONS:
+            assert set(gw.keys()) == set(FORAMINAL_CONDITIONS)
+            for cond in FORAMINAL_CONDITIONS:
                 assert gw[cond].shape == (batch_size, len(SEQUENCES))
                 sums = gw[cond].sum(dim=1)
                 assert torch.allclose(sums, torch.ones_like(sums), atol=1e-5)
-                print(f"  gate[{cond}] weights (T2, T1): {gw[cond][0].tolist()}")
+                print(f"  gate[{cond}] weights (T2, T1-{CONDITION_SIDE[cond]}): {gw[cond][0].tolist()}")
+        else:
+            assert gw is None
 
         total_params = sum(p.numel() for p in model.parameters())
         print(f"  Total params: {total_params:,}")
