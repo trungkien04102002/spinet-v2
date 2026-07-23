@@ -70,8 +70,12 @@ Thầy cho 7 ý, làm đổi trọng tâm cải tiến model:
 | **Buffer** | ~26–31/10 (T15) | Dự phòng, nộp cuối |
 | **Bảo vệ** | 02–06/11 | |
 
-## ⚠️ KNOWN ISSUE (fix trước — 2026-07-20)
-App chạy local OK (BE :8000 + FE :5173), NHƯNG bấm **"Full grading"** lỗi `Failed to fetch`. Nguyên nhân (từ `.run/backend.log`): `/grade_full → run_cbam_grading → run_segmentation → subprocess 'totalspineseg'` → **FileNotFoundError: 'totalspineseg'** (CLI ở env riêng tss-venv, không trên PATH backend). **Fix:** set `Settings.totalspineseg_bin` = đường dẫn binary trong tss-venv (hoặc export PATH có tss-venv khi chạy backend); hoặc để grade_full dùng crop có sẵn thay vì chạy seg mỗi lần. Không phải CORS (preflight :5173 OK). Chạy app: `cd spine-labeling-app && ./run.sh both` · tắt: `./run.sh stop`.
+## ✅ FIXED — "Full grading" E2E (2026-07-23, app commit `dea54b1`)
+Bấm **"Full grading"** trước đây lỗi `Failed to fetch`. Có **2 bug** (đã fix + verify E2E):
+1. **TotalSpineSeg PATH:** `totalspineseg_bin` default = bare `'totalspineseg'`, không trên PATH backend (CLI ở venv riêng) → `FileNotFoundError`. **Fix:** resolve binary bằng `shutil.which`/`isfile` + raise lỗi rõ ràng; config per-máy qua `backend/.env` (`TOTALSPINESEG_BIN=/Users/kienha/totalspineseg/venv/bin/totalspineseg`, gitignored).
+2. **pixel_spacing tuple:** `_load_volume_for_spinenet` trả `(sy, sx)` tuple, upstream `detect_vb` cần scalar in-plane → `TypeError` trên study `.mha`/DICOM. **Fix:** `float(np.mean([sy, sx]))` (khớp upstream `dicom_io`).
+
+**Verify:** `build_full_grading('123', ...)` chạy trọn (SpineNet 66 items + segmentation + CBAM) → result + labelled PNG 353KB, **479s CPU** (nnU-Net chậm là bình thường). Backend suite 62 passed. ⚠️ Lưu ý UX: E2E ~8 phút/CPU → FE có thể cần tăng fetch timeout / async job nếu dùng qua browser (chưa làm). Không phải CORS. Chạy app: `cd spine-labeling-app && ./run.sh both` · tắt: `./run.sh stop`.
 
 ## 5. Việc tiếp theo (ordered checklist)
 - [ ] **#0 Threshold (free):** dump logits val 1 lần/checkpoint → sweep threshold/logit-adjustment/τ-norm → bảng F1 mới (+ cost 1:2:4). *(Claude làm được ngay.)*
