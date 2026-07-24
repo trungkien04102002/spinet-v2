@@ -53,3 +53,41 @@
 **Keywords:** human-in-the-loop / active learning medical imaging; learning from label corrections; continual learning + catastrophic forgetting; batch retraining vs online fine-tuning; label noise / inter-observer variability; model drift / versioning.
 
 **Papers nền:** Budd et al. 2021 *Survey on Active Learning and HITL for Medical Image Analysis* (arXiv 1910.02923); *Comprehensive survey on deep active learning in medical image analysis* 2024 (arXiv 2310.14230); *Physician-in-the-Loop Active Learning in Radiology AI Workflows* AJR 2025.
+
+---
+
+## Tham khảo C — Multi-view T1/T2/Axial cho grading (Q&A đã chuẩn bị)
+
+> Thầy nhiều khả năng hỏi quanh: mỗi chuỗi ảnh dùng cho gì, axial khai thác được gì,
+> lấy đặc trưng bằng cách nào, ghép ra sao, và có phải train lại nhiều không.
+> Trạng thái thật: **T2 đã có đầy đủ; T1 đang thêm (prep xong, chờ GPU train 1 lần);
+> Axial CHƯA làm (stretch/future).** Chi tiết đầy đủ: `MULTIVIEW_RESEARCH.md`.
+
+**Q1. Mỗi chuỗi ảnh mang đặc trưng khác nhau, đúng không? Dùng cho grading nào?**
+Đúng — chuẩn protocol MRI cột sống, khớp cách top RSNA route chuỗi ảnh:
+- **Sag-T2** (dịch/CSF sáng): Pfirrmann, hẹp đĩa, **hẹp ống sống trung tâm (canal)**, thoát vị.
+- **Sag-T1** (mỡ sáng): **hẹp lỗ liên hợp (foraminal)** — dấu hiệu là *mất mỡ quanh rễ* → chỉ rõ trên T1; + Modic/marrow, endplate.
+- **Axial-T2** (mặt cắt ngang): **hẹp ngách bên (subarticular)**, diện tích/hình dạng mặt cắt ống sống.
+
+**Q2. Axial tận dụng được gì? Chỉ mỗi subarticular à?**
+Không chỉ subarticular, nhưng phải phân biệt thông tin **MỚI** vs **xác nhận lại**:
+- **Subarticular**: axial là mặt phẳng chính → thông tin MỚI (sagittal không thấy).
+- **Canal, herniation**: axial có bổ trợ (diện tích mặt cắt; kiểu/hướng thoát vị) NHƯNG **phần lớn trùng tín hiệu đã có trong Sag-T2** → gain F1 nhỏ.
+- **Pfirrmann, hẹp đĩa, spondylo, endplate, marrow**: axial gần như không thêm gì (đây là dấu hiệu mặt phẳng sagittal).
+→ Chỗ **duy nhất** axial mang thông tin không dư thừa là **subarticular** — mà subarticular **chưa nằm trong 11 nhãn hiện tại**. Muốn khai thác axial đúng nghĩa ⇒ phải **thêm nhãn subarticular** (mở rộng label space); nếu không, axial chỉ đóng vai **supporter cho canal** trong fusion.
+
+**Q3. Em dùng cái gì / cách nào để LẤY ĐẶC TRƯNG từ T1/T2/axial?**
+Mỗi chuỗi có **1 encoder riêng: 3D ResNet34 + CBAM** (channel + spatial attention).
+CBAM tự học vùng đặc trưng của từng chuỗi (mỡ lỗ liên hợp trên T1, CSF ống sống trên T2, ngách bên trên axial) → mỗi encoder xuất **1 embedding per-đĩa**.
+
+**Q4. Ghép các đặc trưng đó lại để grading thế nào?**
+**Gated leader–supporter fusion (GMU)**: một gate nhỏ học **trọng số từng chuỗi theo từng bệnh**, khởi tạo theo prior lâm sàng (T1↑ foraminal, T2↑ canal, axial↑ subarticular), rồi head cho ra grade. Ablation báo cáo: T2-only → +T1 (concat) → +gated → (+axial). Model concat + gated **đã code** ở `experiments/multiview/`.
+
+**Q5. Có phải train lại nhiều không? (em muốn tiết kiệm thời gian)**
+Có 2 mức, chọn theo mức chịu train:
+- **Late/decision fusion — 0 training**: chạy model đã có độc lập, route output theo prior (foraminal←T1, canal←T2, subarticular←axial). Chính là cách RSNA hạng 2.
+- **Gated fusion, ĐÓNG BĂNG encoder — train cực nhẹ** (khuyến nghị): freeze encoder đã train, chỉ train **gate + head** (vài phút, không đụng backbone). T2 đã có (free); T1 chỉ train **1 lần** (crop đã prep); axial cần encoder mới → **để future**.
+
+**Papers chống lưng:** GMU gated fusion (Arevalo 2017, arXiv:1702.01992); M-SCAN attention fuse sag+axial, AUROC 0.971 (arXiv:2503.01634); weighted task-specific fusion (arXiv:2307.00885); RSNA 2nd-place (late fusion độc lập, axial build rồi bỏ vì không tăng CV); RSNA 3rd-place (concat theo điều kiện + CenterNet keypoints axial→level).
+
+**⚠️ Caveat thành thật (nên chủ động nói):** **không có ablation sạch** chứng minh axial → tăng Severe-F1; giá trị riêng của axial là subarticular (chưa có nhãn). Đòn chắc ăn hơn hẳn là **T1-foraminal**. → Trình axial ở mức ablation/future, không over-claim.
