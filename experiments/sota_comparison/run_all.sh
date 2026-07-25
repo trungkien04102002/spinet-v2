@@ -18,10 +18,12 @@
 #
 set -uo pipefail  # NOTE: no -e — a failed run must not kill the remaining runs
 
-export PYTHONPATH=/Users/kienha/spinet-v2
-
 THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${THIS_DIR}/../.." && pwd)"
+
+# Derive the repo root from this script's location so it works on any box
+# (the GPU instance clones to a different path than the dev machine).
+export PYTHONPATH="${REPO_ROOT}"
 LOG_DIR="${THIS_DIR}/logs"
 mkdir -p "${LOG_DIR}"
 
