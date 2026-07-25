@@ -11,15 +11,17 @@ tmux set -g mouse on
 # tmux set -g mouse off
 ```
 
-## 0. Setup box (1 lần)
+## 0. Setup box (1 lần, trên box TRẮNG vừa SSH vào)
 
 ```bash
+# repo public → kéo mình vast_setup.sh về, nó tự clone repo + venv + cài deps
+wget https://raw.githubusercontent.com/trungkien04102002/spinet-v2/biomedclip-integration/vast_setup.sh
 bash vast_setup.sh --branch biomedclip-integration
+
 cd spinet-v2
-git pull                                   # lấy fix mới nhất (run_all.sh PYTHONPATH)
-pip3 install -r requirements.txt
-git branch --show-current                  # phải = biomedclip-integration
-nvidia-smi                                  # xác nhận thấy GPU
+source spinenet-venv/bin/activate           # QUAN TRỌNG: mọi lệnh sau chạy trong venv này
+git branch --show-current                   # phải = biomedclip-integration
+nvidia-smi                                   # xác nhận thấy RTX-4090
 ```
 
 ## 1. DATA + WEIGHTS (prereq — thiếu là job chạy sai/ from scratch)
