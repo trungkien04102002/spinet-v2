@@ -36,11 +36,16 @@ python3 -c "import torch, SimpleITK, pydicom, open_clip; print('OK', torch.cuda.
 chmod +x 2_download_preprocessed.sh
 ./2_download_preprocessed.sh 1DCndO_ppTDMGT1H19b8XIqfureMqABi_
 
-# (b) Pretrained backbone (~/.spinenet/weights) — CHO #1/#2/#3
-#     Thiếu cái này → train from scratch (chỉ warning, KHÔNG lỗi) → số vô nghĩa.
+# (b) Pretrained backbone (~/.spinenet/weights) — nền chung (fallback).
 chmod +x 3_download_weights.sh
 ./3_download_weights.sh 1GCmJ0OuNdw9c1E4giLwyA9EK4uwWL6HT
 ls -lh ~/.spinenet/weights/                 # phải thấy weights.pt
+
+# (b2) CBAM checkpoint đã train (best_model_attention.pth) — CHO warm-start #1/#2/#3.
+#      md5-verified = phase2_cbam.pth trên Drive. #1/#2/#3 train TIẾP từ đây.
+mkdir -p checkpoints/rsna
+python3 -m gdown "https://drive.google.com/uc?id=1HRGzEk0UM1fHPkWlOh31psApah7S_02i" -O checkpoints/rsna/best_model_attention.pth
+ls -lh checkpoints/rsna/best_model_attention.pth    # ~243MB
 
 # (c) RSNA T1 crops 17GB — CHO #1/#2/#3. Đã zip + up Drive → tải thẳng:
 chmod +x 6_download_t1.sh
@@ -55,10 +60,12 @@ ls rsna_preprocessed_t1/volumes | wc -l     # kỳ vọng ~19689
 ## 2. SMOKE TEST (bắt buộc — 2 script train này CHƯA chạy GPU thật bao giờ)
 
 ```bash
-python3 experiments/f1_improvement/train_t1_foraminal.py --fast-dev
-python3 experiments/multiview/train_multiview.py --fusion concat --fast-dev
-python3 experiments/multiview/train_multiview.py --fusion gated  --fast-dev
+CK=checkpoints/rsna/best_model_attention.pth       # warm-start từ CBAM đã train
+python3 experiments/f1_improvement/train_t1_foraminal.py --fast-dev --cbam-checkpoint $CK
+python3 experiments/multiview/train_multiview.py --fusion concat --fast-dev --cbam-checkpoint $CK
+python3 experiments/multiview/train_multiview.py --fusion gated  --fast-dev --cbam-checkpoint $CK
 # OOM? hạ --batch-size (T1 default 32, multiview default 16).
+# LƯU Ý: quên --cbam-checkpoint → banner "⚠️ NOT warm-starting"; sai path → dừng báo lỗi.
 ```
 
 ## 3. SOTA (chạy được ngay khi có data (a) — kick trước, làm (b)(c) song song)
@@ -73,24 +80,28 @@ bash experiments/sota_comparison/run_all.sh
 ## 4. F1 #1 — T1-foraminal (ứng viên win to nhất)
 
 ```bash
-python3 experiments/f1_improvement/train_t1_foraminal.py \
-    --epochs 30 --batch-size 32 --lr 1e-3
+CK=checkpoints/rsna/best_model_attention.pth
+python3 experiments/f1_improvement/train_t1_foraminal.py --cbam-checkpoint $CK \
+    --epochs 30 --batch-size 32 --lr 1e-3 \
+    2>&1 | tee experiments/f1_improvement/run_t1.log
 # → checkpoints/t1_foraminal/best_model_t1_foraminal_cbam.pth
-# → checkpoints/t1_foraminal/t1_foraminal_cbam_best_metrics.json
+# → checkpoints/t1_foraminal/t1_foraminal_cbam_best_metrics.json (+ _log.csv + .txt)
 ```
 
 ## 5. F1 #2 + #3 — multi-view fusion
 
 ```bash
+CK=checkpoints/rsna/best_model_attention.pth
 # #2 concat
-python3 experiments/multiview/train_multiview.py --fusion concat \
-    --epochs 30 --batch-size 16 --lr 1e-3
-# → experiments/multiview/checkpoints/best_model_multiview_concat.pth
-# → experiments/multiview/checkpoints/multiview_concat_best_metrics.json
+python3 experiments/multiview/train_multiview.py --fusion concat --cbam-checkpoint $CK \
+    --epochs 30 --batch-size 16 --lr 1e-3 \
+    2>&1 | tee experiments/multiview/run_concat.log
+# → experiments/multiview/checkpoints/best_model_multiview_concat.pth (+ _best_metrics.json/.txt + _log.csv)
 
 # #3 gated leader-supporter (đúng ý thầy)
-python3 experiments/multiview/train_multiview.py --fusion gated \
-    --epochs 30 --batch-size 16 --lr 1e-3
+python3 experiments/multiview/train_multiview.py --fusion gated --cbam-checkpoint $CK \
+    --epochs 30 --batch-size 16 --lr 1e-3 \
+    2>&1 | tee experiments/multiview/run_gated.log
 # → .../best_model_multiview_gated.pth  +  multiview_gated_best_metrics.json
 ```
 
@@ -107,12 +118,13 @@ tail -f experiments/sota_comparison/logs/brendanartley_seed42.log
 ## 7. Kéo kết quả về Mac (chạy trên MÁY LOCAL, sửa PORT/IP theo instance)
 
 ```bash
-# METRICS JSON (nhẹ — cái Claude cần để ráp bảng report)
-scp -P <PORT> root@<IP>:/root/spinet-v2/checkpoints/t1_foraminal/t1_foraminal_cbam_best_metrics.json                 experiments/f1_improvement/results/
-scp -P <PORT> root@<IP>:/root/spinet-v2/experiments/multiview/checkpoints/multiview_concat_best_metrics.json          experiments/multiview/
-scp -P <PORT> root@<IP>:/root/spinet-v2/experiments/multiview/checkpoints/multiview_gated_best_metrics.json           experiments/multiview/
-scp -P <PORT> root@<IP>:/root/spinet-v2/experiments/sota_comparison/comparison_table.md                              experiments/sota_comparison/
-scp -P <PORT> root@<IP>:/root/spinet-v2/experiments/sota_comparison/comparison_table.tex                             experiments/sota_comparison/
+# NHẸ — metrics + log (cái Claude cần để ráp bảng report). Kéo cả thư mục cho gọn:
+scp -P <PORT> -r root@<IP>:/root/spinet-v2/checkpoints/t1_foraminal/'*'.{json,csv,txt}    experiments/f1_improvement/results/
+scp -P <PORT> -r root@<IP>:/root/spinet-v2/experiments/multiview/checkpoints/'*'.{json,csv,txt}   experiments/multiview/
+scp -P <PORT> -r root@<IP>:/root/spinet-v2/experiments/f1_improvement/run_t1.log             experiments/f1_improvement/
+scp -P <PORT> -r root@<IP>:/root/spinet-v2/experiments/multiview/run_*.log                   experiments/multiview/
+scp -P <PORT> -r root@<IP>:/root/spinet-v2/experiments/sota_comparison/comparison_table.*    experiments/sota_comparison/
+scp -P <PORT> -r root@<IP>:/root/spinet-v2/experiments/sota_comparison/logs                  experiments/sota_comparison/
 
 # CHECKPOINTS (nặng — chỉ kéo nếu cần eval/viz thêm)
 scp -P <PORT> root@<IP>:/root/spinet-v2/checkpoints/t1_foraminal/best_model_t1_foraminal_cbam.pth                     checkpoints/t1_foraminal/
