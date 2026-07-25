@@ -35,12 +35,14 @@ chmod +x 3_download_weights.sh
 ./3_download_weights.sh 1GCmJ0OuNdw9c1E4giLwyA9EK4uwWL6HT
 ls -lh ~/.spinenet/weights/                 # phải thấy weights.pt
 
-# (c) RSNA T1 crops 17GB — CHO #1/#2/#3. KHÔNG có link tải → tái sinh.
-#     Cần raw DICOM trong rsna-2024-lumbar-spine-degenerative-classification/
-kaggle competitions download -c rsna-2024-lumbar-spine-degenerative-classification
-# (giải nén raw vào đúng thư mục trên rồi:)
-python3 experiments/f1_improvement/prep_t1_crops.py     # → 19,689 crops, ~17GB
-ls rsna_preprocessed_t1/volumes | wc -l                 # kỳ vọng ~19689
+# (c) RSNA T1 crops 17GB — CHO #1/#2/#3. Đã zip + up Drive → tải thẳng:
+chmod +x 6_download_t1.sh
+./6_download_t1.sh                          # file ID đã baked sẵn trong script
+ls rsna_preprocessed_t1/volumes | wc -l     # kỳ vọng ~19689
+#
+# (Fallback nếu link Drive hỏng — tái sinh từ raw Kaggle:)
+# kaggle competitions download -c rsna-2024-lumbar-spine-degenerative-classification
+# python3 experiments/f1_improvement/prep_t1_crops.py
 ```
 
 ## 2. SMOKE TEST (bắt buộc — 2 script train này CHƯA chạy GPU thật bao giờ)

@@ -18,15 +18,10 @@ echo "======================================================================"
 echo "Download T1 crops (rsna_preprocessed_t1/, ~17GB)"
 echo "======================================================================"
 
-if [ -z "$1" ]; then
-    echo "❌ Error: No file ID provided"
-    echo ""
-    echo "Usage:  ./6_download_t1.sh YOUR_FILE_ID"
-    echo "Get ID from: https://drive.google.com/file/d/YOUR_FILE_ID/view"
-    exit 1
-fi
-
-FILE_ID=$1
+# The uploaded rsna_preprocessed_t1.zip (seed-42 T1 crops). Override with an
+# argument if you re-upload elsewhere: ./6_download_t1.sh <other_id>
+DEFAULT_FILE_ID="19dF-TCY1jlk3nc7X-fjM62Lw4IN6p5ed"
+FILE_ID="${1:-$DEFAULT_FILE_ID}"
 
 echo ""
 echo "[1/3] Installing dependencies..."
