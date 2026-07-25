@@ -220,6 +220,12 @@ class GradingMultiView(nn.Module):
         self.encoder_t2.load_pretrained_backbone(weights_dir, verbose=verbose)
         self.encoder_t1.load_pretrained_backbone(weights_dir, verbose=verbose)
 
+    def load_trained_cbam_encoders(self, checkpoint_path: str, verbose: bool = True):
+        """Warm-start BOTH encoders from a trained CBAM checkpoint (continue
+        from the existing model rather than starting from the generic backbone)."""
+        self.encoder_t2.load_trained_cbam(checkpoint_path, verbose=verbose)
+        self.encoder_t1.load_trained_cbam(checkpoint_path, verbose=verbose)
+
     def freeze_backbones(self, freeze: bool = True):
         self.encoder_t2.freeze_backbone(freeze=freeze)
         self.encoder_t1.freeze_backbone(freeze=freeze)

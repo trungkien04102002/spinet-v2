@@ -234,6 +234,11 @@ def main():
     # Model
     parser.add_argument("--model", type=str, default="cbam", choices=["cbam", "baseline"],
                         help="Which grading backbone to train (default: cbam)")
+    parser.add_argument(
+        "--cbam-checkpoint", type=str, default=None,
+        help="Warm-start from a trained CBAM checkpoint "
+             "(e.g. checkpoints/rsna/best_model_attention.pth) instead of the "
+             "generic backbone. Continues from your existing model.")
     parser.add_argument("--use-pretrained", action="store_true", default=True,
                         help="Use pretrained 3D ResNet34 backbone (default: True)")
     parser.add_argument("--no-pretrained", dest="use_pretrained", action="store_false",
@@ -352,15 +357,31 @@ def main():
         start_epoch = 0
         best_val_loss = float("inf")
 
-        if args.use_pretrained:
-            print("  Loading pretrained backbone...")
-            import os
-            weights_dir = os.path.expanduser("~/.spinenet/weights")
-            try:
-                model.load_pretrained_backbone(weights_dir, verbose=False)
-                print("  Pretrained backbone loaded")
-            except Exception as e:
-                print(f"  Warning: could not load pretrained weights ({e}) -> training from scratch")
+        import os
+        if getattr(args, "cbam_checkpoint", None):
+            if not os.path.isfile(args.cbam_checkpoint):
+                raise FileNotFoundError(
+                    f"\n  --cbam-checkpoint not found: {args.cbam_checkpoint}\n"
+                    "  Upload best_model_attention.pth to the box first, or fix the\n"
+                    "  path. Refusing to silently train from the generic backbone."
+                )
+            print(f"  Warm-starting from trained CBAM: {args.cbam_checkpoint}")
+            model.load_trained_cbam(args.cbam_checkpoint, verbose=True)
+        else:
+            print("=" * 70)
+            print("  ⚠️  NOT warm-starting from your trained CBAM.")
+            print("  Training from the GENERIC backbone instead.")
+            print("  To continue from your model (the intended setup), pass:")
+            print("    --cbam-checkpoint checkpoints/rsna/best_model_attention.pth")
+            print("=" * 70)
+            if args.use_pretrained:
+                print("  Loading pretrained backbone...")
+                weights_dir = os.path.expanduser("~/.spinenet/weights")
+                try:
+                    model.load_pretrained_backbone(weights_dir, verbose=False)
+                    print("  Pretrained backbone loaded")
+                except Exception as e:
+                    print(f"  Warning: could not load pretrained weights ({e}) -> training from scratch")
 
     if args.unfreeze_backbone:
         print("  Unfreezing backbone (fine-tuning mode)")

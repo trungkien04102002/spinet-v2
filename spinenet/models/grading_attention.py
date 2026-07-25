@@ -362,6 +362,34 @@ class GradingModelWithCBAM(nn.Module):
         if verbose:
             print(f"  ✓ Backbone loaded successfully")
 
+    def load_trained_cbam(self, checkpoint_path: str, verbose: bool = True):
+        """Warm-start from a previously TRAINED GradingModelWithCBAM checkpoint.
+
+        Unlike ``load_pretrained_backbone`` (which loads only the generic conv
+        backbone and leaves CBAM random), this loads BOTH the RSNA-fine-tuned
+        backbone AND the trained CBAM modules -- i.e. it continues from your
+        existing model instead of starting fresh. The task heads (``fc_*``) are
+        skipped: multi-view fusion replaces them, and the head shapes may differ.
+        """
+        ckpt = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+        state = ckpt.get("model_state_dict", ckpt.get("model_weights", ckpt))
+        model_dict = self.state_dict()
+        loaded = {}
+        for k, v in state.items():
+            if k.startswith("fc_"):
+                continue  # task heads are replaced downstream
+            if k in model_dict and v.shape == model_dict[k].shape:
+                loaded[k] = v
+        model_dict.update(loaded)
+        self.load_state_dict(model_dict)
+        if verbose:
+            n_cbam = sum(1 for k in loaded if "cbam" in k)
+            print(
+                f"  Warm-started from {checkpoint_path}: "
+                f"{len(loaded)}/{len(model_dict)} tensors "
+                f"(backbone + {n_cbam} CBAM tensors; heads skipped)"
+            )
+
     def freeze_backbone(self, freeze: bool = True):
         """
         Freeze or unfreeze backbone parameters for transfer learning.

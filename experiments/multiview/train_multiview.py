@@ -187,6 +187,12 @@ def main():
                         help="Disable CBAM in the per-sequence encoders")
     parser.add_argument("--use-pretrained", action="store_true", default=True)
     parser.add_argument("--no-pretrained", dest="use_pretrained", action="store_false")
+    parser.add_argument(
+        "--cbam-checkpoint", type=str, default=None,
+        help="Warm-start BOTH encoders from a trained CBAM checkpoint "
+             "(e.g. checkpoints/rsna/best_model_attention.pth). Continues from "
+             "your existing model instead of the generic backbone. Overrides "
+             "--use-pretrained.")
     parser.add_argument("--unfreeze-backbone", action="store_true")
     parser.add_argument("--resume", type=str, default=None)
 
@@ -304,15 +310,31 @@ def main():
         start_epoch = 0
         best_val_loss = float("inf")
 
-        if args.use_pretrained:
-            print("  Loading pretrained backbone into both T2/T1 encoders...")
-            weights_dir = os.path.expanduser("~/.spinenet/weights")
-            try:
-                model.load_pretrained_backbones(weights_dir, verbose=False)
-                print("  Pretrained backbones loaded")
-            except Exception as e:
-                print(f"  Warning: Could not load pretrained weights: {e}")
-                print("  -> Training from scratch")
+        if args.cbam_checkpoint:
+            if not os.path.isfile(args.cbam_checkpoint):
+                raise FileNotFoundError(
+                    f"\n  --cbam-checkpoint not found: {args.cbam_checkpoint}\n"
+                    "  Upload best_model_attention.pth to the box first, or fix the\n"
+                    "  path. Refusing to silently train from the generic backbone."
+                )
+            print(f"  Warm-starting both encoders from trained CBAM: {args.cbam_checkpoint}")
+            model.load_trained_cbam_encoders(args.cbam_checkpoint, verbose=True)
+        else:
+            print("=" * 70)
+            print("  ⚠️  NOT warm-starting from your trained CBAM.")
+            print("  Training both encoders from the GENERIC backbone instead.")
+            print("  To continue from your model (the intended setup), pass:")
+            print("    --cbam-checkpoint checkpoints/rsna/best_model_attention.pth")
+            print("=" * 70)
+            if args.use_pretrained:
+                print("  Loading pretrained backbone into both T2/T1 encoders...")
+                weights_dir = os.path.expanduser("~/.spinenet/weights")
+                try:
+                    model.load_pretrained_backbones(weights_dir, verbose=False)
+                    print("  Pretrained backbones loaded")
+                except Exception as e:
+                    print(f"  Warning: Could not load pretrained weights: {e}")
+                    print("  -> Training from scratch")
 
     if args.unfreeze_backbone:
         print("  Unfreezing backbones (fine-tuning mode)")
