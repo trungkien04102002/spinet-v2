@@ -19,9 +19,14 @@ wget https://raw.githubusercontent.com/trungkien04102002/spinet-v2/biomedclip-in
 bash vast_setup.sh --branch biomedclip-integration
 
 cd spinet-v2
-source spinenet-venv/bin/activate           # QUAN TRỌNG: mọi lệnh sau chạy trong venv này
 git branch --show-current                   # phải = biomedclip-integration
 nvidia-smi                                   # xác nhận thấy RTX-4090
+
+# vast_setup cài deps VÀO spinenet-venv. Nhiều template Vast có sẵn trong python
+# hệ thống nên python3 trần chạy luôn — nhưng test 1 dòng cho chắc:
+python3 -c "import torch, SimpleITK, pydicom, open_clip; print('OK', torch.cuda.is_available())"
+#   → in "OK True"  : chạy thẳng, KHỎI activate.
+#   → ModuleNotFoundError: source spinenet-venv/bin/activate   (rồi test lại)
 ```
 
 ## 1. DATA + WEIGHTS (prereq — thiếu là job chạy sai/ from scratch)
