@@ -63,6 +63,32 @@
 > **Đã verify chạy thật** trên DB thật: thấy đúng 2 correction anh tạo 07/07 (spider_100), migration không mất data,
 > revert OK, path traversal trả 404.
 >
+> ### 🔗 Vòng 3 — vá lỗ "lô" (app `1dd2042`)
+> `build_dataset._latest_corrections()` trước đó lấy **TẤT CẢ** correction, không lọc `submitted_at`
+> → khái niệm "lô" chỉ là trang trí, correction chưa gửi vẫn bị nuốt vào train. Đã vá:
+> mặc định **chỉ lấy correction ĐÃ submit**, thêm `--batch-id` (tái hiện đúng lô của 1 lần train cũ)
+> và `--include-unsubmitted` (thoát hiểm cho thử nghiệm local, có ghi rõ rủi ro).
+> 6 test cũ đỏ ngay khi vá = bằng chứng cổng có tác dụng thật. **Suite 113 pass/1 skip.**
+> Verify DB thật: 2 correction 07/07 bị từ chối đúng, CLI in rõ lý do.
+>
+> ### 🔄 CHUỖI FEEDBACK-LOOP ĐẦY ĐỦ (trả lời "đang dùng cơ chế gì")
+> | Bước | Làm gì | Trạng thái |
+> |---|---|---|
+> | 1 | Bác sĩ sửa → `PUT /annotations` → `correction_log` | ✅ tự động |
+> | 2 | Bấm Gửi → `POST /corrections/submit` → đóng lô | ✅ tự động |
+> | 3 | `build_dataset` → crop + metadata (chỉ lô đã gửi) | ⚠️ **CLI chạy tay** |
+> | 4 | `retrain_head` → học | ⚠️ **CLI chạy tay** |
+> | 5 | `POST /model/activate` → phục vụ | ✅ có nút |
+>
+> **Cơ chế học (bước 4) = head-only fine-tune + replay + frozen BN** (KHÔNG phải EWC/LoRA/Tip-Adapter):
+> backbone đóng băng (chỉ train CBAM + 3 fc head) · BN đóng băng · replay ~200 mẫu gốc ·
+> `CrossEntropyLoss(ignore_index=-1)` + Adam · early-stop theo macro-F1 · chỉ ghi checkpoint nếu macro-F1 tăng ·
+> phải bấm activate mới vào phục vụ, revert luôn có.
+> Thuật ngữ literature: **decoupled classifier retraining (cRT-like) + experience replay + frozen BN** — đúng Tier 1.
+>
+> ⚠️ **Mô tả ĐÚNG trong luận văn:** đây là **bán tự động, có người trong vòng lặp** (bước 3–4 chạy tay,
+> chủ ý — khớp FDA PCCP). **KHÔNG nói "model tự học"** hay "vòng lặp khép kín tự động".
+>
 > ### ⚠️ CÒN LẠI
 > - **Chạy `freeze_holdout` thật một lần** — code xong rồi nhưng **chưa chạy**. Phải chạy TRƯỚC khi bác sĩ
 >   đụng vào app. Nguồn data: crop RSNA ở `spinet-v2/rsna_preprocessed/` (cần convert sang shape
