@@ -135,6 +135,45 @@ Cái này **mạnh hơn** về mặt học thuật vì nó khớp đúng khung p
 
 ---
 
+## 0b. ĐANG DÙNG CÁCH NÀO — và vì sao không dùng mấy cách kia
+
+> Mục này để trả lời hội đồng. Chi tiết kỹ thuật ở §1–§2.
+
+**Model có 2 phần:** backbone (ResNet34-3D + CBAM, ~63M tham số — "học cách NHÌN")
+và 3 head (~50K — "học cách PHÁN"). Với 20–50 ca **không thể train 63M** → sẽ học thuộc lòng
+50 ca đó và quên 9748 ca RSNA.
+
+**Cách đang dùng = head-only fine-tune + replay + frozen BN** (3 lớp phòng vệ):
+1. **Đóng băng backbone, chỉ train head** — bác sĩ sửa nhãn thường vì *ngưỡng phán* lệch,
+   không phải vì model *nhìn* sai. 50K tham số / 50 mẫu là tỉ lệ hợp lý.
+2. **Đóng băng BatchNorm** — BN giữ thống kê của TOÀN BỘ data train, và nó cập nhật
+   **KHÔNG qua gradient**, nên `freeze_backbone()` (chỉ tắt gradient) **không chặn được**.
+   Batch 4 mẫu sẽ đè thống kê của 9748 ca. Lỗi im lặng, không báo gì, chỉ làm model tệ dần.
+3. **Replay ~200 ca cũ** — không có thì model chỉ thấy ca bị sửa, tưởng thế giới toàn ca đó.
+
+Cộng 2 cổng: chỉ lưu nếu **macro-F1 tăng** trên held-out đóng băng; phải **bấm duyệt** mới phục vụ.
+
+**Bảng so sánh (vì sao loại các cách khác):**
+
+| Cách | Ưu | Vì sao KHÔNG chọn |
+|---|---|---|
+| **✅ head-only + replay + frozen BN** | Rẻ; **bằng chứng y tế mạnh nhất** ở vùng data ít; repo đã có 80% code | (đang dùng) |
+| EWC | Nổi tiếng, trích dẫn "sang" | Fisher matrix cần data cũ; **N=20–50 ước lượng không đáng tin**; da liễu cho thấy **replay thắng EWC ở MỌI cấu hình** |
+| LwF | Rẻ, ~20 dòng | Bằng chứng y tế mỏng, không mạnh hơn replay |
+| LoRA / adapter | Học được nhiều hơn head-only | **Cần ≥50 mẫu**; thêm dependency; thừa ở quy mô này |
+| Tip-Adapter / prototype | **Không thể quên** (không ghi đè gì), rollback tức thì | Cần **BiomedCLIP** — app đang chạy **CBAM-only**, phải nối thêm; zero-shot trên task hẹp này yếu |
+| Full fine-tune | — | Quên thảm khốc ở N nhỏ |
+
+**Nhược điểm của cách đang dùng (chủ động nói trước khi bị hỏi):**
+1. **Head-only có trần** — nếu correction đòi hỏi backbone *nhìn thấy* đặc trưng chưa từng học thì
+   chỉnh head không cứu được. Lúc đó mới cần LoRA hoặc mở backbone với LR nhỏ.
+2. **Phải giữ data cũ** trên máy chạy (replay) — tốn chỗ; ở bệnh viện thật thì vướng riêng tư.
+3. ⚠️ **`retrain_head` đang dùng `CrossEntropyLoss` trần** — đúng cái đã giết run T1 (26/07: acc 76%,
+   Severe F1 0.0). Hiện **cổng macro-F1 chặn được** (không lưu checkpoint sập), nhưng nếu chạy mãi
+   không cải thiện thì **việc đầu tiên nên thử là thêm class-weight**, y như fix cho T1.
+
+---
+
 ## 1. Cập nhật trọng số bằng cách nào (N nhỏ)
 
 Xếp theo **bằng chứng trong ảnh y tế**, không phải theo độ "kêu".
