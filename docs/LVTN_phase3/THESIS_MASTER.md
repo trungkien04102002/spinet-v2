@@ -78,12 +78,16 @@ trong khi foraminal **phải** chấm trên **Sag-T1** (mỡ quanh rễ thần k
 over-call Severe. Gap AUC–F1 lớn (Severe AUC 0.899 vs F1 0.356). spinal_canal Moderate thấp = **seed-instability**
 (seed 123 recall sập 0.083), không phải yếu kiến trúc.
 
-### Trụ 4 — Feedback loop (⚪ future work)
-- **Đã có:** capture (`correction_log`, annotation versioned) + `backend/app/feedback/` (build_dataset + retrain_head,
-  before/after + swap thủ công) — đủ thỏa yêu cầu thầy "làm capture trước".
-- **Không build:** EWC / forgetting-eval / model-swap tự động (~10–15 person-days, cạnh 4090 với SOTA, không có bác sĩ thật).
-- **Viết trong report:** đoạn Future Work đã soạn sẵn ở `FEEDBACK_LOOP_RESEARCH.md` §6.
-- Optional partial-credit (~1 ngày): dataset-builder từ correction_log + 1 fine-tune nhẹ 10–20 sample → before/after.
+### Trụ 4 — Feedback loop (🟡 ĐÃ QUAY LẠI SCOPE 2026-07-26 — user sẽ làm)
+- **⭐ Đọc [`FEEDBACK_LOOP_METHODS.md`](FEEDBACK_LOOP_METHODS.md) — khảo sát phương pháp + phần đã code xong.**
+- **Đã có:** capture (`correction_log`, annotation versioned) + `backend/app/feedback/` (build_dataset + retrain_head).
+- **Đã vá 2026-07-26** (3 guard, app test 91 pass/1 skip): đóng băng BatchNorm · replay buffer `--replay-dir` ·
+  cổng keep/discard đổi từ accuracy sang **macro-F1** (accuracy che được việc lớp Severe sập về 0).
+- **Còn lại:** ① **khoá held-out set NGAY trước khi thu correction** (không làm bù được) ② nút Áp dụng/Hoàn tác trong app.
+- **Không build (→ Future Work):** EWC/LwF/LoRA, Tip-Adapter cache, cleanlab, McNemar/bootstrap/BWT chính quy, drift detection.
+- **Phạm vi user chốt:** "có cách tiếp cận, at least là có làm, và có impact, còn hơn không có gì" — không đánh giá nặng.
+  ⚠️ Với 20–50 mẫu **không chứng minh được cải thiện có ý nghĩa thống kê** → phát biểu phải là "cơ chế an toàn, không quên",
+  không phải "model tốt lên". Dự phòng nếu không có bác sĩ thật: **correction mô phỏng** từ held-out.
 
 ---
 
@@ -195,7 +199,8 @@ Chỉ **model multi-view mới** train thật; model cũ KHÔNG train lại; thr
 | [`00_TRACKER.md`](00_TRACKER.md) | Tracker chi tiết theo tuần + dashboard (nguồn của mục b/e) |
 | [`IMPROVE_F1_PLAN.md`](IMPROVE_F1_PLAN.md) | Chẩn đoán F1 + xếp hạng 5 hướng cải thiện |
 | [`MULTIVIEW_RESEARCH.md`](MULTIVIEW_RESEARCH.md) | Research multi-view đầy đủ + kiến trúc fusion |
-| [`FEEDBACK_LOOP_RESEARCH.md`](FEEDBACK_LOOP_RESEARCH.md) | Literature feedback-loop + đoạn Future Work mẫu |
+| [`FEEDBACK_LOOP_METHODS.md`](FEEDBACK_LOOP_METHODS.md) | **Khảo sát phương pháp feedback-loop (2026-07-26) + phần đã code + việc còn lại** |
+| [`FEEDBACK_LOOP_RESEARCH.md`](FEEDBACK_LOOP_RESEARCH.md) | Literature feedback-loop (bản cũ) + đoạn Future Work mẫu |
 | [`CAU_HOI_THAY.md`](CAU_HOI_THAY.md) | Talking points + Q&A đã chuẩn bị cho thầy |
 | [`DESIGN_SPEC.md`](DESIGN_SPEC.md) · [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) | Thiết kế + plan P0–P3 của app |
 | `../handoff/handoff-20260724-codex.md` | Handoff gần nhất (spinet-v2) |
