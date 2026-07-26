@@ -32,10 +32,42 @@
 > ```
 > In ra `Before / After / Delta` theo macro_f1 + severe_f1. Quên `--replay-dir` → có cảnh báo.
 >
-> ### ⚠️ 2 việc CÒN LẠI (chưa làm)
-> 1. **KHOÁ held-out set NGAY, trước khi thu correction đầu tiên.** Thu xong mới chia thì số
->    before/after vô giá trị — không làm bù được. Mất 10 phút, nhưng có hạn chót vật lý.
-> 2. **Nút "Áp dụng / Hoàn tác" trong app** (hiện swap checkpoint thủ công).
+> ### ✅ Vòng 2 (cùng ngày) — luồng "bác sĩ bấm gửi" + khoá held-out + đổi phiên bản model
+>
+> **① Luồng GỬI (`backend/app/routers/feedback.py`)** — trước đây app *có* capture (`correction_log`)
+> nhưng **không có đường gửi**: correction nằm im, bác sĩ không biết có được nhận không.
+> Tách **lưu** (sửa hồ sơ bệnh nhân) khỏi **gửi** (đóng góp làm dữ liệu học) — bác sĩ chủ động bàn giao,
+> không phải ống ngầm từ bệnh án vào training set.
+> - `correction_log` + 2 cột `submitted_at`, `batch_id` (migration additive, đã test trên bảng có sẵn data)
+> - `GET /corrections` (đang chờ / đã gửi / số lô) · `POST /corrections/submit` (đóng 1 lô, trả `batch-<ts>-<hash>`)
+> - **Gửi ≠ train.** Chỉ xếp hàng; train offline; model mới phải được bấm duyệt mới vào phục vụ.
+> - FE: panel "Doctor feedback" từ chữ tĩnh → panel thật (số đang chờ + nút Gửi + thông báo lô)
+>
+> **② Đổi/hoàn tác phiên bản model (`app/feedback/model_registry.py`)** — mọi checkpoint nằm cạnh nhau
+> trong `models/weights/`, con trỏ `ACTIVE` (text) chọn cái đang phục vụ. **Baseline không bao giờ bị ghi đè**
+> → hoàn tác luôn khả dụng, nên mới dám thử update. Chặn path traversal (tên đến từ HTTP).
+> `GET /model/versions` · `POST /model/activate` · `POST /model/revert`. `retrain_head` ghi thêm
+> sidecar `<ckpt>.pth.json` để UI đọc số before/after mà không phải nạp 240MB.
+>
+> **③ Khoá held-out (`app/feedback/freeze_holdout.py`)** — lấy mẫu **phân tầng theo tổ hợp nhãn**
+> (rút đều tay dễ trượt sạch lớp Severe → mù đúng lớp cần đo), ghi `MANIFEST.json` có **sha256 + timestamp + seed**.
+> `--verify` phát hiện được nếu bị sửa. Từ chối freeze đè (mọi số before/after cũ sẽ mất tính so sánh)
+> và từ chối nuốt trọn source.
+> ```bash
+> python -m app.feedback.freeze_holdout --source-dir <data> --out-dir data/holdout_frozen --n 150
+> python -m app.feedback.freeze_holdout --verify data/holdout_frozen
+> ```
+>
+> **Test:** `test_feedback_flow.py` (17) + `test_retrain_guards.py` (11) + migration `correction_log` (1).
+> **Full suite 108 passed / 1 skipped** (trước 80). FE lint + build sạch.
+> **Đã verify chạy thật** trên DB thật: thấy đúng 2 correction anh tạo 07/07 (spider_100), migration không mất data,
+> revert OK, path traversal trả 404.
+>
+> ### ⚠️ CÒN LẠI
+> - **Chạy `freeze_holdout` thật một lần** — code xong rồi nhưng **chưa chạy**. Phải chạy TRƯỚC khi bác sĩ
+>   đụng vào app. Nguồn data: crop RSNA ở `spinet-v2/rsna_preprocessed/` (cần convert sang shape
+>   `build_dataset` hoặc trỏ thẳng nếu đã đúng format `volumes/` + `train_metadata.csv`).
+> - Bấm thử nút Gửi trên UI (em cố ý không bấm hộ — đó là 2 correction thật của anh).
 >
 > ### Dự phòng nếu không mời được bác sĩ thật
 > Lấy N ca model đoán sai trong held-out, "sửa" bằng nhãn thật → chạy nguyên pipeline.
