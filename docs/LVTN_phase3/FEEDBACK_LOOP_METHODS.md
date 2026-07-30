@@ -135,6 +135,46 @@ Cái này **mạnh hơn** về mặt học thuật vì nó khớp đúng khung p
 
 ---
 
+## 0a. GỌI TÊN CHO ĐÚNG (bổ sung 2026-07-30 — dùng cho tên chương + related work)
+
+> Khảo sát gốc mạnh về *cơ chế* nhưng yếu về *thuật ngữ*. Hội đồng sẽ hỏi "cái này gọi là gì
+> trong literature" → phải trả lời được bằng 1 câu, và phải trả lời đúng.
+
+**Tên đầy đủ, dùng câu này:**
+> Hệ thống là **human-in-the-loop continual learning** dạng **batch/offline**, kịch bản
+> **new-instance (NI)** — cùng bài toán grading, cùng không gian nhãn, chỉ thêm mẫu mới đã
+> được bác sĩ hiệu chỉnh — cập nhật bằng **rehearsal (replay)** và có **cổng phê duyệt của người**.
+
+Bóc từng vế:
+
+| Vế | Vì sao đúng với ta | Neo trong literature |
+|---|---|---|
+| **new-instance (NI)** | Không thêm lớp mới, không thêm task mới. Chỉ thêm mẫu của **cùng** 3 head × 3 lớp | Lomonaco & Maltoni, CORe50, CoRL 2017 — bộ ba **NI / NC / NIC**. Ta = NI |
+| **không phải class-IL / task-IL** | Nhãn cố định `Normal/Moderate/Severe` | van de Ven & Tolias, arXiv:1904.07734 (task-IL / domain-IL / class-IL) |
+| **domain-IL chỉ khi** | ...data bác sĩ đến từ máy MRI / bệnh viện khác phân phối RSNA. Nếu có thì nói rõ, vì nó **làm mạnh** đóng góp | như trên |
+| **batch/offline, KHÔNG online** | Ta gom lô (`batch_id`), retrain ngoài giờ, người bấm duyệt, rồi mới đổi `ACTIVE` | FDA PCCP 12/2024 (§5) áp cho **batch update**, không áp online learning |
+| **rehearsal / replay** | `--replay-dir` 200 mẫu RSNA gốc trộn cùng correction | §1 — replay thắng EWC trong ảnh y tế |
+| **human-in-the-loop** | Bác sĩ vừa sinh nhãn (sửa) vừa gác cổng (duyệt model mới) | Budd, Robinson & Kainz, Medical Image Analysis 2021 (arXiv:1910.02923) |
+
+**⚠️ 3 CHỖ ĐỪNG GỌI SAI (hội đồng bắt được ngay):**
+1. **ĐỪNG gọi là "online learning" / "online continual learning".** Online = cập nhật ngay theo
+   dòng dữ liệu, mỗi ca một lần. Ta **cố ý không làm vậy** — và cái "cố ý không" đó chính là
+   đóng góp (khớp PCCP). Gọi sai là tự vứt lập luận mạnh nhất của mình.
+2. **ĐỪNG gọi trần là "fine-tuning".** Fine-tune trần trên 20–50 ca đúng nghĩa là *iterative
+   fine-tuning*, **chưa phải** continual learning — vì không có cơ chế chống quên. Thứ nâng nó
+   lên thành continual learning (dạng nhẹ nhất, rehearsal-based) là 3 guard ở §0b:
+   replay + frozen BN + cổng macro-F1 trên held-out đóng băng. **Bỏ replay đi là mất luôn cái tên.**
+3. **ĐỪNG nhận là "active learning".** Active learning = *model* chọn ca nó không chắc để hỏi
+   bác sĩ. Ta hiện **không** làm: bác sĩ tự chọn ca. Đây là thứ **duy nhất** trong taxonomy mà
+   ta thiếu, và nó rẻ (đã có xác suất đầu ra → sắp worklist theo entropy / 1−max_prob).
+   → xếp vào **Future Work**, hoặc làm nếu còn thời gian; đừng viết như thể đã có.
+
+**Vì sao mục này không mâu thuẫn với §0:** gọi tên đúng ≠ chứng minh được hiệu quả. Ta được
+quyền nói "đây là một hệ human-in-the-loop continual learning kịch bản NI" (đúng về *thiết kế*),
+nhưng vẫn **không** được nói "và nó làm model tốt lên" với N=20–50 (§0). Hai câu khác nhau.
+
+---
+
 ## 0b. ĐANG DÙNG CÁCH NÀO — và vì sao không dùng mấy cách kia
 
 > Mục này để trả lời hội đồng. Chi tiết kỹ thuật ở §1–§2.
@@ -394,6 +434,8 @@ trong luận văn. Vẫn kiểm chứng được cơ chế; chỉ mất phần b
 | Kumari et al., arXiv:2312.17004 — survey CL y tế | Related work | ✅ |
 | González et al., arXiv:2405.13482 — survey CL y tế | Related work | ✅ |
 | PMC8469804 — incremental learning da liễu | Replay > EWC | ✅ |
+| Lomonaco & Maltoni, CoRL 2017 — CORe50 (NI/NC/NIC) | **§0a — gọi tên kịch bản NI** | ⚠️ thêm 30/07, verify arXiv:1705.03550 |
+| van de Ven & Tolias, 2019 — Three scenarios for CL | **§0a — task/domain/class-IL** | ⚠️ thêm 30/07, verify arXiv:1904.07734 |
 
 **Khai báo AI:** khảo sát này thực hiện có hỗ trợ của công cụ AI (Claude + web search). Mọi trích dẫn
 phải được kiểm chứng lại tại nguồn gốc trước khi đưa vào luận văn.
