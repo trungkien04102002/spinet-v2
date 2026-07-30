@@ -57,6 +57,7 @@ if str(_THIS_DIR) not in sys.path:
 from multiview_dataloader import RSNAMultiViewDataset, make_patient_split  # noqa: E402
 from grading_multiview import GradingMultiView, CONDITIONS  # noqa: E402
 from spinenet.metrics_logger import MetricsLogger  # noqa: E402
+from spinenet.losses import compute_class_weights  # noqa: E402
 from spinenet.auc_metrics import (  # noqa: E402
     aggregate_overall_auprc,
     compute_auc_auprc_per_condition,
@@ -202,6 +203,16 @@ def main():
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--weight-decay", type=float, default=1e-4)
     parser.add_argument("--num-workers", type=int, default=4)
+    parser.add_argument("--class-weight-mode", type=str, default="none",
+                        choices=["none", "sqrt", "inverse", "effective"],
+                        help="Class weight mode for CrossEntropyLoss (default: none). "
+                             "Leave at 'none' and the Severe head collapses to the "
+                             "majority class -- Severe F1 stays 0.")
+    parser.add_argument("--select-by", type=str, default="val_loss",
+                        choices=["val_loss", "severe_f1"],
+                        help="Which metric picks the saved 'best' epoch. val_loss "
+                             "rewards the majority-class collapse; use severe_f1 when "
+                             "Severe F1 is what the run is for (default: val_loss)")
 
     # Checkpointing
     parser.add_argument("--save-dir", type=str, default="experiments/multiview/checkpoints")
@@ -305,10 +316,12 @@ def main():
         model.load_state_dict(checkpoint["model_state_dict"])
         start_epoch = checkpoint.get("epoch", 0) + 1
         best_val_loss = checkpoint.get("best_val_loss", float("inf"))
+        best_severe_f1 = checkpoint.get("best_severe_f1", float("-inf"))
         print(f"  Resumed from epoch {start_epoch}")
     else:
         start_epoch = 0
         best_val_loss = float("inf")
+        best_severe_f1 = float("-inf")
 
         if args.cbam_checkpoint:
             if not os.path.isfile(args.cbam_checkpoint):
@@ -352,7 +365,19 @@ def main():
 
     # --- Training setup ---
     print("\n[4/6] Setting up training...")
-    criterion = nn.CrossEntropyLoss(ignore_index=-1)
+    if args.class_weight_mode != "none":
+        print(f"  Computing class weights (mode={args.class_weight_mode}) from train set...")
+        class_alpha = compute_class_weights(
+            train_dataset, num_classes=3, mode=args.class_weight_mode
+        )
+        print(f"  Class weights: Normal={class_alpha[0]:.3f} "
+              f"Moderate={class_alpha[1]:.3f} Severe={class_alpha[2]:.3f}")
+        # .to(device): the weight is a buffer on the loss module, and nothing
+        # ever moves the criterion, so a CPU weight against CUDA logits is a
+        # hard RuntimeError on the first batch.
+        criterion = nn.CrossEntropyLoss(weight=class_alpha.to(device), ignore_index=-1)
+    else:
+        criterion = nn.CrossEntropyLoss(ignore_index=-1)
     optimizer = optim.Adam(
         filter(lambda p: p.requires_grad, model.parameters()),
         lr=args.lr, weight_decay=args.weight_decay,
@@ -360,7 +385,7 @@ def main():
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=5)
 
     print(f"Optimizer: Adam (lr={args.lr}, weight_decay={args.weight_decay})")
-    print("Loss: CrossEntropyLoss")
+    print(f"Loss: CrossEntropyLoss (class_weight_mode={args.class_weight_mode})")
     print("Scheduler: ReduceLROnPlateau (patience=5)")
 
     # --- Training loop ---
@@ -437,9 +462,17 @@ def main():
             if severe_f1s:
                 avg_severe_f1 = float(np.mean(severe_f1s))
 
-        is_best = val_loss < best_val_loss
+        if args.select_by == "severe_f1":
+            is_best = (not np.isnan(avg_severe_f1)) and avg_severe_f1 > best_severe_f1
+        else:
+            is_best = val_loss < best_val_loss
+        # Track both regardless of which one drives selection, so the saved
+        # metrics describe the whole run rather than only the chosen criterion.
+        best_val_loss = min(best_val_loss, val_loss)
+        if not np.isnan(avg_severe_f1):
+            best_severe_f1 = max(best_severe_f1, avg_severe_f1)
+
         if is_best:
-            best_val_loss = val_loss
             best_epoch = epoch + 1
             epochs_without_improvement = 0
 
@@ -453,9 +486,12 @@ def main():
                 "val_weighted_logloss": val_weighted_logloss,
                 "val_accuracies": val_accuracies,
                 "best_val_loss": best_val_loss,
+                "best_severe_f1": best_severe_f1,
+                "select_by": args.select_by,
                 "fusion": args.fusion,
             }, best_path)
-            print(f"\nSaved best model to {best_path}")
+            print(f"\nSaved best model to {best_path} "
+                  f"(selected by {args.select_by})")
 
             elapsed_total = time.time() - total_train_start
             metrics_logger.save_best(
@@ -515,7 +551,9 @@ def main():
             }, checkpoint_path)
             print(f"Saved checkpoint to {checkpoint_path}")
 
-        print(f"\nBest Val Loss: {best_val_loss:.4f} (Epoch {best_epoch})")
+        print(f"\nBest Val Loss: {best_val_loss:.4f} | "
+              f"Best Severe F1: {best_severe_f1:.4f} "
+              f"(saved epoch {best_epoch}, by {args.select_by})")
         print(f"Epochs without improvement: {epochs_without_improvement}")
 
         if epochs_without_improvement >= args.early_stop_patience:
@@ -527,7 +565,8 @@ def main():
     print("\n" + "=" * 70)
     print("[6/6] Training Complete!")
     print("=" * 70)
-    print(f"\nBest model: epoch {best_epoch}, val_loss={best_val_loss:.4f}")
+    print(f"\nBest model: epoch {best_epoch} (by {args.select_by}), "
+          f"val_loss={best_val_loss:.4f}, severe_f1={best_severe_f1:.4f}")
     print(f"Saved at: {save_dir / f'best_model_{prefix}.pth'}")
     print(f"Metrics JSON: {metrics_logger.best_json}")
 

@@ -61,9 +61,14 @@ ls rsna_preprocessed_t1/volumes | wc -l     # kỳ vọng ~19689
 
 ```bash
 CK=checkpoints/rsna/best_model_attention.pth       # warm-start từ CBAM đã train
-python3 experiments/f1_improvement/train_t1_foraminal.py --fast-dev --cbam-checkpoint $CK
-python3 experiments/multiview/train_multiview.py --fusion concat --fast-dev --cbam-checkpoint $CK
-python3 experiments/multiview/train_multiview.py --fusion gated  --fast-dev --cbam-checkpoint $CK
+# --class-weight-mode để smoke-test luôn nhánh có class weight (nhánh này CHƯA từng
+# chạy GPU thật — trước đây weight nằm trên CPU sẽ crash ngay batch đầu, đã fix).
+python3 experiments/f1_improvement/train_t1_foraminal.py --fast-dev --cbam-checkpoint $CK \
+    --class-weight-mode effective --select-by severe_f1
+python3 experiments/multiview/train_multiview.py --fusion concat --fast-dev --cbam-checkpoint $CK \
+    --class-weight-mode effective --select-by severe_f1
+python3 experiments/multiview/train_multiview.py --fusion gated  --fast-dev --cbam-checkpoint $CK \
+    --class-weight-mode effective --select-by severe_f1
 # OOM? hạ --batch-size (T1 default 32, multiview default 16).
 # LƯU Ý: quên --cbam-checkpoint → banner "⚠️ NOT warm-starting"; sai path → dừng báo lỗi.
 ```
@@ -82,8 +87,11 @@ bash experiments/sota_comparison/run_all.sh
 ```bash
 CK=checkpoints/rsna/best_model_attention.pth
 python3 experiments/f1_improvement/train_t1_foraminal.py --cbam-checkpoint $CK \
+    --class-weight-mode effective --select-by severe_f1 \
     --epochs 30 --batch-size 32 --lr 1e-3 \
     2>&1 | tee experiments/f1_improvement/run_t1.log
+# ⚠️ BẮT BUỘC 2 flag trên. Lần chạy 2026-07 thiếu chúng → CE trần, model đoán
+#    toàn Normal, Severe F1 = 0.0000 suốt 10 epoch. Xem docs/LVTN_phase3/IMPROVE_F1_PLAN.md.
 # → checkpoints/t1_foraminal/best_model_t1_foraminal_cbam.pth
 # → checkpoints/t1_foraminal/t1_foraminal_cbam_best_metrics.json (+ _log.csv + .txt)
 ```
@@ -94,12 +102,14 @@ python3 experiments/f1_improvement/train_t1_foraminal.py --cbam-checkpoint $CK \
 CK=checkpoints/rsna/best_model_attention.pth
 # #2 concat
 python3 experiments/multiview/train_multiview.py --fusion concat --cbam-checkpoint $CK \
+    --class-weight-mode effective --select-by severe_f1 \
     --epochs 30 --batch-size 16 --lr 1e-3 \
     2>&1 | tee experiments/multiview/run_concat.log
 # → experiments/multiview/checkpoints/best_model_multiview_concat.pth (+ _best_metrics.json/.txt + _log.csv)
 
 # #3 gated leader-supporter (đúng ý thầy)
 python3 experiments/multiview/train_multiview.py --fusion gated --cbam-checkpoint $CK \
+    --class-weight-mode effective --select-by severe_f1 \
     --epochs 30 --batch-size 16 --lr 1e-3 \
     2>&1 | tee experiments/multiview/run_gated.log
 # → .../best_model_multiview_gated.pth  +  multiview_gated_best_metrics.json
