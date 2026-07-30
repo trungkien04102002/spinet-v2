@@ -43,7 +43,8 @@ threshold/calibration vẫn làm trước vì free.
 | Fix "Full grading" E2E (TotalSpineSeg PATH + `pixel_spacing` scalar), verified 479s CPU | ✅ | app `dea54b1` |
 | Unify UI: 1 nút `✨ Run AI` + 1 bảng 11 nhãn editable + About + Doctor-feedback section | ✅ | app `cfdc7a2` |
 | Upload `.zip` DICOM series (`extract_dicom_zip`, zip-slip guard) | ✅ | app `3c88178` |
-| **Còn lại** | polish UI (dropdown per-condition, async job/progress cho Run AI ~8–15 phút CPU) + **quay demo video** | ⬜ |
+| **Async job + progress cho Run AI** (`POST /grade_full/start` + `GET /jobs/{id}`) | ✅ | app `018c1df` |
+| **Còn lại** | polish UI (dropdown per-condition) + **quay demo video** | ⬜ |
 
 Test: backend **66 passed / 1 skipped**; FE lint+build clean. Repo **public**.
 Chạy: `cd ~/spine-labeling-app && ./run.sh both` (BE :8000, FE :5173) · stop `./run.sh stop`.
@@ -83,7 +84,11 @@ over-call Severe. Gap AUC–F1 lớn (Severe AUC 0.899 vs F1 0.356). spinal_cana
 - **Đã có:** capture (`correction_log`, annotation versioned) + `backend/app/feedback/` (build_dataset + retrain_head).
 - **Đã vá 2026-07-26** (3 guard, app test 91 pass/1 skip): đóng băng BatchNorm · replay buffer `--replay-dir` ·
   cổng keep/discard đổi từ accuracy sang **macro-F1** (accuracy che được việc lớp Severe sập về 0).
-- **Còn lại:** ① **khoá held-out set NGAY trước khi thu correction** (không làm bù được) ② nút Áp dụng/Hoàn tác trong app.
+- **Held-out ĐÃ ĐÓNG BĂNG 26/07** (app `53080da`): `backend/data/holdout_frozen/`, 200 dòng, sha256 `62ab6df1…`,
+  bốc **chỉ từ 395 bệnh nhân validation seed-42** (`--split-seed 42`) — nếu bốc từ cả 9748 dòng thì ~80% là data
+  model đã học ⇒ đo trí nhớ chứ không phải cải thiện. MANIFEST.json đã vào git làm bằng chứng.
+  ⚠️ Bộ này cân bằng lớp cố ý → **đừng so số với paper**, chỉ so trước/sau của chính nó.
+- **Còn lại:** nút Áp dụng/Hoàn tác đã có API (`/model/activate`, `/model/revert`) — chưa gắn nút lên UI.
 - **Không build (→ Future Work):** EWC/LwF/LoRA, Tip-Adapter cache, cleanlab, McNemar/bootstrap/BWT chính quy, drift detection.
 - **Phạm vi user chốt:** "có cách tiếp cận, at least là có làm, và có impact, còn hơn không có gì" — không đánh giá nặng.
   ⚠️ Với 20–50 mẫu **không chứng minh được cải thiện có ý nghĩa thống kê** → phát biểu phải là "cơ chế an toàn, không quên",
