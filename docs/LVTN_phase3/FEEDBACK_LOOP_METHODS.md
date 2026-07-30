@@ -175,6 +175,33 @@ nhưng vẫn **không** được nói "và nó làm model tốt lên" với N=20
 
 ---
 
+### Hình kiến trúc: `figures/feedback_loop_tikz.tex` (vẽ 2026-07-30)
+
+TikZ, cùng style với `paper/lncs_hk252/figures/hybrid_arch_tikz.tex`. Biên dịch:
+`pdflatex feedback_loop_tikz.tex` → `feedback_loop_tikz.pdf` (~18,8 × 14,4 cm).
+**Chưa gắn vào `paper/lvtn_overleaf/`** (user chốt: chạy xong hết mới viết report).
+
+4 dải: **A** trực tuyến (app phục vụ) → **B** thu thập (“lưu” tách khỏi “gửi”) →
+**C** ngoại tuyến (retrain theo lô + kiểm chứng) → **D** triển khai (người duyệt, revert được),
+rồi mũi tên xanh đóng vòng về mô hình đang phục vụ.
+**Nét liền = đã code + có test; nét đứt = DỰ KIẾN** (đúng quy tắc 14 CLAUDE.md — chỉ có 2 hộp đứt:
+*active learning* và *kiểm tra chất lượng nhãn*, cả hai đều chưa làm, xem §0a).
+Mỗi hộp map thẳng vào file/endpoint thật — danh sách đối chiếu nằm ở đầu file `.tex`.
+
+Đoạn chèn sẵn khi viết report (nhớ quy tắc 7: phải có câu mô tả trong thân bài):
+
+```latex
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figures/feedback_loop_tikz.pdf}
+  \caption{Vòng lặp phản hồi bác sĩ theo cơ chế human-in-the-loop continual
+  learning dạng batch. Nét liền: thành phần đã cài đặt; nét đứt: dự kiến.}
+  \label{fig:feedback_loop}
+\end{figure}
+```
+
+---
+
 ## 0b. ĐANG DÙNG CÁCH NÀO — và vì sao không dùng mấy cách kia
 
 > Mục này để trả lời hội đồng. Chi tiết kỹ thuật ở §1–§2.
