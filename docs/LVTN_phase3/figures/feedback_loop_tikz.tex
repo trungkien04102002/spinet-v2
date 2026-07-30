@@ -105,8 +105,9 @@
 \draw[arr] (registry) -- (revert);
 
 % ---- vong lap dong lai: nap checkpoint moi vao model dang phuc vu ----
+% Di vong DUOI dai D roi moi len, de khong cat ngang hop revert.
 \draw[arr,thick,green!45!black]
-  (registry.west) -- (-1.0,-5.0) -- (-1.0, 5.6) -- (8.3, 5.6) -- (grade.north);
+  (registry.south) -- (10.0,-6.3) -- (-1.0,-6.3) -- (-1.0, 5.6) -- (8.3, 5.6) -- (grade.north);
 \node[lbl,text=green!35!black,above] at (4.0,5.62)
   {\textbf{Nạp checkpoint mới} $\to$ phục vụ ca kế tiếp \scriptsize(\texttt{\_load\_model.cache\_clear()})};
 
@@ -128,11 +129,11 @@
   {D. TRIỂN KHAI — người quyết định, luôn quay đầu được};
 
 % ============ chu thich ============
-\node[note,anchor=west] at (-0.8,-6.6)
+\node[note,anchor=west] at (-0.8,-7.2)
   {\textbf{Nét liền} = đã cài đặt và có kiểm thử \quad
    \textbf{--- nét đứt ---} = dự kiến, chưa có \quad
    \textbf{cam} = điểm con người tham gia};
-\node[note,anchor=west,text=black!45] at (-0.8,-7.15)
+\node[note,anchor=west,text=black!45] at (-0.8,-7.75)
   {Cập nhật theo LÔ (batch), không phải online: model đang phục vụ KHÔNG tự đổi khi bác sĩ bấm Lưu —
    khớp khung FDA PCCP 12/2024.};
 
