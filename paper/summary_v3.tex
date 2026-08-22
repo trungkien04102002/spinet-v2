@@ -45,7 +45,7 @@
 \noindent Báo cáo này tổng hợp kết quả của ba hướng nghiên cứu đã hoàn thành: (i) xử lý mất cân bằng dữ liệu, (ii) cải thiện chất lượng đặc trưng bằng cơ chế attention, và (iii) mở rộng không gian nhãn qua mô hình ngôn ngữ-thị giác y khoa BiomedCLIP. Thí nghiệm được thực hiện trên hai bộ dữ liệu RSNA 2024 Lumbar Spine và SPIDER, sử dụng các chỉ số Accuracy, Recall, Precision, F1, AUC, và AUPRC.
 
 \vspace{0.5em}
-\noindent Mô hình Hybrid đề xuất (CBAM + BiomedCLIP đóng băng) chấp nhận giảm Accuracy khoảng 9\% để đổi lấy Severe Recall tăng 38\%, Severe AUPRC tăng 16\% tương đối, đồng thời Mean Precision macro vẫn cải thiện nhẹ (+0.031). Hybrid đạt kết quả tốt nhất trên cả sáu chỉ số so với ba cấu hình còn lại (Base, CBAM-only, BMC-only). Thí nghiệm ablation BMC-only được bổ sung nhằm xác minh fusion hai nhánh là cần thiết.
+\noindent Mô hình Hybrid đề xuất (CBAM + BiomedCLIP đóng băng) chấp nhận giảm Accuracy khoảng 9\% để đổi lấy Severe Recall tăng 38\%, Severe AUPRC tăng 16\% tương đối, đồng thời Mean Precision macro vẫn cải thiện nhẹ (+0.031). Hybrid đạt kết quả tốt nhất trên cả sáu chỉ số so với ba cấu hình còn lại (SpineNetV2, CBAM-only, BMC-only). Thí nghiệm ablation BMC-only được bổ sung nhằm xác minh fusion hai nhánh là cần thiết.
 
 % ============================================================================
 \section*{Bảng 1A: Tóm tắt 4 cấu hình trên RSNA}
@@ -53,7 +53,7 @@
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 \rowcolor{tablehdr}
-\textbf{Chỉ số} & Base & CBAM-only & BMC-only \emph{(ablation)} & \best{Hybrid} \\
+\textbf{Chỉ số} & SpineNetV2 & CBAM-only & BMC-only \emph{(ablation)} & \best{Hybrid} \\
 \midrule
 Mean Accuracy & \best{81.4\%} & 68.98\% & 69.19\% & 72.1\% \\
 Mean F1 macro & 0.420 & 0.502 & 0.464 & \best{0.528} \\
@@ -108,7 +108,7 @@ Mean AUPRC macro & 0.523 & 0.519 & 0.482 & \best{0.526} \\
 \rowcolor{tablehdr}
 & \multicolumn{2}{c}{Recall} & \multicolumn{2}{c}{Precision} & \multicolumn{2}{c}{F1} & \multicolumn{2}{c}{AUC} & \multicolumn{2}{c}{AUPRC} \\
 \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-11}
-\textbf{Class} & Base & Ours & Base & Ours & Base & Ours & Base & Ours & Base & Ours \\
+\textbf{Class} & SpineNetV2 & Ours & SpineNetV2 & Ours & SpineNetV2 & Ours & SpineNetV2 & Ours & SpineNetV2 & Ours \\
 \midrule
 Normal/Mild & 97.0\% & \bad{68.6\%} & 83.7\% & \good{94.6\%} & 0.898 & 0.786 & 0.829 & \good{0.848} & 0.948 & 0.949 \\
 Moderate & 14.4\% & \good{64.9\%} & 41.0\% & \bad{30.5\%} & 0.211 & \good{0.406} & 0.790 & \bad{0.732} & 0.345 & \bad{0.288} \\
@@ -151,7 +151,7 @@ R. Foraminal & \textbf{Severe} & 76.8 $\rightarrow$ 60.4 & \bad{0.0} $\rightarro
 \begin{tabular}{@{}llcccc@{}}
 \toprule
 \rowcolor{tablehdr}
-\textbf{Condition} & \textbf{Grade} & Base AUC & Ours AUC & Base AUPRC & Ours AUPRC \\
+\textbf{Condition} & \textbf{Grade} & SpineNetV2 AUC & Ours AUC & SpineNetV2 AUPRC & Ours AUPRC \\
 \midrule
 Spinal Canal & Normal/Mild & 0.892 & \good{0.947} (\good{+0.055}) & 0.984 & \good{0.993} (\good{+0.009}) \\
 Spinal Canal & Moderate & 0.851 & \good{0.884} (\good{+0.033}) & 0.272 & \good{0.319} (\good{+0.047}) \\

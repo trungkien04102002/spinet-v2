@@ -4,27 +4,36 @@
 % TODO: open with clinical motivation paragraph (low back pain
 % prevalence, MRI grading workload, inter-rater variability).
 
-% TODO: state the gap — most spine grading models have rigid label
-% spaces, so a model trained on RSNA's 5 stenosis labels cannot answer
-% questions about Pfirrmann grading or Modic changes from SPIDER.
+% TODO: state the three coupled problems — class imbalance, feature
+% ambiguity in 3D backbones, rigid label spaces that block transfer
+% between RSNA and SPIDER. Frame each as a clinical/practical pain
+% point before describing the technical answer.
 
-% TODO: state our contributions (3 bullets).
-
-\textbf{Contributions.}
+\textbf{Contributions.} We address three coupled problems in lumbar
+spine MRI grading with a single hybrid pipeline:
 \begin{itemize}
-  \item A 3D CBAM-augmented backbone that recovers minority Severe-class
-        detection on imbalanced spinal stenosis grading
-        (Foraminal Severe F1 from $0.000 \to 0.18/0.20$).
-  \item A hybrid integration of frozen BiomedCLIP image and text
-        encoders with the 3D backbone, enabling zero-shot extension
-        to unseen disease labels via cosine-similarity classification.
-  \item A cross-dataset zero-shot evaluation (RSNA $\to$ SPIDER) showing
-        \emph{selective transfer}: the hybrid wins on disc-related
-        labels where 3D context matters, while a 2D-only baseline wins
-        on vertebra/endplate appearance — characterising when the
-        added complexity is justified.
+  \item \textbf{Imbalance handling.} A combined toolkit of Focal Loss,
+        square-root class weights, minority oversampling, and
+        augmentation lifts mean Severe-class recall from $11.9\%$ to
+        $49.6\%$ (a $4.2\times$ gain) on RSNA's three stenosis
+        conditions, with mean F1 macro improving in absolute terms
+        despite the deliberate accuracy trade-off.
+  \item \textbf{Attention-driven feature quality.} CBAM (channel and
+        spatial attention) on a 3D ResNet-34 backbone recovers
+        foraminal Severe F1 from $0.000$ (baseline) to
+        $0.276/0.283$ on left/right foraminal classes, where the
+        baseline collapses entirely on the minority class.
+  \item \textbf{Label-space extension.} Fusing the CBAM backbone
+        with a frozen BiomedCLIP image-text encoder enables
+        \emph{both} (i) zero-shot prediction over $8$ unseen SPIDER
+        labels via cosine-similarity prompting (Mean F1 macro
+        $= 0.362$, no SPIDER-specific training) and (ii) supervised
+        SPIDER transfer with ${\sim}5$M trainable parameters
+        (Mean F1 macro $= 0.623$). We further report a
+        \emph{selective transfer} pattern, characterising which
+        SPIDER labels benefit from RSNA-learned features.
 \end{itemize}
 
-% Motivation for the design choice (vs MedGemma / RadFM) is summarised
-% in MOTIVATION_AND_DESIGN.md (repo); short version belongs in
-% Section~\ref{sec:related} of this paper.
+% Motivation for the design choice (vs MedGemma / RadFM / 2D Kaggle
+% pipelines) is summarised in MOTIVATION_AND_DESIGN.md (repo); short
+% version belongs in Section~\ref{sec:related} of this paper.

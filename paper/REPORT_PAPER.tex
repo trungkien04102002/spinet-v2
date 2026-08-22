@@ -77,9 +77,9 @@ the BiomedCLIP branch acts as a cross-dataset regularizer when CBAM
 overfits RSNA-specific patterns. On clinical minority classes Hybrid
 leads consistently: Disc Herniation recall from $0$ to $0.36 \pm
 0.08$, Spondylolisthesis from $0.20$ to $0.30$, Pfirrmann Grade~4
-from $0.47$ to $0.53$. To our knowledge this is the first
-BiomedCLIP-based pipeline reported on RSNA 2024 lumbar
-classification.
+from $0.47$ to $0.53$. To our knowledge no prior peer-reviewed
+work has applied BiomedCLIP to RSNA 2024 lumbar classification at
+the time of submission.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -228,7 +228,7 @@ Method & Yr & Data & F1\,/\,AUC & Setup\,$^\dagger$ \\
 Hallinan~et~al.~\cite{hallinan2021}      & '21 & Priv.   & $\kappa$ .89--.96 & Bin., diff.\,metric \\
 Nigru~et~al.~\cite{nigru2024}            & '24 & Priv.   & .84\,/\,$\kappa$.46--.74 & Foram.\,binary \\
 Lin~et~al.~\cite{lin2024cbam}            & '24 & RSNA\,sub & \best{.945}\,/\,.97 & Bin., bal., 1-lvl \\
-Aktan~et~al.~\cite{aktan2025}            & '25 & RSNA    & \best{.957}\,/\,—   & Bin., bal., joint seg \\
+Liu~et~al.~\cite{aktan2025}              & '25 & RSNA    & \best{.957}\,/\,—   & Bin., bal., joint seg \\
 M-SCAN~\cite{hong2025mscan}              & '25 & RSNA    & —\,/\,.971 (canal) & Multi-view (sag.\,+\,ax.) \\
 Phaphuang.~\cite{phaphuangwittayakul2026}& '26 & RSNA+ext. & \best{.956}\,/\,.99 & Bin., ext.\,bal. \\
 nshen7~\cite{nshen2024}                  & '24 & RSNA & Sev.\,F1 \best{.501} & 3-cls, public split \\
@@ -416,16 +416,20 @@ approximately \$2 per Hybrid run.
 sagittal T2 stacks. We use a patient-level 80/20 train/validation split
 (\verb|random_state=42|), yielding 1{,}942 validation IVDs from 395
 patients. Labels span 5 levels $\times$ 5 conditions $\times$ 3
-severities; we report metrics for the three conditions with
-3-severity labels (canal, left foraminal, right foraminal). Class
-distribution per condition averages Normal/Mild $\approx 85\%$,
+severities. We restrict evaluation to three of the five conditions
+(canal stenosis, left and right neural foraminal narrowing) for which
+sagittal-only input is most clinically appropriate; left and right
+subarticular stenosis, which are best assessed on axial reformats,
+are left to future work and discussed in \S\ref{sec:disc}. Class
+distribution per evaluated condition averages Normal/Mild $\approx 85\%$,
 Moderate $\approx 10\%$, Severe $\approx 5\%$.
 
 \textbf{SPIDER.}~\cite{vandergraaf2024spider} Approximately 1{,}400
 IVDs from 218 patients across four Dutch hospitals (T1 and T2-FS
 sagittal sequences). For consistency with the RSNA-trained encoder we
 use the T2-FS sagittal series only. The label schema differs from
-RSNA: Pfirrmann grades 1--5~\cite{pfirrmann2001}, modic 0--3,
+RSNA: Pfirrmann grades 1--5~\cite{pfirrmann2001}, Modic
+changes 0--3~\cite{modic1988},
 spondylolisthesis (binary), disc herniation (binary), disc narrowing
 (binary), disc bulging (binary), upper-/lower-endplate damage
 (binary). Used for cross-dataset zero-shot evaluation only; no SPIDER
@@ -474,8 +478,10 @@ split for four configurations: a 3D ResNet-34 baseline, CBAM-only
 hybrid. The hybrid wins 8/9 metrics; the only metric on which it does
 not win is Mean Accuracy, which we discuss below. We note that the
 nshen7~\cite{nshen2024} Severe F1 of $0.501$ in Table~\ref{tab:sota}
-appears higher than our $0.343$, but reflects a per-condition
-evaluation (likely canal-only) on a different validation split; our
+appears higher than our $0.343$, but reflects a different evaluation
+protocol (alternative per-condition aggregation and a different
+validation split) reported only as a public GitHub artifact without
+peer review; our
 $0.343$ is the macro-averaged Severe F1 over all three RSNA
 conditions (canal, left foraminal, right foraminal), where the two
 foraminal conditions are known to exhibit a sagittal-only ceiling
@@ -670,7 +676,8 @@ fusing CBAM with BiomedCLIP's dataset-agnostic semantic prior.
 
 \item \emph{CBAM hurts cross-dataset transfer}: CBAM Mean F1
 ($0.619$) is below Baseline ($0.646$) by $-0.027$, exceeding the
-pooled CBAM--Baseline noise ($\sigma = 0.010$). This is a substantive
+pooled CBAM--Baseline noise ($\sigma_{\text{pooled}} = 0.007$,
+$|\Delta|/\sigma = 3.8$). This is a substantive
 observation: the same CBAM module that improves in-domain (RSNA)
 Severe-class metrics produces a measurable regression when the
 backbone is reused on a different dataset. We discuss the implications
@@ -824,7 +831,12 @@ objectives (supervised cross-entropy vs.\ contrastive InfoNCE) into a
 single text-aligned space. Removing either branch costs both
 classification F1 and Severe-class metrics; the gain over the better
 single branch ($+0.026$ F1, $+0.039$ Severe F1) is small in absolute
-terms but consistent across nearly every metric.
+terms but consistent across nearly every metric. We use the term
+\emph{complementary} in the empirical sense that each branch alone
+falls short of the Hybrid; we do not claim a formal synergy effect,
+which would require an interaction-term test (e.g.\ ANOVA across
+the four ablation cells with multiple seeds) and is deferred to
+future work.
 
 \textbf{Why CBAM, given the cross-dataset cost?} A natural question
 arises from the 3-seed SPIDER analysis: if CBAM hurts cross-dataset
@@ -849,7 +861,8 @@ restores robustness.} On SPIDER (different
 sites, scanners, label schema), CBAM Mean F1 ($0.619 \pm 0.010$)
 \emph{drops below} the plain ResNet-34 Baseline ($0.646 \pm 0.002$),
 a $\Delta = -0.027$ regression that exceeds the pooled CBAM--Baseline
-seed standard deviation ($\sigma = 0.010$). CBAM appears to over-fit
+seed standard deviation ($\sigma_{\text{pooled}} = 0.007$,
+$|\Delta|/\sigma = 3.8$). CBAM appears to over-fit
 RSNA-specific spatial patterns that do not transfer across centers.
 Hybrid ($0.653 \pm 0.014$) recovers above CBAM by $+0.034$ ($> 2\sigma$,
 significant) and matches Baseline within seed variability. We
@@ -875,11 +888,14 @@ sensitivity thresholds, which generally require recall above $80\%$
 to be acceptable as a triage tool. The findings here establish that
 the methodology efficacy is real (consistent improvements across
 metrics, conditions, and a second dataset) but should not yet be
-interpreted as deployment-ready. Closing the remaining recall gap
-likely requires additional sources of evidence: axial T2 reformats
-for foraminal stenosis, larger training corpora with synthetic
-augmentation for the Severe class, and human-in-the-loop refinement
-on edge cases identified by the model.
+interpreted as deployment-ready. At the current operating point the
+model is best positioned as a \emph{second-reader assistance tool}
+that flags candidate Severe cases for a radiologist to confirm,
+rather than as a standalone screening system. Closing the remaining
+recall gap likely requires additional sources of evidence: axial T2
+reformats for foraminal stenosis, larger training corpora with
+synthetic augmentation for the Severe class, and human-in-the-loop
+refinement on edge cases identified by the model.
 
 \textbf{Foraminal weakness as architectural choice.} Severe recall on
 left/right foraminal stenosis remains in the 18--22\% range. This
@@ -909,7 +925,12 @@ attention pooling; native-3D MRI VLMs such as
 Decipher-MR~\cite{yang2026deciphermr} and Merlin~\cite{blankemeier2026merlin}
 were not publicly available during this work. (iii) The fusion strategy
 is restricted to concat-MLP; gated fusion and cross-attention are
-unexplored ablations.
+unexplored ablations. (iv) RSNA 2024 ground-truth labels were
+contributed by a multi-annotator, multi-center crowdsourced
+labeling effort~\cite{kaggle2024}; per-class inter-rater agreement
+statistics for the Severe class were not released alongside the
+public dataset, so the upper bound on achievable Severe metrics
+reflects label noise as well as model capacity.
 
 \textbf{Future work.} Adopting RadCLIP's slice-pooling
 adapter~\cite{lu2024radclip}, prompt-tuning BiomedCLIP via
@@ -1036,12 +1057,19 @@ N.~Boos,
 degeneration,''
 \textit{Spine}, vol.~26, no.~17, pp.~1873--1878, 2001.
 
+\bibitem{modic1988}
+M.~T. Modic, P.~M. Steinberg, J.~S. Ross, T.~J. Masaryk, and
+J.~R. Carter,
+``Degenerative disk disease: assessment of changes in vertebral body
+marrow with MR imaging,''
+\textit{Radiology}, vol.~166, no.~1, pp.~193--199, 1988.
+
 \bibitem{aktan2025}
-S.~Aktan, F.~Khan \textit{et al.},
+Y.~Liu, J.~Rashid, S.~M. Boulaaras \textit{et al.},
 ``A deep learning approach to lumbar spine degenerative classification
 on the RSNA 2024 dataset,''
 \textit{International Journal of Computational Intelligence Systems},
-2025.
+vol.~18, 2025, doi: 10.1007/s44196-025-01098-7.
 
 \bibitem{hong2025mscan}
 J.~Hong \textit{et al.},
