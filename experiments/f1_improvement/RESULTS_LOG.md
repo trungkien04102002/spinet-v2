@@ -1,9 +1,19 @@
 # F1 improvement — GPU run log (kì cuối)
 
+> ⚠️ **READ THE LAST SECTION FIRST — "Deep review, 2026-08-22 evening".** It supersedes
+> several recommendations made earlier in this file, and it changes what should be
+> measured at all. In particular: the ordinal-loss (CDW-CE) recommendation is
+> **withdrawn**, per-class F1 at this sample size cannot resolve the differences chased
+> throughout, and the foraminal crops come from the wrong sequence and location.
+>
 > Running record of the #1/#2/#3 experiments. Written as results arrive so nothing
 > is lost when the rented box is destroyed. Numbers here are copied from the box;
 > the authoritative artifacts are the `*_best_metrics.json` files pulled down
 > alongside this file.
+>
+> The rented box was **destroyed on 2026-08-22**; all needed artifacts are local.
+> The analysis tooling added that evening (`robust_metrics.py`, `compare_models.py`,
+> `temperature_calibration.py`) runs on the Mac and needs no GPU.
 
 ## Box
 
@@ -663,3 +673,242 @@ and `checkpoints/hybrid_gated/` exists **only on the Mac**. Uploading them to th
 backup was considered and **declined** — today's runs are cheap to reproduce (~48 min of
 4090 time each, and the exact commands are in this file), so a second copy was judged not
 worth the effort. If the Mac copy is lost, re-run rather than hunt for a backup.
+
+---
+---
+
+# Deep review, 2026-08-22 evening — the measurement itself was the problem
+
+Three parallel literature searches plus a fresh look at our own data. This section
+supersedes several earlier recommendations in this file. Read it before acting on
+anything above.
+
+## FINDING 1 — foraminal labels are drawn on an image the model never sees
+
+Straight from `train_label_coordinates.csv` joined to `train_series_descriptions.csv`:
+
+| condition | Axial T2 | Sagittal T1 | Sagittal T2/STIR |
+|---|---|---|---|
+| Left Neural Foraminal Narrowing | 0 | **9860** | 0 |
+| Right Neural Foraminal Narrowing | 0 | **9859** | 0 |
+| Spinal Canal Stenosis | 0 | 5 | **9748** |
+| Left/Right Subarticular Stenosis | **9610** | 0 | 0 |
+
+Radiologists graded foraminal narrowing on **Sagittal T1, 100% of the time**. Canal on
+Sagittal T2, 99.9%. The two share a series in 1 case out of 6291.
+
+Our pipeline (`rsna_dataloader.py:255-310`) builds **one** crop per disc level -- 9
+slices, 240x120 px, centred on the **Spinal Canal Stenosis** coordinate of the
+**Sagittal T2** series -- and attaches all three labels to it. The foraminal heads are
+therefore asked to grade a lateral structure from the wrong sequence at a midline
+location.
+
+Quantified: within the T1 series, the left and right foramen annotations sit a median
+of **7.0 slices apart** (n=9824; 99.1% more than 4 apart; 22.8% more than 8 apart). Our
+window is 9 slices, so even perfectly centred the two foramina land on the outermost
+slices, and in nearly a quarter of cases they cannot both fit at all.
+
+**Independent confirmation from the leaderboard.** Every top-3 solution uses Sagittal T1
+for foraminal, with a separate crop per side centred on that side's coordinate. The 1st
+place team lists **"sagt2 image for nfn" under *what didn't work*** -- which is our
+pipeline. No top-10 team used a single shared per-level crop for all conditions as its
+primary path; brendanartley has one, but `infer.py:244` deletes its foraminal output
+whenever a Sagittal T1 exists. Ian Pan's shared model scored *worse* on canal.
+
+Foraminal is also intrinsically harder, so some of the gap is not our fault: Ian Pan's
+CV log gives foraminal log loss 0.475 vs canal 0.270 on identical folds -- 1.75x.
+
+## FINDING 2 — an augmentation that flips the wrong axis, in every run so far
+
+`spinenet/augmentation.py:78`:
+
+```python
+volume = torch.flip(volume, dims=[-1])   # volume is (9, 112, 224)
+if self.swap_labels:
+    labels = _swap_lr_labels(labels)     # swaps left_* / right_*
+```
+
+`dims=[-1]` is the 224 axis. In a sagittal crop the in-plane axes are
+anterior-posterior and superior-inferior; **left-right is the slice axis**. Confirmed
+from the coordinates themselves: y runs 228 (L1/L2) to 484 (L5/S1), so y is
+superior-inferior, while x barely moves (322 to 353) with the lordotic curve, so x is
+anterior-posterior.
+
+So the flip mirrors front-to-back, not left-to-right. Two consequences:
+
+1. The docstring claims "flip horizontally (left-right)" and uses that to justify
+   swapping L/R labels. The premise is false, so the **default `swap_labels=True`
+   injects real label noise**. Published runs passed `--no-hflip-swap-labels` and
+   escaped -- for the wrong reason. Any future run on defaults is corrupted.
+2. The flip itself is anatomically implausible: it places the spinal canal *anterior*
+   to the disc. It is applied to 50% of training samples in every run to date, on a
+   crop centred on the canal.
+
+The correct laterality augmentation -- reverse slice order and swap L/R labels, which
+is what brendanartley's `reverse_labels` does -- is not implemented.
+
+## FINDING 3 — the validation set cannot resolve what we have been chasing
+
+The RSNA training split is **single-annotator with no adjudication**. From the dataset
+paper (Richards, Flanders, Colak, ... Talbott, *LumbarDISC*, arXiv:2506.09162 /
+Radiology:AI): after every case was annotated **once**, the scale was collapsed and the
+data split; **only the test sets** received 1-3 extra reads until two annotators agreed.
+Our 1,973 studies are the Kaggle train split, so each of our ~80 Severe validation cases
+is **one radiologist's opinion**.
+
+Foraminal is the least reliable location. Studies measuring both with the same readers:
+Lurie et al., *Spine* 2008;33(14):1605-10 -- canal weighted kappa **0.73**, foraminal
+**0.58**. Pain Medicine 2021 -- canal 0.702, foraminal 0.544. With 12 readers
+(*Eur Spine J* 2024, doi 10.1007/s00586-024-08612-z) Fleiss kappa drops to **0.31-0.44**.
+RSNA used ~60 annotators.
+
+Monte-Carlo at n=80 positives: **SD(Severe F1) ~= 0.045-0.050, 95% CI ~= +/-0.09**. Our
+0.02-0.03 targets are 0.4-0.6 standard errors; a 0.02 change is 2-3 disc levels
+flipping. And a *population-level* +0.02 claim would need ~7,000 Severe positives --
+the entire LumbarDISC release holds ~1,200 per side. **Not attainable with this dataset.**
+
+Note also that the RSNA competition metric was never F1: it was sample-weighted log
+loss (1/2/4) plus an any-severe term. No top team optimised thresholded F1, and
+Van Calster et al. (arXiv:2412.10288) rate F1 the one measure among 32 that is neither
+proper nor decision-analytically sound.
+
+### Measured on our own runs, confirming it
+
+AUPRC was already being logged every epoch and had never been looked at:
+
+| last 5 epochs | (a) concat | (b) gated |
+|---|---|---|
+| Severe AUPRC mean | 0.3043 | 0.2985 |
+| Severe AUPRC **SD** | **0.0006** | **0.0006** |
+| Severe F1 mean | 0.3061 | 0.2750 |
+| Severe F1 **SD** | **0.0067** | **0.0097** |
+
+**AUPRC is 10-15x more stable across epochs than F1.** The +/-0.02-0.03 oscillation that
+caused three wrong trend calls in one day is threshold-selection noise, not model noise.
+
+Be precise about which noise this removes: AUPRC kills the *epoch/threshold* noise. It
+does **not** shrink the *validation-set sampling* interval -- the patient-clustered
+bootstrap CI is a comparable width for both (0.092 for Severe AUPRC vs 0.100 for Severe
+F1). Two different noise sources; do not conflate them.
+
+## New tooling (no GPU needed, runs on the Mac)
+
+- `experiments/f1_improvement/robust_metrics.py` -- Severe AUPRC, macro AUPRC, QWK, the
+  competition's weighted log loss, plus F1 demoted to secondary, all with **bootstrap
+  CIs resampled by patient** (Severe findings cluster within a patient, so a row-level
+  bootstrap is too narrow).
+- `experiments/f1_improvement/compare_models.py` -- **paired** bootstrap between two
+  models on the same split. Refuses to run if the two dumps do not share identical rows.
+- `experiments/f1_improvement/temperature_calibration.py` -- single-scalar temperature,
+  cross-fitted over patient halves so the reported gain is not fitted on itself.
+
+## RESULT A — the published Hybrid, restated honestly
+
+Seed 42, 395 patients, 1942 rows, 2000 patient-clustered bootstrap draws:
+
+| metric | value | 95% CI | width |
+|---|---|---|---|
+| Severe AUPRC | 0.3211 | [0.2796, 0.3712] | 0.092 |
+| Macro AUPRC | 0.5258 | [0.5085, 0.5504] | 0.042 |
+| **QWK** | **0.4670** | [0.4323, 0.4994] | 0.067 |
+| weighted log loss | 0.7549 | [0.7364, 0.7731] | 0.037 |
+| Severe F1 | 0.3434 | [0.2918, 0.3921] | **0.100** |
+| Severe AUC | 0.8964 | [0.8794, 0.9131] | 0.034 |
+
+So the thesis headline **0.3434 is really 0.34 +/- 0.05**. State it that way before an
+examiner does.
+
+Per condition, QWK against published human agreement:
+
+| | our QWK | human kappa (Lurie 2008) |
+|---|---|---|
+| spinal_canal | **0.641** | 0.73 |
+| left_foraminal | 0.351 | 0.58 |
+| right_foraminal | 0.409 | 0.58 |
+
+Canal is close to human-level; foraminal is far below. That is the same asymmetry
+Finding 1 predicts, arrived at independently. It is also a much stronger thesis
+statement than any F1 number, because it is directly comparable to the clinical
+literature.
+
+Severe **AUC 0.896** with Severe F1 only 0.343: the model ranks Severe cases well and
+the decision rule throws it away. This is why post-hoc threshold tuning was the only
+confirmed gain.
+
+## RESULT B — Hybrid vs CBAM does not survive a paired test as reported
+
+Paired patient-clustered bootstrap, seed 42, Hybrid minus CBAM:
+
+| metric | CBAM | Hybrid | diff | 95% CI | p | verdict |
+|---|---|---|---|---|---|---|
+| Severe AUPRC | 0.3192 | 0.3211 | +0.0013 | [-0.027, +0.030] | 0.92 | **no difference** |
+| Macro AUPRC | 0.5187 | 0.5258 | +0.0073 | [-0.005, +0.019] | 0.25 | **no difference** |
+| QWK | 0.4473 | 0.4670 | +0.0197 | [+0.001, +0.039] | 0.046 | Hybrid, marginal |
+| weighted log loss | 0.7293 | 0.7549 | +0.0258 | [+0.018, +0.033] | 0.000 | **CBAM better** |
+| Severe F1 | 0.3044 | 0.3434 | +0.0392 | [+0.001, +0.076] | 0.045 | Hybrid, marginal |
+| Severe recall | 0.3617 | 0.4640 | +0.1026 | [+0.054, +0.152] | 0.000 | Hybrid |
+| Severe AUC | 0.8858 | 0.8964 | +0.0104 | [+0.002, +0.020] | 0.015 | Hybrid |
+
+The Hybrid ranks better (AUC, recall) but is **worse on the competition's own metric**,
+and **tied on AUPRC**. The +0.039 Severe F1 headline comes almost entirely from higher
+recall at unchanged precision -- a decision-threshold effect. Caveat: this is seed 42
+only; the published figure is a 3-seed mean and no logit dumps exist for the other seeds.
+
+## RESULT C — the reversal, and a free gain
+
+Good ranking with a bad proper score is the signature of **miscalibration**, not a weaker
+model -- and the Hybrid recipe is full of decalibrating parts (focal loss, Kendall
+uncertainty weighting, a learned bounded cosine scale). Temperature scaling, cross-fitted
+over patient halves so it is not fitted on itself:
+
+| weighted log loss | before | after | T |
+|---|---|---|---|
+| CBAM | 0.7293 | 0.6980 | 0.45-0.81 |
+| **Hybrid** | 0.7549 | **0.6623** | 0.33-0.58 |
+
+**The verdict flips.** Before calibration CBAM wins by 0.026; after, the Hybrid wins by
+0.036. T well below 1 means the cosine head's logits are systematically **under-confident**
+-- expected from a bounded logit scale. Ranking metrics are unchanged by construction.
+
+This is a real gain, costs nothing, stacks with threshold tuning, and has precedent:
+the 3rd place RSNA solution applied T=0.91 to its spinal logits.
+
+## Revised plan (supersedes the A/E/C/D ordering above)
+
+**Step 0 -- change the reported metric. No GPU.** Lead with AUPRC + QWK + weighted log
+loss, all with patient-clustered bootstrap CIs; F1 to a secondary table. Every past run's
+CSV already carries AUPRC, so old tables can be restated without retraining. This is not
+evasion: "F1 at n=80 has SE 0.047, so we report AUPRC with clustered CIs" is a stronger
+methods paragraph than defending an unresolvable 0.02, it matches Metrics Reloaded
+(*Nat Methods* 2024) and CLAIM 2024, and QWK is directly comparable to radiologist kappa.
+
+**Step 1 -- temperature-calibrate everything reported.** Done above for seed 42; extend
+to the other seeds and to (a)/(b) once their logits are dumped.
+
+**Step 2 -- a T1 specialist for foraminal.** Data already prepared (19,689 per-side
+crops from `prep_t1_crops.py`). Put it on the **Hybrid** architecture instead of bare
+CBAM; keep the cosine head so zero-shot label extension survives. Canal keeps using the
+existing T2 model. This mirrors what every top solution does.
+
+**Step 3 -- fix the flip axis** and add slice-reversal + label-swap as the real
+laterality augmentation.
+
+**Step 4 -- label cleaning.** With single-annotator labels, confident learning may beat
+any architecture change; the 2nd place team called it a "notable improvement".
+
+**Demoted:** LDAM / logit adjustment. Sound in theory, but not worth GPU time until the
+measurement problem is fixed.
+
+**Dropped:** ordinal losses (CDW-CE, SORD, EMD, unimodal) as a primary fix. They penalise
+*distant* errors more than adjacent ones, i.e. they reward regression toward the middle
+class -- which is exactly our pathology (Severe recall 13.8% while Moderate recall is
+75%). With 3 classes and alpha~5 the distance-2 penalty is 32x the distance-1 penalty.
+An earlier section of this file recommended CDW-CE; that recommendation is withdrawn.
+
+**Dropped:** axial imaging. The 2nd place solution used sagittal only and its axial
+variant moved CV by 0.01-0.02 without helping the ensemble.
+
+**Worth 30 minutes:** the AWS Open Data LumbarDISC release covers **2,697** patients
+against our 1,973. If the extra 716 carry the **2-of-3 adjudicated** grades, the oracle
+ceiling rises from ~0.66 to ~0.87 and that is worth more than any architecture change
+buyable with the same GPU hours.
