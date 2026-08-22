@@ -175,6 +175,16 @@ Kết quả và lệnh đầy đủ ở `experiments/f1_improvement/RESULTS_LOG.
 không có BiomedCLIP/text anchor/cosine head, tức là THAY THẾ Hybrid bằng model yếu hơn.
 Đừng chạy lại `train_multiview.py`.
 
+> ⚠️ **CẬP NHẬT 22/08 tối — deep review đã ĐẢO thứ tự ưu tiên bên dưới.**
+> Gốc vấn đề là **đo lường**: F1 tại n=80 ca Severe có SD≈0.047, nên mọi mức 0.02-0.03
+> đuổi theo cả tháng là nhiễu; nhãn train chỉ MỘT bác sĩ chấm, không hội chẩn.
+> Ngoài ra crop foraminal lấy SAI chuỗi (T2 thay vì T1) và SAI vị trí — đội nhất RSNA
+> xếp đúng setup này vào mục "what didn't work". Và `augmentation.py:78` lật SAI TRỤC.
+> Thứ tự mới: (0) đổi thước đo sang AUPRC+QWK+weighted-logloss kèm CI bootstrap phân cụm,
+> (1) temperature scaling — đã cho gain miễn phí 0.7549→0.6623, (2) chuyên gia T1 cho
+> foraminal, (3) sửa trục lật, (4) làm sạch nhãn. BỎ ordinal loss và axial.
+> Chi tiết + số liệu: mục CUỐI `experiments/f1_improvement/RESULTS_LOG.md`.
+
 **P1 — hướng tiếp theo, xếp theo giá trị/GPU-hour** (chi tiết + dẫn chứng ở RESULTS_LOG):
 
 | | Việc | Chi phí |
