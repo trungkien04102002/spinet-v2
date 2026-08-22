@@ -57,7 +57,8 @@ if str(_THIS_DIR) not in sys.path:
 from multiview_dataloader import RSNAMultiViewDataset, make_patient_split  # noqa: E402
 from grading_multiview import GradingMultiView, CONDITIONS  # noqa: E402
 from spinenet.metrics_logger import MetricsLogger  # noqa: E402
-from spinenet.losses import compute_class_weights  # noqa: E402
+from spinenet.losses import FocalLoss, compute_class_weights  # noqa: E402
+from spinenet.augmentation import OversamplingDataset  # noqa: E402
 from spinenet.auc_metrics import (  # noqa: E402
     aggregate_overall_auprc,
     compute_auc_auprc_per_condition,
@@ -234,9 +235,25 @@ def main():
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--class-weight-mode", type=str, default="none",
                         choices=["none", "sqrt", "inverse", "effective"],
-                        help="Class weight mode for CrossEntropyLoss (default: none). "
+                        help="Class weight mode for the loss alpha (default: none). "
                              "Leave at 'none' and the Severe head collapses to the "
                              "majority class -- Severe F1 stays 0.")
+    # --- Phase-2 imbalance recipe, ported from train_rsna_hybrid.py -------------
+    # Weighted cross-entropy alone is only the RE-WEIGHTING half of the standard
+    # long-tail toolkit. With ~5% Severe and batch 16, most batches carry 0-1
+    # Severe samples, so the rare-class gradient dominates sporadically and the
+    # metric oscillates epoch to epoch (observed: +/-0.02 to 0.03 in runs #1 and
+    # #2). Oversampling is the RE-SAMPLING half that Phase 2 paired it with.
+    parser.add_argument("--use-focal", action="store_true",
+                        help="Use FocalLoss (gamma below) instead of CrossEntropyLoss. "
+                             "Phase 2's published Hybrid used this.")
+    parser.add_argument("--focal-gamma", type=float, default=2.0,
+                        help="Focal focusing parameter (default: 2.0, as in Phase 2)")
+    parser.add_argument("--oversample-factor", type=int, default=1,
+                        help="Repeat each sample carrying a Moderate/Severe label this "
+                             "many times in the TRAIN split (1 = off; Phase 2 used 3). "
+                             "Class weights are still computed on the pre-oversampling "
+                             "split, matching train_rsna_hybrid.py.")
     parser.add_argument("--select-by", type=str, default="val_loss",
                         choices=["val_loss", "severe_f1"],
                         help="Which metric picks the saved 'best' epoch. val_loss "
@@ -321,8 +338,22 @@ def main():
         print(f"  [fast-dev] Truncated to {len(train_indices)} train / "
               f"{len(val_indices)} val samples (class-stratified)")
 
-    train_dataset = Subset(dataset, train_indices)
+    # base_train_dataset stays un-oversampled: class weights must be computed from
+    # the real label distribution, not the rebalanced one (same as
+    # train_rsna_hybrid.py, which passes base_train_dataset to compute_class_weights).
+    base_train_dataset = Subset(dataset, train_indices)
     val_dataset = Subset(dataset, val_indices)
+    train_dataset = base_train_dataset
+
+    if args.oversample_factor > 1:
+        train_dataset = OversamplingDataset(
+            train_dataset,
+            oversample_factor=args.oversample_factor,
+            target_classes=[1, 2],  # Moderate, Severe
+        )
+        print(f"  Oversampling x{args.oversample_factor}: "
+              f"{len(train_dataset)} train samples (from {len(base_train_dataset)})")
+
     print(f"Train: {len(train_dataset)} samples   Val: {len(val_dataset)} samples")
 
     train_loader = DataLoader(
@@ -396,10 +427,12 @@ def main():
 
     # --- Training setup ---
     print("\n[4/6] Setting up training...")
+    class_alpha = None
     if args.class_weight_mode != "none":
-        print(f"  Computing class weights (mode={args.class_weight_mode}) from train set...")
+        print(f"  Computing class weights (mode={args.class_weight_mode}) from the "
+              f"pre-oversampling train split...")
         class_alpha = compute_class_weights(
-            train_dataset, num_classes=3, mode=args.class_weight_mode
+            base_train_dataset, num_classes=3, mode=args.class_weight_mode
         )
         if not torch.isfinite(class_alpha).all():
             raise ValueError(
@@ -417,6 +450,13 @@ def main():
         # .to(device): the weight is a buffer on the loss module, and nothing
         # ever moves the criterion, so a CPU weight against CUDA logits is a
         # hard RuntimeError on the first batch.
+    if args.use_focal:
+        # FocalLoss moves alpha to the logits' device inside forward(), so a CPU
+        # alpha is safe here (unlike nn.CrossEntropyLoss, whose weight is a buffer).
+        criterion = FocalLoss(alpha=class_alpha, gamma=args.focal_gamma, ignore_index=-1)
+        print(f"  Loss: FocalLoss (gamma={args.focal_gamma}, "
+              f"class_weight_mode={args.class_weight_mode})")
+    elif class_alpha is not None:
         criterion = nn.CrossEntropyLoss(weight=class_alpha.to(device), ignore_index=-1)
     else:
         criterion = nn.CrossEntropyLoss(ignore_index=-1)
@@ -427,7 +467,9 @@ def main():
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=5)
 
     print(f"Optimizer: Adam (lr={args.lr}, weight_decay={args.weight_decay})")
-    print(f"Loss: CrossEntropyLoss (class_weight_mode={args.class_weight_mode})")
+    print(f"Loss: {'FocalLoss' if args.use_focal else 'CrossEntropyLoss'} "
+          f"(class_weight_mode={args.class_weight_mode}, "
+          f"oversample={args.oversample_factor}x)")
     print("Scheduler: ReduceLROnPlateau (patience=5)")
 
     # --- Training loop ---
