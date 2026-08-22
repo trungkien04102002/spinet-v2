@@ -656,8 +656,10 @@ reproducible on paper. Only the weights are gone, and re-deriving them would mea
 re-running a line already documented as a dead end. The weight-averaging spike also
 showed the intermediate epoch checkpoints add nothing on a decaying-LR trajectory.
 
-### Backup gap to close
+### Backup status (decision taken 2026-08-22)
 
 The `.pth` files above are gitignored, so the 128 MB now under `checkpoints/hybrid_rebase/`
-and `checkpoints/hybrid_gated/` exists **only on the Mac** — no second copy anywhere.
-Add them to the Drive backup (`checkpoints_canonical_backup`) before relying on them.
+and `checkpoints/hybrid_gated/` exists **only on the Mac**. Uploading them to the Drive
+backup was considered and **declined** — today's runs are cheap to reproduce (~48 min of
+4090 time each, and the exact commands are in this file), so a second copy was judged not
+worth the effort. If the Mac copy is lost, re-run rather than hunt for a backup.
