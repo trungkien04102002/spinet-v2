@@ -3,9 +3,12 @@
 > Cập nhật **2026-08-22**. Đây là file canonical: mọi session sau **đọc file này TRƯỚC**,
 > rồi mới mở file chi tiết được link bên dưới. Không đọc transcript session (.jsonl).
 >
-> **Trạng thái mới nhất (22/08):** trụ 2 (SOTA) **XONG**. Trụ 3 đang chạy GPU trên Vast
-> (`ssh -p 46108 root@115.75.223.236`, instance `48374995`) — số từng epoch ghi ở
-> [`../../experiments/f1_improvement/RESULTS_LOG.md`](../../experiments/f1_improvement/RESULTS_LOG.md),
+> **Trạng thái mới nhất (22/08, cuối ngày):** trụ 2 (SOTA) **XONG**. Trụ 3: đợt GPU 22/08
+> đã chạy xong 4 run, **box Vast đã huỷ** — mọi artifact cần thiết đã kéo về máy.
+> Kết quả: `--fusion gated` **THUA** `concat_mlp` (0.2954 vs 0.3212); cấu hình thắng là (a).
+> Phát hiện mới quan trọng nhất: lỗi là **ordinal** — Severe recall 13.8% trong khi Moderate
+> recall 75%, tức ca nặng bị hút vào Moderate. Số từng epoch + hướng đi tiếp (A→E→C→D, B cuối)
+> ghi ở `experiments/f1_improvement/RESULTS_LOG.md`.
 > **đọc file đó trước khi tin bảng tóm tắt bên dưới**. Paper MIWAI camera-ready đã nộp 13–14/08.
 >
 > Repo: `~/spinet-v2` nhánh `biomedclip-integration` @ `6d47d46` · `~/spine-labeling-app` nhánh `main` @ `5e3c5d6`.
@@ -23,7 +26,7 @@ Chốt với thầy (2026-07-06, tinh chỉnh sau meeting 2026-07-19):
 |---|---|---|---|
 | 1 | **Software** gán nhãn MRI hỗ trợ bác sĩ (`spine-labeling-app`) | Ưu tiên 1 — deliverable chính | 🟢 ~95% |
 | 2 | **So sánh SOTA** cho grading (PP mình vs PP đã công bố, cùng split RSNA) | Bắt buộc — khác ablation nội bộ | 🟢 **XONG 25/07** — 2 model × 3 seed |
-| 3 | **Improve F1** (multi-view T1/T2, threshold, axial) | Ưu tiên 2, nhưng thầy đẩy lên trọng tâm 19/07 | 🟡 #0 xong · **#1 đang chạy GPU 22/08** · #2/#3 chờ |
+| 3 | **Improve F1** (threshold, fusion, ordinal loss) | Ưu tiên 2, nhưng thầy đẩy lên trọng tâm 19/07 | 🟡 đợt GPU 22/08 XONG · #0 threshold = gain duy nhất · gated THUA · **hướng tiếp: A→E→C→D** (xem RESULTS_LOG) · axial khuyến nghị BỎ |
 | 4 | **Feedback bác sĩ → model học lại** | **FUTURE WORK** (capture đã build, không build retrain) | ⚪ write-up only |
 
 Bối cảnh: **paper MIWAI ĐÃ NỘP** (em first author, thầy corresponding) → kì cuối = luận văn.
@@ -166,16 +169,28 @@ và Mean AUPRC cũng sai. **Phải sửa khi viết lại** — hướng đã ng
 
 ## (e) Kế hoạch còn lại + ưu tiên
 
-**P0 — GPU batch (chặn mọi thứ phía sau).** Mỗi việc 1 lệnh, seed 42 trước:
-```bash
-# trên 4090 / Vast, sau git pull
-python3 experiments/f1_improvement/train_t1_foraminal.py      # #1 T1-foraminal
-python3 experiments/multiview/train_multiview.py --fusion concat   # #2
-python3 experiments/multiview/train_multiview.py --fusion gated    # #3
-bash experiments/sota_comparison/run_all.sh                   # SOTA, 2 model × 3 seed
-```
-**P1 — Khóa số F1:** #1 seed 42 → nếu win thì chạy #2/#3 → mở rộng 3 seed cho con số cuối cùng.
-Chỉ **model multi-view mới** train thật; model cũ KHÔNG train lại; threshold/SOTA là 1 lượt.
+**P0 — ĐÃ XONG 22/08.** Đợt GPU đã chạy #1, #2, (a) concat_mlp rebase, (b) gated. Box đã huỷ.
+Kết quả và lệnh đầy đủ ở `experiments/f1_improvement/RESULTS_LOG.md`.
+⚠️ **Nhánh multi-view (`experiments/multiview/`) là NGÕ CỤT** — nó dùng CBAM cho cả hai nhánh,
+không có BiomedCLIP/text anchor/cosine head, tức là THAY THẾ Hybrid bằng model yếu hơn.
+Đừng chạy lại `train_multiview.py`.
+
+**P1 — hướng tiếp theo, xếp theo giá trị/GPU-hour** (chi tiết + dẫn chứng ở RESULTS_LOG):
+
+| | Việc | Chi phí |
+|---|---|---|
+| **A** | In ma trận cosine giữa 3 text anchor của BiomedCLIP | ~2 phút, **chạy CPU trên Mac được** |
+| **E** | `python3 train_rsna_hybrid.py ... --slice-strategy dynamic` | 0 dòng code, 1 run |
+| **C** | Class Distance Weighted CE trong `spinenet/losses.py` (GIỮ head cosine) | vài dòng + 1 run |
+| **D** | OGM-GE (arXiv:2203.15332) chống sụp nhánh | vừa |
+| **B** | threshold tuning trên cấu hình thắng — làm **CUỐI**, vì nó cộng dồn | 0 train |
+
+**Không làm axial** (gợi ý #1 của thầy): lời giải giải nhì RSNA 2024 chỉ dùng sagittal,
+biến thể axial của họ chỉ +0.01-0.02 CV và không giúp ensemble; định tuyến chuỗi ảnh của
+mình đã trùng với họ.
+
+**Số cuối cho luận văn:** cấu hình thắng phải chạy 20 epoch × 3 seed cho **cả nó lẫn đối
+thủ** = 6 run, ~5 giờ, 0 dòng code.
 
 **P2 — Viết report LVTN** (chương Phương pháp + Thực nghiệm trước, cuốn chiếu theo số về).
 
