@@ -11,6 +11,30 @@ tmux set -g mouse on
 # tmux set -g mouse off
 ```
 
+## 0.a Thuê box: chọn bao nhiêu STORAGE
+
+**Chọn 100 GB.** Tối thiểu 80 GB. Dưới 60 GB là chết giữa chừng lúc giải nén T1.
+
+Đỉnh dung lượng ~56 GB, vì lúc giải nén zip thì zip và thư mục giải nén cùng tồn tại:
+
+| Hạng mục | GB |
+|---|---|
+| Repo clone (lịch sử git ~5.1 + working tree ~1) | 6 |
+| venv + torch CUDA | ~8 |
+| `rsna_preprocessed/` | 8.2 |
+| `rsna_preprocessed_t1/` | 17 |
+| **+ zip T1 lúc đang giải nén** (script `rm` SAU khi unzip xong) | **+17** |
+| weights (ckpt1 + CBAM) | 0.5 |
+| checkpoint sinh ra (xem dưới) | ~8.5 |
+
+Checkpoint sinh ra: `--save-freq 5` trên 30 epoch = 6 snapshot + 1 best mỗi run.
+T1-foraminal ~243 MB/file → ~1.7 GB. Multiview ~489 MB/file → ~3.4 GB mỗi fusion,
+2 fusion = 6.8 GB.
+
+Mẹo tiết kiệm: `vast_setup.sh` dùng `git clone --branch` (full history, ~5.1 GB).
+Thêm `--depth 1` thì tiết kiệm ~5 GB và clone nhanh hơn hẳn — lịch sử git không cần
+cho việc train.
+
 ## 0. Setup box (1 lần, trên box TRẮNG vừa SSH vào)
 
 ```bash

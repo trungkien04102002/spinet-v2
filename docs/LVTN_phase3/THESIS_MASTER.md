@@ -1,7 +1,12 @@
 # THESIS_MASTER — điểm vào DUY NHẤT cho luận văn (LVTN kì cuối)
 
-> Cập nhật **2026-07-24**. Đây là file canonical: mọi session sau **đọc file này TRƯỚC**,
+> Cập nhật **2026-08-22**. Đây là file canonical: mọi session sau **đọc file này TRƯỚC**,
 > rồi mới mở file chi tiết được link bên dưới. Không đọc transcript session (.jsonl).
+>
+> **Trạng thái mới nhất (22/08):** trụ 2 (SOTA) **XONG**. Trụ 3 đang chạy GPU trên Vast
+> (`ssh -p 46108 root@115.75.223.236`, instance `48374995`) — số từng epoch ghi ở
+> [`../../experiments/f1_improvement/RESULTS_LOG.md`](../../experiments/f1_improvement/RESULTS_LOG.md),
+> **đọc file đó trước khi tin bảng tóm tắt bên dưới**. Paper MIWAI camera-ready đã nộp 13–14/08.
 >
 > Repo: `~/spinet-v2` nhánh `biomedclip-integration` @ `6d47d46` · `~/spine-labeling-app` nhánh `main` @ `5e3c5d6`.
 > Timeline: giao đề 15–17/07 · thực hiện **15 tuần 20/07 → 31/10/2026** · **bảo vệ 02–06/11/2026**.
@@ -17,8 +22,8 @@ Chốt với thầy (2026-07-06, tinh chỉnh sau meeting 2026-07-19):
 | # | Trụ | Vai trò | Trạng thái tổng |
 |---|---|---|---|
 | 1 | **Software** gán nhãn MRI hỗ trợ bác sĩ (`spine-labeling-app`) | Ưu tiên 1 — deliverable chính | 🟢 ~95% |
-| 2 | **So sánh SOTA** cho grading (PP mình vs PP đã công bố, cùng split RSNA) | Bắt buộc — khác ablation nội bộ | 🟡 code xong, **chưa chạy GPU** |
-| 3 | **Improve F1** (multi-view T1/T2, threshold, axial) | Ưu tiên 2, nhưng thầy đẩy lên trọng tâm 19/07 | 🟡 #0 xong, #1–#3 chờ GPU |
+| 2 | **So sánh SOTA** cho grading (PP mình vs PP đã công bố, cùng split RSNA) | Bắt buộc — khác ablation nội bộ | 🟢 **XONG 25/07** — 2 model × 3 seed |
+| 3 | **Improve F1** (multi-view T1/T2, threshold, axial) | Ưu tiên 2, nhưng thầy đẩy lên trọng tâm 19/07 | 🟡 #0 xong · **#1 đang chạy GPU 22/08** · #2/#3 chờ |
 | 4 | **Feedback bác sĩ → model học lại** | **FUTURE WORK** (capture đã build, không build retrain) | ⚪ write-up only |
 
 Bối cảnh: **paper MIWAI ĐÃ NỘP** (em first author, thầy corresponding) → kì cuối = luận văn.
@@ -53,7 +58,25 @@ Cần `backend/.env` (gitignored): `TOTALSPINESEG_BIN=/Users/kienha/totalspinese
 ⚠️ **Nói ĐÚNG trong report:** app dùng **SpineNet gốc cho 8 nhãn** + **fine-tune CBAM cho canal/foraminal L/R**.
 KHÔNG nói "app chạy hoàn toàn bằng model fine-tune".
 
-### Trụ 2 — SOTA comparison (🟡 chưa chạy)
+### Trụ 2 — SOTA comparison (🟢 XONG 25/07)
+
+**Đã chạy thật: 2 model × 3 seed {42,123,456}, cùng split, `eval_samples=1942` khớp cả 2 bên.**
+Bảng: `experiments/sota_comparison/comparison_table.{md,tex}` (commit `71b7700`).
+
+| Metric | SpineNetV2 | brendanartley | transformer | **Hybrid (ta)** |
+|---|---|---|---|---|
+| Mean Accuracy | 81.0 | **83.6** | 83.4 | 72.4 |
+| Mean F1 macro | 0.420 | **0.532** | 0.527 | 0.527 ±0.027 |
+| Severe F1 | 0.152 | 0.271 | 0.257 | **0.356** |
+| Severe Recall | 12.3 | 26.0 | 25.9 | **48.6** |
+
+⚠️ **Phải nói rõ khi đưa vào báo cáo:** baseline ngoài train bằng **CrossEntropy trần, không class
+weight, không oversample, không augmentation, from scratch**; Hybrid của mình có đủ bộ chống mất cân
+bằng + warm-start. Khoảng cách Severe là *công thức của mình vs kiến trúc của họ*, không phải
+kiến trúc vs kiến trúc. Ta **thua sát nút Mean F1** (0.527 vs 0.532, trong 1 std) và **thua đậm
+Mean Accuracy** — chuẩn bị sẵn câu trả lời cho hội đồng.
+
+<details><summary>Ghi chú cũ (trước khi chạy)</summary>
 - 2 baseline **đã code + smoke-test pass**, drop-in vào harness sẵn có (cùng split, cùng metric JSON schema):
   `experiments/sota_comparison/models/grading_brendanartley.py` (2.5D CNN+BiLSTM+attention-pool, 13M)
   và `models/grading_transformer.py` (ResNet18/lát → TransformerEncoder, 17.5M).
@@ -62,14 +85,19 @@ KHÔNG nói "app chạy hoàn toàn bằng model fine-tune".
   **bảng SỐ** + **bảng NĂNG LỰC định tính**. Commit `633be1f`.
 - Hoãn chạy tới sau multi-view (để so với model tốt nhất của mình).
 - Fairness đã chốt TRƯỚC khi chạy: **nếu SOTA thắng F1 thô cũng OK** — novelty là label-space flexibility.
+</details>
 
 ### Trụ 3 — Improve F1 (🟡)
+
+> ⭐ **Nhật ký chạy GPU chi tiết: [`../../experiments/f1_improvement/RESULTS_LOG.md`](../../experiments/f1_improvement/RESULTS_LOG.md)**
+> — box specs, lệnh chạy, config đã verify, bảng Severe F1 từng epoch, phân tích, lệnh `scp` kéo
+> artifact. **Đọc file đó để biết số mới nhất**; mục dưới đây chỉ là tóm tắt.
 | # | Việc | TT | Kết quả / commit |
 |---|---|---|---|
 | **0** | Threshold / calibration / logit-adjustment / τ-norm (không train) | ✅ | Hybrid seed42: macro **+0.019 held-out** (0.528→0.564 in-split), cost 0.314→0.285. **Fix CANAL Severe (0.50→0.57), KHÔNG cứu foraminal Severe (0.28→0.29)** → foraminal là vấn đề **representation** → cần #1. CBAM: +0.039. `ca2137a`/`d5f6a8e`/`bc9472a` |
-| **1** | T1-foraminal (chấm foraminal trên Sag-T1 thay vì T2) | 🟡 prep xong, **chờ GPU train** | `rsna_preprocessed_t1/` 19,689 crop per-side, 1972/1973 study; `experiments/f1_improvement/{prep_t1_crops,train_t1_foraminal}.py`. `4ece1db` |
-| **2** | Two-branch late fusion (T2 + T1, concat) | 🟡 code + smoke-test xong, **chờ GPU** | `experiments/multiview/` |
-| **3** | Gated leader–supporter fusion (GMU per-condition) — **đúng ý thầy** | 🟡 code xong, gate foraminal smoke = [T2 0.27, T1 0.73] khớp prior | `9f47112` |
+| **1** | T1-foraminal (chấm foraminal trên Sag-T1 thay vì T2) | 🔵 **ĐANG CHẠY GPU 22/08** | Seed 42, 25 epoch, ~203s/epoch. **Epoch 13: Severe F1 0.3010** (vượt khoảng T2 0.27–0.29), precision 0.19–0.22. ⚠️ foraminal-only, **KHÔNG so được với Mean F1 0.527**. Biến động epoch lớn (ep9 tụt 0.164) → **cần 3 seed mới dám khẳng định** |
+| **2** | Two-branch late fusion (T2 + T1, concat) | 🟡 smoke-test GPU xong, **chờ chạy thật** | Quan trọng hơn #1: #1 *thay* T2 bằng T1, #2 *giữ cả hai* và ra đủ 3 điều kiện → Mean F1 so được với số cũ |
+| **3** | Gated leader–supporter fusion (GMU per-condition) — **đúng ý thầy** | 🟡 smoke-test GPU xong, **chờ chạy thật** | ⚠️ Gate là **tổ hợp lồi** (512-dim) vs concat (1024-dim) → **capacity thấp hơn, thua concat về F1 là bình thường**. Giá trị = interpretability (`get_gate_weights()`) |
 | **4** | Axial-T2 branch | ⬜ stretch/future | — |
 
 **🔴 Phát hiện gốc:** `rsna_dataloader.py:127-144` (`is_sagittal_t2`) lọc **Sag-T2 cho MỌI head**, kể cả foraminal —
@@ -202,6 +230,8 @@ Chỉ **model multi-view mới** train thật; model cũ KHÔNG train lại; thr
 | File | Nội dung |
 |---|---|
 | [`00_TRACKER.md`](00_TRACKER.md) | Tracker chi tiết theo tuần + dashboard (nguồn của mục b/e) |
+| ⭐ [`../../experiments/f1_improvement/RESULTS_LOG.md`](../../experiments/f1_improvement/RESULTS_LOG.md) | **KẾT QUẢ CHẠY GPU thật (22/08+)** — số mới nhất của #1/#2/#3, từng epoch, kèm phân tích. Đọc file này để biết trụ 3 đang ở đâu |
+| [`BAO_CAO_THAY_20260822.md`](BAO_CAO_THAY_20260822.md) | Báo cáo cho thầy: 4 gợi ý (axial, T1/T2 leader-supporter, pipeline, mất cân bằng) + khảo sát tài liệu đã verify |
 | [`IMPROVE_F1_PLAN.md`](IMPROVE_F1_PLAN.md) | Chẩn đoán F1 + xếp hạng 5 hướng cải thiện |
 | [`MULTIVIEW_RESEARCH.md`](MULTIVIEW_RESEARCH.md) | Research multi-view đầy đủ + kiến trúc fusion |
 | [`FEEDBACK_LOOP_METHODS.md`](FEEDBACK_LOOP_METHODS.md) | **Khảo sát phương pháp feedback-loop (2026-07-26) + phần đã code + việc còn lại** |

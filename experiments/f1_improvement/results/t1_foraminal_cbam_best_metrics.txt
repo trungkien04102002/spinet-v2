@@ -1,0 +1,57 @@
+=== BEST MODEL METRICS (t1_foraminal_cbam) ===
+Saved at:  2026-08-22T09:14:01
+Epoch:     20
+Train Loss: 0.6950
+Val Loss:   0.5472
+Avg Severe F1: 0.3095
+
+Validation Accuracies:
+  left_foraminal     0.7544
+  right_foraminal    0.7399
+
+Per-Class Metrics:
+
+  left_foraminal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.865  0.891  0.878     1528
+    Moderate         0.459  0.213  0.291      367
+    Severe           0.216  0.625  0.322       80
+
+  right_foraminal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.882  0.843  0.862     1508
+    Moderate         0.415  0.382  0.398      385
+    Severe           0.212  0.500  0.298       72
+
+AUC / AUPRC / Brier (per class, one-vs-rest):
+
+  left_foraminal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.841  0.950  0.142     1528
+    Moderate         0.791  0.400  0.127      367
+    Severe           0.902  0.246  0.052       80
+    macro            0.845  0.532
+
+  right_foraminal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.844  0.946  0.145     1508
+    Moderate         0.789  0.414  0.135      385
+    Severe           0.902  0.239  0.043       72
+    macro            0.845  0.533
+
+AUC / AUPRC overall (averaged across 3 conditions):
+  macro AUC      : 0.845
+  macro AUPRC    : 0.532
+  popular AUPRC  : 0.948  (Normal/Mild)
+  rare    AUPRC  : 0.325  (Moderate + Severe)
+  Severe  AUPRC  : 0.242  (clinical priority)
+
+Extra:
+  best_path: checkpoints/t1_foraminal/best_model_t1_foraminal_cbam.pth
+  total_train_seconds: 4072.9692397117615
+  avg_epoch_seconds: 203.64846198558809
+  eval_seconds: 21.87621760368347
+  eval_samples: 3940
+  eval_throughput_samples_per_sec: 180.10426077205372
+  eval_ms_per_sample: 5.552339493320678
+  args: {'data_dir': 'rsna_preprocessed_t1', 'val_split': 0.2, 'model': 'cbam', 'cbam_checkpoint': 'checkpoints/rsna/best_model_attention.pth', 'use_pretrained': True, 'unfreeze_backbone': False, 'resume': None, 'epochs': 25, 'batch_size': 32, 'lr': 0.001, 'weight_decay': 0.0001, 'num_workers': 4, 'class_weight_mode': 'effective', 'select_by': 'severe_f1', 'save_dir': 'checkpoints/t1_foraminal', 'save_freq': 5, 'early_stop_patience': 10, 'seed': 42, 'fast_dev': False, 'fast_dev_samples': 24}
