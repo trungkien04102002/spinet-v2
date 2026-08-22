@@ -64,6 +64,27 @@ from spinenet.auc_metrics import (  # noqa: E402
 )
 
 
+def _stratified_head(metadata, indices, n_total):
+    """Pick a small subset of `indices` that still covers all three severity
+    classes (for --fast-dev).
+
+    A plain ``indices[:n]`` slice almost always lands on Normal-only rows,
+    because Severe is under 5% of the data. compute_class_weights would then
+    divide by a zero count (inf -> NaN weights), so the smoke test could never
+    exercise the class-weight path it exists to check.
+    """
+    n_per_class = max(2, n_total // 3)
+    sub = metadata.loc[indices]
+    # Row severity = worst label across the three conditions (-1 = missing,
+    # so max() naturally ignores it unless every condition is missing).
+    row_class = sub[list(CONDITIONS)].max(axis=1)
+
+    picked = []
+    for cls in (0, 1, 2):
+        picked.extend(sub.index[row_class == cls][:n_per_class].tolist())
+    return picked or list(indices[:n_total])
+
+
 def compute_weighted_log_loss(outputs_dict, labels_dict):
     """Weighted log loss (RSNA competition metric), equal weights per
     condition — identical to train_rsna_baseline.py's version."""
@@ -112,14 +133,22 @@ def evaluate(model, dataloader, device):
 
             outputs = model(t2_vol, t1_left_vol, t1_right_vol)
 
-            loss = 0.0
+            # CrossEntropyLoss(ignore_index=-1) returns NaN when EVERY target
+            # in the batch is -1 for a condition. Rare on this data (T2
+            # metadata is 99.6-100% labelled per condition) but one NaN poisons
+            # val_loss and therefore the best-epoch selection, so only average
+            # over conditions that actually have a label in this batch.
+            loss_terms = []
             for cond in CONDITIONS:
-                loss += criterion(outputs[cond], labels_device[cond])
-            loss /= len(CONDITIONS)
+                labels_c = labels_device[cond]
+                if (labels_c != -1).any():
+                    loss_terms.append(criterion(outputs[cond], labels_c))
+            if loss_terms:
+                total_loss += (sum(loss_terms) / len(loss_terms)).item()
+                num_batches += 1
 
-            total_loss += loss.item()
-            num_batches += 1
-
+            # Predictions are collected regardless of the loss guard above, so
+            # a skipped batch never shrinks the evaluated sample count.
             for cond in CONDITIONS:
                 preds = torch.argmax(outputs[cond], dim=1)
                 all_preds[cond].extend(preds.cpu().numpy())
@@ -283,12 +312,14 @@ def main():
     )
 
     if args.fast_dev:
-        # Keep a tiny, deterministic slice for the smoke test only.
+        # Keep a tiny, deterministic, CLASS-STRATIFIED slice for the smoke
+        # test. A plain head-slice would be Normal-only and blow up the class
+        # weights (see _stratified_head).
         n = args.fast_dev_samples
-        train_indices = train_indices[: max(1, int(n * (1 - args.val_split)))]
-        val_indices = val_indices[: max(1, int(n * args.val_split))]
+        train_indices = _stratified_head(dataset.metadata, train_indices, n)
+        val_indices = _stratified_head(dataset.metadata, val_indices, max(6, n // 2))
         print(f"  [fast-dev] Truncated to {len(train_indices)} train / "
-              f"{len(val_indices)} val samples")
+              f"{len(val_indices)} val samples (class-stratified)")
 
     train_dataset = Subset(dataset, train_indices)
     val_dataset = Subset(dataset, val_indices)
@@ -370,8 +401,19 @@ def main():
         class_alpha = compute_class_weights(
             train_dataset, num_classes=3, mode=args.class_weight_mode
         )
+        if not torch.isfinite(class_alpha).all():
+            raise ValueError(
+                f"Class weights are not finite: {class_alpha.tolist()}\n"
+                "  A severity class has ZERO samples in the training split, so "
+                "1/count blew up.\n"
+                "  Raise --fast-dev-samples, or check --data-dir."
+            )
         print(f"  Class weights: Normal={class_alpha[0]:.3f} "
               f"Moderate={class_alpha[1]:.3f} Severe={class_alpha[2]:.3f}")
+        if args.fast_dev:
+            print("  [fast-dev] These come from a tiny class-stratified subset, so they "
+                  "do NOT reflect the real dataset imbalance. Check only that they are "
+                  "finite and printed; a real run puts Severe far above Normal.")
         # .to(device): the weight is a buffer on the loss module, and nothing
         # ever moves the criterion, so a CPU weight against CUDA logits is a
         # hard RuntimeError on the first batch.
@@ -415,10 +457,18 @@ def main():
             optimizer.zero_grad()
             outputs = model(t2_vol, t1_left_vol, t1_right_vol)
 
+            # Same all-ignored-in-batch guard as evaluate() -- see the comment
+            # there. Backprop on a NaN loss would wreck the weights outright.
             loss = 0.0
+            n_valid_conditions = 0
             for cond in CONDITIONS:
-                loss += criterion(outputs[cond], labels_device[cond])
-            loss /= len(CONDITIONS)
+                labels_c = labels_device[cond]
+                if (labels_c != -1).any():
+                    loss = loss + criterion(outputs[cond], labels_c)
+                    n_valid_conditions += 1
+            if n_valid_conditions == 0:
+                continue  # nothing labelled in this batch (essentially never)
+            loss = loss / n_valid_conditions
 
             loss.backward()
             optimizer.step()

@@ -65,12 +65,16 @@ CK=checkpoints/rsna/best_model_attention.pth       # warm-start từ CBAM đã t
 # chạy GPU thật — trước đây weight nằm trên CPU sẽ crash ngay batch đầu, đã fix).
 python3 experiments/f1_improvement/train_t1_foraminal.py --fast-dev --cbam-checkpoint $CK \
     --class-weight-mode effective --select-by severe_f1
-python3 experiments/multiview/train_multiview.py --fusion concat --fast-dev --cbam-checkpoint $CK \
-    --class-weight-mode effective --select-by severe_f1
-python3 experiments/multiview/train_multiview.py --fusion gated  --fast-dev --cbam-checkpoint $CK \
-    --class-weight-mode effective --select-by severe_f1
+python3 experiments/multiview/train_multiview.py --fusion concat --fast-dev --allow-missing-t1 \
+    --cbam-checkpoint $CK --class-weight-mode effective --select-by severe_f1
+python3 experiments/multiview/train_multiview.py --fusion gated  --fast-dev --allow-missing-t1 \
+    --cbam-checkpoint $CK --class-weight-mode effective --select-by severe_f1
 # OOM? hạ --batch-size (T1 default 32, multiview default 16).
 # LƯU Ý: quên --cbam-checkpoint → banner "⚠️ NOT warm-starting"; sai path → dừng báo lỗi.
+# Smoke test giờ cắt còn 24 train / 12 val (class-stratified) → xong trong ~1 phút.
+# Class weights in ra ở fast-dev KHÔNG phản ánh imbalance thật (subset đã stratify);
+# chỉ cần thấy nó FINITE và có in ra là đạt.
+# Đã verify chạy được trên CPU máy Mac 2026-08-22: cả 3 lệnh exit=0.
 ```
 
 ## 3. SOTA (chạy được ngay khi có data (a) — kick trước, làm (b)(c) song song)
@@ -100,20 +104,35 @@ python3 experiments/f1_improvement/train_t1_foraminal.py --cbam-checkpoint $CK \
 
 ```bash
 CK=checkpoints/rsna/best_model_attention.pth
+# ⚠️ --allow-missing-t1 là BẮT BUỘC. 51 hàng T2 (10 left, 41 right) không có crop
+#    T1 tương ứng; thiếu cờ này dataloader raise FileNotFoundError và GIẾT job giữa
+#    epoch 1. Kiểm rồi: 50/51 hàng đó vốn đã có nhãn -1 (loss bỏ qua sẵn), đúng 1 hàng
+#    có nhãn thật bị thay bằng volume zeros → mất 1 mẫu / 9748.
+
 # #2 concat
 python3 experiments/multiview/train_multiview.py --fusion concat --cbam-checkpoint $CK \
-    --class-weight-mode effective --select-by severe_f1 \
+    --allow-missing-t1 --class-weight-mode effective --select-by severe_f1 \
     --epochs 30 --batch-size 16 --lr 1e-3 \
     2>&1 | tee experiments/multiview/run_concat.log
 # → experiments/multiview/checkpoints/best_model_multiview_concat.pth (+ _best_metrics.json/.txt + _log.csv)
 
 # #3 gated leader-supporter (đúng ý thầy)
 python3 experiments/multiview/train_multiview.py --fusion gated --cbam-checkpoint $CK \
-    --class-weight-mode effective --select-by severe_f1 \
+    --allow-missing-t1 --class-weight-mode effective --select-by severe_f1 \
     --epochs 30 --batch-size 16 --lr 1e-3 \
     2>&1 | tee experiments/multiview/run_gated.log
 # → .../best_model_multiview_gated.pth  +  multiview_gated_best_metrics.json
 ```
+
+**Đọc kết quả cho đúng (2 điều đã rà ra 2026-08-22):**
+- **`gated` có capacity THẤP HƠN `concat`.** Gate là tổ hợp lồi `w_t2·e_t2 + w_t1·e_t1`
+  (softmax, sum=1) → vector 512 chiều; concat giữ cả hai → 1024 chiều. **concat thắng gated
+  là bình thường, không phải bug.** Giá trị của gated là *giải thích được*
+  (`model.get_gate_weights()` trả trọng số leader/supporter từng ca) — đúng thứ thầy muốn nhìn.
+- **Encoder T1 đang bị đóng băng ở trọng số học từ T2.** `freeze_backbone(True)` (mặc định)
+  chỉ để `fc_*` + `cbam*` train; conv backbone giữ nguyên. T1/T2 khác contrast rõ rệt, nên nếu
+  epoch 5 Severe F1 vẫn thấp thì **`--unfreeze-backbone --lr 1e-4` không phải "leo thang khẩn cấp"**
+  mà nhiều khả năng mới là setup đúng cho một phép đổi chuỗi ảnh.
 
 ## 6. Theo dõi trong lúc chạy
 

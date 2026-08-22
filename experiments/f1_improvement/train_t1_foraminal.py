@@ -85,6 +85,28 @@ def build_model(name: str):
         raise ValueError(f"Unknown model: {name}")
 
 
+def _stratified_head(metadata, indices, n_total):
+    """Pick a small subset of `indices` that still covers all three severity
+    classes (for --fast-dev).
+
+    A plain ``indices[:n]`` slice usually lands on Normal-only rows, because
+    Severe is under 5% of the data. compute_class_weights would then divide by
+    a zero count -- ``1/0`` -> inf -> NaN weights after normalisation -- and the
+    smoke test would "pass" without ever exercising the class-weight path it
+    exists to check.
+    """
+    n_per_class = max(2, n_total // 3)
+    sub = metadata.loc[indices]
+    # Each T1 row is valid on exactly one side; the other side is -1, so max()
+    # recovers that row's severity class (-1 only if both are missing).
+    row_class = sub[["left_foraminal", "right_foraminal"]].max(axis=1)
+
+    picked = []
+    for cls in (0, 1, 2):
+        picked.extend(sub.index[row_class == cls][:n_per_class].tolist())
+    return picked or list(indices[:n_total])
+
+
 def evaluate(model, dataloader, device):
     """Evaluate model on validation set -- foraminal heads only."""
     model.eval()
@@ -275,9 +297,14 @@ def main():
 
     # Fast dev / smoke test
     parser.add_argument("--fast-dev", action="store_true",
-                        help="Smoke-test mode: 1 epoch, tiny batch, num_workers=0. "
-                             "Proves the training loop + metrics JSON work end-to-end "
-                             "on whatever subset is under --data-dir. Not for real results.")
+                        help="Smoke-test mode: 1 epoch, tiny batch, num_workers=0, "
+                             "and a tiny class-stratified subset of the data. Proves "
+                             "the training loop + class weights + metrics JSON work "
+                             "end-to-end in ~a minute. Not for real results.")
+    parser.add_argument("--fast-dev-samples", type=int, default=24,
+                        help="Approximate number of training samples to keep in "
+                             "--fast-dev (split evenly across the 3 severity "
+                             "classes, default: 24)")
 
     args = parser.parse_args()
 
@@ -331,6 +358,17 @@ def main():
 
     train_indices = dataset.metadata[dataset.metadata["study_id"].isin(train_patients)].index.tolist()
     val_indices = dataset.metadata[dataset.metadata["study_id"].isin(val_patients)].index.tolist()
+
+    if args.fast_dev:
+        # Without this the "smoke test" runs a full epoch over ~15.7k crops
+        # (batch 4 -> ~3.9k steps), which takes 10-20 minutes and reads every
+        # .npy on disk. Stratified so Moderate/Severe survive the cut.
+        train_indices = _stratified_head(dataset.metadata, train_indices, args.fast_dev_samples)
+        val_indices = _stratified_head(
+            dataset.metadata, val_indices, max(6, args.fast_dev_samples // 2)
+        )
+        print(f"  [fast-dev] Truncated to {len(train_indices)} train / "
+              f"{len(val_indices)} val samples (class-stratified)")
 
     train_dataset = Subset(dataset, train_indices)
     val_dataset = Subset(dataset, val_indices)
@@ -411,7 +449,19 @@ def main():
     if args.class_weight_mode != "none":
         print(f"  Computing class weights (mode={args.class_weight_mode}) from train set...")
         class_alpha = compute_class_weights(train_dataset, num_classes=3, mode=args.class_weight_mode)
+        if not torch.isfinite(class_alpha).all():
+            raise ValueError(
+                f"Class weights are not finite: {class_alpha.tolist()}\n"
+                "  A severity class has ZERO samples in the training split, so "
+                "1/count blew up.\n"
+                "  Raise --fast-dev-samples, or check that --data-dir really "
+                "holds Moderate/Severe rows."
+            )
         print(f"  Class weights: Normal={class_alpha[0]:.3f} Moderate={class_alpha[1]:.3f} Severe={class_alpha[2]:.3f}")
+        if args.fast_dev:
+            print("  [fast-dev] These come from a tiny class-stratified subset, so they "
+                  "do NOT reflect the real dataset imbalance. Check only that they are "
+                  "finite and printed; a real run puts Severe far above Normal.")
         # .to(device): the weight is a buffer on the loss module, and nothing
         # ever moves the criterion, so a CPU weight against CUDA logits is a
         # hard RuntimeError on the first batch.
