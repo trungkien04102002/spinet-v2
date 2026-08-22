@@ -176,7 +176,226 @@ right 0.190) — so the run was allowed to continue rather than being cut for ru
 
 ---
 
-## Run #2 — multi-view concat (PENDING)
+## Course correction, 2026-08-22 — runs #1/#2/#3 were built on the wrong base
+
+`GradingMultiView` uses `GradingModelWithCBAM` for BOTH branches. It has no BiomedCLIP
+branch, no text anchors and no cosine head: it ends in a plain `nn.Linear`. So the whole
+multi-view line does not extend the published Hybrid, it **replaces** it with a
+CBAM-only two-branch model and starts from a weaker base. That is why it cannot reach
+0.356 -- it was never the same architecture.
+
+Meanwhile `train_rsna_hybrid.py:166` has had `--fusion gated` all along, `GatedFusion`
+(GMU, Arevalo et al. 2017) is implemented at `grading_hybrid.py:82`, and the comment at
+line 171 says it exists to "test whether a smarter fusion improves over the default".
+**Every published Phase 2 run used `concat_mlp`; gated has never been run.** It also
+comes with the full Phase 2 recipe already wired -- focal + SupCon + uncertainty
+weighting + sqrt class weights + oversample x3 + augmentation -- i.e. the five things
+the multi-view scripts were missing, at zero code cost.
+
+### The CBAM init used by the published Hybrid is gone
+
+`hybrid_best_metrics.json` records `cbam_checkpoint =
+checkpoints/v3_20260503/cbam/best_model_attention.pth` (epoch 14, Severe F1 0.3044,
+`class_weight_mode=sqrt`, `oversample_factor=5`). That file was deleted on 2026-08-04.
+Every `*.json` in the repo carrying `val_accuracies` was checked against its recorded
+accuracies (canal 0.878476 / L 0.613836 / R 0.577181); only the original metrics file
+matches, so **no surviving copy exists**. Note also that
+`checkpoints/rsna/best_model_attention.pth` is byte-identical (md5 `50101203...`) to
+`checkpoints/no_class_weight/best_model_attention.pth`, i.e. it is the no-class-weight
+ablation, not the `sqrt` checkpoint the Hybrid was warm-started from.
+
+Consequence: a `gated` run cannot be compared directly against the published
+`concat_mlp` number, because the init differs too. Hence two runs, both from
+`checkpoints/rsna/best_model_attention.pth`: a `concat_mlp` re-baseline and then
+`gated`. The A/B is internally valid whatever the init.
+
+### Comparison targets -- do not mix seed sets
+
+The published Hybrid numbers per seed: **seed 42 = 0.3434**, seed 123 = 0.3482,
+seed 456 = 0.3753, 3-seed mean = 0.3556. A seed-42 run must be compared against
+**0.3434**, not against 0.356.
+
+### What "stuck mode" looks like
+
+`checkpoints/v3_20260503/hybrid/hybrid_log.csv` turns out to hold THREE appended runs:
+
+| run | epochs | max Severe F1 | max foraminal | mean val_loss |
+|---|---|---|---|---|
+| 1 | 20 | 0.2264 | 0.080 | 0.1781 |
+| 2 | 6 | 0.2402 | 0.082 | 0.1841 |
+| 3 | 20 | **0.3434** | 0.287 | 0.1447 | <- the published run |
+
+In runs 1 and 2 the foraminal heads never left ~0 and the mean stalled at 0.22-0.24.
+In run 3 foraminal woke up at epoch 2 and the mean jumped to 0.3128.
+
+**Do not read this as seed fragility.** Runs 1-2 sit at val_loss ~0.178-0.184 against
+run 3's ~0.145; a systematic gap that size points at a different configuration rather
+than seed variance, and the CSV stores no per-row args, so the earlier runs' flags are
+unknown and unrecoverable. What it does give us is a signature for the failure mode:
+foraminal pinned at 0 with val_loss around 0.18.
+
+## Run #2 — multi-view concat (DONE 2026-08-22, early-stopped)
+
+Ran the full `--epochs 20` and stopped itself at epoch 14 after 10 epochs without
+improvement, so this number needs no "killed by hand" caveat.
+
+**Best epoch 4, Severe F1 0.3323**, val_loss 0.5373, accuracy canal 0.895 / L 0.682 /
+R 0.683, `eval_samples` 1942 (directly comparable to the paper's split), 20 min of
+training. Plateau over the last six epochs: mean **0.3227**, range 0.3184-0.3282 -- so
+0.3323 is again a peak rather than the converged level.
+
+Beats both external SOTA baselines (0.271, 0.257) but sits below the seed-42 Hybrid
+(0.3434). Foraminal never passed 0.26 in any epoch, which is the whole gap.
+
+## Run #2b — multi-view concat + Phase 2 recipe (ABANDONED before running)
+
+Superseded by the course correction above: fixing the recipe on the wrong architecture
+is worth less than running the right architecture with the recipe it already has. The
+`--use-focal` / `--focal-gamma` / `--oversample-factor` flags added to
+`train_multiview.py` (commit `51ea246`) stay available and default to off, so runs #2
+and #3 remain comparable.
+
+## ⚠️ READ FIRST if you are pulling numbers for the report
+
+Nothing in the (a)/(b) section below is a final number. They are **screening runs**:
+single seed (42), warm-started from a CBAM checkpoint that is *not* the one the
+published Hybrid used (that file was deleted, see above), and possibly cut short.
+
+**Comparison rules that must not be broken:**
+1. A seed-42 run compares against the seed-42 published number **0.3434**, never
+   against the 3-seed mean 0.356.
+2. (a) and (b) must be compared at the **same epoch budget**. If one ran 12 epochs and
+   the other 20, compute best-within-12 for both from the per-epoch CSVs; a longer run
+   has more chances to catch a peak, and on this task the peak-to-trough swing is
+   +/-0.03, which is larger than any effect being measured.
+3. Report the plateau (mean of the last several epochs), not only the best epoch.
+   `--select-by severe_f1` saves the top of the oscillation; on run #1 that inflated the
+   saved number by 0.018 over the plateau.
+
+**To produce a number that belongs in the thesis:** whichever fusion wins the screen,
+run it AND its counterpart for the full 20 epochs on seeds 42/123/456, then report
+mean +/- std. That is 6 runs, about 5 hours, no code changes.
+
+## Run (a) — Hybrid `concat_mlp` re-baseline (2026-08-22)
+
+Flags generated directly from the published run's saved `args` so the only intended
+difference is the CBAM init. 144 s/epoch, 420 steps, ~48 min for 20 epochs; VRAM only
+2.8 GB because both backbones are frozen. BiomedCLIP downloaded to `/workspace/.hf_home`
+(748 MB) -- the Vast image sets `HF_HOME` there, not `~/.cache/huggingface`.
+
+**DONE, full 20 epochs.** Best: **epoch 15, Severe F1 0.3212** (canal 0.557 / L 0.206 /
+R 0.201), val_loss 0.1488, accuracy canal 0.874 / L 0.614 / R 0.621, `eval_samples` 1942,
+36 min of training. Artifacts in `experiments/hybrid/hybrid_rebase_*`.
+
+### The published 0.3434 is a lucky peak, and this run shows it
+
+| | best epoch | plateau (last 8 epochs) |
+|---|---|---|
+| published (seed 42) | **0.3434** | 0.2969 |
+| re-baseline | 0.3212 | **0.3050** |
+| delta | **-0.0222** | **+0.0080** |
+
+The re-baseline is *worse at the peak but more stable*: the published run's best sits
+**+0.046 above its own plateau**, the re-baseline's only +0.016. This is the ordinary
+consequence of selecting the best epoch on validation — standard practice, not
+misconduct — but it means the Hybrid's converged performance is materially below the
+number that was reported. If every seed's peak sits ~0.04 above its plateau, the
+"converged" 3-seed figure would be around 0.31 rather than 0.356.
+
+**Worth stating proactively in the thesis.** It is a much weaker position to have a
+committee notice it first. The honest framing: report the best-epoch number as the paper
+does, and add the plateau alongside it.
+
+Comparison targets for run (b), which shares this init and epoch budget:
+**best 0.3212** and **plateau 0.3050**. A win on the peak alone could be luck; a win on
+both is evidence.
+
+Epoch-by-epoch against the published run (same recipe, same split, same seed; only the
+CBAM init differs):
+
+| ep | published | re-baseline | delta | rebase canal / L / R |
+|---|---|---|---|---|
+| 1 | 0.1973 | 0.1731 | -0.0242 | 0.519 / 0.000 / 0.000 |
+| 2 | 0.3128 | 0.2908 | -0.0220 | 0.415 / 0.217 / 0.241 |
+| 3 | 0.3358 | 0.3129 | -0.0230 | 0.444 / 0.231 / 0.263 |
+| 4 | 0.3046 | 0.2888 | -0.0158 | 0.533 / 0.177 / 0.156 |
+| 5 | 0.3283 | 0.3192 | -0.0091 | 0.564 / 0.203 / 0.190 |
+| 6 | 0.2670 | 0.2596 | -0.0074 | 0.483 / 0.166 / 0.130 |
+| 7 | 0.2545 | 0.2602 | +0.0057 | 0.571 / 0.111 / 0.098 |
+| 8 | 0.2944 | 0.2958 | +0.0014 | 0.550 / 0.168 / 0.170 |
+| 9 | 0.3289 | 0.3069 | -0.0220 | 0.465 / 0.231 / 0.224 |
+| 10 | **0.3434** | 0.3081 | -0.0353 | 0.558 / 0.184 / 0.183 |
+| 11 | 0.2521 | 0.2857 | +0.0336 | 0.573 / 0.159 / 0.125 |
+| 12 | 0.3366 | 0.3154 | -0.0212 | 0.544 / 0.183 / 0.219 |
+| 13 | 0.2821 | 0.2705 | -0.0115 | 0.519 / 0.157 / 0.136 |
+| 14 | 0.3319 | 0.3176 | -0.0142 | 0.541 / 0.215 / 0.197 |
+| 15 | 0.3302 | **0.3212** | -0.0090 | 0.557 / 0.206 / 0.201 |
+| 16 | 0.2990 | 0.3108 | +0.0118 | 0.562 / 0.211 / 0.160 |
+| 17 | 0.2818 | 0.3035 | +0.0217 | 0.551 / 0.203 / 0.156 |
+| 18 | 0.2919 | 0.3165 | +0.0247 | 0.554 / 0.219 / 0.176 |
+| 19 | 0.2799 | 0.2982 | +0.0183 | 0.563 / 0.190 / 0.142 |
+| 20 | 0.2790 | 0.3013 | +0.0223 | 0.566 / 0.190 / 0.148 |
+
+Qualitatively identical dynamics: foraminal is exactly 0.000 on both sides at epoch 1,
+wakes at epoch 2, and canal drops as capacity shifts to foraminal (0.519 -> 0.415 here,
+0.592 -> 0.455 published). So the deleted init does **not** put the run into the stuck
+mode described above -- val_loss reached 0.1439 by epoch 12 against the published
+0.1436.
+
+The gap is not a constant offset: it narrows to +0.006 by epoch 7, then reopens to
+-0.035 at epoch 10, the published run's peak. **Two of my own mid-run readings were
+wrong** and are recorded here as a caution: at epoch 4 I called it "a stable -0.02", and
+at epoch 8 "the gap closes, the init only causes delay". Both were extrapolations from
+2-4 points on a curve that swings +/-0.03. On this task, do not infer a trend from fewer
+than about five epochs.
+
+Where the gap actually sits: at epoch 10 the published foraminal is 0.278 / 0.252 while
+the re-baseline is 0.184 / 0.183 — canal is comparable. The deficit is concentrated in
+the hardest condition, which fits the init being the `no_class_weight` ablation rather
+than the `sqrt`-weighted checkpoint the published run started from.
+
+## Run (b) — Hybrid `--fusion gated` (PENDING)
+
+Same command with `--fusion gated`. This is the advisor's leader-supporter ask evaluated
+**on the published architecture**, and it reuses the BiomedCLIP branch and cosine head,
+so it keeps the zero-shot label-extension contribution intact. BiomedCLIP is now cached
+at `/workspace/.hf_home` on the box, so no download.
+
+Exactly one component changes. Everything else — frozen CBAM branch, frozen BiomedCLIP
+branch, slice-attention pool, cosine head against frozen text anchors, focal + SupCon +
+uncertainty weighting + sqrt weights + oversample x3 + augmentation, data, split, seed —
+is byte-identical to (a):
+
+```python
+# (a) ConcatMLPFusion  -- "the MLP is the only place where per-modality information mixes"
+proj(cat([feat_cbam, feat_bmc]))                  # 1024 -> MLP(768) -> 512
+
+# (b) GatedFusion (GMU, Arevalo et al. 2017)
+ha = tanh(h_a(feat_cbam)); hb = tanh(h_b(feat_bmc))
+z  = sigmoid(gate(cat([feat_cbam, feat_bmc])))    # 512-dim, per sample
+z * ha + (1 - z) * hb
+```
+
+Note this is a *different* gate from `GMUConditionGate` in `experiments/multiview/`: it
+projects each branch separately before gating, so the capacity concern raised about the
+multi-view gated variant (convex combination collapsing 1024 -> 512) does **not** apply
+here.
+
+Compare against **(a)'s best, not the published 0.3434**, since (b) shares (a)'s init.
+
+## Remaining untested knobs on the published architecture (0 lines of code)
+
+All already wired into `train_rsna_hybrid.py`; none was ever varied in Phase 2.
+
+| Knob | Published value | Why it might matter |
+|---|---|---|
+| `--fusion gated` | `concat_mlp` | run (b) |
+| `--slice-strategy dynamic` | `static` (3 centre slices) | Picks slices by cosine similarity to the text anchor instead of hard-coding the three central ones. The foramina are **lateral** structures, so a fixed midline crop may simply not contain them — which is the standing explanation for foraminal being the worst condition. Best remaining idea after (b). |
+| `--modality-dropout 0.1-0.2` | `0.0` | Zeroes one branch at random during training; regularises and forces each branch to stand alone. May damp the oscillation. |
+| `--class-weight-mode effective` | `sqrt` | cheap sweep |
+| `--oversample-factor 5` | `3` | the CBAM run used 5 |
+| `--supcon-weight` | `0.1` | never swept |
+| post-hoc threshold tuning on the winner | — | already proven +0.019 on the Hybrid (seed 42); costs no training and **stacks** on top of whatever wins |
 
 ```
 python3 experiments/multiview/train_multiview.py --fusion concat \
