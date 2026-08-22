@@ -115,3 +115,23 @@ Label convention in the RSNA pipeline: `-1` means "missing label" and MUST be pr
 - `COMMANDS.md` — exhaustive command reference with expected timings and results.
 - `SPIDER_TRAINING_GUIDE.md` — SPIDER transfer-learning workflow and expected metrics.
 - `tutorials/01-quickstart.ipynb` — upstream inference example.
+
+## Academic writing rules (LaTeX report/thesis + Beamer slides)
+
+Apply these whenever editing the report/thesis LaTeX under `paper/` (or any `.tex` report/slide). Derived from advisor (Phan Trọng Nhân) feedback; full version with snippets in `paper/QUY_TAC_VIET_BAO_CAO_15.md`. Report bodies are Vietnamese — keep that language; this rule list is the exception to "English in files".
+
+1. **Abstract/Tóm tắt order**: problem → method → results-so-far → *then* chapter outline. Never lead with the chapter list.
+2. **Front matter**: list of figures + list of tables must appear in the ToC (`\addcontentsline{toc}{chapter}{\listfigurename}` before `\listoffigures`; same for `\listtablename`).
+3. **No single-child sections**: if a section has only one subsection, drop the sub-level (use a bold lead-in sentence instead).
+4. **Conclusion chapter**: include a concrete next-phase plan (what / how long / how) — only tasks that will actually be done.
+5. **Cite every named dataset / standard / model** (e.g. "chuẩn RSNA 2024" → `~\cite{...}`), especially in background/related-work chapters.
+6. **No duplicate caption**: don't bake a title into an image that repeats the LaTeX `\caption` — crop it out (matplotlib: drop `plt.title`).
+7. **Every figure/table must be referenced and described in the text** ("Hình~\ref{...} minh họa…"). No orphan floats.
+8. **Consistent cross-refs**: always `Hình~\ref{}` / `Bảng~\ref{}` — never hardcode the number, never bold it. Every float gets a UNIQUE `\label`.
+9. **Cite borrowed figures/tables in the caption** (`\caption{... \cite{src}.}`); self-made ones need no citation.
+10. **Readable in-figure text**: prefer `\includegraphics[width=\textwidth]{}` over small `scale=`; export matplotlib at larger font.
+11. **Consistent equations**: number all display equations with `\begin{equation}` — never mix in unnumbered `$$...$$`.
+12. **Section titles state the action/purpose fully** (e.g. "Các mô hình tham khảo" → "Ứng dụng các mô hình tham khảo").
+13. **Name the document correctly**: an internship report says "báo cáo thực tập này", not "luận văn này".
+14. **Architecture/pipeline figures must match the actual proposed flow**: don't draw A→B if A's output isn't B's input; show missing integration steps (dashed = planned/future). Draw the full target solution and mark done-vs-planned.
+15. **Avoid pages with large whitespace**: remove forced `\newpage`/`\clearpage`; use `[ht]`/`[htbp]` for floats (not rigid `[H]`); place figures/tables near their reference.
