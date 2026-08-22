@@ -8,10 +8,10 @@
 \toprule
 Metric & SpineNetV2 & brendanartley & transformer & Hybrid (Ours) \\
 \midrule
-Mean Accuracy & 81.0 $\pm$ 0.6 & \textit{pending} & \textit{pending} & 72.4 $\pm$ 0.3 \\
-Mean F1 macro & 0.420 $\pm$ 0.010 & \textit{pending} & \textit{pending} & 0.527 $\pm$ 0.027 \\
-Severe F1 & 0.152 $\pm$ 0.008 & \textit{pending} & \textit{pending} & 0.356 $\pm$ 0.017 \\
-Severe Recall & 12.3 $\pm$ 0.6 & \textit{pending} & \textit{pending} & 48.6 $\pm$ 1.9 \\
+Mean Accuracy & 81.0 $\pm$ 0.6 & 83.6 $\pm$ 0.5 & 83.4 $\pm$ 0.4 & 72.4 $\pm$ 0.3 \\
+Mean F1 macro & 0.420 $\pm$ 0.010 & 0.532 $\pm$ 0.008 & 0.527 $\pm$ 0.028 & 0.527 $\pm$ 0.027 \\
+Severe F1 & 0.152 $\pm$ 0.008 & 0.271 $\pm$ 0.026 & 0.257 $\pm$ 0.020 & 0.356 $\pm$ 0.017 \\
+Severe Recall & 12.3 $\pm$ 0.6 & 26.0 $\pm$ 1.6 & 25.9 $\pm$ 2.8 & 48.6 $\pm$ 1.9 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -28,7 +28,7 @@ Capability & SpineNetV2 & brendanartley & transformer & Hybrid (Ours) \\
 Takes a new label set as input & \ding{55} (fixed head) & \ding{55} (fixed head) & \ding{55} (fixed head) & \ding{51} (prompt-based) \\
 Cross-dataset transfer (RSNA to SPIDER) & \ding{55} (requires retrain) & \ding{55} (requires retrain) & \ding{55} (requires retrain) & \ding{51} \\
 Zero-shot to unseen labels & \ding{55} & \ding{55} & \ding{55} & \ding{51} \\
-RSNA Mean F1 & 0.420 $\pm$ 0.010 & \textit{pending} & \textit{pending} & 0.527 $\pm$ 0.027 \\
+RSNA Mean F1 & 0.420 $\pm$ 0.010 & 0.532 $\pm$ 0.008 & 0.527 $\pm$ 0.028 & 0.527 $\pm$ 0.027 \\
 \bottomrule
 \end{tabular}
 \end{table}
