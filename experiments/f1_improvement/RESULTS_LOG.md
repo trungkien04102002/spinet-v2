@@ -597,3 +597,67 @@ answers it for this dataset; do not assume either direction.
 ### Suggested order
 
 A (2 min) -> E (0 code) -> C -> D, evaluating after each. B last, since it stacks.
+
+---
+
+## Box teardown audit, 2026-08-22 — what was saved, what was deliberately dropped
+
+Instance `48374995` destroyed after this audit. The audit method matters: listing files
+by mtime is **useless** on a fresh clone (checkout stamps every file with the clone
+date). The reliable question is "what does git not track?", since anything committed is
+already safe:
+
+```bash
+# on the box
+{ git ls-files --others --exclude-standard;
+  git ls-files --others --ignored --exclude-standard; } | sort -u
+```
+
+That returned 41 artifact files. Each was size-compared against the Mac.
+
+### Saved
+
+| What | Where it landed | Size |
+|---|---|---|
+| Run (b) gated metrics (json/txt/csv) | `experiments/hybrid/gated/` | 18 KB |
+| Run (b) gated model + 4 periodic checkpoints | `checkpoints/hybrid_gated/` | 60 MB |
+| **Run (a) concat_mlp — the winning config** | `checkpoints/hybrid_rebase/` | 68 MB |
+| Run #2 multiview-concat metrics | `experiments/multiview/checkpoints/` | 15 KB |
+| 4 run logs, progress bars stripped + gzipped | `experiments/logs_archive/` | 488 KB |
+
+`checkpoints/hybrid_rebase/best_model_hybrid.pth` is the one that matters most: it is the
+config that won, and post-hoc threshold tuning (the +0.019 lever) needs it.
+
+Log archiving verified, not assumed: the gzipped `run_hybrid_gated.log.gz` still contains
+all 20 epoch summaries and the per-class precision/recall tables. Those tables exist
+**only** in the logs — the CSVs carry Severe F1 and recall but not precision, and no
+Normal/Moderate rows. The Severe-absorbed-into-Moderate diagnostic came from there, so
+losing them would have cost the most interesting finding of the day.
+
+### A false alarm worth recording
+
+The size diff flagged `multiview_gated_*` as newer on the box than on the Mac
+(json 4728 vs 4357 bytes, model 512384085 vs 512375893). Opening both showed they are
+**smoke-test outputs, one epoch each**: the Mac's is dated 2026-07-25, the box's
+2026-08-22T08:02 (today's `--fast-dev` check). Run #3 (multiview gated) was **never
+trained for real**. Nothing was lost. A size mismatch is a prompt to open the file, not
+evidence of a newer result.
+
+### Deliberately NOT pulled (~3.1 GB)
+
+| What | Size | Why |
+|---|---|---|
+| `checkpoints/t1_foraminal/*.pth` (6) | 1.5 GB | run #1, wrong architecture (no BiomedCLIP, no cosine head) |
+| `experiments/multiview/checkpoints/best_model_multiview_concat.pth` + 2 periodic | 1.5 GB | run #2, same wrong architecture |
+| raw uncompressed logs | 7 MB | stripped+gzipped copies kept instead |
+
+Metrics and logs for both runs **are** saved, so every number in this file stays
+reproducible on paper. Only the weights are gone, and re-deriving them would mean
+re-running a line already documented as a dead end. The weight-averaging spike also
+showed the intermediate epoch checkpoints add nothing on a decaying-LR trajectory.
+
+### Backup gap to close
+
+The `.pth` files above are gitignored, so the 128 MB now under `checkpoints/hybrid_rebase/`
+and `checkpoints/hybrid_gated/` exists **only on the Mac** — no second copy anywhere.
+Add them to the Drive backup (`checkpoints_canonical_backup`) before relying on them.
