@@ -98,12 +98,12 @@ Mean Accuracy** — chuẩn bị sẵn câu trả lời cho hội đồng.
 | # | Việc | TT | Kết quả / commit |
 |---|---|---|---|
 | **0** | Threshold / calibration / logit-adjustment / τ-norm (không train) | ✅ | Hybrid seed42: macro **+0.019 held-out** (0.528→0.564 in-split), cost 0.314→0.285. **Fix CANAL Severe (0.50→0.57), KHÔNG cứu foraminal Severe (0.28→0.29)** → foraminal là vấn đề **representation** → cần #1. CBAM: +0.039. `ca2137a`/`d5f6a8e`/`bc9472a` |
-| **1** | T1-foraminal (chấm foraminal trên Sag-T1 thay vì T2) | 🔵 **ĐANG CHẠY GPU 22/08** | Seed 42, 25 epoch, ~203s/epoch. **Epoch 13: Severe F1 0.3010** (vượt khoảng T2 0.27–0.29), precision 0.19–0.22. ⚠️ foraminal-only, **KHÔNG so được với Mean F1 0.527**. Biến động epoch lớn (ep9 tụt 0.164) → **cần 3 seed mới dám khẳng định** |
-| **2** | Two-branch late fusion (T2 + T1, concat) | 🟡 smoke-test GPU xong, **chờ chạy thật** | Quan trọng hơn #1: #1 *thay* T2 bằng T1, #2 *giữ cả hai* và ra đủ 3 điều kiện → Mean F1 so được với số cũ |
-| **3** | Gated leader–supporter fusion (GMU per-condition) — **đúng ý thầy** | 🟡 smoke-test GPU xong, **chờ chạy thật** | ⚠️ Gate là **tổ hợp lồi** (512-dim) vs concat (1024-dim) → **capacity thấp hơn, thua concat về F1 là bình thường**. Giá trị = interpretability (`get_gate_weights()`) |
-| **4** | Axial-T2 branch | ⬜ stretch/future | — |
+| **1** | T1-foraminal (chấm foraminal trên Sag-T1 thay vì T2) | ✅ **XONG 22/08** | Seed 42, 25 epoch, ~203s/epoch. **Epoch 13: Severe F1 0.3010** (vượt khoảng T2 0.27–0.29), precision 0.19–0.22. ⚠️ foraminal-only, **KHÔNG so được với Mean F1 0.527**. Biến động epoch lớn (ep9 tụt 0.164) → **cần 3 seed mới dám khẳng định** |
+| **2** | Two-branch late fusion (T2 + T1, concat) | ✅ **XONG 22/08 — kiến trúc SAI** | Quan trọng hơn #1: #1 *thay* T2 bằng T1, #2 *giữ cả hai* và ra đủ 3 điều kiện → Mean F1 so được với số cũ |
+| **3** | Gated leader–supporter fusion (GMU per-condition) — **đúng ý thầy** | ✅ **XONG 22/08 — THUA concat** | ⚠️ Gate là **tổ hợp lồi** (512-dim) vs concat (1024-dim) → **capacity thấp hơn, thua concat về F1 là bình thường**. Giá trị = interpretability (`get_gate_weights()`) |
+| **4** | Axial-T2 branch | ❌ **KHUYẾN NGHỊ BỎ** | — |
 
-**🔴 Phát hiện gốc:** `rsna_dataloader.py:127-144` (`is_sagittal_t2`) lọc **Sag-T2 cho MỌI head**, kể cả foraminal —
+**🔴 Phát hiện gốc (ĐÃ ĐỊNH LƯỢNG 22/08 tối):** toạ độ nhãn cho thấy foraminal được chấm **100% trên Sag-T1** (9860/9859), canal **99.9% trên Sag-T2**; hai loại chung series 1/6291 lần. Lỗ liên hợp trái–phải cách nhau **trung vị 7 lát** mà cửa sổ crop chỉ 9 lát (22.8% ca cách >8 lát). **Đội NHẤT RSNA xếp đúng setup của mình vào mục "what didn't work".** Nguyên văn ghi chú cũ:  `rsna_dataloader.py:127-144` (`is_sagittal_t2`) lọc **Sag-T2 cho MỌI head**, kể cả foraminal —
 trong khi foraminal **phải** chấm trên **Sag-T1** (mỡ quanh rễ thần kinh). Đang chấm sai chuỗi ảnh đúng chỗ F1 tệ nhất.
 
 **Chẩn đoán F1 (3-seed):** foraminal Severe F1 0.27–0.29, bottleneck = **PRECISION** (0.22–0.23), recall ổn →
