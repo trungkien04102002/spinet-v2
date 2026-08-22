@@ -219,6 +219,38 @@ Consequence: a `gated` run cannot be compared directly against the published
 `checkpoints/rsna/best_model_attention.pth`: a `concat_mlp` re-baseline and then
 `gated`. The A/B is internally valid whatever the init.
 
+> ### CORRECTION, 2026-08-22 evening — a same-recipe init did survive
+>
+> The paragraph above is right that the *exact* file is gone, but wrong in its practical
+> conclusion. **`checkpoints/fresh_cbam/best_model_attention_sqrt_cw_e20.pth` (242.8 MB)
+> carries `class_weight_mode=sqrt`, `oversample_factor=5`** — the same recipe family as
+> the published init, differing only in run/epoch (19 vs 14):
+>
+> | checkpoint | epoch | class_weight | oversample | val acc (canal / L / R) |
+> |---|---|---|---|---|
+> | published init (deleted) | 14 | sqrt | 5 | 0.8785 / 0.6138 / 0.5772 |
+> | `fresh_cbam/..._sqrt_cw_e20.pth` | 19 | **sqrt** | 5 | 0.8826 / 0.5710 / 0.6035 |
+> | `checkpoints/rsna/best_model_attention.pth` (what runs (a)/(b) used) | 14 | **None** | 5 | 0.9027 / 0.7501 / 0.7475 |
+>
+> So runs (a) and (b) were warm-started from a **no-class-weight** backbone while a
+> **sqrt** one sat on disk unused. That is very likely a large part of why (a)'s
+> foraminal Severe F1 came out at 0.203 against the published 0.283 — the deficit this
+> log already attributed to the init. **Any re-run should use the `fresh_cbam` sqrt
+> checkpoint**, and the (a)-vs-published comparison should be redone on it.
+>
+> What this does **not** fix: the seed123/456 Hybrid heads
+> (`checkpoints/v3_20260503/hybrid/best_model_hybrid_seed{123,456}.pth` — both present)
+> store only trainable weights (`train_rsna_hybrid.py:782` strips `cbam.` and
+> `biomedclip.`). Their cosine heads were trained on the frozen features of the
+> *specific* deleted backbone, so pairing them with a different CBAM — same recipe or
+> not — is a mismatched pairing and would not reproduce those models. **The 3-seed
+> AUPRC/QWK table is therefore not recoverable from existing artifacts; it needs a
+> retrain.** Only the seed-42 logit dump (made 2026-07-20, before the deletion) survives.
+>
+> Also found: `checkpoints/best_model_attention_sqrt_cw_e20.pth` (30 MB, repo root) is
+> **corrupt** — torch.load fails with "failed finding central directory". Not the same
+> file as the 242.8 MB one under `fresh_cbam/`, despite the matching name.
+
 ### Comparison targets -- do not mix seed sets
 
 The published Hybrid numbers per seed: **seed 42 = 0.3434**, seed 123 = 0.3482,
