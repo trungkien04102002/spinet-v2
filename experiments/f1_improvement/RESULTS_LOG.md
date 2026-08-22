@@ -356,7 +356,32 @@ than the `sqrt`-weighted checkpoint the published run started from.
 
 ## Run (b) — Hybrid `--fusion gated` (PENDING)
 
-Same command with `--fusion gated`. This is the advisor's leader-supporter ask evaluated
+Exact command (flags generated from the published run's saved `args`, not typed from
+memory — `--use-uncertainty` takes a value, `--oversample-factor` defaults to 5 but the
+paper used 3, and `--hflip-swap-labels` defaults to True but the paper used False):
+
+```bash
+cd ~/spinet-v2
+source spinenet-venv/bin/activate          # required: bare python3 has no torch
+CK=checkpoints/rsna/best_model_attention.pth
+RECIPE="--data-dir rsna_preprocessed --val-split 0.2 --epochs 20 --batch-size 32 \
+        --lr 0.0001 --weight-decay 0.0001 --slice-strategy static \
+        --use-focal --focal-gamma 2.0 --use-supcon --supcon-weight 0.1 \
+        --use-uncertainty True --class-weight-mode sqrt --augmentation medium \
+        --no-hflip-swap-labels --oversample-factor 3 --num-workers 4 \
+        --save-freq 5 --early-stop-patience 15 --seed 42 \
+        --ablate-branch none --modality-dropout 0.0"
+
+python3 train_rsna_hybrid.py --cbam-checkpoint $CK --fusion gated $RECIPE \
+    --save-dir checkpoints/hybrid_gated \
+    2>&1 | tee experiments/hybrid/run_hybrid_gated.log
+```
+
+Confirm `Fusion head: gated` appears at startup — the script only prints that line when
+fusion differs from `concat_mlp`, so its absence means the flag did not take. ~144 s per
+epoch, about 48 min for 20 epochs.
+
+Same command as (a) with `--fusion gated`. This is the advisor's leader-supporter ask evaluated
 **on the published architecture**, and it reuses the BiomedCLIP branch and cosine head,
 so it keeps the zero-shot label-extension contribution intact. BiomedCLIP is now cached
 at `/workspace/.hf_home` on the box, so no download.
