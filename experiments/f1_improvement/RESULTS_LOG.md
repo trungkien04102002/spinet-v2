@@ -354,7 +354,79 @@ the re-baseline is 0.184 / 0.183 — canal is comparable. The deficit is concent
 the hardest condition, which fits the init being the `no_class_weight` ablation rather
 than the `sqrt`-weighted checkpoint the published run started from.
 
-## Run (b) — Hybrid `--fusion gated` (PENDING)
+## Run (b) — Hybrid `--fusion gated` (DONE 2026-08-22, 20/20 epochs)
+
+**Verdict: gated LOSES to concat_mlp. Do not use it.** Artifacts pulled to
+`experiments/hybrid/gated/` (metrics json/txt + per-epoch csv).
+
+| | Severe F1 best | at epoch | plateau (last 3) |
+|---|---|---|---|
+| (a) `concat_mlp` — same init, same 20 epochs | **0.3212** | 15 | **0.3053** |
+| (b) `gated` | 0.2954 | 5 | 0.2812 |
+
+Behind at the peak by 0.026 and at the plateau by 0.024. **19 of 20 epochs were below
+(a)**; only epoch 1 was above. (b)'s best was set at epoch 5 and never beaten — early
+stopping fired at epoch 20 after 15 epochs without improvement. The single result is
+therefore not a noise artifact: the sign is consistent across the whole run.
+
+Mean Severe F1 per condition over all 20 epochs:
+
+| condition | (a) concat_mlp | (b) gated | delta |
+|---|---|---|---|
+| spinal_canal | 0.5316 | 0.5217 | -0.010 |
+| left_foraminal | 0.1811 | 0.1484 | -0.033 |
+| right_foraminal | 0.1658 | 0.1262 | -0.040 |
+
+Gated is worse on every condition, but the damage is 3-4x larger on the foraminal heads
+than on canal. That asymmetry is the interesting part: the gate degrades most where the
+BiomedCLIP semantic branch should be contributing most.
+
+### Correction to the mid-run reading (recorded deliberately)
+
+At epoch 10 this log's author reported "gated is BETTER on canal (0.547 vs 0.524) and
+the gate has collapsed onto the CBAM branch". Over the full 20 epochs that is **wrong**:
+canal ends slightly worse (-0.010), not better. The epoch-10 claim came from a
+3-epoch trailing window that happened to catch a canal peak. What survives is the
+weaker, still-useful statement: **the foraminal heads are hurt far more than canal**,
+consistent with the gate under-weighting the semantic branch — but there is no canal
+"gain" to trade against.
+
+This is the third mid-run trend call in one day that a longer window overturned (the
+others are recorded above). Reinforced rule: **do not report a per-condition trend from
+a trailing window shorter than the full run.** Report per-condition numbers only at the
+end, or state the window explicitly.
+
+### Why it plausibly fails (mechanism, for the write-up)
+
+`GatedFusion` forms `z*tanh(h_a(cbam)) + (1-z)*tanh(h_b(bmc))` with `z` a 512-dim
+per-sample sigmoid. To lean fully on one branch the gate must saturate, and the two
+branches are forced through a single convex-ish blend. `ConcatMLPFusion` has no such
+constraint: its MLP can route different feature subspaces from each branch
+independently. Gated also has **11% fewer trainable parameters** (1,050,626 vs
+1,181,442), so capacity is a confound that cannot be ruled out from this run alone --
+state that limitation rather than claiming a clean architectural conclusion.
+
+For the thesis this is a usable negative result: it answers the advisor's
+"leader-supporter" suggestion (#2) empirically, on the published architecture, with the
+zero-shot cosine head intact.
+
+### The diagnostic that came out of this run
+
+Per-class table at epoch 19, left foraminal:
+
+| class | support | precision | recall | F1 |
+|---|---|---|---|---|
+| Normal/Mild | 1497 | 0.926 | 0.639 | 0.757 |
+| Moderate | 360 | 0.318 | **0.750** | 0.447 |
+| Severe | 80 | 0.200 | **0.138** | 0.163 |
+
+Severe recall 13.8% while Moderate recall is 75% and Moderate precision is only 31.8%:
+**the Severe cases are being absorbed into Moderate.** This is an adjacent-class,
+ordinal failure. Every technique tried so far (focal, class weights, oversampling)
+targets rarity, not ordinality -- cross-entropy penalises Severe->Moderate exactly as
+much as Severe->Normal. This reframes what to try next; see the research notes below.
+
+---
 
 Exact command (flags generated from the published run's saved `args`, not typed from
 memory — `--use-uncertainty` takes a value, `--oversample-factor` defaults to 5 but the
@@ -460,3 +532,68 @@ scp -P 46108 root@115.75.223.236:'/root/spinet-v2/experiments/multiview/run_*.lo
 
 Checkpoints themselves (243 MB for #1, 489 MB each for #2/#3) only need pulling if
 further inference, threshold sweeps, or Grad-CAM are planned.
+
+---
+
+## Research notes, 2026-08-22 (after run (b)) — where the remaining headroom probably is
+
+Literature checked against the evidence above, not in the abstract. Ranked by
+value-per-GPU-hour, cheapest first.
+
+### Tier 1 — no training required
+
+**A. Inspect the geometry of the three frozen text anchors.** The head is
+`logits = logit_scale * image_emb @ text_embs.T` (`grading_hybrid.py:347`): three frozen
+BiomedCLIP text anchors per condition. Nothing constrains Moderate and Severe to be far
+apart in that space. If `cos(Moderate, Severe)` is very high, that IS the mechanism
+behind the Severe->Moderate absorption measured above, and the fix is rewriting the
+anchor prompts — zero training. Cost: ~2 minutes, one model load, print a 3x3 matrix.
+Highest value-to-cost ratio of anything on this list; do it first. Falsifiable either way.
+
+**B. Post-hoc threshold tuning on the winning config.** Already proven +0.019 on the
+Hybrid (seed 42). With Severe precision 0.200 and recall 0.138 the decision boundary is
+far from the F1 optimum, so headroom here may exceed the earlier +0.019. Stacks on top
+of whatever else wins, so run it last.
+
+### Tier 2 — small code change, one run each
+
+**C. Ordinal-aware loss.** Targets the diagnostic directly. Cheapest form is Class
+Distance Weighted CE (arXiv:2412.01246): scale each error by `|pred - true|^alpha` so
+Severe->Normal costs more than Severe->Moderate. A few lines in `spinenet/losses.py`,
+**keeps the cosine head**. CORAL/CORN are stronger but replace the head with K-1 binary
+outputs, which would destroy the zero-shot label-extension contribution — do not use
+them here.
+
+**D. OGM-GE gradient modulation** (Peng et al., CVPR 2022 oral,
+arXiv:2203.15332). Monitors each branch's contribution and damps the gradient of the
+dominant one. This is the treatment for the imbalance measured in run (b), and it
+sequences well in the write-up: gated fusion diagnosed the problem, OGM-GE treats it.
+
+**E. `--slice-strategy dynamic`.** Still 0 lines of code. Foramina are lateral; the
+static crop takes three central slices.
+
+### Tier 3 — larger, and one thing to explicitly NOT do
+
+Checked the actual winning solutions on this dataset. The 2nd place solution
+(github.com/brendanartley/RSNA-2024-Competition — **already vendored in this repo as a
+SOTA baseline**) is two-stage: predict per-level coordinates first, then classify;
+foraminal from Sag-T1, canal and subarticular from Sag-T2; encoder -> LSTM -> attention
+over 24 frames, pseudo-labels, 9-rotation TTA, ~24 h on an A100 40GB. 1st place is also
+localize-then-classify over multiview 2.5D crops.
+
+Two takeaways:
+- **Our sequence routing matches the 2nd place solution.** No change needed there.
+- **Axial adds little.** 2nd place used sagittal only; their axial variant moved CV by
+  0.01-0.02 and did not help the ensemble. So the advisor's suggestion #1 (add axial) is
+  high-effort / low-return — recommend dropping it for the 10-week window, and saying so
+  explicitly with this citation rather than silently skipping it.
+
+**Unfreezing the backbone is an open empirical question, not a known win.** Only 0.4% of
+parameters (1.05M/260M) are currently trainable. The literature is genuinely split:
+frozen features can beat fine-tuning on small medical datasets and can help rare classes
+(arXiv:2204.00484), while linear probing scores worst in other benchmarks. One run
+answers it for this dataset; do not assume either direction.
+
+### Suggested order
+
+A (2 min) -> E (0 code) -> C -> D, evaluating after each. B last, since it stacks.
