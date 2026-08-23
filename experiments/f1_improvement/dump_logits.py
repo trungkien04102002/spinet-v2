@@ -13,8 +13,8 @@ train_rsna_attention.py:
 
     full_dataset = RSNAPreprocessedDataset(data_dir, split='train')
     unique_patients = full_dataset.metadata['study_id'].unique()
-    train_patients, val_patients = train_test_split(
-        unique_patients, test_size=val_split, random_state=seed)
+    train_patients, val_patients = split_patients(
+        unique_patients, val_split, seed, mode=split_mode)
     val_indices = full_dataset.metadata[
         full_dataset.metadata['study_id'].isin(val_patients)].index.tolist()
     val_dataset = Subset(full_dataset, val_indices)   # NO augmentation, NO oversampling
@@ -66,7 +66,6 @@ from pathlib import Path
 import numpy as np
 import torch
 from torch.utils.data import DataLoader, Subset
-from sklearn.model_selection import train_test_split
 
 # Make repo root importable regardless of cwd (this file lives 2 levels deep).
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -74,6 +73,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from rsna_preprocessed_dataloader import RSNAPreprocessedDataset  # noqa: E402
+from spinenet.patient_split import SPLIT_MODES, split_patients  # noqa: E402
 
 CONDITIONS = ["spinal_canal", "left_foraminal", "right_foraminal"]
 
@@ -122,6 +122,11 @@ def parse_args():
     p.add_argument("--fusion", type=str, default="concat_mlp", choices=["concat_mlp", "gated"])
     p.add_argument("--seed", type=int, default=42, help="Must match the seed used at training time (patient split).")
     p.add_argument("--val-split", type=float, default=0.2)
+    p.add_argument("--split-mode", type=str, default="random", choices=list(SPLIT_MODES),
+                   help="Must match the training run. 'hash' keeps the held-out "
+                        "patients identical across datasets; 'random' reproduces "
+                        "published runs. Dumping under the wrong mode scores the "
+                        "model partly on its own training patients.")
     p.add_argument("--batch-size", type=int, default=16)
     p.add_argument("--num-workers", type=int, default=0)
     p.add_argument("--device", type=str, default="auto", choices=["auto", "cpu", "cuda", "mps"])
@@ -139,12 +144,18 @@ def pick_device(requested: str) -> torch.device:
     return torch.device("cpu")
 
 
-def build_val_split(data_dir: str, seed: int, val_split: float, split: str = "train"):
-    """Reproduce the exact patient-level split from train_rsna_hybrid.py."""
+def build_val_split(data_dir: str, seed: int, val_split: float, split: str = "train",
+                    split_mode: str = "random"):
+    """Reproduce the exact patient-level split from train_rsna_hybrid.py.
+
+    split_mode MUST match the training run: a checkpoint trained under 'hash'
+    and dumped under 'random' would be scored partly on its own training
+    patients, silently inflating every metric.
+    """
     full_dataset = RSNAPreprocessedDataset(data_dir=data_dir, split=split, transform=None)
     unique_patients = full_dataset.metadata["study_id"].unique()
-    train_patients, val_patients = train_test_split(
-        unique_patients, test_size=val_split, random_state=seed,
+    train_patients, val_patients = split_patients(
+        unique_patients, val_split=val_split, seed=seed, mode=split_mode,
     )
     val_indices = full_dataset.metadata[
         full_dataset.metadata["study_id"].isin(val_patients)
@@ -293,7 +304,7 @@ def main():
 
     print("\n[1/4] Reconstructing seed-{} patient split...".format(args.seed))
     val_dataset, val_study_ids, n_patients, n_train_p, n_val_p = build_val_split(
-        args.data_dir, args.seed, args.val_split, args.split
+        args.data_dir, args.seed, args.val_split, args.split, args.split_mode
     )
     print(f"  Total patients: {n_patients}  train: {n_train_p}  val: {n_val_p}")
     print(f"  Val samples (IVDs): {len(val_dataset)}")
@@ -342,6 +353,7 @@ def main():
         "seed": args.seed,
         "val_split": args.val_split,
         "split": args.split,
+        "split_mode": args.split_mode,
         "conditions": list(args.conditions),
         "data_dir": str(args.data_dir),
         "cbam_checkpoint": str(args.cbam_checkpoint),

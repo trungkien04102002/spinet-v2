@@ -47,6 +47,7 @@ from spinenet.losses import FocalLoss, UncertaintyLoss, compute_class_weights
 from spinenet.augmentation import (assert_slice_reverse_is_safe,
                                    get_training_augmentation, OversamplingDataset)
 from spinenet.metrics_logger import MetricsLogger
+from spinenet.patient_split import SPLIT_MODES, describe_split, split_patients
 from spinenet.auc_metrics import (
     aggregate_overall_auprc,
     compute_auc_auprc_per_condition,
@@ -104,6 +105,19 @@ def parse_args():
                         help='Directory to save Hybrid checkpoints')
     parser.add_argument('--val-split', type=float, default=0.2,
                         help='Validation split ratio (default: 0.2)')
+    parser.add_argument('--split-mode', type=str, default='random',
+                        choices=list(SPLIT_MODES),
+                        help="How patients are assigned to train/val. 'random' "
+                             "(default) splits the patient list this dataset "
+                             "happens to contain, reproducing published runs. "
+                             "'hash' assigns each patient by a hash of its id, "
+                             "so datasets that list overlapping patients agree "
+                             "on who is held out -- required before comparing a "
+                             "T1 model against a T2 model, or routing one "
+                             "condition to each, because the two metadata files "
+                             "differ by three studies and 'random' then puts 181 "
+                             "of one run's validation patients in the other "
+                             "run's training set.")
     parser.add_argument('--select-by', type=str, default='severe_f1',
                         choices=['severe_f1', 'severe_auprc', 'macro_auprc',
                                  'weighted_logloss'],
@@ -228,7 +242,62 @@ def parse_args():
                              'missing-modality at inference. Recommended 0.15 '
                              'when enabled. Default 0.0 = disabled.')
 
+    # Backbone fine-tuning. Everything downstream of the frozen features
+    # (fusion head, weight averaging, thresholds) has moved the ranking metrics
+    # very little, which points at the representation rather than the decision
+    # rule. With only ~0.45% of parameters trainable, the backbone is the part
+    # that has never been allowed to adapt.
+    parser.add_argument('--unfreeze-cbam', type=str, default='none',
+                        choices=['none', 'layer4', 'all'],
+                        help="Fine-tune part of the frozen CBAM backbone. "
+                             "'layer4' trains only the last residual stage "
+                             "(cautious: ~80 Severe positives per condition). "
+                             "'all' trains the whole backbone and overfits "
+                             "easily. Default 'none' = today's behaviour.")
+    parser.add_argument('--cbam-lr', type=float, default=None,
+                        help='LR for the unfrozen backbone parameters. Default '
+                             '= --lr / 10, since a pretrained backbone needs a '
+                             'much smaller step than a randomly initialised head.')
+    parser.add_argument('--cbam-bn-eval', action='store_true',
+                        help="Hold the backbone's BatchNorm running statistics "
+                             "fixed during training. Without this, model.train() "
+                             "recurses into the 'frozen' backbone and its BN "
+                             "statistics keep adapting -- which is how every run "
+                             "so far has behaved. Off by default so existing "
+                             "results stay reproducible.")
+
     return parser.parse_args()
+
+
+def portable_state_dict(model):
+    """Everything needed to reproduce this model from the CBAM checkpoint alone.
+
+    The head is always included. Backbone entries are included when they can
+    differ from the CBAM checkpoint on disk:
+
+      * parameters being fine-tuned (--unfreeze-cbam), which would otherwise be
+        dropped and silently replaced by the original frozen weights on reload;
+      * BatchNorm running statistics, which drift during training unless
+        --cbam-bn-eval is set, and whose absence makes a reloaded model score
+        slightly differently from what the training run reported.
+
+    BiomedCLIP is never included: it is frozen and reloaded from HuggingFace.
+    """
+    trainable_cbam = {
+        name for name, p in model.named_parameters()
+        if p.requires_grad and name.startswith("cbam.")
+    }
+    bn_suffixes = ("running_mean", "running_var", "num_batches_tracked")
+    out = {}
+    for k, v in model.state_dict().items():
+        if k.startswith("biomedclip."):
+            continue
+        if k.startswith("cbam."):
+            if k in trainable_cbam or k.endswith(bn_suffixes):
+                out[k] = v
+            continue
+        out[k] = v
+    return out
 
 
 def set_seed(seed: int):
@@ -509,11 +578,13 @@ def main():
     # Split by patient (no data leakage!)
     print(f"\n[2/7] Splitting dataset by patient...")
     unique_patients = full_dataset.metadata['study_id'].unique()
-    train_patients, val_patients = train_test_split(
+    train_patients, val_patients = split_patients(
         unique_patients,
-        test_size=args.val_split,
-        random_state=args.seed,
+        val_split=args.val_split,
+        seed=args.seed,
+        mode=args.split_mode,
     )
+    print(f"  {describe_split(train_patients, val_patients, args.split_mode)}")
 
     train_indices = full_dataset.metadata[full_dataset.metadata['study_id'].isin(train_patients)].index.tolist()
     val_indices = full_dataset.metadata[full_dataset.metadata['study_id'].isin(val_patients)].index.tolist()
@@ -616,7 +687,15 @@ def main():
         ablate_branch=args.ablate_branch,
         fusion_mode=args.fusion,
         modality_dropout_p=args.modality_dropout,
+        unfreeze_cbam=args.unfreeze_cbam,
+        cbam_bn_eval=args.cbam_bn_eval,
     ).to(device)
+    if args.unfreeze_cbam != 'none':
+        n_cbam = sum(p.numel() for p in model.cbam_trainable_params())
+        print(f"  Backbone fine-tuning: {args.unfreeze_cbam} "
+              f"({n_cbam:,} backbone params trainable)")
+    if args.cbam_bn_eval:
+        print(f"  Backbone BatchNorm statistics held fixed")
     if args.ablate_branch != 'none':
         print(f"  Ablation mode: {args.ablate_branch} "
               f"(other branch zeroed before fusion)")
@@ -674,14 +753,23 @@ def main():
     # [6/7] Setup optimizer and scheduler
     print(f"\n[6/7] Setting up optimizer and scheduler...")
 
+    # A pretrained backbone needs a far smaller step than a freshly initialised
+    # head, so the two get separate param groups whenever the backbone is being
+    # fine-tuned. When it is frozen this reduces to exactly the previous
+    # single-group optimizer.
     train_param_list = [p for p in model.parameters() if p.requires_grad]
-    if args.use_uncertainty:
-        optimizer = AdamW([
-            {'params': train_param_list, 'lr': args.lr},
-            {'params': uncertainty_loss.parameters(), 'lr': args.lr}
-        ], weight_decay=args.weight_decay)
+    cbam_params = list(model.cbam_trainable_params())
+    if cbam_params:
+        head_params = list(model.head_trainable_params())
+        cbam_lr = args.cbam_lr if args.cbam_lr is not None else args.lr / 10
+        groups = [{'params': head_params, 'lr': args.lr},
+                  {'params': cbam_params, 'lr': cbam_lr}]
+        print(f"  Backbone LR: {cbam_lr:g}  (head LR: {args.lr:g})")
     else:
-        optimizer = AdamW(train_param_list, lr=args.lr, weight_decay=args.weight_decay)
+        groups = [{'params': train_param_list, 'lr': args.lr}]
+    if args.use_uncertainty:
+        groups.append({'params': uncertainty_loss.parameters(), 'lr': args.lr})
+    optimizer = AdamW(groups, weight_decay=args.weight_decay)
 
     scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs)
 
@@ -752,6 +840,10 @@ def main():
         _tag_parts.append("slicerev")
     if not args.ap_flip:
         _tag_parts.append("noapflip")
+    if args.unfreeze_cbam != 'none':
+        _tag_parts.append(f"unfreeze{args.unfreeze_cbam}")
+    if args.cbam_bn_eval:
+        _tag_parts.append("bneval")
     run_tag = "_" + "_".join(_tag_parts) if _tag_parts else ""
     metrics_logger = MetricsLogger(save_dir=save_dir, prefix=f"hybrid{run_tag}")
 
@@ -901,10 +993,7 @@ def main():
 
             best_path = save_dir / f'best_model_hybrid{run_tag}.pth'
             # Save only trainable weights (keeps file small ~2MB)
-            trainable_state = {
-                k: v for k, v in model.state_dict().items()
-                if 'cbam.' not in k and 'biomedclip.' not in k
-            }
+            trainable_state = portable_state_dict(model)
             torch.save({
                 'epoch': epoch,
                 'model_state_dict': trainable_state,
@@ -969,10 +1058,7 @@ def main():
         # Save periodic checkpoint
         if (epoch + 1) % args.save_freq == 0:
             checkpoint_path = save_dir / f'checkpoint_hybrid{run_tag}_epoch_{epoch+1}.pth'
-            trainable_state = {
-                k: v for k, v in model.state_dict().items()
-                if 'cbam.' not in k and 'biomedclip.' not in k
-            }
+            trainable_state = portable_state_dict(model)
             torch.save({
                 'epoch': epoch,
                 'model_state_dict': trainable_state,

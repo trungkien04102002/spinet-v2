@@ -140,8 +140,12 @@ class SpineNetHybrid(nn.Module):
         ablate_branch: str = "none",
         fusion_mode: str = "concat_mlp",
         modality_dropout_p: float = 0.0,
+        unfreeze_cbam: str = "none",
+        cbam_bn_eval: bool = False,
     ):
         super().__init__()
+        assert unfreeze_cbam in ("none", "layer4", "all"), \
+            f"Unknown unfreeze_cbam: {unfreeze_cbam}"
         assert ablate_branch in ("none", "cbam_only", "biomedclip_only"), \
             f"Unknown ablate_branch: {ablate_branch}"
         assert fusion_mode in ("concat_mlp", "gated"), \
@@ -160,6 +164,27 @@ class SpineNetHybrid(nn.Module):
         for p in self.cbam.parameters():
             p.requires_grad = False
         self.cbam.eval()
+
+        # Partial fine-tuning of the backbone. With ~7.8k training crops and only
+        # ~80 Severe positives per condition, unfreezing everything overfits, so
+        # "layer4" (the last residual stage, the most task-specific one) is the
+        # cautious default when fine-tuning at all.
+        self.unfreeze_cbam = unfreeze_cbam
+        if unfreeze_cbam == "layer4":
+            for p in self.cbam.layer4.parameters():
+                p.requires_grad = True
+        elif unfreeze_cbam == "all":
+            for p in self.cbam.parameters():
+                p.requires_grad = True
+
+        # nn.Module.train() recurses into children, so the self.cbam.eval() above
+        # is undone by the first model.train() call: the backbone's BatchNorm
+        # layers then keep updating running_mean/var even when every weight is
+        # frozen (torch.no_grad() stops gradients, not BN statistics). That is
+        # how every run up to now behaved. Setting cbam_bn_eval=True holds those
+        # statistics fixed instead; it is off by default so existing results stay
+        # reproducible.
+        self.cbam_bn_eval = cbam_bn_eval
 
         # ---- Frozen BiomedCLIP ----
         self.biomedclip = BiomedCLIPWrapper(device=biomedclip_device)
@@ -352,6 +377,33 @@ class SpineNetHybrid(nn.Module):
         for name, p in self.named_parameters():
             if p.requires_grad:
                 yield p
+
+    def cbam_trainable_params(self):
+        """Backbone parameters being fine-tuned, so they can get their own LR."""
+        for p in self.cbam.parameters():
+            if p.requires_grad:
+                yield p
+
+    def head_trainable_params(self):
+        """Trainable parameters that are NOT part of the CBAM backbone."""
+        cbam_ids = {id(p) for p in self.cbam.parameters()}
+        for p in self.parameters():
+            if p.requires_grad and id(p) not in cbam_ids:
+                yield p
+
+    def train(self, mode: bool = True):
+        """Standard train(), plus optionally holding the backbone's BN fixed.
+
+        nn.Module.train() recurses, so without this the frozen backbone's
+        BatchNorm layers go back into training mode and keep adapting their
+        running statistics to the augmented, oversampled training stream.
+        """
+        super().train(mode)
+        if mode and self.cbam_bn_eval:
+            for m in self.cbam.modules():
+                if isinstance(m, torch.nn.modules.batchnorm._BatchNorm):
+                    m.eval()
+        return self
 
 
 if __name__ == "__main__":
