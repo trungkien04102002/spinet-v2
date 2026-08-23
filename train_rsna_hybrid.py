@@ -74,6 +74,8 @@ RSNA_PROMPTS = {
     },
 }
 
+ALL_CONDITIONS = tuple(RSNA_PROMPTS.keys())
+
 
 def parse_args():
     """Parse command line arguments."""
@@ -82,12 +84,41 @@ def parse_args():
     # Data
     parser.add_argument('--data-dir', type=str, default='rsna_preprocessed',
                         help='Path to preprocessed data directory')
+    parser.add_argument('--split', type=str, default='train',
+                        help="Metadata split to load: reads <split>_metadata.csv. "
+                             "Use 't1' with --data-dir rsna_preprocessed_t1 for the "
+                             "per-side Sagittal T1 foraminal crops.")
+    parser.add_argument('--conditions', type=str, nargs='+', default=list(ALL_CONDITIONS),
+                        choices=list(ALL_CONDITIONS),
+                        help="Which conditions to train and evaluate. Defaults to all "
+                             "three. Radiologists grade foraminal narrowing on Sagittal "
+                             "T1 and canal stenosis on Sagittal T2 -- the coordinate file "
+                             "puts them on the same series once in 6291 cases -- so a T1 "
+                             "run should pass only the two foraminal conditions. The "
+                             "cosine head and its frozen text anchors are unchanged; "
+                             "unselected conditions are simply not scored.")
     parser.add_argument('--cbam-checkpoint', type=str, required=True,
                         help='Path to trained CBAM checkpoint (best_model_attention.pth)')
     parser.add_argument('--save-dir', type=str, default='checkpoints/hybrid',
                         help='Directory to save Hybrid checkpoints')
     parser.add_argument('--val-split', type=float, default=0.2,
                         help='Validation split ratio (default: 0.2)')
+    parser.add_argument('--select-by', type=str, default='severe_f1',
+                        choices=['severe_f1', 'severe_auprc', 'macro_auprc',
+                                 'weighted_logloss'],
+                        help="Metric that decides which epoch is saved as best. "
+                             "Default severe_f1 reproduces published runs, but it is "
+                             "threshold-dependent and swings ~15x more between epochs "
+                             "than severe_auprc on this validation set, so it tends to "
+                             "save the top of an oscillation. severe_auprc is the "
+                             "steadier choice; weighted_logloss is the RSNA 2024 "
+                             "competition metric (lower is better).")
+    parser.add_argument('--fast-dev', action='store_true',
+                        help='Smoke test: tiny class-stratified subset, 1 epoch. '
+                             'Exercises data loading, the text database, class '
+                             'weights and one train+eval pass in about a minute.')
+    parser.add_argument('--fast-dev-samples', type=int, default=24,
+                        help='Training rows to keep under --fast-dev (default 24).')
 
     # Training
     parser.add_argument('--epochs', type=int, default=30,
@@ -249,16 +280,47 @@ def supervised_contrastive_loss(image_embs, labels, temperature=0.07):
     return -mean_log_prob_pos.mean()
 
 
-def build_text_database(model, device):
+def _stratified_head(metadata, indices, n_total, conditions):
+    """Pick a small subset of `indices` that still covers all three severity
+    classes (for --fast-dev).
+
+    A plain ``indices[:n]`` slice usually lands on Normal-only rows, because
+    Severe is under 5% of the data. compute_class_weights would then divide by a
+    zero count -- ``1/0`` -> inf -> NaN weights after normalisation -- and the
+    smoke test would "pass" without ever exercising the class-weight path it
+    exists to check.
+
+    On the per-side T1 crops each row is labelled on exactly one side and -1 on
+    the other, so max() over the active conditions recovers that row's class.
     """
-    Pre-compute text embeddings for all 9 RSNA labels per condition.
+    n_per_class = max(2, n_total // 3)
+    sub = metadata.loc[indices]
+    row_class = sub[list(conditions)].max(axis=1)
+    picked = []
+    for cls in (0, 1, 2):
+        picked.extend(sub.index[row_class == cls][:n_per_class].tolist())
+    return picked or list(indices[:n_total])
+
+
+def build_text_database(model, device, conditions=None):
+    """
+    Pre-compute text embeddings for the selected conditions' labels.
     Frozen BiomedCLIP text encoder is called once - reused every batch.
+
+    Args:
+        conditions: iterable of condition names, or None for all of them. The
+            returned dict's key order defines the task order everywhere else,
+            so it is kept in ALL_CONDITIONS order regardless of CLI order.
 
     Returns:
         {condition: [3, 512] tensor of L2-normalized text embeddings on device}
     """
+    selected = set(conditions) if conditions is not None else set(ALL_CONDITIONS)
     db = {}
-    for condition, prompts in RSNA_PROMPTS.items():
+    for condition in ALL_CONDITIONS:
+        if condition not in selected:
+            continue
+        prompts = RSNA_PROMPTS[condition]
         texts = [prompts[i] for i in sorted(prompts.keys())]
         embs = model.encode_text(texts).to(device)
         db[condition] = embs
@@ -269,10 +331,13 @@ def evaluate(model, dataloader, text_db, criterion, uncertainty_loss, device):
     """Evaluate model on validation set."""
     model.eval()
 
-    all_losses = {'spinal_canal': [], 'left_foraminal': [], 'right_foraminal': []}
-    all_preds = {'spinal_canal': [], 'left_foraminal': [], 'right_foraminal': []}
-    all_labels = {'spinal_canal': [], 'left_foraminal': [], 'right_foraminal': []}
-    all_probs = {'spinal_canal': [], 'left_foraminal': [], 'right_foraminal': []}
+    # text_db carries exactly the conditions selected by --conditions, so every
+    # loop below is driven by it rather than by a hardcoded list of three.
+    conditions = list(text_db.keys())
+    all_losses = {c: [] for c in conditions}
+    all_preds = {c: [] for c in conditions}
+    all_labels = {c: [] for c in conditions}
+    all_probs = {c: [] for c in conditions}
     per_class_metrics = {}
 
     val_pbar = tqdm(dataloader, desc="Validating", leave=False)
@@ -282,22 +347,22 @@ def evaluate(model, dataloader, text_db, criterion, uncertainty_loss, device):
             volumes = volumes.unsqueeze(1).to(device)  # [B, 1, 9, 112, 224]
 
             # Move labels to device
-            labels_device = {
-                'spinal_canal': labels['spinal_canal'].to(device),
-                'left_foraminal': labels['left_foraminal'].to(device),
-                'right_foraminal': labels['right_foraminal'].to(device)
-            }
+            labels_device = {c: labels[c].to(device) for c in conditions}
 
             # Forward pass: image embedding via Hybrid encoder
             image_emb = model.encode_image(volumes)
 
             # Compute per-task losses + predictions via cosine similarity
-            for condition in ['spinal_canal', 'left_foraminal', 'right_foraminal']:
+            for condition in conditions:
                 text_embs = text_db[condition]
                 logits = model.logit_scale.exp().clamp(max=100.0) * (image_emb @ text_embs.T)
 
-                loss = criterion(logits, labels_device[condition])
-                all_losses[condition].append(loss.item())
+                # On the per-side T1 crops a whole batch can be -1 for one side,
+                # and CrossEntropyLoss(ignore_index=-1) returns NaN when it has
+                # nothing to average over. Skipping keeps the epoch mean finite.
+                if (labels_device[condition] != -1).any():
+                    loss = criterion(logits, labels_device[condition])
+                    all_losses[condition].append(loss.item())
 
                 probs = torch.softmax(logits, dim=1).cpu().numpy()
                 preds = torch.argmax(logits, dim=1)
@@ -312,7 +377,7 @@ def evaluate(model, dataloader, text_db, criterion, uncertainty_loss, device):
     probs_dict = {c: np.concatenate(all_probs[c], axis=0) for c in all_probs}
     labels_dict = {c: np.array(all_labels[c]) for c in all_labels}
 
-    for condition in ['spinal_canal', 'left_foraminal', 'right_foraminal']:
+    for condition in conditions:
         labels_np = labels_dict[condition]
         preds_np = np.array(all_preds[condition])
 
@@ -344,7 +409,10 @@ def evaluate(model, dataloader, text_db, criterion, uncertainty_loss, device):
     auc_auprc_metrics = compute_auc_auprc_per_condition(probs_dict, labels_dict)
     auc_auprc_overall = aggregate_overall_auprc(auc_auprc_metrics)
 
-    avg_loss = np.mean([np.mean(all_losses[c]) for c in ['spinal_canal', 'left_foraminal', 'right_foraminal']])
+    # Only average conditions that actually recorded a loss: on the per-side T1
+    # crops a condition can legitimately have zero labelled batches.
+    scored = [np.mean(all_losses[c]) for c in conditions if all_losses[c]]
+    avg_loss = float(np.mean(scored)) if scored else float('nan')
 
     return (avg_loss, val_weighted_logloss, val_accuracies, per_class_metrics,
             auc_auprc_metrics, auc_auprc_overall)
@@ -352,8 +420,13 @@ def evaluate(model, dataloader, text_db, criterion, uncertainty_loss, device):
 
 def print_per_class_metrics(per_class_metrics):
     """Print precision, recall, F1-score per class for each condition."""
-    conditions = ['spinal_canal', 'left_foraminal', 'right_foraminal']
-    condition_names = ['Spinal Canal', 'Left Foraminal', 'Right Foraminal']
+    # Driven by what was actually scored, so a --conditions subset prints only
+    # the conditions it trained on. `args` is deliberately not referenced here.
+    display = {'spinal_canal': 'Spinal Canal',
+               'left_foraminal': 'Left Foraminal',
+               'right_foraminal': 'Right Foraminal'}
+    conditions = [c for c in ALL_CONDITIONS if c in per_class_metrics]
+    condition_names = [display[c] for c in conditions]
     class_names = ['Normal/Mild', 'Moderate', 'Severe']
 
     print("\n" + "="*70)
@@ -389,6 +462,12 @@ def print_per_class_metrics(per_class_metrics):
 def main():
     args = parse_args()
 
+    # Canonical task order for the whole run: ALL_CONDITIONS order, filtered by
+    # --conditions. Everything downstream (text database, loss aggregation,
+    # UncertaintyLoss task slots, metrics) keys off this, so a T1 run that scores
+    # only the two foraminal heads stays internally consistent.
+    conditions = [c for c in ALL_CONDITIONS if c in set(args.conditions)]
+
     # Reproducibility — must be set before any RNG-using import path
     set_seed(args.seed)
 
@@ -421,7 +500,7 @@ def main():
 
     full_dataset = RSNAPreprocessedDataset(
         data_dir=args.data_dir,
-        split='train',
+        split=args.split,
         transform=None
     )
     print(f"  ✓ Loaded {len(full_dataset)} samples")
@@ -437,6 +516,41 @@ def main():
 
     train_indices = full_dataset.metadata[full_dataset.metadata['study_id'].isin(train_patients)].index.tolist()
     val_indices = full_dataset.metadata[full_dataset.metadata['study_id'].isin(val_patients)].index.tolist()
+
+    # RandomSliceReverse mirrors the patient left-to-right and swaps the L/R
+    # labels together. That pairing is only valid when the crop actually spans
+    # the midline, as the Sagittal T2 crop does (it is centred on the canal).
+    #
+    # The per-side Sagittal T1 crops are centred on ONE foramen, so reversing
+    # their slice order still shows that same foramen -- swapping the label
+    # would assert the opposite side and inject exactly the kind of label noise
+    # that cost 40% relative Severe F1 in the v3 regression (0.333 -> 0.200,
+    # experiments/v3_20260503/RESULTS_LOG.md).
+    #
+    # Detect per-side data rather than trusting the caller: on per-side crops
+    # every row has exactly one of left/right labelled and the other at -1.
+    if args.slice_reverse:
+        lr = full_dataset.metadata[['left_foraminal', 'right_foraminal']]
+        one_side_only = ((lr != -1).sum(axis=1) == 1).mean()
+        if one_side_only > 0.9:
+            raise SystemExit(
+                "--slice-reverse is unsafe on this dataset.\n"
+                f"  {one_side_only:.1%} of rows are labelled on exactly one side, "
+                "so these are PER-SIDE crops.\n"
+                "  Reversing their slice order does not move the foramen to the "
+                "other side, so swapping\n"
+                "  left/right labels would corrupt them. Use --slice-reverse only "
+                "with the midline\n"
+                "  Sagittal T2 crops (--data-dir rsna_preprocessed --split train)."
+            )
+
+    if args.fast_dev:
+        train_indices = _stratified_head(full_dataset.metadata, train_indices,
+                                         args.fast_dev_samples, conditions)
+        val_indices = _stratified_head(full_dataset.metadata, val_indices,
+                                       max(6, args.fast_dev_samples // 2), conditions)
+        args.epochs = min(args.epochs, 1)
+        print(f"  ⚡ --fast-dev: {len(train_indices)} train / {len(val_indices)} val, 1 epoch")
 
     base_train_dataset = Subset(full_dataset, train_indices)
     base_val_dataset = Subset(full_dataset, val_indices)
@@ -461,7 +575,7 @@ def main():
         print(f"  ✓ Augmentation: {args.augmentation} ({', '.join(geo)})")
         augmented_full_dataset = RSNAPreprocessedDataset(
             data_dir=args.data_dir,
-            split='train',
+            split=args.split,
             transform=train_transform
         )
         train_dataset = Subset(augmented_full_dataset, train_indices)
@@ -529,7 +643,7 @@ def main():
 
     # [4/7] Pre-compute text embeddings (frozen, computed once)
     print(f"\n[4/7] Pre-computing label text embeddings (frozen BiomedCLIP)...")
-    text_db = build_text_database(model, device)
+    text_db = build_text_database(model, device, conditions)
     for cond, embs in text_db.items():
         print(f"  ✓ {cond}: {embs.shape}")
 
@@ -560,7 +674,7 @@ def main():
             criterion = nn.CrossEntropyLoss(ignore_index=-1)
 
     if args.use_uncertainty:
-        uncertainty_loss = UncertaintyLoss(num_tasks=3).to(device)
+        uncertainty_loss = UncertaintyLoss(num_tasks=len(conditions)).to(device)
         print(f"  ✓ UncertaintyLoss for multi-task weighting")
     else:
         uncertainty_loss = None
@@ -590,6 +704,7 @@ def main():
     # Resume from checkpoint if provided
     start_epoch = 0
     best_severe_f1 = -1.0
+    best_score = -float('inf')
 
     if args.resume:
         print(f"\nResuming from checkpoint: {args.resume}")
@@ -642,11 +757,7 @@ def main():
         for batch_idx, (volumes, labels) in enumerate(train_pbar):
             volumes = volumes.unsqueeze(1).to(device)  # [B, 1, 9, 112, 224]
 
-            labels_device = {
-                'spinal_canal': labels['spinal_canal'].to(device),
-                'left_foraminal': labels['left_foraminal'].to(device),
-                'right_foraminal': labels['right_foraminal'].to(device)
-            }
+            labels_device = {c: labels[c].to(device) for c in conditions}
 
             # Forward pass
             optimizer.zero_grad()
@@ -654,7 +765,14 @@ def main():
 
             # Compute per-task losses (cosine similarity vs frozen text embeddings)
             task_losses = []
-            for condition in ['spinal_canal', 'left_foraminal', 'right_foraminal']:
+            for condition in conditions:
+                # Each per-side T1 crop is labelled on exactly one side, so a
+                # whole batch can be -1 for the other one. CrossEntropyLoss with
+                # ignore_index=-1 returns NaN in that case, which would poison
+                # the backward pass, so that task sits this batch out.
+                if not (labels_device[condition] != -1).any():
+                    continue
+
                 text_embs = text_db[condition]
                 logits = model.logit_scale.exp().clamp(max=100.0) * (image_emb @ text_embs.T)
                 loss_cls = criterion(logits, labels_device[condition])
@@ -667,11 +785,16 @@ def main():
 
                 task_losses.append(task_loss)
 
+            if not task_losses:
+                continue  # nothing labelled in this batch at all
+
             # Aggregate loss
-            if args.use_uncertainty:
+            if args.use_uncertainty and len(task_losses) == len(conditions):
+                # UncertaintyLoss holds one log-variance per task and expects them
+                # in a fixed order, so it only applies when every task contributed.
                 loss, task_weights = uncertainty_loss(task_losses)
             else:
-                loss = sum(task_losses) / 3.0
+                loss = sum(task_losses) / len(task_losses)
 
             # Backward pass
             loss.backward()
@@ -730,9 +853,30 @@ def main():
         # Print detailed per-class metrics every epoch (Severe F1 is critical)
         print_per_class_metrics(val_per_class_metrics)
 
-        # Save best on Severe F1 (the metric we care about, not val_loss)
-        is_best = avg_severe_f1 > best_severe_f1
+        # Which epoch gets saved. Severe F1 is the historical default and stays
+        # so, but it is a poor selector on this validation set: across the last
+        # five epochs of the 2026-08-22 runs its epoch-to-epoch SD was 0.007-0.010
+        # while Severe AUPRC's was 0.0006 -- 10-15x steadier, because AUPRC is
+        # threshold-free and reads the ranking over all ~1940 rows instead of
+        # whatever the argmax happened to do. Selecting on F1 therefore tends to
+        # save the top of an oscillation rather than the best model; it inflated
+        # run #1's reported figure by 0.018 over its own plateau.
+        selector = args.select_by
+        if selector == 'severe_f1':
+            score = avg_severe_f1
+        elif selector == 'severe_auprc':
+            score = (val_auc_auprc_overall or {}).get('severe_auprc', float('nan'))
+        elif selector == 'macro_auprc':
+            score = (val_auc_auprc_overall or {}).get('macro_auprc', float('nan'))
+        else:  # weighted_logloss -- lower is better, so negate to keep one rule
+            score = -val_weighted_logloss
+
+        if score != score:  # NaN, e.g. a condition had no Severe cases this epoch
+            score = -float('inf')
+
+        is_best = score > best_score
         if is_best:
+            best_score = score
             best_severe_f1 = avg_severe_f1
             best_epoch = epoch + 1
             epochs_without_improvement = 0
@@ -753,7 +897,9 @@ def main():
                 'best_severe_f1': best_severe_f1,
                 'args': vars(args),
             }, best_path)
-            print(f"\n✓ Saved best model to {best_path} (Severe F1: {best_severe_f1:.4f})")
+            print(f"\n✓ Saved best model to {best_path} "
+                  f"({args.select_by}={score if args.select_by != 'weighted_logloss' else -score:.4f}, "
+                  f"Severe F1: {best_severe_f1:.4f})")
 
             elapsed_total = time.time() - total_train_start
             metrics_logger.save_best(

@@ -111,6 +111,16 @@ class RandomSliceReverse:
     It is a no-op for laterality-free conditions: ``spinal_canal`` sits on the
     midline and has no left/right mate to swap, so only the image changes.
 
+    **Only valid on crops that span the midline.** The Sagittal T2 crop does --
+    it is centred on the spinal canal coordinate, so its 9 slices straddle the
+    midline and reversing them really does exchange the two sides. The per-side
+    Sagittal T1 crops do NOT: each is centred on one foramen, so reversing its
+    slices still shows that same foramen, and swapping the label would assert
+    the opposite side. That is the same class of label corruption that cost 40%
+    relative Severe F1 in the v3 regression (0.333 -> 0.200, see
+    ``experiments/v3_20260503/RESULTS_LOG.md``), so ``train_rsna_hybrid.py``
+    refuses the combination rather than trusting the caller.
+
     Not applied in any published run -- default off wherever it is wired in, so
     turning it on is a measurable single change.
     """
