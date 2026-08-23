@@ -1,0 +1,141 @@
+% Human-in-the-loop continual learning -- vong lap phan hoi bac si.
+%
+% Ve theo dung style cua paper/lncs_hk252/figures/hybrid_arch_tikz.tex
+% (standalone, sffamily, Stealth[round], vien dam + nen nhat).
+%
+% QUY UOC (CLAUDE.md quy tac 14): net LIEN = da code + da test that;
+% net DUT = DU KIEN, chua co. Dung ve khong.
+%
+% Bien dich:  pdflatex feedback_loop_tikz.tex
+%
+% Doi chieu code that (spine-labeling-app):
+%   grade      -> app/inference/{full_grading,grading}.py  (_load_model doc con tro ACTIVE)
+%   corr       -> models_db.CorrectionLog (+ submitted_at, batch_id)
+%   batch      -> POST /corrections/submit  (routers/feedback.py)
+%   build      -> app/feedback/build_dataset.py  (mac dinh CHI lay lo da gui)
+%   retrain    -> app/feedback/retrain_head.py   (_freeze_batchnorm + --replay-dir)
+%   evalb      -> app/feedback/freeze_holdout.py (MANIFEST.json, sha256, --split-seed 42)
+%   gate       -> retrain_head.evaluate() -> cong macro_f1
+%   approve    -> POST /model/activate
+%   registry   -> app/feedback/model_registry.py (con tro ACTIVE, baseline bat bien)
+%   revert     -> POST /model/revert
+\documentclass[border=8pt]{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage[utf8]{vietnam}   % khop main.tex cua luan van
+\usepackage{tikz}
+\usepackage{lmodern}
+\usetikzlibrary{positioning,arrows.meta,fit,backgrounds,calc}
+\begin{document}
+\begin{tikzpicture}[
+  font=\sffamily,
+  >={Stealth[round]},
+  io/.style={rectangle,rounded corners=2pt,draw=black!55,fill=black!7,
+             align=center,inner sep=4pt,font=\sffamily\scriptsize},
+  net/.style={rectangle,rounded corners=2pt,draw=blue!60!black,fill=blue!14,
+              align=center,inner sep=4pt,font=\sffamily\scriptsize},
+  model/.style={rectangle,rounded corners=3pt,draw=blue!60!black,fill=blue!24,
+                align=center,inner sep=5pt,font=\sffamily\scriptsize},
+  human/.style={rectangle,rounded corners=3pt,draw=orange!85!black,fill=orange!22,
+                align=center,inner sep=5pt,font=\sffamily\scriptsize},
+  data/.style={rectangle,rounded corners=2pt,draw=black!55,fill=black!10,
+               align=center,inner sep=4pt,font=\sffamily\scriptsize},
+  train/.style={rectangle,rounded corners=2pt,draw=violet!60!black,fill=violet!14,
+                align=center,inner sep=4pt,font=\sffamily\scriptsize},
+  gate/.style={rectangle,rounded corners=3pt,draw=teal!65!black,fill=teal!16,
+               align=center,inner sep=5pt,font=\sffamily\scriptsize},
+  deploy/.style={rectangle,rounded corners=2pt,draw=green!45!black,fill=green!16,
+                 align=center,inner sep=4pt,font=\sffamily\scriptsize},
+  planned/.style={rectangle,rounded corners=2pt,draw=black!45,fill=white,
+                  dashed,align=center,inner sep=4pt,font=\sffamily\scriptsize,
+                  text=black!65},
+  band/.style={rectangle,rounded corners=5pt,draw=black!22,fill=black!3,inner sep=9pt},
+  bandlab/.style={font=\sffamily\bfseries\scriptsize,text=black!55,align=left},
+  arr/.style={->,semithick,black!70},
+  parr/.style={->,semithick,black!40,dashed},
+  lbl/.style={font=\sffamily\scriptsize,text=black!65,align=center},
+  note/.style={font=\sffamily\scriptsize,text=black!50,align=center}
+]
+
+% ============ A. TRUC TUYEN -- app dang phuc vu ============
+\node[io]    (mri)   at ( 1.1, 3.4) {Ảnh MRI\\\scriptsize .mha / .nii.gz};
+\node[net]   (seg)   at ( 4.5, 3.4) {TotalSpineSeg\\+ SpineNet detect\\\scriptsize tách đĩa theo tầng};
+\node[model] (grade) at ( 8.3, 3.4) {\textbf{Mô hình hybrid}\\CBAM + BiomedCLIP\\\scriptsize nạp checkpoint \texttt{ACTIVE}};
+\node[io]    (view)  at (11.9, 3.4) {Viewer:\\mask + độ nặng\\\scriptsize 3 điều kiện $\times$ 5 tầng};
+\node[human] (doc)   at (15.4, 3.4) {\textbf{Bác sĩ}\\kiểm tra, sửa mask\\và sửa nhãn bệnh};
+
+\draw[arr] (mri)  -- (seg);
+\draw[arr] (seg)  -- (grade);
+\draw[arr] (grade)-- (view);
+\draw[arr] (view) -- (doc);
+
+% ============ B. THU THAP -- tach "luu" khoi "gui" ============
+\node[data]    (corr)  at (15.4, 0.9) {\texttt{correction\_log}\\\scriptsize chờ gửi (pending)};
+\node[data]    (batch) at (11.0, 0.9) {\textbf{Lô niêm phong}\\\scriptsize \texttt{batch\_id} + \texttt{submitted\_at}\\\scriptsize \texttt{POST /corrections/submit}};
+\node[planned] (qual)  at ( 6.6, 0.9) {Kiểm tra chất lượng nhãn\\\scriptsize confident learning\\\textbf{(DỰ KIẾN)}};
+\node[planned] (al)    at ( 1.3, 0.9) {Active learning:\\\scriptsize xếp worklist theo entropy\\\textbf{(DỰ KIẾN)}};
+
+\draw[arr] (doc)  -- node[lbl,right=1mm]{\textsf{Lưu}} (corr);
+\draw[arr] (corr) -- node[lbl,above=0pt]{\textsf{Gửi}} (batch);
+% Vong ngoai ben trai: active learning chon ca cho bac si xem truoc.
+% Di vong ra ngoai khung de khong de len nhan dai B.
+\draw[parr](al.west) -- (-0.35,0.9) -- (-0.35,3.4) -- (mri.west);
+
+% ============ C. NGOAI TUYEN -- co nguoi gac cong ============
+\node[data]  (build)   at ( 1.7,-2.1) {\texttt{build\_dataset.py}\\\scriptsize chỉ lấy lô ĐÃ GỬI};
+\node[train] (retrain) at ( 6.0,-2.1) {\texttt{retrain\_head.py}\\\scriptsize chỉ train head\\BatchNorm ĐÓNG BĂNG\\\textbf{+ replay 200 mẫu RSNA}};
+\node[gate]  (evalb)   at (10.6,-2.1) {Đánh giá trên held-out\\\textbf{ĐÓNG BĂNG}\\\scriptsize 200 dòng, sha256,\\chỉ bệnh nhân model chưa thấy};
+\node[gate]  (gatek)   at (15.0,-2.1) {\textbf{Cổng tự động}\\\scriptsize macro-F1 \& Severe-F1\\không tăng $\Rightarrow$ BỎ checkpoint};
+
+% Duong that: lo da gui -> build_dataset (di vuong goc cho de doc).
+\draw[arr] (batch.south) -- (11.0,-0.55) -- (1.7,-0.55) -- (build.north);
+% Buoc DU KIEN: chen vao chinh doan duong tren, chua co.
+\draw[parr] (qual.south) -- (6.6,-0.55);
+\node[lbl,text=black!45,anchor=west] at (6.85,-0.3) {\scriptsize chèn vào đây};
+\draw[arr] (build)   -- (retrain);
+\draw[arr] (retrain) -- (evalb);
+\draw[arr] (evalb)   -- (gatek);
+
+% ============ D. TRIEN KHAI -- doi phien ban co the quay dau ============
+\node[human]  (approve)  at (15.0,-5.0) {\textbf{NGƯỜI phê duyệt}\\\scriptsize \texttt{POST /model/activate}};
+\node[deploy] (registry) at (10.0,-5.0) {\texttt{model\_registry}\\\scriptsize con trỏ \texttt{ACTIVE}\\baseline KHÔNG bị ghi đè};
+\node[deploy] (revert)   at ( 5.0,-5.0) {\texttt{POST /model/revert}\\\scriptsize quay về baseline\\bất cứ lúc nào};
+
+\draw[arr] (gatek)    -- node[lbl,right=1mm]{\scriptsize qua cổng} (approve);
+\draw[arr] (approve)  -- (registry);
+\draw[arr] (registry) -- (revert);
+
+% ---- vong lap dong lai: nap checkpoint moi vao model dang phuc vu ----
+% Di vong DUOI dai D roi moi len, de khong cat ngang hop revert.
+\draw[arr,thick,green!45!black]
+  (registry.south) -- (10.0,-6.3) -- (-1.0,-6.3) -- (-1.0, 5.6) -- (8.3, 5.6) -- (grade.north);
+\node[lbl,text=green!35!black,above] at (4.0,5.62)
+  {\textbf{Nạp checkpoint mới} $\to$ phục vụ ca kế tiếp \scriptsize(\texttt{\_load\_model.cache\_clear()})};
+
+% ============ nen tung dai + nhan ============
+\begin{scope}[on background layer]
+  \node[band,fit=(mri)(doc)]           (bA) {};
+  \node[band,fit=(al)(corr)]           (bB) {};
+  \node[band,fit=(build)(gatek)]       (bC) {};
+  \node[band,fit=(revert)(approve)]    (bD) {};
+\end{scope}
+% Nhan dai dat NGOAI khung, khong de de len hop.
+\node[bandlab,anchor=south west] at ([xshift=1mm,yshift=0.6mm]bA.north west)
+  {A. TRỰC TUYẾN — app đang phục vụ};
+\node[bandlab,anchor=south west] at ([xshift=1mm,yshift=0.6mm]bB.north west)
+  {B. THU THẬP — “lưu” tách khỏi “gửi”};
+\node[bandlab,anchor=south west] at ([xshift=1mm,yshift=0.6mm]bC.north west)
+  {C. NGOẠI TUYẾN — cập nhật theo lô, có kiểm chứng};
+\node[bandlab,anchor=south west] at ([xshift=1mm,yshift=0.6mm]bD.north west)
+  {D. TRIỂN KHAI — người quyết định, luôn quay đầu được};
+
+% ============ chu thich ============
+\node[note,anchor=west] at (-0.8,-7.2)
+  {\textbf{Nét liền} = đã cài đặt và có kiểm thử \quad
+   \textbf{--- nét đứt ---} = dự kiến, chưa có \quad
+   \textbf{cam} = điểm con người tham gia};
+\node[note,anchor=west,text=black!45] at (-0.8,-7.75)
+  {Cập nhật theo LÔ (batch), không phải online: model đang phục vụ KHÔNG tự đổi khi bác sĩ bấm Lưu —
+   khớp khung FDA PCCP 12/2024.};
+
+\end{tikzpicture}
+\end{document}

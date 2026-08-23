@@ -1,0 +1,70 @@
+\section{Related Work}
+\label{sec:related}
+
+\subsection{Spine MRI Grading}
+% Windsor SpineNetV2, RSNA top-10 + published RSNA 2024 method papers,
+% SpineNet external validations, SPIDER benchmark. Position our
+% contribution: 3D volumetric grading with cross-dataset zero-shot
+% label extension and the first BiomedCLIP-based RSNA 2024 pipeline.
+SpineNetV2~\cite{windsor2024spinenet} provides a 3D ResNet-34 backbone
+pretrained on lumbar IVD volumes, which we adopt as our base. Several
+external-validation studies place SpineNet's per-pathology agreement at
+$\kappa$~0.46--0.74 across Pfirrmann, central canal stenosis,
+spondylolisthesis, foraminal stenosis, and disc herniation
+\cite{nigru2024spinenetv2,mcsweeney2023spinenet,liu2025spinenetv2ext},
+with foraminal grading consistently the weakest sub-task ($\sim70\,\%$
+balanced accuracy ceiling). The RSNA~2024 challenge produced multiple
+multi-stage 2D pipelines~\cite{nshen7rsna2024,kaggle2nd2024,kaggle4th2024};
+these treat each IVD as a 2D crop, fuse sagittal and axial planes via
+ensembling, and report only the competition's sample-weighted log-loss
+metric. The single peer-reviewed RSNA~2024 method paper to date,
+Aktan et al.~\cite{liu2025rsna}, evaluates a MobileNetV2-UNet
+joint segmentation+classification cascade on a balanced internal split.
+Other recent multi-task or per-condition baselines include
+Hallinan et al.~\cite{hallinan2021stenosis} (seminal Mask R-CNN + 3D CNN
+stenosis classifier with dichotomous $\kappa$~0.89--0.96),
+Lin et al.~\cite{lin2024multiattention} (the closest CBAM-based
+architectural twin, evaluated on a binarised single-level L4--L5 subset),
+M-SCAN~\cite{hong2025mscan} (multi-view cross-attention on RSNA 2024,
+AUROC~0.971 on canal stenosis), and the
+Phaphuangwittayakul et al.~\cite{phaphuangwittayakul2026multitask}
+multi-task model with multi-center external validation. Our approach
+differs in three ways: (i) we use volumetric input throughout (no 2D
+slice ensembling); (ii) we are, to our knowledge, the first to integrate
+a frozen vision-language foundation model on RSNA~2024 lumbar grading;
+and (iii) we add a label-space-extensible head allowing inference on
+unseen disease classes from the SPIDER dataset~\cite{vandergraaf2024spider,spider}
+without any SPIDER training.
+
+\subsection{Attention for Imbalanced Medical Imaging}
+% CBAM (Woo 2018), SE-Net (Hu 2018), small-lesion attention precedents.
+CBAM~\cite{woo2018cbam} combines channel and spatial attention at near-zero
+parameter cost. We choose CBAM over SE-Net~\cite{hu2018senet} because the
+spatial gate is the critical component for localising small Severe
+lesions; non-local~\cite{wang2018nonlocal} and transformer self-attention
+scale poorly under our small-data regime.
+
+\subsection{Medical Vision-Language Foundation Models}
+% BiomedCLIP, MedGemma, RadFM, RAD-DINO, RadCLIP, Decipher-MR, Merlin.
+% Justify why a frozen contrastive encoder is the right choice.
+Recent medical foundation models include BiomedCLIP~\cite{zhang2023biomedclip},
+RadCLIP~\cite{lu2024radclip}, RadFM~\cite{wu2025radfm},
+RAD-DINO~\cite{perezgarcia2024raddino}, MedGemma~\cite{sebro2025medgemma},
+the 3D-MRI-native Decipher-MR~\cite{yang2026deciphermr}, and the 3D-CT
+Merlin~\cite{blankemeier2026merlin}. Of these, BiomedCLIP is the only
+contrastive image--text encoder small enough (${\sim}86$M image params)
+to integrate as a frozen feature extractor on a consumer GPU while
+exposing a CLIP-style~\cite{radford2021clip} embedding space suitable
+for cosine-similarity zero-shot classification. Recent analyses
+\cite{biomedclipImbalance2025} document BiomedCLIP's brittleness under
+high class imbalance, which motivates our hybrid design that pairs the
+frozen 2D encoder with a learnable 3D-CBAM-ResNet specialist.
+MedGemma and RadFM are generative models whose multimodal arms are
+2D-only and whose fine-tuning requirements exceed our resource regime;
+RadCLIP introduces a slice-pooling adapter that would natively handle
+volumetric inputs but appeared after our experiments were finalised;
+Decipher-MR and Merlin are very recent native-3D foundation models
+which we discuss as the strongest future-work alternatives in
+Sec.~\ref{sec:discussion}. To our knowledge, no published study has
+applied BiomedCLIP (or any of these alternatives) to RSNA~2024 lumbar
+spine MRI grading prior to ours.

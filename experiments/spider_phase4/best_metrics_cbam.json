@@ -1,0 +1,105 @@
+{
+  "epoch": 16,
+  "train_loss": 0.6316291848818462,
+  "val_loss": 0.8273943117819726,
+  "val_mean_acc": 0.7521276595744681,
+  "val_mean_f1_macro": 0.5972543535022447,
+  "val_accuracies": {
+    "pfirrmann": 0.5276595744680851,
+    "modic": 0.7319148936170212,
+    "disc_narrowing": 0.8680851063829788,
+    "spondylolisthesis": 0.8808510638297873
+  },
+  "val_f1_macro": {
+    "pfirrmann": 0.5346442506973089,
+    "modic": 0.3580747955747956,
+    "disc_narrowing": 0.8623419814440392,
+    "spondylolisthesis": 0.6339563862928349
+  },
+  "per_class_f1": {
+    "pfirrmann": [
+      0.6262626262626263,
+      0.44,
+      0.423728813559322,
+      0.4927536231884058,
+      0.6904761904761905
+    ],
+    "modic": [
+      0.8013468013468014,
+      0.0,
+      0.6309523809523809,
+      0.0
+    ],
+    "disc_narrowing": [
+      0.8904593639575972,
+      0.8342245989304813
+    ],
+    "spondylolisthesis": [
+      0.9345794392523364,
+      0.3333333333333333
+    ]
+  },
+  "per_class_precision": {
+    "pfirrmann": [
+      0.5740740740740741,
+      0.4489795918367347,
+      0.5,
+      0.5483870967741935,
+      0.5686274509803921
+    ],
+    "modic": [
+      0.8686131386861314,
+      0.0,
+      0.5408163265306123,
+      0.0
+    ],
+    "disc_narrowing": [
+      0.9197080291970803,
+      0.7959183673469388
+    ],
+    "spondylolisthesis": [
+      0.9852216748768473,
+      0.21875
+    ]
+  },
+  "per_class_recall": {
+    "pfirrmann": [
+      0.6888888888888889,
+      0.43137254901960786,
+      0.36764705882352944,
+      0.4473684210526316,
+      0.8787878787878788
+    ],
+    "modic": [
+      0.74375,
+      0.0,
+      0.7571428571428571,
+      0.0
+    ],
+    "disc_narrowing": [
+      0.863013698630137,
+      0.8764044943820225
+    ],
+    "spondylolisthesis": [
+      0.8888888888888888,
+      0.7
+    ]
+  },
+  "args": {
+    "data_dir": "spider",
+    "modality": "t2",
+    "val_split": 0.2,
+    "model": "cbam",
+    "rsna_checkpoint": "checkpoints/best_model_attention.pth",
+    "freeze_backbone": true,
+    "epochs": 20,
+    "batch_size": 32,
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "loss": "weighted",
+    "num_workers": 16,
+    "save_freq": 5,
+    "early_stop_patience": 15,
+    "resume": null
+  }
+}

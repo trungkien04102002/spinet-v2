@@ -1,0 +1,36 @@
+=== BEST MODEL METRICS (hybrid) ===
+Saved at:  2026-04-26T09:50:45
+Epoch:     7
+Train Loss: 1.0153
+Val Loss:   0.1469
+Avg Severe F1: 0.3532
+
+Validation Accuracies:
+  spinal_canal       0.8615
+  left_foraminal     0.6123
+  right_foraminal    0.6278
+
+Per-Class Metrics:
+
+  spinal_canal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.971  0.909  0.939     1722
+    Moderate         0.280  0.338  0.306      139
+    Severe           0.374  0.753  0.500       81
+
+  left_foraminal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.936  0.608  0.737     1497
+    Moderate         0.297  0.683  0.414      360
+    Severe           0.219  0.375  0.276       80
+
+  right_foraminal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.941  0.624  0.751     1482
+    Moderate         0.316  0.702  0.436      372
+    Severe           0.233  0.361  0.283       83
+
+Extra:
+  best_path: checkpoints/hybrid/best_model_hybrid.pth
+  cbam_checkpoint: checkpoints/best_model_attention.pth
+  args: {'data_dir': 'rsna_preprocessed', 'cbam_checkpoint': 'checkpoints/best_model_attention.pth', 'save_dir': 'checkpoints/hybrid', 'val_split': 0.2, 'epochs': 20, 'batch_size': 32, 'lr': 0.0001, 'weight_decay': 0.0001, 'slice_strategy': 'static', 'use_focal': True, 'focal_gamma': 2.0, 'use_supcon': True, 'supcon_weight': 0.1, 'use_uncertainty': True, 'class_weight_mode': 'sqrt', 'augmentation': 'medium', 'oversample_factor': 3, 'num_workers': 16, 'save_freq': 5, 'early_stop_patience': 15, 'resume': None}

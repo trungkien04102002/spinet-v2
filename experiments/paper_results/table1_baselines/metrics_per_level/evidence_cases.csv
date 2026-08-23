@@ -1,0 +1,10 @@
+model,study_id,TP,FP,FN,TN,total
+NingShen,105895264,10,2,1,2,15
+NingShen,245660566,9,0,1,5,15
+NingShen,100206310,6,1,4,4,15
+SpineNetV2 upstream,105895264,11,4,0,0,15
+SpineNetV2 upstream,1038453736,11,4,0,0,15
+SpineNetV2 upstream,100206310,10,5,0,0,15
+MedGemma,75336136,0,0,13,2,15
+MedGemma,105895264,2,0,9,4,15
+MedGemma,100206310,1,0,9,5,15

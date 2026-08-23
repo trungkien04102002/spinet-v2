@@ -1,0 +1,78 @@
+% =============================================================================
+%  PLACEHOLDER TEMPLATE — replace with the official conference template
+%  (e.g. EMBC 2027 .cls + sample .tex) once your advisor sends the link.
+%
+%  Current style: IEEEtran (conference). EMBC, MICCAI W'shop, ISBI, IPMI all
+%  ship IEEEtran-compatible templates, so the section structure below should
+%  port over with minimal edits when you swap the class file.
+%
+%  Build:        latexmk -pdf main.tex
+%  Single-pass:  pdflatex main && bibtex main && pdflatex main && pdflatex main
+% =============================================================================
+
+\documentclass[conference]{IEEEtran}
+
+% ---- Standard packages -------------------------------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage{cite}
+\usepackage{url}
+
+% Figures live in ../experiments/ — single source of truth with the codebase.
+\graphicspath{{../experiments/}{../experiments/paper_results/}{../experiments/paper_results/spider_zeroshot/}}
+
+% Convenience macros
+\newcommand{\modelname}{SpineNet+CBAM+BiomedCLIP\xspace}  % rename if needed
+\usepackage{xspace}
+
+\begin{document}
+
+% =============================================================================
+%  Title block
+% =============================================================================
+\title{Lightweight 3D Attention with Frozen Vision-Language Embeddings\\
+       for Zero-shot Lumbar Spine MRI Grading}
+
+\author{\IEEEauthorblockN{Trung Kien Ha\IEEEauthorrefmark{1},
+                         Nh\^an Phan\IEEEauthorrefmark{1}}
+        \IEEEauthorblockA{\IEEEauthorrefmark{1}University Name, City, Country\\
+                          Email: \{kien, nhan\}@example.edu}}
+
+\maketitle
+
+% =============================================================================
+%  Abstract + keywords
+% =============================================================================
+\input{sections/abstract}
+
+\begin{IEEEkeywords}
+spine MRI, foundation models, attention, zero-shot classification,
+contrastive learning, BiomedCLIP, CBAM, lumbar stenosis
+\end{IEEEkeywords}
+
+% =============================================================================
+%  Body
+% =============================================================================
+\input{sections/01_introduction}
+\input{sections/02_related_work}
+\input{sections/03_methods}
+\input{sections/04_experiments}
+\input{sections/05_results}
+\input{sections/06_discussion}
+\input{sections/07_conclusion}
+
+% =============================================================================
+%  References
+% =============================================================================
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

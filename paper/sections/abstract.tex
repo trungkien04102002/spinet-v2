@@ -1,0 +1,20 @@
+\begin{abstract}
+% Target: 150–200 words for EMBC.
+Automated lumbar spine MRI grading faces three coupled challenges:
+severe class imbalance (rare ``Severe'' findings), feature ambiguity
+in deep 3D features, and rigid label spaces that do not transfer
+between datasets such as RSNA~2024 and SPIDER. We address all three
+with a single hybrid pipeline. First, an imbalance toolkit (Focal
+Loss, square-root class weights, minority oversampling, augmentation)
+lifts mean Severe-class recall by $4.2\times$ ($11.9\% \to 49.6\%$)
+on RSNA. Second, Convolutional Block Attention Modules (CBAM) sharpen
+channel and spatial features on a 3D ResNet-34 backbone, recovering
+foraminal Severe F1 from $0.000$ (baseline) to $0.276/0.283$ on
+left/right foraminal classes. Third, fusing the CBAM backbone with a
+frozen BiomedCLIP encoder enables both \emph{zero-shot} extension to
+$8$ unseen SPIDER labels (Mean F1 macro $= 0.362$, no SPIDER training)
+and \emph{retrained} transfer (Mean F1 macro $= 0.623$ with
+${\sim}5$M trainable parameters). The pipeline trains end-to-end in
+under $30$ minutes per phase on a single consumer GPU and is
+foundation-model-agnostic.
+\end{abstract}

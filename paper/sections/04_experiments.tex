@@ -1,0 +1,41 @@
+\section{Experimental Setup}
+\label{sec:experiments}
+
+\subsection{Datasets}
+% TODO: brief RSNA + SPIDER description.
+\textbf{RSNA 2024 Lumbar Spine Degenerative Classification.}
+$\sim$2{,}000 patients, sagittal T2 stack per IVD, 3 conditions
+(spinal canal, left/right foraminal) $\times$ 3 severity classes
+(Normal/Moderate/Severe). Patient-level 80/20 split, $\textsc{seed}=42$,
+$1{,}942$ validation IVDs.
+
+\textbf{SPIDER.} $\sim$1{,}400 IVDs from a separate hospital cohort, 8
+disease labels (Pfirrmann grade, Modic, Disc narrowing/herniation/bulging,
+Spondylolisthesis, UP/LOW endplate). Used both as a fully held-out
+zero-shot test set and as a supervised transfer-learning target.
+
+\subsection{Evaluation Protocol}
+% Mean F1 macro + Mean Accuracy primary; domain-specific (Severe F1,
+% per-tier zero-shot F1) reported alongside.
+We adopt \textbf{Mean F1 macro} (per-condition macro-F1 averaged across
+conditions) and \textbf{Mean Accuracy} as primary metrics in all
+cross-phase comparisons. Domain-specific metrics — Severe F1 on RSNA
+and per-tier zero-shot F1 (easy/medium/hard) on SPIDER — are reported
+alongside but never as the sole metric.
+
+\subsection{Phases}
+\begin{itemize}
+  \item \textbf{Phase 1+2} (RSNA supervised): Baseline vs CBAM vs
+        Hybrid (CBAM + frozen BiomedCLIP). Class imbalance handled
+        with focal loss + sqrt-frequency class weights.
+  \item \textbf{Phase 3} (SPIDER zero-shot): No SPIDER training. The
+        Hybrid model trained on RSNA encodes 8 SPIDER prompts at
+        inference and predicts. Compared against ``Naked BiomedCLIP''
+        (same architecture without the RSNA-trained backbone or
+        projection MLP) to isolate the effect of the 3D specialist
+        branch.
+  \item \textbf{Phase 4} (SPIDER supervised transfer): 4-way
+        comparison — Vanilla, CBAM, Hybrid frozen, Hybrid full
+        fine-tune — on 4 SPIDER conditions (Pfirrmann 5-cls,
+        Modic 4-cls, Disc Narrowing 2-cls, Spondylolisthesis 2-cls).
+\end{itemize}

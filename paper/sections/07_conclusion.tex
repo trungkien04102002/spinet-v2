@@ -1,0 +1,20 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+We presented a lightweight integration pattern — 3D CBAM-augmented
+backbone plus a frozen BiomedCLIP image+text encoder, fused by a small
+projection MLP and matched via cosine similarity — that recovers
+minority-class detection on imbalanced lumbar stenosis grading and
+extends to unseen disease labels in zero-shot fashion across datasets.
+The whole system trains in under 30 minutes on a single consumer GPU
+with $\sim 5$M trainable parameters. We additionally report a
+selective-transfer finding that characterises when the hybrid is
+preferable to a 2D-only contrastive baseline. The pattern is
+foundation-model-agnostic; integrating heavier contrastive encoders
+(MedSigLIP, RAD-DINO) and exploring multi-domain projection heads are
+natural next steps.
+
+\section*{Acknowledgement}
+% TODO: thanks advisor, lab, dataset providers (RSNA, SPIDER), funding.
+The authors thank the RSNA 2024 organisers and the SPIDER consortium
+for releasing the datasets.

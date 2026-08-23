@@ -5,8 +5,12 @@ pandas
 pydicom
 requests
 scikit-image
+scikit-learn
 scipy
 shapely
 torch
 torchvision
 tqdm
+open_clip_torch
+transformers
+SimpleITK

@@ -3,6 +3,30 @@ spinenet-venv
 spinenet/weights/*
 tutorials/example_scans/*
 tutorials/results/*
+spider/
+
+# RSNA 2024 Dataset (large data files - do not commit)
+rsna-2024-lumbar-spine-degenerative-classification/
+rsna_preprocessed/
+rsna_preprocessed.zip
+rsna_preprocessed_t1/
+example_scans/
+*.npy
+
+# SPIDER Phase 3+4 large artifacts (regenerate with prepare_spider_zeroshot.py)
+rsna_preprocessed_spider/
+spider.zip
+*.pdf
+# Note: checkpoints_spider/ folder is kept (via .gitkeep) so Phase 4 runs
+# don't need a manual mkdir on a fresh clone. Inside .pth files are still
+# ignored by the global *.pth rule.
+
+# Training outputs (large model files - do not commit)
+checkpoints/
+*.pth
+
+# macOS
+.DS_Store
 
 
 # Standard Python GitIgnore
@@ -166,3 +190,18 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+
+# SOTA comparison experiment (experiments/sota_comparison)
+experiments/sota_comparison/external/
+experiments/sota_comparison/checkpoints/
+experiments/sota_comparison/logs/
+experiments/sota_comparison/splits/*_manifest.csv
+experiments/sota_comparison/**/__pycache__/
+
+# F1 improvement experiment outputs
+experiments/f1_improvement/logits/
+experiments/f1_improvement/results/
+experiments/f1_improvement/**/__pycache__/
+
+# Local checkpoint/metrics backup tarballs (upload to Drive, never commit)
+checkpoints_canonical_backup_*.tar.gz

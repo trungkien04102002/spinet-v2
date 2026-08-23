@@ -1,0 +1,15 @@
+=== BEST HYBRID SPIDER MODEL ===
+Saved at: 2026-04-27T11:56:20
+Epoch: 11
+Val loss: 0.6751
+Val mean acc:      79.68%
+Val mean F1 macro: 0.623
+
+Pfirrmann             acc= 62.13%  F1_macro=0.626  per-class F1=[0.655, 0.458, 0.632, 0.579, 0.806]
+                      precision=[0.544, 0.594, 0.632, 0.579, 0.862]  recall=[0.822, 0.373, 0.632, 0.579, 0.758]
+Modic                 acc= 77.45%  F1_macro=0.373  per-class F1=[0.846, 0.0, 0.644, 0.0]
+                      precision=[0.849, 0.0, 0.618, 0.0]  recall=[0.844, 0.0, 0.671, 0.0]
+Disc Narrowing        acc= 87.23%  F1_macro=0.865  per-class F1=[0.896, 0.835]
+                      precision=[0.908, 0.817]  recall=[0.884, 0.854]
+Spondylolisthesis     acc= 91.91%  F1_macro=0.627  per-class F1=[0.957, 0.296]
+                      precision=[0.972, 0.235]  recall=[0.942, 0.4]

@@ -1,0 +1,10 @@
+Condition,Model,Precision,Recall,F1,TP,FP,FN,TN,Support,Total
+Spinal Canal Stenosis,SpineNetV2,62.5,71.43,66.67,10,6,4,27,14,47
+Spinal Canal Stenosis,MedGemma,100.0,7.14,13.33,1,0,13,33,14,47
+Spinal Canal Stenosis,NingShen,100.0,92.86,96.3,13,0,1,33,14,47
+Left Neural Foraminal Narrowing,SpineNetV2,55.17,69.57,61.54,16,13,7,11,23,47
+Left Neural Foraminal Narrowing,MedGemma,0.0,0.0,0.0,0,0,23,24,23,47
+Left Neural Foraminal Narrowing,NingShen,67.74,91.3,77.78,21,10,2,14,23,47
+Right Neural Foraminal Narrowing,SpineNetV2,64.29,69.23,66.67,18,10,8,11,26,47
+Right Neural Foraminal Narrowing,MedGemma,0.0,0.0,0.0,0,0,26,21,26,47
+Right Neural Foraminal Narrowing,NingShen,80.0,92.31,85.71,24,6,2,15,26,47

@@ -1,0 +1,203 @@
+\section{Results}
+\label{sec:results}
+
+\subsection{Comparison with State-of-the-Art}
+\label{sec:sota}
+% =============================================================================
+% SOTA Table 1 — comparison with published methods on lumbar spine grading
+% =============================================================================
+We position our method against the best published lumbar spine MRI grading
+results from 2021--2026 (Tab.~\ref{tab:sota}). Direct numerical comparison
+on RSNA~2024 is intrinsically limited because the Kaggle metric is
+sample-weighted log-loss with no public per-class F1 / AUC. To our
+knowledge, no peer-reviewed paper applies a vision-language foundation
+model to the RSNA~2024 dataset; ours is the first BiomedCLIP-based pipeline
+on this benchmark.
+
+\begin{table*}[t]
+\centering
+\caption{Comparison with published methods on lumbar spine MRI grading. Our
+         numbers are reported on the full RSNA~2024 validation split
+         (random\_state=42, test\_size=0.2, patient-level, 1942 IVDs / 395
+         patients). Footnotes:
+         \textsuperscript{$\dagger$}~balanced/single-level/binarised subset;
+         \textsuperscript{$\dagger\dagger$}~pixel-level segmentation of 6
+         anatomical regions, not severity grading;
+         \textsuperscript{$\ddagger$}~different metric ($\kappa$);
+         \textsuperscript{$*$}~in-house dataset. Bold = best directly
+         comparable on the same row (where applicable). ``--'' = not reported
+         in the source.}
+\label{tab:sota}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}llllll@{}}
+\toprule
+Method & Year & Dataset & Backbone & Mean F1 & AUC / $\kappa$ \\
+\midrule
+Hallinan et al.~\cite{hallinan2021stenosis}            & 2021 & 446 + 100\textsuperscript{*}   & Mask R-CNN + 3D CNN          & --          & $\kappa$ 0.89--0.96\textsuperscript{$\ddagger$} \\
+McSweeney et al.~\cite{mcsweeney2023spinenet}          & 2023 & NFBC1966\textsuperscript{*}    & SpineNetV2 ext.\ val.        & --          & Pfirr.\ Bal.\,Acc 78\,\%, $\kappa$ 0.68 \\
+Bharadwaj et al.~\cite{bharadwaj2023interpretable}     & 2023 & 200 pat.\textsuperscript{*}    & V-Net + BiT + DT             & --          & AUROC 0.92--0.94 \\
+Nigru et al.~\cite{nigru2024spinenetv2}                & 2024 & 1\,747 disks\textsuperscript{*} & SpineNetV2 ext.\ val.       & 0.796--0.985 (per-cond.) & $\kappa$ 0.46--0.74 \\
+Lin, Zhang, Shang~\cite{lin2024multiattention}         & 2024 & RSNA-derived L4--L5 & CNN + CBAM + multi-attn       & 0.945\textsuperscript{$\dagger$} & 0.951--0.972 \\
+Liu et al.~\cite{liu2025rsna}                          & 2025 & RSNA 2024            & MobileNetV2-UNet (segmentation) & 0.957\textsuperscript{$\dagger\dagger$} & -- \\
+M-SCAN~\cite{hong2025mscan}                            & 2025 & RSNA 2024            & Multi-view + cross-attn       & --          & AUROC 0.971 (canal) \\
+Wang et al.~\cite{wang2025cnntransformer}              & 2025 & 564 MRIs\textsuperscript{*} & CNN vs.\ Transformer        & --          & $\kappa$ 0.91--0.99 \\
+AFFM-YOLOv8~\cite{liu2025affmyolo}                     & 2025 & 8\,428 pat.\textsuperscript{*} & YOLOv8 + AFFM             & 0.910 (MSU) & $\kappa$ $>$ 0.9 \\
+Acharya \& Kansakar~\cite{acharya2026disccentric}      & 2026 & Sagittal T2\textsuperscript{*} & Disc-Centric Contrastive  & Bal.\,Acc 0.781 & -- \\
+Phaphuangwittayakul et al.~\cite{phaphuangwittayakul2026multitask} & 2026 & RSNA 2024 + Phayao\textsuperscript{*} & VGG19/ConvNeXt-T + clf  & 0.956 (ext.) & AUC 0.994--1.000 \\
+\midrule
+\textbf{Ours} (CBAM + frozen BiomedCLIP)               & 2026 & \textbf{RSNA 2024 val (full, 3-cls)} & 3D ResNet34 + CBAM + BiomedCLIP & \textbf{0.528} & \textbf{0.837} (Severe AUPRC 0.321) \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+The 0.945 / 0.957 numbers in Lin et al.~\cite{lin2024multiattention} and
+Liu et al.~\cite{liu2025rsna} should be read with the table footnotes:
+Lin et al.\ evaluate on a balanced binarised single-level L4--L5 subset,
+and Liu et al.\ solve a different task — pixel-level segmentation of six
+anatomical regions on the RSNA 2024 dataset rather than per-IVD severity
+grading; the authors explicitly state their model ``does not directly
+grade severity levels''.
+The most directly comparable published row is
+Nigru et al.~\cite{nigru2024spinenetv2}, which evaluates SpineNetV2 (our
+shared backbone) on a 1\,747-disc external set spanning all five of our
+label-space conditions. Their reported foraminal Bal.\,Acc of $\sim70\,\%$
+($\kappa$ 0.46--0.47) is the realistic literature ceiling for sagittal-only
+foraminal grading and contextualises our foraminal weakness as
+intrinsic-to-modality rather than method-specific.
+
+\subsection{Cross-phase Summary}
+% Pull from experiments/PHASE_REPORT_FULL.md cross-phase table.
+\begin{table}[t]
+\centering
+\caption{Cross-phase Mean F1 macro and Mean Accuracy. Best per phase in bold.}
+\label{tab:cross_phase}
+\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+Phase & Method                & Mean F1 macro       & Mean Acc \\
+\midrule
+1     & Baseline (no CBAM)    & 0.420               & 81.4\,\% \\
+2     & CBAM + sqrt CW        & 0.509               & 68.6\,\% \\
+2     & \textbf{Hybrid (E7)}  & \textbf{0.516}      & 70.0\,\% \\
+\midrule
+3     & Hybrid 0-shot         & 0.362               & --       \\
+3     & \textbf{Naked BMC 0-shot} & \textbf{0.394}  & --       \\
+\midrule
+4     & Vanilla SPIDER        & 0.610               & 77.1\,\% \\
+4     & CBAM SPIDER           & 0.597               & 75.2\,\% \\
+4     & \textbf{Hybrid frozen} & \textbf{0.623}     & 79.7\,\% \\
+4     & Hybrid unfreeze       & 0.622               & 80.4\,\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Phase 1+2 — RSNA Severe-class Recovery}
+\begin{table}[t]
+\centering
+\caption{Severe-class F1 on RSNA validation (per condition).}
+\label{tab:severe_f1}
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Method            & Spinal Severe & L. Foram. Severe & R. Foram. Severe \\
+\midrule
+Baseline          & 0.457         & \textbf{0.000}   & \textbf{0.000} \\
+CBAM + sqrt CW    & \textbf{0.623}& 0.180            & 0.197 \\
+Hybrid (E7)       & 0.500         & \textbf{0.276}   & \textbf{0.283} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The CBAM spatial gate recovers Foraminal Severe F1 from $0.000$
+(baseline collapse) to $0.180/0.197$. Adding the frozen BiomedCLIP
+branch (Hybrid) further improves to $0.276/0.283$, showing the
+language-aligned semantic features supply complementary signal beyond
+3D attention.
+
+\subsection{Phase 3 — Zero-shot SPIDER}
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{cross_phase_comparison.png}
+  \caption{Mean F1 macro across all phases; red border indicates best
+           in phase. Selective transfer is evident in Phase 3, where
+           the Hybrid wins on disc-related labels but a 2D-only Naked
+           BiomedCLIP wins on vertebra/endplate labels.}
+  \label{fig:cross_phase}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\caption{Per-disease F1 macro on SPIDER zero-shot evaluation
+         (no SPIDER training used). $\Delta$ = Hybrid $-$ Naked.}
+\label{tab:spider_zeroshot}
+\small
+\begin{tabular}{@{}llccr@{}}
+\toprule
+Disease            & Tier   & Hybrid          & Naked BMC         & $\Delta$ \\
+\midrule
+Disc\_narrowing    & easy   & \textbf{0.586}  & 0.403             & $+0.183$ \\
+Disc\_bulging      & medium & \textbf{0.613}  & 0.363             & $+0.250$ \\
+Disc\_herniation   & medium & \textbf{0.563}  & 0.532             & $+0.031$ \\
+Pfirrman           & hard   & \textbf{0.155}  & 0.152             & $+0.003$ \\
+\midrule
+UP\_endplate       & hard   & 0.467           & \textbf{0.569}    & $-0.102$ \\
+LOW\_endplate      & hard   & 0.468           & \textbf{0.558}    & $-0.090$ \\
+Spondylolisthesis  & medium & 0.028           & \textbf{0.500}    & $-0.472$ \\
+Modic              & hard   & 0.018           & \textbf{0.071}    & $-0.053$ \\
+\midrule
+\textbf{Mean (8)}  &        & 0.362           & \textbf{0.394}    & $-0.032$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{ablation_hybrid_vs_naked.png}
+  \caption{Phase 3 ablation: per-disease zero-shot F1 macro.
+           Hybrid wins on disc-related labels (top), Naked BiomedCLIP
+           wins on vertebra/endplate labels (bottom) — supporting the
+           complementarity argument.}
+  \label{fig:ablation}
+\end{figure}
+
+The split in Tab.~\ref{tab:spider_zeroshot} and Fig.~\ref{fig:ablation}
+is the central evidence for selective transfer: gains on disc-related
+labels (where 3D volumetric context dominates) trade against losses on
+vertebra/endplate labels (where 2D appearance is sufficient and the
+RSNA-trained projection MLP over-specialises). We interpret this as a
+characterisation of \emph{when} the hybrid integration is preferred to
+a frozen 2D-only baseline, rather than a failure mode.
+
+\subsection{Phase 4 — SPIDER Transfer Learning}
+\begin{table}[t]
+\centering
+\caption{Per-condition F1 macro on SPIDER supervised transfer.
+         Best per row in bold. Hybrid frozen achieves the best mean
+         with ${\sim}5$M trainable parameters vs $22$M for Vanilla.}
+\label{tab:spider_transfer}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Condition           & Vanilla & CBAM   & Hybrid fz       & Hybrid unfz     \\
+\midrule
+Pfirrmann (5-cls)   & 0.594   & 0.535  & \textbf{0.626}  & 0.580           \\
+Modic (4-cls)       & 0.363   & 0.358  & 0.373           & \textbf{0.387}  \\
+Disc Narrow.\ (2)   & 0.851   & 0.862  & 0.865           & \textbf{0.878}  \\
+Spondylolist.\ (2)  & 0.633   & 0.634  & 0.627           & \textbf{0.643}  \\
+\midrule
+Mean F1 macro       & 0.610   & 0.597  & \textbf{0.623}  & 0.622           \\
+Mean Acc            & 77.1\,\% & 75.2\,\% & 79.7\,\%     & \textbf{80.4\,\%} \\
+Trainable params    & 22M     & 22M    & \textbf{5M}     & 95M             \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+With $\sim 5$M trainable parameters, Hybrid frozen reaches Mean F1
+macro $0.623$, exceeding both fully fine-tuned Vanilla ($0.610$) and
+CBAM ($0.597$) baselines while training in $\sim 5$ minutes per epoch
+on a single GPU. Full backbone fine-tuning (Hybrid unfreeze) does not
+improve mean F1 — gains on three conditions are offset by a Pfirrmann
+regression — supporting frozen as the better default
+(Tab.~\ref{tab:spider_transfer}).

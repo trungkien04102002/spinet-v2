@@ -1,0 +1,63 @@
+tmux set -g mouse on
+./vast_setup.sh --branch train-attention
+pip3 install -r requirements.txt
+
+chmod +x 2_download_preprocessed.sh
+./2_download_preprocessed.sh 1DCndO_ppTDMGT1H19b8XIqfureMqABi_
+
+./3_download_weights.sh 1GCmJ0OuNdw9c1E4giLwyA9EK4uwWL6HT
+
+python train_rsna_baseline.py --epochs 5 --batch-size 32 --lr 1e-3
+
+
+python3 train_rsna_baseline.py --epochs 30 --batch-size 32 --lr 1e-3
+python3 train_rsna_baseline.py --epochs 1 --batch-size 32 --lr 1e-3
+python train_rsna_baseline.py --epochs 5 --batch-size 32 --lr 1e-3
+python3 train_rsna_baseline.py --epochs 30 --batch-size 64 --lr 1e-3
+
+
+
+python3 test_rsna_preprocessed.py --model checkpoints/best_model.pth --num-patients 5
+python3 test_rsna_preprocessed.py --model checkpoints/best_model.pth --num-patients -1
+python3 test_rsna_preprocessed.py --model checkpoints/best_model_attention.pth --num-patients -1
+
+scp -P 29458 root@120.238.149.205:/root/spinet-v2/checkpoints/best_model_attention.pth checkpoints/
+
+scp -P 59873 root@175.28.230.22:/root/spinet-v2/checkpoints/best_model.pth checkpoints/
+
+python3 train_rsna_attention.py --epochs 1 --batch-size 32 --lr 1e-3
+
+
+df -h
+du -sh .
+ls -lh checkpoints/
+
+
+
+
+
+
+
+# 1. Baseline
+python3 train_rsna_baseline.py --epochs 30 --batch-size 32 --lr 1e-3
+
+# 2. + FocalLoss only
+python3 train_rsna_attention.py --epochs 30 --batch-size 32 --lr 1e-3 \
+    --no-cbam --use-uncertainty=False --augmentation none
+
+# 3. + FocalLoss + Augmentation
+python3 train_rsna_attention.py --epochs 30 --batch-size 32 --lr 1e-3 \
+    --no-cbam --use-uncertainty=False
+
+# 4. + FocalLoss + Augmentation + CBAM
+python3 train_rsna_attention.py --epochs 30 --batch-size 32 --lr 1e-3
+
+# 5. All improvements (final model)
+python3 train_rsna_attention.py --epochs 10 --batch-size 32 --lr 1e-3
+
+python3 train_rsna_attention.py --epochs 30 --batch-size 64  --focal-gamma 1.5 --lr 1e-3 --num-workers 8
+
+
+
+
+

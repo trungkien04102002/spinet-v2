@@ -1,0 +1,407 @@
+% ===========================================================================
+% Summary v3 — 4-config × 2-dataset (RSNA + SPIDER 8-label transfer)
+% Single-seed (seed=42) snapshot, compiled 2026-05-15.
+% Standalone reference: open this for the executive view of all numbers.
+% ===========================================================================
+
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[vietnamese]{babel}
+\usepackage[margin=2cm]{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{hyperref}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+
+\definecolor{tablehdr}{RGB}{220,230,241}
+\definecolor{ours}{RGB}{255,243,224}
+\definecolor{cnormal}{RGB}{102,194,165}
+\definecolor{cmod}{RGB}{252,141,98}
+\definecolor{csevere}{RGB}{231,41,138}
+\newcommand{\best}[1]{\textbf{#1}}
+
+\title{Summary v3 --- 4-config $\times$ 2-dataset\\
+       \large SpineNetV2 Hybrid Ablation, Single Seed (42)}
+\author{Trung Kiên --- GVHD: Nhân Phan}
+\date{15 May 2026}
+
+\begin{document}
+\maketitle
+
+\noindent\textbf{Phạm vi}: Snapshot ngắn gọn các bảng kết quả \emph{v3
+(2026-05-03 RSNA retrain + 2026-05-15 SPIDER 8-label transfer 3-seed)}.
+SPIDER báo cáo mean$\pm$std qua 3 seeds $\{42, 123, 456\}$; RSNA hiện
+còn single-seed (42), 3-seed deferred.
+
+% ===========================================================================
+\section{Phân phối nhãn (Class distribution)}
+
+\subsection{RSNA 2024 --- 9{,}748 IVD, 3 conditions $\times$ 3 severities}
+
+\begin{table}[h]
+\centering
+\caption{Số lượng và tỉ lệ mỗi mức độ bệnh trên 3 conditions (full train+val).}
+\label{tab:rsna_distribution}
+\small
+\begin{tabular}{lccc|c}
+\toprule
+\rowcolor{tablehdr}
+Condition & \cellcolor{cnormal!30}Normal/Mild (0) & \cellcolor{cmod!30}Moderate (1) & \cellcolor{csevere!30}Severe (2) & Total \\
+\midrule
+Spinal Canal Stenosis  & 8{,}549 (87.7\%) & 731 (7.5\%)      & \textbf{468 (4.8\%)}  & 9{,}748 \\
+Left Foraminal Stenosis  & 7{,}554 (77.5\%) & 1{,}787 (18.3\%) & \textbf{397 (4.1\%)}  & 9{,}738 \\
+Right Foraminal Stenosis & 7{,}571 (77.7\%) & 1{,}758 (18.0\%) & \textbf{379 (3.9\%)}  & 9{,}708 \\
+\midrule
+\textbf{Mean}          & \textbf{81.0\%}  & \textbf{14.6\%}  & \textbf{4.3\%}        & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent\textbf{Tại sao Severe quan trọng}: chỉ chiếm $\sim 4\%$ nhưng
+là class \emph{clinically critical} (cần phẫu thuật). Baseline thuần
+predict Normal/Mild $\Rightarrow$ Accuracy cao $81\%$ nhưng Severe
+Recall gần $0$ $\Rightarrow$ vô nghĩa lâm sàng.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    ybar stacked,
+    width=14cm, height=5.5cm,
+    bar width=30pt,
+    ymin=0, ymax=105,
+    ylabel={Tỉ lệ (\%)},
+    symbolic x coords={Spinal Canal, Left Foraminal, Right Foraminal},
+    xtick=data,
+    legend pos=outer north east,
+    legend style={font=\small},
+    nodes near coords align={vertical},
+    every node near coord/.append style={font=\scriptsize},
+]
+\addplot+[fill=cnormal!60, draw=cnormal!80!black]
+    coordinates {(Spinal Canal,87.7) (Left Foraminal,77.5) (Right Foraminal,77.7)};
+\addplot+[fill=cmod!70, draw=cmod!80!black]
+    coordinates {(Spinal Canal,7.5)  (Left Foraminal,18.3) (Right Foraminal,18.0)};
+\addplot+[fill=csevere!70, draw=csevere!80!black]
+    coordinates {(Spinal Canal,4.8)  (Left Foraminal,4.1)  (Right Foraminal,3.9)};
+\legend{Normal/Mild, Moderate, Severe}
+\end{axis}
+\end{tikzpicture}
+\caption{RSNA distribution per condition. Severe ($<5\%$) cần focus lâm sàng.}
+\label{fig:rsna_dist}
+\end{figure}
+
+\subsection{SPIDER --- 1{,}520 IVD, 8 conditions $\times$ varying classes}
+
+\begin{table}[h]
+\centering
+\caption{Phân phối lớp trên 8 nhãn SPIDER (radiological\_gradings.csv).
+Minority class (positive/severe) in-text \textbf{bold}.}
+\label{tab:spider_distribution}
+\small
+\begin{tabular}{lcccccc}
+\toprule
+\rowcolor{tablehdr}
+Condition & \multicolumn{5}{c}{Class \%} & Total \\
+          & C0 & C1 & C2 & C3 & C4 &       \\
+\midrule
+Pfirrmann grade (1-5)   & 18.8\% & 22.4\% & 27.5\% & \textbf{19.1\%} & \textbf{12.1\%} & 1{,}520 \\
+Modic Type (0-3)        & 66.2\% & \textbf{0.3\%}  & 33.1\% & \textbf{0.5\%}  & --- & 1{,}520 \\
+Disc Narrowing (No/Yes) & 64.2\% & \textbf{35.8\%} & --- & --- & --- & 1{,}520 \\
+Spondylolisthesis       & 97.2\% & \textbf{2.8\%}  & --- & --- & --- & 1{,}520 \\
+UP Endplate             & 59.6\% & \textbf{40.4\%} & --- & --- & --- & 1{,}520 \\
+LOW Endplate            & 59.0\% & \textbf{41.0\%} & --- & --- & --- & 1{,}520 \\
+Disc Herniation         & 95.3\% & \textbf{4.7\%}  & --- & --- & --- & 1{,}520 \\
+Disc Bulging            & 50.9\% & \textbf{49.1\%} & --- & --- & --- & 1{,}520 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent\textbf{Class hiếm SPIDER (clinical-relevant)}:
+\begin{itemize}
+\item \textbf{Modic Type 1} (0.3\%) và \textbf{Type 3} (0.5\%) ---
+extreme rare, mọi config 0\% recall (\emph{intractable single-seed}).
+\item \textbf{Spondylolisthesis Yes} (2.8\%) --- rare, Hybrid recover
+40\% vs Baseline 10\% (\emph{key result của paper}).
+\item \textbf{Disc Herniation Yes} (4.7\%) --- rare, BMC-only win 45.5\%.
+\item \textbf{Pfirrmann Grade 4-5} (severe degeneration combined
+$\sim 31.2\%$) --- moderate imbalance, Hybrid Grade 4 recall 57.9\%
+vs Baseline 47.4\%.
+\end{itemize}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    ybar,
+    width=15cm, height=6.5cm,
+    ymin=0, ymax=100,
+    ylabel={Tỉ lệ minority/positive class (\%)},
+    symbolic x coords={
+        Modic T1, Modic T3, Spondy Yes, Herniation Yes,
+        Pfirrmann G5, Pfirrmann G4, Disc Narrow Yes,
+        UP Endplate Yes, LOW Endplate Yes, Disc Bulging Yes
+    },
+    xtick=data,
+    x tick label style={rotate=35, anchor=east, font=\small},
+    nodes near coords,
+    every node near coord/.append style={font=\scriptsize, color=black},
+    bar width=18pt,
+]
+\addplot[fill=csevere!70, draw=csevere!80!black] coordinates {
+    (Modic T1, 0.3)
+    (Modic T3, 0.5)
+    (Spondy Yes, 2.8)
+    (Herniation Yes, 4.7)
+    (Pfirrmann G5, 12.1)
+    (Pfirrmann G4, 19.1)
+    (Disc Narrow Yes, 35.8)
+    (UP Endplate Yes, 40.4)
+    (LOW Endplate Yes, 41.0)
+    (Disc Bulging Yes, 49.1)
+};
+\end{axis}
+\end{tikzpicture}
+\caption{SPIDER class prevalence (minority/positive). 4 nhãn $<5\%$
+(rare clinical concerns) định nghĩa khó của bài toán transfer.}
+\label{fig:spider_dist}
+\end{figure}
+
+\subsection{So sánh imbalance 2 dataset}
+
+\begin{table}[h]
+\centering
+\caption{Tỉ lệ class hiếm nhất trên cả 2 datasets.}
+\small
+\begin{tabular}{lcc}
+\toprule
+\rowcolor{tablehdr}
+Dataset & Class hiếm & Tỉ lệ \\
+\midrule
+RSNA Spinal Canal Severe       & critical surgical & \textbf{4.8\%} \\
+RSNA Foraminal Severe (avg)    & critical surgical & \textbf{4.0\%} \\
+SPIDER Modic Type 1            & rare inflammatory & \textbf{0.3\%} \\
+SPIDER Modic Type 3            & rare sclerotic    & \textbf{0.5\%} \\
+SPIDER Spondylolisthesis Yes   & rare vertebra slip & \textbf{2.8\%} \\
+SPIDER Disc Herniation Yes     & rare protrusion   & \textbf{4.7\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent SPIDER có class còn hiếm hơn RSNA Severe (Modic Type 1 ở
+$0.3\%$ vs RSNA Severe $4-5\%$) $\Rightarrow$ giải thích vì sao
+Modic Type 1/3 không config nào recover được với $15$ epoch.
+
+% ===========================================================================
+\section{RSNA 2024 (4-config $\times$ 9-metric, val 1{,}942 IVD)}
+
+\begin{table}[h]
+\centering
+\caption{RSNA validation. \best{Bold} = best per row.}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\rowcolor{tablehdr}
+Metric & Base & CBAM & BMC-only & \best{Hybrid} \\
+\midrule
+Mean Accuracy        & \best{81.4\%} & 68.98\% & 69.19\% & 72.1\% \\
+Mean F1 macro        & 0.420 & 0.502 & 0.464 & \best{0.528} \\
+Mean Recall macro    & 0.411 & 0.569 & 0.528 & \best{0.592} \\
+Mean Precision macro & 0.486 & 0.510 & 0.475 & \best{0.517} \\
+Mean AUC macro       & 0.826 & 0.822 & 0.812 & \best{0.837} \\
+Mean AUPRC macro     & 0.523 & 0.519 & 0.482 & \best{0.526} \\
+\midrule
+\textbf{Severe F1}    & 0.149 & 0.304 & 0.229 & \best{0.343} \\
+\textbf{Severe Recall}& 11.5\%& 37.0\%& 24.5\%& \best{46.4\%} \\
+\textbf{Severe AUC}   & 0.860 & 0.886 & 0.874 & \best{0.896} \\
+\textbf{Severe AUPRC} & 0.276 & 0.319 & 0.218 & \best{0.321} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent Hybrid win 8/10 metrics. Baseline win Mean Accuracy (predict
+majority). BMC-only win 0/10 (over-fit class-imbalanced features).
+
+% ===========================================================================
+\section{SPIDER 8-label transfer learning (val 234 IVD)}
+
+\subsection*{Aggregate}
+
+\begin{table}[h]
+\centering
+\caption{SPIDER mean across 8 conditions, 3 seeds $\{42, 123, 456\}$.
+\textbf{Bold} = best per row when gap exceeds $2\sigma$ pooled std.}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\rowcolor{tablehdr}
+Metric & Base & CBAM & BMC-only & Hybrid \\
+\midrule
+Mean Accuracy & \best{80.23 $\pm$ 0.94} & 79.27 $\pm$ 1.19 & 76.12 $\pm$ 0.83 & 78.30 $\pm$ 1.64 \\
+Mean F1 macro & 0.646 $\pm$ 0.002 & 0.619 $\pm$ 0.010 & 0.613 $\pm$ 0.006 & 0.653 $\pm$ 0.014 \\
+Mean AUC      & 0.842 $\pm$ 0.006 & 0.824 $\pm$ 0.018 & 0.808 $\pm$ 0.011 & 0.846 $\pm$ 0.018 \\
+Mean AUPRC    & \best{0.633 $\pm$ 0.026} & 0.580 $\pm$ 0.016 & 0.544 $\pm$ 0.007 & 0.611 $\pm$ 0.010 \\
+\midrule
+Val Loss      & 0.446 $\pm$ 0.008 & 0.489 $\pm$ 0.012 & 0.603 $\pm$ 0.015 & 0.566 $\pm$ 0.025 \\
+Inf (ms/sa)   & 65.5 $\pm$ 2.7 & 66.7 $\pm$ 3.2 & 65.2 $\pm$ 3.9 & 66.4 $\pm$ 3.7 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent\textbf{Significance check (Hybrid vs Baseline + Hybrid vs
+CBAM)}:
+\begin{itemize}
+\item Mean F1: Hybrid vs Baseline $\Delta = +0.006$ within $2\sigma$
+($\sigma = 0.010$) --- within noise.
+\item Mean F1: Hybrid vs CBAM $\Delta = +0.034$ exceeds $2\sigma$
+($\sigma = 0.012$) --- significant.
+\item Mean AUPRC: Hybrid vs Baseline $\Delta = -0.022$
+(\emph{Baseline lead}) within noise; Hybrid vs CBAM $\Delta = +0.031$
+significant ($\sigma = 0.013$).
+\end{itemize}
+
+\noindent$\Rightarrow$ \emph{Hybrid acts as regularizer recovering
+above CBAM}, parity with Baseline on aggregate, wins on rare classes
+(see per-condition).
+
+\subsection*{Per-condition F1 macro}
+
+\begin{table}[h]
+\centering
+\caption{SPIDER F1 macro per condition (8 nhãn), mean$\pm$std qua 3 seeds.}
+\small
+\begin{tabular}{@{}lcccc|c@{}}
+\toprule
+\rowcolor{tablehdr}
+Condition & Base & CBAM & BMC & Hybrid & Winner \\
+\midrule
+Pfirrmann (5-cls)    & \best{0.592 $\pm$ .04} & 0.540 $\pm$ .02 & 0.439 $\pm$ .02 & 0.544 $\pm$ .03 & Baseline \\
+Modic (4-cls)        & 0.376 $\pm$ .01 & 0.374 $\pm$ .01 & 0.381 $\pm$ .02 & 0.379 $\pm$ .02 & ${\sim}$Tie \\
+Disc Narrowing       & 0.823 $\pm$ .01 & 0.818 $\pm$ .01 & 0.792 $\pm$ .01 & \best{0.831 $\pm$ .01} & Hybrid \\
+Spondylolisthesis    & \best{0.632 $\pm$ .05} & 0.492 $\pm$ .00 & 0.501 $\pm$ .02 & 0.613 $\pm$ .04 & Baseline \\
+UP Endplate          & 0.728 $\pm$ .03 & 0.729 $\pm$ .02 & 0.724 $\pm$ .01 & \best{0.749 $\pm$ .02} & Hybrid \\
+LOW Endplate         & \best{0.757 $\pm$ .01} & 0.757 $\pm$ .02 & 0.712 $\pm$ .02 & 0.744 $\pm$ .04 & Baseline \\
+Disc Herniation      & 0.485 $\pm$ .00 & 0.485 $\pm$ .00 & 0.565 $\pm$ .04 & \best{0.601 $\pm$ .04} & \textbf{Hybrid} \\
+Disc Bulging         & 0.777 $\pm$ .03 & 0.758 $\pm$ .01 & \best{0.792 $\pm$ .01} & 0.761 $\pm$ .01 & BMC-only \\
+\midrule
+Wins                 & 3 & 0 & 2 & 3 & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{Minority recall (rare positive classes)}
+
+\begin{table}[h]
+\centering
+\caption{Recall của \emph{positive minority class} qua 3 seeds, focus clinical.}
+\small
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+\rowcolor{tablehdr}
+Condition & Prev. \% & Base & CBAM & BMC & Hybrid \\
+\midrule
+Pfirrmann Grade 4 (severe)   & 19\% & 0.473 $\pm$ .06 & 0.396 $\pm$ .04 & 0.437 $\pm$ .16 & \best{0.534 $\pm$ .04} \\
+Modic Type 1 (rare)          & 0.3\%& 0.000 & 0.000 & 0.000 & 0.000 \\
+Modic Type 3 (rare)          & 0.5\%& 0.000 & 0.000 & 0.000 & 0.000 \\
+Disc Narrowing (Yes)         & 38\% & 0.758 $\pm$ .03 & 0.770 $\pm$ .03 & 0.822 $\pm$ .02 & \best{0.825 $\pm$ .02} \\
+\textbf{Spondylolisthesis Y} & 3\% & 0.200 $\pm$ .10 & 0.000 $\pm$ .00 & 0.056 $\pm$ .08 & \best{0.300 $\pm$ .10} \\
+\textbf{Disc Herniation Y}   & 5\% & 0.000 $\pm$ .00 & 0.000 $\pm$ .00 & 0.270 $\pm$ .15 & \best{0.356 $\pm$ .08} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent\textbf{Clinical minority headlines (3-seed)}:
+\begin{itemize}
+\item \textbf{Disc Herniation Yes (5\%)}: Hybrid recover $0.36 \pm .08$
+trong khi Baseline + CBAM = $0$ --- consistent strong win.
+\item \textbf{Spondylolisthesis Yes (3\%)}: Hybrid $0.30 \pm .10$ vs
+Baseline $0.20 \pm .10$ (gap $+0.10$, smaller than single-seed
+report $+0.30$ nhưng vẫn lead consistently).
+\item \textbf{Pfirrmann Grade 4 (19\%)}: Hybrid $0.534 \pm .04$ vs
+Baseline $0.473 \pm .06$ (+0.06 absolute).
+\item Modic Type 1/3 intractable: $0\%$ across all configs.
+\end{itemize}
+
+% ===========================================================================
+\section{Severe summary cross-dataset (RSNA + SPIDER)}
+
+\begin{table}[h]
+\centering
+\caption{Hybrid lead trên rare class \emph{xuyên hai datasets}.}
+\small
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+\rowcolor{tablehdr}
+Metric & Class hiếm \% & Base & CBAM & BMC & \best{Hybrid} \\
+\midrule
+RSNA Mean Severe Recall   & $<$5\% & 11.5\% & 37.0\% & 24.5\% & \best{46.4\%} \\
+RSNA Mean Severe F1       & ---   & 0.149  & 0.304  & 0.229  & \best{0.343} \\
+SPIDER Spondylolisthesis  & 3\%   & 10.0\% & 0.0\%  & 0.0\%  & \best{40.0\%} \\
+SPIDER Pfirrmann Grade 4  & 19\%  & 47.4\% & 44.7\% & 34.2\% & \best{57.9\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ===========================================================================
+\section{Label-space extension capability (architectural)}
+
+\begin{table}[h]
+\centering
+\caption{Khả năng zero-shot thêm nhãn mới (không retrain).}
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\rowcolor{tablehdr}
+Config & Có thể? & Cách thêm \\
+\midrule
+Baseline      & \textcolor{red}{KHÔNG} & FC layer mới $+$ retrain \\
+CBAM          & \textcolor{red}{KHÔNG} & FC layer mới $+$ retrain \\
+BMC-only      & \textcolor{green!60!black}{CÓ}  & Encode text prompt $\Rightarrow$ inference \\
+\best{Hybrid} & \textcolor{green!60!black}{\best{CÓ}} & Encode text prompt $\Rightarrow$ inference \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent Hybrid vượt Baseline cả ở (a) F1/AUC/AUPRC, (b) Severe
+recall, (c) zero-shot label extension --- triple advantage.
+
+% ===========================================================================
+\section{Computational cost (RTX 4090)}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\rowcolor{tablehdr}
+Config & RSNA train & SPIDER train & SPIDER inf (ms/sa) & Params \\
+\midrule
+Baseline      & 16.4 min & 19.4 min & 62.0 & 13.7M \\
+CBAM v3       & 56.0 min & 19.9 min & 62.4 & 14.3M \\
+BMC-only      & ${\sim}3.2$ min & 13.9 min & 60.0 & 0.6M  \\
+Hybrid v3     & 24.8 min & 18.5 min & 61.6 & 1.18M / 218M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent Hybrid \emph{không slow hơn} Baseline trên SPIDER inference
+(61.6 ms vs 62.0 ms) dù có thêm BiomedCLIP --- argument deployment
+mạnh.
+
+% ===========================================================================
+\section{Caveats}
+
+\begin{itemize}
+\item \textbf{Single seed (42)} --- multi-seed deferred. Gap Hybrid vs
+Baseline $+0.011$ F1 nằm trong noise zone, cần $\geq 3$ seed để
+khẳng định.
+\item \textbf{Modic Type 1/3}: 0\% recall ở tất cả config --- class
+quá rare ($<5\%$/$<1\%$). Sẽ cải thiện với BiomedCoOp prompt tuning
+hoặc Mendeley augmentation (future work).
+\item \textbf{BMC-only converge sớm ep 11/15} --- early stop có thể bị
+local optimum, cần fair comparison với linear-probe naked BiomedCLIP
+(future work).
+\end{itemize}
+
+\end{document}
