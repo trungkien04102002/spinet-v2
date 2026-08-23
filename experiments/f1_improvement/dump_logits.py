@@ -102,6 +102,16 @@ def parse_args():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--model", choices=["hybrid", "cbam"], required=True)
     p.add_argument("--data-dir", type=str, default=str(REPO_ROOT / "rsna_preprocessed"))
+    p.add_argument("--split", type=str, default="train",
+                   help="Metadata file stem: reads <data-dir>/<split>_metadata.csv. "
+                        "Use 't1' for the per-side T1 crops. Must match the value "
+                        "train_rsna_hybrid.py was run with, or the patient split "
+                        "will not be reproduced.")
+    p.add_argument("--conditions", nargs="+", default=list(CONDITIONS),
+                   choices=list(CONDITIONS),
+                   help="Conditions to dump. Must match the training run: a T1 "
+                        "foraminal specialist was trained on left_foraminal and "
+                        "right_foraminal only.")
     p.add_argument("--cbam-checkpoint", type=str, required=True,
                    help="CBAM checkpoint. Required for both --model cbam (loaded "
                         "directly) and --model hybrid (frozen backbone the Hybrid "
@@ -129,9 +139,9 @@ def pick_device(requested: str) -> torch.device:
     return torch.device("cpu")
 
 
-def build_val_split(data_dir: str, seed: int, val_split: float):
+def build_val_split(data_dir: str, seed: int, val_split: float, split: str = "train"):
     """Reproduce the exact patient-level split from train_rsna_hybrid.py."""
-    full_dataset = RSNAPreprocessedDataset(data_dir=data_dir, split="train", transform=None)
+    full_dataset = RSNAPreprocessedDataset(data_dir=data_dir, split=split, transform=None)
     unique_patients = full_dataset.metadata["study_id"].unique()
     train_patients, val_patients = train_test_split(
         unique_patients, test_size=val_split, random_state=seed,
@@ -189,9 +199,10 @@ def print_gpu_box_hint(cbam_checkpoint):
     print("      --output experiments/f1_improvement/logits/cbam_seed42_val.npz")
 
 
-def build_text_database(model, device):
+def build_text_database(model, device, conditions=CONDITIONS):
     db = {}
-    for condition, prompts in RSNA_PROMPTS.items():
+    for condition in conditions:
+        prompts = RSNA_PROMPTS[condition]
         texts = [prompts[i] for i in sorted(prompts.keys())]
         embs = model.encode_text(texts).to(device)
         db[condition] = embs
@@ -228,14 +239,14 @@ def load_hybrid_trainable_weights(model, hybrid_checkpoint, device):
 
 
 @torch.no_grad()
-def run_inference_cbam(model, loader, device):
-    all_probs = {c: [] for c in CONDITIONS}
-    all_logits = {c: [] for c in CONDITIONS}
-    all_labels = {c: [] for c in CONDITIONS}
+def run_inference_cbam(model, loader, device, conditions=CONDITIONS):
+    all_probs = {c: [] for c in conditions}
+    all_logits = {c: [] for c in conditions}
+    all_labels = {c: [] for c in conditions}
     for volumes, labels in loader:
         volumes = volumes.unsqueeze(1).to(device)
         outputs = model(volumes)
-        for c in CONDITIONS:
+        for c in conditions:
             logits_np = outputs[c].cpu().numpy()
             probs = torch.softmax(outputs[c], dim=1).cpu().numpy()
             all_probs[c].append(probs)
@@ -245,14 +256,14 @@ def run_inference_cbam(model, loader, device):
 
 
 @torch.no_grad()
-def run_inference_hybrid(model, text_db, loader, device):
-    all_probs = {c: [] for c in CONDITIONS}
-    all_logits = {c: [] for c in CONDITIONS}
-    all_labels = {c: [] for c in CONDITIONS}
+def run_inference_hybrid(model, text_db, loader, device, conditions=CONDITIONS):
+    all_probs = {c: [] for c in conditions}
+    all_logits = {c: [] for c in conditions}
+    all_labels = {c: [] for c in conditions}
     for volumes, labels in loader:
         volumes = volumes.unsqueeze(1).to(device)
         image_emb = model.encode_image(volumes)
-        for c in CONDITIONS:
+        for c in conditions:
             text_embs = text_db[c]
             logits = model.logit_scale.exp().clamp(max=100.0) * (image_emb @ text_embs.T)
             logits_np = logits.cpu().numpy()
@@ -273,6 +284,8 @@ def main():
     print(f"Device:     {device}")
     print(f"Seed:       {args.seed}")
     print(f"Val split:  {args.val_split}")
+    print(f"Split:      {args.split}  (<data-dir>/{args.split}_metadata.csv)")
+    print(f"Conditions: {', '.join(args.conditions)}")
 
     if args.model == "hybrid" and args.hybrid_checkpoint is None:
         print("ERROR: --hybrid-checkpoint is required when --model hybrid")
@@ -280,7 +293,7 @@ def main():
 
     print("\n[1/4] Reconstructing seed-{} patient split...".format(args.seed))
     val_dataset, val_study_ids, n_patients, n_train_p, n_val_p = build_val_split(
-        args.data_dir, args.seed, args.val_split
+        args.data_dir, args.seed, args.val_split, args.split
     )
     print(f"  Total patients: {n_patients}  train: {n_train_p}  val: {n_val_p}")
     print(f"  Val samples (IVDs): {len(val_dataset)}")
@@ -300,15 +313,17 @@ def main():
         print(f"  Loading Hybrid trainable weights from {args.hybrid_checkpoint}")
         model = load_hybrid_trainable_weights(model, args.hybrid_checkpoint, device)
         print("  Pre-computing text embeddings (frozen BiomedCLIP text encoder)...")
-        text_db = build_text_database(model, device)
+        text_db = build_text_database(model, device, args.conditions)
     print(f"  ✓ Model ready ({time.time() - t0:.1f}s)")
 
     print("\n[3/4] Running inference on val split...")
     t0 = time.time()
     if args.model == "cbam":
-        all_probs, all_logits, all_labels = run_inference_cbam(model, val_loader, device)
+        all_probs, all_logits, all_labels = run_inference_cbam(
+            model, val_loader, device, args.conditions)
     else:
-        all_probs, all_logits, all_labels = run_inference_hybrid(model, text_db, val_loader, device)
+        all_probs, all_logits, all_labels = run_inference_hybrid(
+            model, text_db, val_loader, device, args.conditions)
     elapsed = time.time() - t0
     print(f"  ✓ Inference done in {elapsed:.1f}s ({len(val_dataset)/elapsed:.1f} samples/s)")
 
@@ -317,7 +332,7 @@ def main():
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     save_dict = {}
-    for c in CONDITIONS:
+    for c in args.conditions:
         save_dict[f"probs_{c}"] = np.concatenate(all_probs[c], axis=0).astype(np.float32)
         save_dict[f"logits_{c}"] = np.concatenate(all_logits[c], axis=0).astype(np.float32)
         save_dict[f"labels_{c}"] = np.concatenate(all_labels[c], axis=0).astype(np.int64)
@@ -326,6 +341,9 @@ def main():
         "model": args.model,
         "seed": args.seed,
         "val_split": args.val_split,
+        "split": args.split,
+        "conditions": list(args.conditions),
+        "data_dir": str(args.data_dir),
         "cbam_checkpoint": str(args.cbam_checkpoint),
         "hybrid_checkpoint": str(args.hybrid_checkpoint) if args.hybrid_checkpoint else None,
         "slice_strategy": args.slice_strategy,
@@ -338,7 +356,7 @@ def main():
     np.savez_compressed(out_path, **save_dict)
     print(f"  ✓ Saved to {out_path}")
     print(f"  Shapes: " + ", ".join(
-        f"{c}={save_dict[f'probs_{c}'].shape}" for c in CONDITIONS
+        f"{c}={save_dict[f'probs_{c}'].shape}" for c in args.conditions
     ))
     print("\nDone.")
 
