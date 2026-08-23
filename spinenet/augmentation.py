@@ -38,30 +38,47 @@ def _swap_lr_labels(labels):
 
 class RandomHorizontalFlip:
     """
-    Randomly flip the volume horizontally (left-right) AND swap left/right
-    paired labels (e.g. left_foraminal <-> right_foraminal).
+    Flip the volume along its last axis.
 
-    Without label swapping, half of the foraminal training samples would be
-    label-noisy because the flipped image's left foramen is on the right side
-    while the label says "left". This class is the corrected version.
+    **This is NOT a left-right flip.** The volume is ``(9, 112, 224)`` =
+    (sagittal slices, superior-inferior, anterior-posterior), so ``dims=[-1]``
+    mirrors the image **front-to-back**. Left-right is the *slice* axis --
+    see :class:`RandomSliceReverse`.
 
-    The constructor accepts ``swap_labels=False`` for v2 reproducibility:
-    that legacy mode does NOT swap labels on flip, reproducing the original
-    label-noise behavior. The noise (~25 % of foraminal samples flipped
-    without label swap, given p=0.5) acts as accidental regularization that
-    helped v2 break the Severe-foraminal F1=0 threshold. v3 with
-    ``swap_labels=True`` (default) is mathematically correct but loses that
-    free regularization, so foraminal-Severe may need stronger oversampling
-    or a smaller focal_gamma to break threshold.
+    Verified against ``train_label_coordinates.csv``: within one study the
+    annotated y runs 228 (L1/L2) to 484 (L5/S1), so y is superior-inferior,
+    while x moves only 322 -> 353 across the whole lumbar spine, tracking the
+    lordotic curve -- so x is anterior-posterior.
+
+    Two consequences, both of which this class now guards against:
+
+    1. ``swap_labels=True`` swaps ``left_*``/``right_*`` for an operation that
+       has nothing to do with laterality, which **injects label noise**. The
+       original docstring claimed the flip was left-right and used that to
+       justify the swap; the premise was wrong. Passing ``swap_labels=True``
+       now raises unless ``allow_wrong_axis_swap=True`` is also passed, which
+       exists only to reproduce runs that were configured that way.
+    2. The flip itself puts the spinal canal *anterior* to the disc, which is
+       anatomically impossible. Every published run applied it to 50% of
+       training samples, so it is kept (default on) for reproducibility, but
+       ``p=0.0`` disables it and is worth measuring.
     """
-    def __init__(self, p=0.5, swap_labels=True):
+    def __init__(self, p=0.5, swap_labels=False, allow_wrong_axis_swap=False):
         """
         Args:
-            p: Probability of applying the flip (default: 0.5)
-            swap_labels: If True (default), swap left_*/right_* paired labels
-                on flip. Set False to reproduce the v2 buggy behavior — useful
-                only for ablation/reproducibility experiments.
+            p: Probability of applying the flip (default: 0.5).
+            swap_labels: Swap left_*/right_* paired labels on flip. Defaults to
+                False now that the axis is known to be anterior-posterior.
+            allow_wrong_axis_swap: Escape hatch to permit ``swap_labels=True``
+                for reproducing an earlier configuration. Do not use in new runs.
         """
+        if swap_labels and not allow_wrong_axis_swap:
+            raise ValueError(
+                "RandomHorizontalFlip flips the anterior-posterior axis, not "
+                "left-right, so swapping left_*/right_* labels here corrupts "
+                "them. Use RandomSliceReverse for laterality augmentation. "
+                "Pass allow_wrong_axis_swap=True only to reproduce an old run."
+            )
         self.p = p
         self.swap_labels = swap_labels
 
@@ -69,15 +86,53 @@ class RandomHorizontalFlip:
         """
         Args:
             volume: Tensor of shape (9, 112, 224) or (C, D, H, W)
-            labels: Optional dict; left_*/right_* pairs are swapped on flip
-                when ``swap_labels=True`` (default).
+            labels: Optional dict, passed through unchanged unless the
+                deprecated ``swap_labels`` was explicitly allowed.
         Returns:
-            (flipped_volume, maybe_swapped_labels) tuple
+            (flipped_volume, labels) tuple
         """
         if random.random() < self.p:
             volume = torch.flip(volume, dims=[-1])
             if self.swap_labels:
                 labels = _swap_lr_labels(labels)
+        return volume, labels
+
+
+class RandomSliceReverse:
+    """
+    Reverse the sagittal slice order AND swap left/right paired labels.
+
+    This is the anatomically correct laterality augmentation for a sagittal
+    stack: left-right is the slice axis, so reversing the slices mirrors the
+    patient left-to-right, and the left foramen genuinely becomes the right one.
+    The 2nd place RSNA 2024 solution uses exactly this pairing (its
+    ``reverse_labels`` flag) as its foraminal augmentation.
+
+    It is a no-op for laterality-free conditions: ``spinal_canal`` sits on the
+    midline and has no left/right mate to swap, so only the image changes.
+
+    Not applied in any published run -- default off wherever it is wired in, so
+    turning it on is a measurable single change.
+    """
+    def __init__(self, p=0.5):
+        """
+        Args:
+            p: Probability of applying the reversal (default: 0.5).
+        """
+        self.p = p
+
+    def __call__(self, volume, labels=None):
+        """
+        Args:
+            volume: Tensor of shape (9, 112, 224) or (D, H, W) -- dim 0 is the
+                sagittal slice axis.
+            labels: Optional dict; left_*/right_* pairs are swapped on reversal.
+        Returns:
+            (reversed_volume, swapped_labels) tuple
+        """
+        if random.random() < self.p:
+            volume = torch.flip(volume, dims=[0])
+            labels = _swap_lr_labels(labels)
         return volume, labels
 
 
@@ -256,40 +311,56 @@ class Compose:
         return volume, labels
 
 
-def get_training_augmentation(mode='medium', hflip_swap_labels=True):
+def get_training_augmentation(mode='medium', hflip_swap_labels=False,
+                              ap_flip=True, slice_reverse=False):
     """
     Get predefined augmentation pipeline for training.
 
+    Defaults reproduce every published run byte-for-byte: the anterior-posterior
+    flip stays on at p=0.5, label swapping stays off, and slice reversal stays
+    off. Each correction is therefore a single flag you can measure on its own.
+
     Args:
-        mode: 'light', 'medium', or 'heavy'
-        hflip_swap_labels: If True (default), HFlip swaps left_*/right_*
-            labels (correct behavior). If False, reproduces v2 buggy
-            label-noise behavior — useful only for ablation/reproducibility.
+        mode: 'light', 'medium', or 'heavy'.
+        hflip_swap_labels: Deprecated. The flip is anterior-posterior, so
+            swapping left/right labels with it corrupts them. Kept only so an
+            old configuration can be reproduced explicitly; raises otherwise.
+        ap_flip: Keep the anterior-posterior flip (default True = current
+            behaviour). Set False to drop an augmentation that mirrors the spine
+            front-to-back, which no anatomy produces.
+        slice_reverse: Add the correct laterality augmentation -- reverse the
+            sagittal slice order and swap left_*/right_* labels together
+            (default False = current behaviour).
 
     Returns:
         Compose object with augmentation transforms
     """
+    if mode not in ('light', 'medium', 'heavy'):
+        raise ValueError(f"Unknown mode: {mode}. Choose 'light', 'medium', or 'heavy'.")
+
+    geometric = []
+    if ap_flip:
+        geometric.append(RandomHorizontalFlip(
+            p=0.5, swap_labels=hflip_swap_labels,
+            allow_wrong_axis_swap=hflip_swap_labels))
+    if slice_reverse:
+        geometric.append(RandomSliceReverse(p=0.5))
+
     if mode == 'light':
-        return Compose([
-            RandomHorizontalFlip(p=0.5, swap_labels=hflip_swap_labels),
+        return Compose(geometric + [
             RandomBrightnessContrast(brightness_limit=0.1, contrast_limit=0.1, p=0.3),
         ])
     elif mode == 'medium':
-        return Compose([
-            RandomHorizontalFlip(p=0.5, swap_labels=hflip_swap_labels),
+        return Compose(geometric + [
             RandomRotation(degrees=10),
             RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.5),
             RandomGaussianNoise(std_limit=0.05, p=0.3),
         ])
-    elif mode == 'heavy':
-        return Compose([
-            RandomHorizontalFlip(p=0.5, swap_labels=hflip_swap_labels),
-            RandomRotation(degrees=15),
-            RandomBrightnessContrast(brightness_limit=0.3, contrast_limit=0.3, p=0.7),
-            RandomGaussianNoise(std_limit=0.08, p=0.5),
-        ])
-    else:
-        raise ValueError(f"Unknown mode: {mode}. Choose 'light', 'medium', or 'heavy'.")
+    return Compose(geometric + [
+        RandomRotation(degrees=15),
+        RandomBrightnessContrast(brightness_limit=0.3, contrast_limit=0.3, p=0.7),
+        RandomGaussianNoise(std_limit=0.08, p=0.5),
+    ])
 
 
 def _resolve_get_labels(dataset):

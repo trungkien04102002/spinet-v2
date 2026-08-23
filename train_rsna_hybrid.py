@@ -128,14 +128,32 @@ def parse_args():
     parser.add_argument('--augmentation', type=str, default='medium',
                         choices=['none', 'light', 'medium', 'heavy'],
                         help='Augmentation strength')
+    # NOTE: this used to default to True and its help text had the two modes
+    # backwards. RandomHorizontalFlip flips dims=[-1], which on a (9,112,224)
+    # sagittal crop is the ANTERIOR-POSTERIOR axis, not left-right (laterality
+    # is the slice axis). Swapping left_*/right_* on that flip therefore
+    # corrupts the labels rather than correcting them. Default is now False,
+    # which is what every published run passed explicitly via
+    # --no-hflip-swap-labels, so defaults now reproduce those runs.
     parser.add_argument('--hflip-swap-labels', dest='hflip_swap_labels',
-                        action='store_true', default=True,
-                        help='HFlip swaps left_*/right_* labels (default, correct)')
+                        action='store_true', default=False,
+                        help='DEPRECATED and label-corrupting: swap left_*/right_* '
+                             'on the anterior-posterior flip. Only for reproducing '
+                             'a run that was configured this way.')
     parser.add_argument('--no-hflip-swap-labels', dest='hflip_swap_labels',
                         action='store_false',
-                        help='Reproduce v2 buggy behavior — HFlip flips image '
-                             'WITHOUT swapping labels (label-noise as accidental '
-                             'regularization that helps foraminal Severe break threshold).')
+                        help='Do not swap labels on the AP flip (default, correct).')
+    parser.add_argument('--no-ap-flip', dest='ap_flip', action='store_false',
+                        default=True,
+                        help='Drop the anterior-posterior flip entirely. It mirrors '
+                             'the spine front-to-back, placing the canal anterior to '
+                             'the disc, which no anatomy produces. On by default '
+                             'because every published run used it.')
+    parser.add_argument('--slice-reverse', dest='slice_reverse',
+                        action='store_true', default=False,
+                        help='Add the correct laterality augmentation: reverse the '
+                             'sagittal slice order AND swap left_*/right_* labels. '
+                             'Off by default; never used in a published run.')
     parser.add_argument('--oversample-factor', type=int, default=5,
                         help='Oversampling factor for minority classes')
 
@@ -431,12 +449,16 @@ def main():
         train_transform = get_training_augmentation(
             mode=args.augmentation,
             hflip_swap_labels=args.hflip_swap_labels,
+            ap_flip=args.ap_flip,
+            slice_reverse=args.slice_reverse,
         )
-        if not args.hflip_swap_labels:
-            print(f"  ⚠ Augmentation: {args.augmentation} (LEGACY v2 buggy mode — "
-                  "HFlip does NOT swap labels)")
-        else:
-            print(f"  ✓ Augmentation: {args.augmentation} (HFlip with label swap)")
+        geo = []
+        geo.append("AP-flip on" if args.ap_flip else "AP-flip OFF")
+        if args.slice_reverse:
+            geo.append("slice-reverse + L/R swap ON")
+        if args.hflip_swap_labels:
+            geo.append("!! AP-flip swaps L/R labels (corrupting)")
+        print(f"  ✓ Augmentation: {args.augmentation} ({', '.join(geo)})")
         augmented_full_dataset = RSNAPreprocessedDataset(
             data_dir=args.data_dir,
             split='train',

@@ -95,14 +95,26 @@ def parse_args():
     parser.add_argument('--augmentation', type=str, default='medium',
                         choices=['none', 'light', 'medium', 'heavy'],
                         help='Augmentation strength')
+    # See the matching note in train_rsna_hybrid.py: the flip is
+    # anterior-posterior, not left-right, so swapping L/R labels on it corrupts
+    # them. Default flipped to False, which reproduces every published run.
     parser.add_argument('--hflip-swap-labels', dest='hflip_swap_labels',
-                        action='store_true', default=True,
-                        help='HFlip swaps left_*/right_* labels (default, correct)')
+                        action='store_true', default=False,
+                        help='DEPRECATED and label-corrupting: swap left_*/right_* '
+                             'on the anterior-posterior flip. Reproduction only.')
     parser.add_argument('--no-hflip-swap-labels', dest='hflip_swap_labels',
                         action='store_false',
-                        help='Reproduce v2 buggy behavior — HFlip flips image '
-                             'WITHOUT swapping labels (label-noise as accidental '
-                             'regularization). Use only for ablation studies.')
+                        help='Do not swap labels on the AP flip (default, correct).')
+    parser.add_argument('--no-ap-flip', dest='ap_flip', action='store_false',
+                        default=True,
+                        help='Drop the anterior-posterior flip entirely (it mirrors '
+                             'the spine front-to-back). On by default for parity '
+                             'with published runs.')
+    parser.add_argument('--slice-reverse', dest='slice_reverse',
+                        action='store_true', default=False,
+                        help='Reverse sagittal slice order AND swap left_*/right_* '
+                             'labels -- the correct laterality augmentation. Off by '
+                             'default; never used in a published run.')
     parser.add_argument('--oversample-factor', type=int, default=5,
                         help='Oversampling factor for minority classes')
 
@@ -331,12 +343,15 @@ def main():
         train_transform = get_training_augmentation(
             mode=args.augmentation,
             hflip_swap_labels=args.hflip_swap_labels,
+            ap_flip=args.ap_flip,
+            slice_reverse=args.slice_reverse,
         )
-        if not args.hflip_swap_labels:
-            print(f"  ⚠ Augmentation: {args.augmentation} (LEGACY v2 buggy mode — "
-                  "HFlip does NOT swap labels)")
-        else:
-            print(f"  ✓ Augmentation: {args.augmentation} (HFlip with label swap)")
+        geo = ["AP-flip on" if args.ap_flip else "AP-flip OFF"]
+        if args.slice_reverse:
+            geo.append("slice-reverse + L/R swap ON")
+        if args.hflip_swap_labels:
+            geo.append("!! AP-flip swaps L/R labels (corrupting)")
+        print(f"  ✓ Augmentation: {args.augmentation} ({', '.join(geo)})")
         # Create augmented dataset by wrapping the base dataset
         augmented_full_dataset = RSNAPreprocessedDataset(
             data_dir=args.data_dir,
