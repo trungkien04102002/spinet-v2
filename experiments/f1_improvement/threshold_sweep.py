@@ -93,6 +93,33 @@ COST_WEIGHTS = np.array([1.0, 2.0, 4.0])
 # argmax sanity check can be compared 1:1 against SOURCE_OF_TRUTH.md).
 # --------------------------------------------------------------------------
 
+def select_conditions(npz_path, requested=None):
+    """Narrow the module-level CONDITIONS to what this dump supports.
+
+    Every metric in this script averages over CONDITIONS, so a dump missing a
+    condition (a T1 foraminal specialist has no spinal_canal) must not leave a
+    stale name in the list: it would KeyError on load, or silently average over
+    a condition that was never predicted.
+    """
+    global CONDITIONS
+    d = np.load(npz_path, allow_pickle=True)
+    present = [c for c in CONDITIONS if f"probs_{c}" in d.files]
+    if not present:
+        raise SystemExit(f"{npz_path} contains no known condition (probs_* keys: "
+                         f"{[k for k in d.files if k.startswith('probs_')]})")
+    if requested:
+        missing = [c for c in requested if c not in present]
+        if missing:
+            raise SystemExit(f"--conditions asked for {missing}, but {npz_path} "
+                             f"only contains {present}")
+        present = [c for c in present if c in requested]
+    if present != CONDITIONS:
+        print(f"Conditions: {', '.join(present)}  "
+              f"(dump does not cover {[c for c in CONDITIONS if c not in present]})")
+    CONDITIONS = present
+    return present
+
+
 def load_npz(path):
     d = np.load(path, allow_pickle=True)
     probs = {c: d[f"probs_{c}"] for c in CONDITIONS}
@@ -329,11 +356,20 @@ def main():
                           "to diff the reconstructed argmax metrics against.")
     ap.add_argument("--tau-grid", type=float, nargs="+", default=[0.5, 1.0, 1.5, 2.0])
     ap.add_argument("--output-dir", type=str, default=str(Path(__file__).resolve().parent / "results"))
+    ap.add_argument("--conditions", nargs="+", default=None,
+                     help="Conditions to sweep. Default: every condition the dump "
+                          "actually contains, which is all three for a standard "
+                          "run and the two foraminal ones for a T1 specialist.")
     args = ap.parse_args()
 
     print("=" * 78)
     print("Experiment #0 — threshold_sweep.py (post-hoc, no retraining)")
     print("=" * 78)
+
+    # Narrow the module-level condition list ONCE, before anything reads it, so
+    # every downstream metric (macro_f1, severe_f1, ...) averages over exactly
+    # the conditions this dump has. A T1 specialist dump has no spinal_canal.
+    select_conditions(args.npz, args.conditions)
 
     probs, logits, labels, study_id, meta = load_npz(args.npz)
     print(f"Loaded: {args.npz}")
@@ -520,8 +556,18 @@ def main():
     # ---------------- save ----------------
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    # The tag must separate runs that differ only by data source, or a T1
+    # specialist dump and a T2 dump (both "hybrid", both seed 42) silently
+    # overwrite each other's results in a shared --output-dir.
     tag = f"{meta.get('model', 'unknown')}_seed{meta.get('seed', 'na')}"
+    split_tag = meta.get("split", "train")
+    if split_tag and split_tag != "train":
+        tag += f"_{split_tag}"
+    if len(CONDITIONS) < 3:
+        tag += "_" + "_".join(c.split("_")[0] for c in CONDITIONS)
     out_path = out_dir / f"{tag}_threshold_results.json"
+    if out_path.exists():
+        print(f"  NOTE: overwriting existing {out_path.name}")
     with open(out_path, "w") as f:
         json.dump(results, f, indent=2, default=lambda o: o.tolist() if isinstance(o, np.ndarray) else str(o))
     print(f"\nSaved full results to {out_path}")
