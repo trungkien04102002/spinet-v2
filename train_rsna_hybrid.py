@@ -44,7 +44,8 @@ from tqdm import tqdm
 # SpineNetV2 imports
 from spinenet.models.grading_hybrid import SpineNetHybrid
 from spinenet.losses import FocalLoss, UncertaintyLoss, compute_class_weights
-from spinenet.augmentation import get_training_augmentation, OversamplingDataset
+from spinenet.augmentation import (assert_slice_reverse_is_safe,
+                                   get_training_augmentation, OversamplingDataset)
 from spinenet.metrics_logger import MetricsLogger
 from spinenet.auc_metrics import (
     aggregate_overall_auprc,
@@ -530,19 +531,7 @@ def main():
     # Detect per-side data rather than trusting the caller: on per-side crops
     # every row has exactly one of left/right labelled and the other at -1.
     if args.slice_reverse:
-        lr = full_dataset.metadata[['left_foraminal', 'right_foraminal']]
-        one_side_only = ((lr != -1).sum(axis=1) == 1).mean()
-        if one_side_only > 0.9:
-            raise SystemExit(
-                "--slice-reverse is unsafe on this dataset.\n"
-                f"  {one_side_only:.1%} of rows are labelled on exactly one side, "
-                "so these are PER-SIDE crops.\n"
-                "  Reversing their slice order does not move the foramen to the "
-                "other side, so swapping\n"
-                "  left/right labels would corrupt them. Use --slice-reverse only "
-                "with the midline\n"
-                "  Sagittal T2 crops (--data-dir rsna_preprocessed --split train)."
-            )
+        assert_slice_reverse_is_safe(full_dataset.metadata)
 
     if args.fast_dev:
         train_indices = _stratified_head(full_dataset.metadata, train_indices,
@@ -714,6 +703,19 @@ def main():
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         start_epoch = checkpoint['epoch'] + 1
         best_severe_f1 = checkpoint.get('best_severe_f1', -1.0)
+
+        # best_score is what actually gates "is this epoch the new best". Leaving
+        # it at -inf would make the first resumed epoch overwrite the saved best
+        # model even if it is worse. Restore it when the checkpoint was selected
+        # by the same metric; otherwise say so rather than comparing two scales.
+        prev_select = checkpoint.get('select_by', 'severe_f1')
+        if prev_select == args.select_by:
+            best_score = checkpoint.get('best_score', best_severe_f1)
+            print(f"  ✓ Restored best {args.select_by} = {best_score:.4f}")
+        else:
+            print(f"  ⚠ Checkpoint was selected by '{prev_select}' but this run uses "
+                  f"'{args.select_by}'. Starting the best-epoch race over, so the "
+                  f"first epoch will be saved as best.")
         print(f"  ✓ Resumed from epoch {start_epoch}")
 
     # [7/7] Training loop
@@ -911,6 +913,11 @@ def main():
                 'val_loss': val_loss,
                 'val_accuracies': val_accuracies,
                 'best_severe_f1': best_severe_f1,
+                # Needed so --resume can restore the best-epoch race on the same
+                # scale it was run on; without these the first resumed epoch
+                # always overwrites the saved best.
+                'best_score': best_score,
+                'select_by': args.select_by,
                 'args': vars(args),
             }, best_path)
             print(f"\n✓ Saved best model to {best_path} "
@@ -961,7 +968,7 @@ def main():
 
         # Save periodic checkpoint
         if (epoch + 1) % args.save_freq == 0:
-            checkpoint_path = save_dir / f'checkpoint_hybrid_epoch_{epoch+1}.pth'
+            checkpoint_path = save_dir / f'checkpoint_hybrid{run_tag}_epoch_{epoch+1}.pth'
             trainable_state = {
                 k: v for k, v in model.state_dict().items()
                 if 'cbam.' not in k and 'biomedclip.' not in k
@@ -974,6 +981,11 @@ def main():
                 'val_loss': val_loss,
                 'val_accuracies': val_accuracies,
                 'best_severe_f1': best_severe_f1,
+                # Needed so --resume can restore the best-epoch race on the same
+                # scale it was run on; without these the first resumed epoch
+                # always overwrites the saved best.
+                'best_score': best_score,
+                'select_by': args.select_by,
                 'args': vars(args),
             }, checkpoint_path)
             print(f"✓ Saved checkpoint to {checkpoint_path}")

@@ -35,7 +35,8 @@ from tqdm import tqdm
 # SpineNetV2 imports
 from spinenet.models.grading_attention import GradingModelWithCBAM
 from spinenet.losses import FocalLoss, UncertaintyLoss, compute_class_weights
-from spinenet.augmentation import get_training_augmentation, OversamplingDataset
+from spinenet.augmentation import (assert_slice_reverse_is_safe,
+                                   get_training_augmentation, OversamplingDataset)
 from spinenet.metrics_logger import MetricsLogger
 from spinenet.auc_metrics import (
     aggregate_overall_auprc,
@@ -337,6 +338,9 @@ def main():
 
     print(f"  ✓ Train: {len(base_train_dataset)} samples ({len(train_patients)} patients)")
     print(f"  ✓ Val:   {len(base_val_dataset)} samples ({len(val_patients)} patients)")
+
+    if args.slice_reverse:
+        assert_slice_reverse_is_safe(full_dataset.metadata)
 
     # Apply augmentation to training set
     if args.augmentation != 'none':

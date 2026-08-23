@@ -146,6 +146,35 @@ class RandomSliceReverse:
         return volume, labels
 
 
+def assert_slice_reverse_is_safe(metadata, flag_name="--slice-reverse"):
+    """Raise unless `metadata` describes crops that span the midline.
+
+    :class:`RandomSliceReverse` swaps the left/right labels along with the image,
+    which is only correct when reversing the slice order really does exchange the
+    two sides. It does for the Sagittal T2 crop (centred on the spinal canal), and
+    it does not for the per-side Sagittal T1 crops (each centred on one foramen).
+
+    Detected from the data rather than trusted from a flag: on per-side crops
+    every row is labelled on exactly one side, with the other at -1. Measured
+    2026-08-22: 100.0% of T1 rows versus 0.3% of T2 rows, so the 90% threshold
+    sits far from both.
+    """
+    cols = ["left_foraminal", "right_foraminal"]
+    if not all(c in metadata.columns for c in cols):
+        return
+    one_side_only = ((metadata[cols] != -1).sum(axis=1) == 1).mean()
+    if one_side_only > 0.9:
+        raise SystemExit(
+            f"{flag_name} is unsafe on this dataset.\n"
+            f"  {one_side_only:.1%} of rows are labelled on exactly one side, so "
+            "these are PER-SIDE crops.\n"
+            "  Reversing their slice order does not move the foramen to the other "
+            "side, so swapping\n"
+            "  left/right labels would corrupt them. Use it only with the midline "
+            "Sagittal T2 crops."
+        )
+
+
 class RandomRotation:
     """
     Randomly rotate the volume by a small angle.
