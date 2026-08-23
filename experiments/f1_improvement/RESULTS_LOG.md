@@ -944,3 +944,60 @@ variant moved CV by 0.01-0.02 without helping the ensemble.
 against our 1,973. If the extra 716 carry the **2-of-3 adjudicated** grades, the oracle
 ceiling rises from ~0.66 to ~0.87 and that is worth more than any architecture change
 buyable with the same GPU hours.
+
+---
+
+## Run (a) vs (b) re-tested properly, 2026-08-23 — the F1 verdict does not hold up
+
+Logits for both runs were dumped on the Mac (CPU, ~30 min each) and compared with a
+**paired** patient-clustered bootstrap, 1500 draws, seed 42, 395 patients / 1942 rows.
+Pairing matters: both models saw the same patients, so most of the sampling error is
+shared and cancels, making the paired interval several times narrower than either
+model's own.
+
+| metric | (a) concat | (b) gated | diff | 95% CI | p | verdict |
+|---|---|---|---|---|---|---|
+| Severe F1 | 0.3216 | 0.2954 | -0.0260 | [-0.060, +0.008] | **0.125** | **no difference** |
+| Severe AUPRC | 0.3043 | 0.2889 | -0.0144 | [-0.035, +0.005] | 0.152 | no difference |
+| Macro AUPRC | 0.5175 | 0.5115 | -0.0057 | [-0.014, +0.003] | 0.157 | no difference |
+| **QWK** | **0.4537** | 0.4272 | -0.0265 | [-0.041, -0.012] | **0.000** | **(a) better** |
+| **weighted log loss** | **0.7540** | 0.7775 | +0.0236 | [+0.018, +0.028] | **0.000** | **(a) better** |
+| Severe precision | 0.2798 | 0.2243 | -0.0557 | [-0.089, -0.023] | 0.000 | (a) better |
+| Severe recall | 0.3861 | 0.4393 | +0.0536 | [+0.011, +0.097] | 0.013 | (b) better |
+| Severe AUC | 0.8812 | 0.8858 | +0.0046 | [-0.001, +0.011] | 0.112 | no difference |
+
+### Correction
+
+Everything written above about run (b) leads with "gated loses by 0.026 Severe F1".
+**That difference is not resolvable on this validation set** (p = 0.125). It was
+reported all through 2026-08-22 as though it were settled.
+
+The conclusion survives, but the evidence for it is different from what was claimed:
+
+- **Ranking is tied.** Severe AUPRC, macro AUPRC and Severe AUC all straddle zero.
+  Gated is not worse at ordering cases by severity.
+- **Ordinal agreement and calibration are genuinely worse**: QWK -0.027 and weighted
+  log loss +0.024, both p < 0.001. These are the real differences.
+- **It trades precision for recall**: -0.056 precision for +0.054 recall. That trade is
+  what produced the F1 gap, and F1 is exactly the metric that cannot resolve it.
+- The strongest single piece of evidence remains the **epoch-wise record: 19 of 20
+  epochs below (a)** -- 20 paired observations, consistent in sign. That is a different
+  and better argument than the gap between two best checkpoints.
+
+### Calibration explains most of the log-loss gap, but not the QWK gap
+
+Cross-fitted temperature scaling, over patient halves:
+
+| weighted log loss | raw | calibrated |
+|---|---|---|
+| (a) concat | 0.7540 | **0.6870** |
+| (b) gated | 0.7775 | **0.6823** |
+
+After calibration the two are level (0.687 vs 0.682), so most of gated's log-loss
+deficit was miscalibration rather than a weaker model. QWK is untouched by temperature
+(T cannot move an argmax), so the -0.027 QWK gap is real and stands.
+
+**Recommendation is unchanged -- use `concat_mlp`, drop `gated` -- but the reason is now
+QWK and precision, not Severe F1.**
+
+Artifacts: `experiments/f1_improvement/logits/{rebase_a,gated_b}_seed42_val.npz`.
