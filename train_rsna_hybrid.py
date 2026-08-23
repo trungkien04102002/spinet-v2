@@ -737,6 +737,19 @@ def main():
         _tag_parts.append(args.fusion)
     if args.modality_dropout > 0:
         _tag_parts.append(f"mdrop{args.modality_dropout:g}")
+    # A foraminal-only T1 run and a full three-condition T2 run would otherwise
+    # both write best_model_hybrid.pth into the same directory and silently
+    # overwrite each other -- the checkpoint equivalent of the appending CSV.
+    if len(conditions) != len(ALL_CONDITIONS):
+        _tag_parts.append("_".join(c.split('_')[0] for c in conditions))
+    if args.split != 'train':
+        _tag_parts.append(args.split)
+    if args.select_by != 'severe_f1':
+        _tag_parts.append(args.select_by)
+    if args.slice_reverse:
+        _tag_parts.append("slicerev")
+    if not args.ap_flip:
+        _tag_parts.append("noapflip")
     run_tag = "_" + "_".join(_tag_parts) if _tag_parts else ""
     metrics_logger = MetricsLogger(save_dir=save_dir, prefix=f"hybrid{run_tag}")
 
