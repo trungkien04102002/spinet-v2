@@ -1001,3 +1001,79 @@ deficit was miscalibration rather than a weaker model. QWK is untouched by tempe
 QWK and precision, not Severe F1.**
 
 Artifacts: `experiments/f1_improvement/logits/{rebase_a,gated_b}_seed42_val.npz`.
+
+---
+
+## Run (c) — T2 baseline on the CORRECT sqrt init (2026-08-23, DONE 20/20 epochs)
+
+Box: Vast `ssh -p 45927 root@115.73.217.180`, RTX 4090, branch
+`fix/foraminal-crop-and-aug` @ `614ca4d`. Artifacts in `experiments/hybrid/t2_sqrt/`
+and `checkpoints/t2_sqrt_baseline/`.
+
+The point of this run: runs (a) and (b) were warm-started from
+`checkpoints/rsna/best_model_attention.pth`, which is the **no-class-weight** ablation,
+while the published Hybrid used a `sqrt` backbone. `checkpoints/fresh_cbam/
+best_model_attention_sqrt_cw_e20.pth` is the same recipe family (`class_weight_mode=sqrt`,
+`oversample_factor=5`, epoch 19 vs the published epoch 14). This run repeats the
+published recipe on that init, everything else identical: seed 42, same split
+(7806/1942 rows, 1578/395 patients), same class weights (0.389/0.918/1.693),
+`concat_mlp`, focal 2.0 + SupCon 0.1 + uncertainty + sqrt + oversample x3 + medium aug.
+Only `--select-by severe_auprc` differs from the published run's implicit `severe_f1`.
+
+### Against the published Phase 2 (seed 42, its own best epoch 10)
+
+| metric | Phase 2 | run (c), ep5 | delta |
+|---|---|---|---|
+| Mean F1 macro | 0.5277 | **0.5286** | +0.0009 |
+| Mean Accuracy | 0.7208 | **0.7318** | +0.0110 |
+| Severe F1 | 0.3434 | **0.3696** | +0.0262 |
+| Severe Recall | 0.4640 | **0.4889** | +0.0249 |
+| Severe Precision | 0.2732 | **0.3014** | +0.0282 |
+| **Severe AUPRC** | 0.3211 | **0.3696** | **+0.0485** |
+| Severe AUC | 0.8964 | **0.9006** | +0.0042 |
+| Macro AUPRC | 0.5258 | **0.5364** | +0.0106 |
+| val_loss | 0.1436 | 0.1435 | -0.0001 |
+| Macro AUC | 0.8371 | 0.8368 | -0.0003 |
+
+Nine of ten better; the tenth is a 0.0003 tie. Both recall AND precision improve, so
+this is not the threshold trade seen in run (b).
+
+### The result is solid on AUPRC and fragile on F1
+
+| | best | plateau (last 5) | min over 20 | SD |
+|---|---|---|---|---|
+| Severe AUPRC | 0.3696 (ep5) | **0.3543** | **0.3529** | **0.0048** |
+| Severe F1 | 0.3901 (ep15) | 0.3118 | 0.2685 | 0.0286 |
+
+**No epoch of the 20 had Severe AUPRC below 0.3529** — the worst epoch of this run still
+beats the published *peak* of 0.3211 by +0.032. That is the strongest evidence here: not
+one lucky epoch but the whole curve sitting higher, with a spread of 0.005.
+
+F1 tells a weaker story. Its plateau (0.3118) is **below** the published peak (0.3434),
+and only beats the published *plateau* (0.2969) by +0.015. Epochs 16-20 drifted down to
+0.306-0.317. Across the run F1 spans 0.2685 to 0.3901 -- a range of **0.121 within one
+run** -- and its SD is 6x AUPRC's.
+
+So: report +0.049 Severe AUPRC, not the +0.047 that best-epoch F1 would suggest. The
+AUPRC number is measurable; the F1 number is inside the noise this file has documented
+repeatedly.
+
+### Foraminal: the init hypothesis holds, but less strongly than mid-run
+
+At the saved epoch, foraminal Severe F1 is **0.289 / 0.249** against the published
+0.278 / 0.252 -- a tie. Mid-run it reached 0.29-0.32 (epochs 10-15), which looked much
+stronger at the time. What is unambiguous is the contrast with run (a) on the wrong
+init, which peaked at 0.203 / 0.201, and which produced exactly 0.000 at epoch 1 where
+this run produced 0.136 / 0.157.
+
+### What this means for the earlier conclusions
+
+**Runs (a) and (b) were both handicapped by the wrong init.** The gated-vs-concat
+comparison of 2026-08-22 remains internally valid -- both arms shared the same init --
+but it was run on a depressed baseline, so `gated` should be re-tested on the sqrt init
+before it is written off. That run is queued.
+
+**This is a baseline correction, not a contribution.** "We used the right checkpoint" is
+not a thesis result. Its value is that every later claim is now measured against a
+baseline that is not broken -- which is exactly the kind of thing an examiner would
+otherwise find.
