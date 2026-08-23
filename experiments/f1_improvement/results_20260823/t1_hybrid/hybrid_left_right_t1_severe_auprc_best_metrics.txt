@@ -1,0 +1,58 @@
+=== BEST MODEL METRICS (hybrid_left_right_t1_severe_auprc) ===
+Saved at:  2026-08-23T12:49:10
+Epoch:     14
+Train Loss: 0.1759
+Val Loss:   0.1805
+Avg Severe F1: 0.2574
+
+Validation Accuracies:
+  left_foraminal     0.6071
+  right_foraminal    0.5771
+
+Per-Class Metrics:
+
+  left_foraminal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.959  0.579  0.722     1528
+    Moderate         0.308  0.801  0.445      367
+    Severe           0.204  0.250  0.225       80
+
+  right_foraminal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.964  0.529  0.683     1508
+    Moderate         0.303  0.800  0.440      385
+    Severe           0.231  0.389  0.290       72
+
+AUC / AUPRC / Brier (per class, one-vs-rest):
+
+  left_foraminal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.827  0.944  0.255     1528
+    Moderate         0.750  0.364  0.189      367
+    Severe           0.872  0.254  0.052       80
+    macro            0.816  0.521
+
+  right_foraminal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.828  0.939  0.272     1508
+    Moderate         0.718  0.336  0.200      385
+    Severe           0.899  0.287  0.052       72
+    macro            0.815  0.521
+
+AUC / AUPRC overall (averaged across 3 conditions):
+  macro AUC      : 0.816
+  macro AUPRC    : 0.521
+  popular AUPRC  : 0.942  (Normal/Mild)
+  rare    AUPRC  : 0.310  (Moderate + Severe)
+  Severe  AUPRC  : 0.271  (clinical priority)
+
+Extra:
+  best_path: checkpoints/t1_hybrid/best_model_hybrid_left_right_t1_severe_auprc.pth
+  cbam_checkpoint: checkpoints/fresh_cbam/best_model_attention_sqrt_cw_e20.pth
+  total_train_seconds: 3580.5809059143066
+  avg_epoch_seconds: 255.75577899387903
+  eval_seconds: 37.504958629608154
+  eval_samples: 3940
+  eval_throughput_samples_per_sec: 105.05277552524964
+  eval_ms_per_sample: 9.51902503289547
+  args: {'data_dir': 'rsna_preprocessed_t1', 'split': 't1', 'conditions': ['left_foraminal', 'right_foraminal'], 'cbam_checkpoint': 'checkpoints/fresh_cbam/best_model_attention_sqrt_cw_e20.pth', 'save_dir': 'checkpoints/t1_hybrid', 'val_split': 0.2, 'select_by': 'severe_auprc', 'fast_dev': False, 'fast_dev_samples': 24, 'epochs': 20, 'batch_size': 32, 'lr': 0.0001, 'weight_decay': 0.0001, 'slice_strategy': 'static', 'use_focal': True, 'focal_gamma': 2.0, 'use_supcon': True, 'supcon_weight': 0.1, 'use_uncertainty': True, 'class_weight_mode': 'sqrt', 'augmentation': 'medium', 'hflip_swap_labels': False, 'ap_flip': True, 'slice_reverse': False, 'oversample_factor': 3, 'num_workers': 4, 'save_freq': 5, 'early_stop_patience': 15, 'resume': None, 'seed': 42, 'ablate_branch': 'none', 'fusion': 'concat_mlp', 'modality_dropout': 0.0}

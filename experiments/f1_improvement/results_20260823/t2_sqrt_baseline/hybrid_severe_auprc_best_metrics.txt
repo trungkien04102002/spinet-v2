@@ -1,0 +1,72 @@
+=== BEST MODEL METRICS (hybrid_severe_auprc) ===
+Saved at:  2026-08-23T09:09:13
+Epoch:     5
+Train Loss: 1.1555
+Val Loss:   0.1435
+Avg Severe F1: 0.3696
+
+Validation Accuracies:
+  spinal_canal       0.8867
+  left_foraminal     0.6696
+  right_foraminal    0.6391
+
+Per-Class Metrics:
+
+  spinal_canal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.959  0.943  0.951     1722
+    Moderate         0.337  0.223  0.268      139
+    Severe           0.433  0.840  0.571       81
+
+  left_foraminal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.920  0.694  0.791     1497
+    Moderate         0.331  0.639  0.436      360
+    Severe           0.246  0.350  0.289       80
+
+  right_foraminal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.933  0.644  0.762     1482
+    Moderate         0.321  0.699  0.440      372
+    Severe           0.225  0.277  0.249       83
+
+AUC / AUPRC / Brier (per class, one-vs-rest):
+
+  spinal_canal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.945  0.992  0.133     1722
+    Moderate         0.872  0.263  0.084      139
+    Severe           0.971  0.697  0.038       81
+    macro            0.929  0.651
+
+  left_foraminal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.816  0.937  0.241     1497
+    Moderate         0.690  0.290  0.182      360
+    Severe           0.866  0.186  0.052       80
+    macro            0.791  0.471
+
+  right_foraminal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.825  0.937  0.251     1482
+    Moderate         0.682  0.300  0.190      372
+    Severe           0.864  0.226  0.053       83
+    macro            0.791  0.488
+
+AUC / AUPRC overall (averaged across 3 conditions):
+  macro AUC      : 0.837
+  macro AUPRC    : 0.536
+  popular AUPRC  : 0.955  (Normal/Mild)
+  rare    AUPRC  : 0.327  (Moderate + Severe)
+  Severe  AUPRC  : 0.370  (clinical priority)
+
+Extra:
+  best_path: checkpoints/t2_sqrt_baseline/best_model_hybrid_severe_auprc.pth
+  cbam_checkpoint: checkpoints/fresh_cbam/best_model_attention_sqrt_cw_e20.pth
+  total_train_seconds: 741.8855087757111
+  avg_epoch_seconds: 148.3771017551422
+  eval_seconds: 18.770657539367676
+  eval_samples: 1942
+  eval_throughput_samples_per_sec: 103.45934850321817
+  eval_ms_per_sample: 9.665632100601275
+  args: {'data_dir': 'rsna_preprocessed', 'split': 'train', 'conditions': ['spinal_canal', 'left_foraminal', 'right_foraminal'], 'cbam_checkpoint': 'checkpoints/fresh_cbam/best_model_attention_sqrt_cw_e20.pth', 'save_dir': 'checkpoints/t2_sqrt_baseline', 'val_split': 0.2, 'select_by': 'severe_auprc', 'fast_dev': False, 'fast_dev_samples': 24, 'epochs': 20, 'batch_size': 32, 'lr': 0.0001, 'weight_decay': 0.0001, 'slice_strategy': 'static', 'use_focal': True, 'focal_gamma': 2.0, 'use_supcon': True, 'supcon_weight': 0.1, 'use_uncertainty': True, 'class_weight_mode': 'sqrt', 'augmentation': 'medium', 'hflip_swap_labels': False, 'ap_flip': True, 'slice_reverse': False, 'oversample_factor': 3, 'num_workers': 4, 'save_freq': 5, 'early_stop_patience': 15, 'resume': None, 'seed': 42, 'ablate_branch': 'none', 'fusion': 'concat_mlp', 'modality_dropout': 0.0}

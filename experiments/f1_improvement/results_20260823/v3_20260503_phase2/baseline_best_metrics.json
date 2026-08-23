@@ -1,0 +1,191 @@
+{
+  "prefix": "baseline",
+  "epoch": 18,
+  "timestamp": "2026-05-03T14:44:03",
+  "train_loss": 0.4435080287397885,
+  "val_loss": 0.45961320400238037,
+  "val_accuracies": {
+    "spinal_canal": 0.8949536560247168,
+    "left_foraminal": 0.7790397521941146,
+    "right_foraminal": 0.7656169334021683
+  },
+  "avg_severe_f1": 0.14933333333333335,
+  "per_class_metrics": {
+    "spinal_canal": {
+      "precision": [
+        0.9090422685928304,
+        0.3793103448275862,
+        0.6363636363636364
+      ],
+      "recall": [
+        0.9866434378629501,
+        0.07913669064748201,
+        0.345679012345679
+      ],
+      "f1": [
+        0.9462545252018936,
+        0.13095238095238096,
+        0.448
+      ],
+      "support": [
+        1722,
+        139,
+        81
+      ]
+    },
+    "left_foraminal": {
+      "precision": [
+        0.8116438356164384,
+        0.4702702702702703,
+        0.0
+      ],
+      "recall": [
+        0.9498997995991983,
+        0.24166666666666667,
+        0.0
+      ],
+      "f1": [
+        0.8753462603878116,
+        0.3192660550458716,
+        0.0
+      ],
+      "support": [
+        1497,
+        360,
+        80
+      ]
+    },
+    "right_foraminal": {
+      "precision": [
+        0.7996594778660613,
+        0.4228571428571429,
+        0.0
+      ],
+      "recall": [
+        0.9507422402159245,
+        0.1989247311827957,
+        0.0
+      ],
+      "f1": [
+        0.8686806411837238,
+        0.27056672760511885,
+        0.0
+      ],
+      "support": [
+        1482,
+        372,
+        83
+      ]
+    }
+  },
+  "auc_auprc_metrics": {
+    "spinal_canal": {
+      "per_class": {
+        "Normal/Mild": {
+          "auc": 0.8924823144335339,
+          "auprc": 0.9839148818917782,
+          "brier": 0.0687984898686409,
+          "support": 1722
+        },
+        "Moderate": {
+          "auc": 0.8508201758061106,
+          "auprc": 0.2723300505941536,
+          "brier": 0.057926252484321594,
+          "support": 139
+        },
+        "Severe": {
+          "auc": 0.9219654904770435,
+          "auprc": 0.5134692340730734,
+          "brier": 0.028163230046629906,
+          "support": 81
+        }
+      },
+      "macro_auc": 0.8884226602388959,
+      "macro_auprc": 0.589904722186335
+    },
+    "left_foraminal": {
+      "per_class": {
+        "Normal/Mild": {
+          "auc": 0.7939576121940851,
+          "auprc": 0.9315370057299373,
+          "brier": 0.1428084671497345,
+          "support": 1497
+        },
+        "Moderate": {
+          "auc": 0.7577573451701543,
+          "auprc": 0.3873252622937125,
+          "brier": 0.13354746997356415,
+          "support": 360
+        },
+        "Severe": {
+          "auc": 0.8149299946149704,
+          "auprc": 0.14726094250264277,
+          "brier": 0.037298548966646194,
+          "support": 80
+        }
+      },
+      "macro_auc": 0.7888816506597367,
+      "macro_auprc": 0.4887077368420975
+    },
+    "right_foraminal": {
+      "per_class": {
+        "Normal/Mild": {
+          "auc": 0.802096958372262,
+          "auprc": 0.9286627248078094,
+          "brier": 0.14311619102954865,
+          "support": 1482
+        },
+        "Moderate": {
+          "auc": 0.7595520285822254,
+          "auprc": 0.37467791241087234,
+          "brier": 0.1364978551864624,
+          "support": 372
+        },
+        "Severe": {
+          "auc": 0.8423987210979841,
+          "auprc": 0.16667030739836378,
+          "brier": 0.03815186768770218,
+          "support": 83
+        }
+      },
+      "macro_auc": 0.8013492360174905,
+      "macro_auprc": 0.4900036482056818
+    }
+  },
+  "auc_auprc_overall": {
+    "macro_auc": 0.826217848972041,
+    "macro_auprc": 0.5228720357447048,
+    "popular_auc": 0.8295122949999604,
+    "popular_auprc": 0.9480382041431751,
+    "rare_auc": 0.8245706259580814,
+    "rare_auprc": 0.3102889515454697,
+    "severe_auc": 0.859764735396666,
+    "severe_auprc": 0.2758001613246933
+  },
+  "extra": {
+    "val_weighted_logloss": 0.4599203933041056,
+    "best_path": "checkpoints/v3_20260503/baseline/best_model.pth",
+    "total_train_seconds": 986.3957138061523,
+    "avg_epoch_seconds": 54.799761878119575,
+    "eval_seconds": 10.897956609725952,
+    "eval_samples": 1942,
+    "eval_throughput_samples_per_sec": 178.1985439606953,
+    "eval_ms_per_sample": 5.61171813065188,
+    "args": {
+      "data_dir": "rsna_preprocessed",
+      "val_split": 0.2,
+      "use_pretrained": true,
+      "unfreeze_backbone": false,
+      "resume": null,
+      "epochs": 20,
+      "batch_size": 64,
+      "lr": 0.001,
+      "weight_decay": 0.0001,
+      "num_workers": 4,
+      "save_dir": "checkpoints/v3_20260503/baseline",
+      "save_freq": 5,
+      "early_stop_patience": 10,
+      "class_weight_mode": "none"
+    }
+  }
+}

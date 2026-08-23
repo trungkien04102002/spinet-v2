@@ -1,0 +1,166 @@
+{
+  "prefix": "hybrid_left_right_t1_severe_auprc",
+  "epoch": 14,
+  "timestamp": "2026-08-23T12:49:10",
+  "train_loss": 0.1759478204911298,
+  "val_loss": 0.18054589690626405,
+  "val_accuracies": {
+    "left_foraminal": 0.6070886075949367,
+    "right_foraminal": 0.5770992366412214
+  },
+  "avg_severe_f1": 0.25743727076905165,
+  "per_class_metrics": {
+    "left_foraminal": {
+      "precision": [
+        0.9588299024918743,
+        0.3081761006289308,
+        0.20408163265306123
+      ],
+      "recall": [
+        0.5791884816753927,
+        0.8010899182561307,
+        0.25
+      ],
+      "f1": [
+        0.7221542227662179,
+        0.44511733535200604,
+        0.2247191011235955
+      ],
+      "support": [
+        1528,
+        367,
+        80
+      ]
+    },
+    "right_foraminal": {
+      "precision": [
+        0.9637681159420289,
+        0.3031496062992126,
+        0.23140495867768596
+      ],
+      "recall": [
+        0.5291777188328912,
+        0.8,
+        0.3888888888888889
+      ],
+      "f1": [
+        0.6832191780821918,
+        0.43968593861527483,
+        0.29015544041450775
+      ],
+      "support": [
+        1508,
+        385,
+        72
+      ]
+    }
+  },
+  "auc_auprc_metrics": {
+    "left_foraminal": {
+      "per_class": {
+        "Normal/Mild": {
+          "auc": 0.8271607107300561,
+          "auprc": 0.9438845307806876,
+          "brier": 0.25488537549972534,
+          "support": 1528
+        },
+        "Moderate": {
+          "auc": 0.7504016023425109,
+          "auprc": 0.3638480838162898,
+          "brier": 0.18891048431396484,
+          "support": 367
+        },
+        "Severe": {
+          "auc": 0.871853562005277,
+          "auprc": 0.25382701872904934,
+          "brier": 0.052492234855890274,
+          "support": 80
+        }
+      },
+      "macro_auc": 0.8164719583592813,
+      "macro_auprc": 0.5205198777753423
+    },
+    "right_foraminal": {
+      "per_class": {
+        "Normal/Mild": {
+          "auc": 0.8278662595986976,
+          "auprc": 0.9393150107579555,
+          "brier": 0.2715000808238983,
+          "support": 1508
+        },
+        "Moderate": {
+          "auc": 0.7178185106033208,
+          "auprc": 0.33608811872788624,
+          "brier": 0.20038571953773499,
+          "support": 385
+        },
+        "Severe": {
+          "auc": 0.8985223337442038,
+          "auprc": 0.287227702201826,
+          "brier": 0.05233728513121605,
+          "support": 72
+        }
+      },
+      "macro_auc": 0.8147357013154074,
+      "macro_auprc": 0.5208769438958892
+    }
+  },
+  "auc_auprc_overall": {
+    "macro_auc": 0.8156038298373444,
+    "macro_auprc": 0.5206984108356157,
+    "popular_auc": 0.8275134851643768,
+    "popular_auprc": 0.9415997707693216,
+    "rare_auc": 0.8096490021738281,
+    "rare_auprc": 0.31024773086876284,
+    "severe_auc": 0.8851879478747404,
+    "severe_auprc": 0.2705273604654377
+  },
+  "extra": {
+    "best_path": "checkpoints/t1_hybrid/best_model_hybrid_left_right_t1_severe_auprc.pth",
+    "cbam_checkpoint": "checkpoints/fresh_cbam/best_model_attention_sqrt_cw_e20.pth",
+    "total_train_seconds": 3580.5809059143066,
+    "avg_epoch_seconds": 255.75577899387903,
+    "eval_seconds": 37.504958629608154,
+    "eval_samples": 3940,
+    "eval_throughput_samples_per_sec": 105.05277552524964,
+    "eval_ms_per_sample": 9.51902503289547,
+    "args": {
+      "data_dir": "rsna_preprocessed_t1",
+      "split": "t1",
+      "conditions": [
+        "left_foraminal",
+        "right_foraminal"
+      ],
+      "cbam_checkpoint": "checkpoints/fresh_cbam/best_model_attention_sqrt_cw_e20.pth",
+      "save_dir": "checkpoints/t1_hybrid",
+      "val_split": 0.2,
+      "select_by": "severe_auprc",
+      "fast_dev": false,
+      "fast_dev_samples": 24,
+      "epochs": 20,
+      "batch_size": 32,
+      "lr": 0.0001,
+      "weight_decay": 0.0001,
+      "slice_strategy": "static",
+      "use_focal": true,
+      "focal_gamma": 2.0,
+      "use_supcon": true,
+      "supcon_weight": 0.1,
+      "use_uncertainty": true,
+      "class_weight_mode": "sqrt",
+      "augmentation": "medium",
+      "hflip_swap_labels": false,
+      "ap_flip": true,
+      "slice_reverse": false,
+      "oversample_factor": 3,
+      "num_workers": 4,
+      "save_freq": 5,
+      "early_stop_patience": 15,
+      "resume": null,
+      "seed": 42,
+      "ablate_branch": "none",
+      "fusion": "concat_mlp",
+      "modality_dropout": 0.0
+    }
+  }
+}
