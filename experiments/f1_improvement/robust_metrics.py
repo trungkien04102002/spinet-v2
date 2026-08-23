@@ -105,11 +105,18 @@ def metrics_for_condition(probs, labels):
     return out
 
 
-def evaluate(data, cond_subset=CONDITIONS, row_mask=None):
-    """Per-condition metrics plus the macro average across conditions."""
+def evaluate(data, cond_subset=CONDITIONS, row_mask=None, probs_override=None):
+    """Per-condition metrics plus the macro average across conditions.
+
+    `probs_override` swaps in externally computed probabilities (e.g. temperature
+    calibrated ones) while keeping the same labels and row selection.
+    """
     per_cond, collected = {}, {}
     for cond in cond_subset:
-        probs = data[f"probs_{cond}"]
+        if probs_override is not None and cond in probs_override:
+            probs = probs_override[cond]
+        else:
+            probs = data[f"probs_{cond}"]
         labels = data[f"labels_{cond}"]
         if row_mask is not None:
             probs, labels = probs[row_mask], labels[row_mask]
@@ -159,6 +166,13 @@ def main():
     ap.add_argument("--n-boot", type=int, default=2000)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--json-out", type=str, default=None)
+    ap.add_argument("--calibrate", action="store_true",
+                    help="Also report temperature-scaled numbers. The temperature is "
+                         "cross-fitted over patient halves, so no row is scored by a "
+                         "temperature fitted on its own patient. Proper scores move a "
+                         "lot; argmax-based metrics (F1, QWK) cannot move at all; "
+                         "ranking metrics move slightly -- see the note in "
+                         "temperature_calibration.py.")
     args = ap.parse_args()
 
     data = np.load(args.npz, allow_pickle=True)
@@ -206,6 +220,28 @@ def main():
         f1w = report["severe_f1"]["ci_high"] - report["severe_f1"]["ci_low"]
         apw = report["severe_auprc"]["ci_high"] - report["severe_auprc"]["ci_low"]
         print(f"\nSevere F1 interval is {f1w / apw:.1f}x wider than Severe AUPRC's.")
+
+    if args.calibrate:
+        from temperature_calibration import crossfit_calibrated_probs
+        cal_probs, temps = crossfit_calibrated_probs(data, conds, seed=args.seed)
+        _, cal_mean = evaluate(data, conds, probs_override=cal_probs)
+        print("\nAFTER TEMPERATURE SCALING (cross-fitted over patient halves)")
+        print(f"{'metric':<20}{'raw':>10}{'calibrated':>13}{'change':>10}")
+        print("-" * 53)
+        for key in PRIMARY + SECONDARY:
+            if key in mean and key in cal_mean:
+                delta = cal_mean[key] - mean[key]
+                print(f"{key:<20}{mean[key]:>10.4f}{cal_mean[key]:>13.4f}{delta:>+10.4f}")
+        tstr = "  ".join(f"{c}: " + "/".join(f"{t:.3f}" for t in v)
+                         for c, v in temps.items())
+        print(f"\nT per condition (one per fold) -- {tstr}")
+        print("T below 1 means the head was under-confident and the logits needed "
+              "sharpening.")
+        print("F1/QWK are unchanged because T cannot move an argmax. AUPRC/AUC shift "
+              "slightly:\nwith a multi-class softmax the denominator differs per "
+              "sample, so T does reorder samples.")
+        report["calibrated"] = cal_mean
+        report["temperatures"] = temps
 
     if args.json_out:
         Path(args.json_out).write_text(json.dumps(

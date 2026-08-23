@@ -9,10 +9,18 @@ proper score -- is the signature of miscalibration rather than a weaker model, a
 the Hybrid's recipe is full of things that decalibrate: focal loss, Kendall
 uncertainty weighting, and a learned cosine logit scale.
 
-Temperature scaling (Guo et al., ICML 2017) divides the logits by a single scalar T,
-which cannot change the argmax or any ranking-based metric (AUPRC, AUC stay fixed by
-construction) but can move a proper score a great deal. The 3rd place RSNA solution
-applied exactly this, T=0.91, to its spinal logits.
+Temperature scaling (Guo et al., ICML 2017) divides the logits by a single scalar T.
+It cannot change an argmax, so accuracy, F1 and QWK are fixed by construction. It CAN
+move a proper score a great deal.
+
+Ranking metrics are a subtler case, and an earlier version of this file got it wrong.
+For a multi-class softmax, softmax(z/T)_c is NOT a monotone function of softmax(z)_c
+across samples, because each sample has its own denominator -- so T does reorder
+samples and AUPRC/AUC shift slightly. Measured on the published Hybrid: macro AUPRC
++0.0085, Severe AUC -0.0009, against a weighted-log-loss gain of -0.093. (The
+"unchanged by construction" intuition holds only for a binary sigmoid.)
+
+The 3rd place RSNA 2024 solution applied exactly this, T=0.91, to its spinal logits.
 
 Fitting T on the same rows used to report the score would flatter it. This script
 cross-fits by PATIENT: fit T on half the patients, score the other half, swap, and
@@ -48,6 +56,48 @@ def fit_temperature(logits, labels):
     # Search log T so T stays positive; bounds cover T in ~[0.22, 4.5].
     res = minimize_scalar(obj, bounds=(-1.5, 1.5), method="bounded")
     return float(np.exp(res.x))
+
+
+def crossfit_calibrated_probs(data, conditions, seed=0):
+    """Temperature-scale every condition's probabilities without fitting on the
+    rows being scored.
+
+    Patients are split in half; the temperature fitted on one half is applied to
+    the other, and vice versa, so each returned probability comes from a model
+    calibrated on data that excludes its own patient. Splitting by patient
+    rather than row matters because Severe findings cluster within a patient.
+
+    Returns:
+        (probs_by_condition, temperatures_by_condition) where probs match the
+        row order of the input and temperatures lists one T per fold.
+    """
+    study_ids = data["study_id"]
+    patients = np.unique(study_ids)
+    rng = np.random.default_rng(seed)
+    shuffled = rng.permutation(patients)
+    halves = [set(shuffled[: len(shuffled) // 2]), set(shuffled[len(shuffled) // 2:])]
+
+    out_probs, out_temps = {}, {}
+    for cond in conditions:
+        key = f"logits_{cond}"
+        if key not in data.files:
+            continue
+        logits = data[key]
+        labels = data[f"labels_{cond}"]
+        valid = labels >= 0
+        probs = softmax(logits)  # fallback for rows we cannot calibrate
+        temps = []
+        for fit_half, eval_half in ((0, 1), (1, 0)):
+            fit_rows = valid & np.isin(study_ids, list(halves[fit_half]))
+            eval_rows = np.isin(study_ids, list(halves[eval_half]))
+            if fit_rows.sum() == 0 or eval_rows.sum() == 0:
+                continue
+            T = fit_temperature(logits[fit_rows], labels[fit_rows])
+            temps.append(T)
+            probs[eval_rows] = softmax(logits[eval_rows] / T)
+        out_probs[cond] = probs
+        out_temps[cond] = temps
+    return out_probs, out_temps
 
 
 def main():
@@ -107,8 +157,9 @@ def main():
         mb, ma = float(np.mean(before_all)), float(np.mean(after_all))
         print("-" * 74)
         print(f"{'MEAN':<17}{'':>18}{mb:>18.4f}{ma:>10.4f}{ma - mb:>+10.4f}")
-        print("\nLower is better. Ranking metrics (AUPRC, AUC) are unchanged by")
-        print("construction -- temperature scaling cannot reorder samples.")
+        print("\nLower is better. F1/QWK cannot change (T does not move an argmax);")
+        print("AUPRC/AUC shift slightly, since a multi-class softmax gives each sample")
+        print("its own denominator and T therefore does reorder samples.")
 
 
 if __name__ == "__main__":

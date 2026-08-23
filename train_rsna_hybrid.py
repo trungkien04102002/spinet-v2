@@ -829,17 +829,20 @@ def main():
         print(f"Val Loss:   {val_loss:.4f}")
         print(f"Logit scale: {model.logit_scale.exp().item():.2f}")
 
+        display = {'spinal_canal': 'Spinal Canal', 'left_foraminal': 'Left Foraminal',
+                   'right_foraminal': 'Right Foraminal'}
         print(f"\nValidation Accuracies:")
-        print(f"  Spinal Canal:     {val_accuracies['spinal_canal']:.2%}")
-        print(f"  Left Foraminal:   {val_accuracies['left_foraminal']:.2%}")
-        print(f"  Right Foraminal:  {val_accuracies['right_foraminal']:.2%}")
+        for c in conditions:
+            if c in val_accuracies:
+                print(f"  {display[c] + ':':<18}{val_accuracies[c]:.2%}")
 
         if args.use_uncertainty:
             task_weights = uncertainty_loss.get_task_weights().detach().cpu().numpy()
             print(f"\nTask Weights (from UncertaintyLoss):")
-            print(f"  Spinal Canal:   {task_weights[0]:.4f}")
-            print(f"  Left Foraminal: {task_weights[1]:.4f}")
-            print(f"  Right Foraminal: {task_weights[2]:.4f}")
+            # One weight per active task, in `conditions` order -- the same order
+            # the losses were passed to UncertaintyLoss.
+            for c, w in zip(conditions, task_weights):
+                print(f"  {display[c] + ':':<18}{w:.4f}")
 
         # Compute average Severe F1 (selection metric for "best")
         avg_severe_f1 = float('nan')
