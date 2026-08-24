@@ -1,0 +1,57 @@
+{
+  "dump": "runc_final_val.npz",
+  "conditions": {
+    "left_foraminal": {
+      "inside": {
+        "auc": 0.8684897210762017,
+        "auprc": 0.15175729934564802,
+        "auprc_lift": 4.219512736153996,
+        "prevalence": 0.03596559812353401,
+        "n_severe": 46,
+        "n": 1279
+      },
+      "outside": {
+        "auc": 0.8643005279034691,
+        "auprc": 0.2660041508540892,
+        "auprc_lift": 5.147962684176196,
+        "prevalence": 0.05167173252279635,
+        "n_severe": 34,
+        "n": 658
+      },
+      "auc_gap_inside_minus_outside": 0.004189193172732586,
+      "auprc_lift_gap_inside_minus_outside": -0.9284499480221999,
+      "gap_ci95": [
+        -0.07428391569264324,
+        0.08230116877120501
+      ],
+      "gap_p_two_sided": 0.903,
+      "median_slices_outside_subset": 4.00001529957505
+    },
+    "right_foraminal": {
+      "inside": {
+        "auc": 0.8982897384305836,
+        "auprc": 0.20938900958715775,
+        "auprc_lift": 7.1471448605749845,
+        "prevalence": 0.029296875,
+        "n_severe": 30,
+        "n": 1024
+      },
+      "outside": {
+        "auc": 0.832141290039491,
+        "auprc": 0.24715872224255458,
+        "auprc_lift": 4.257658743536837,
+        "prevalence": 0.05805038335158817,
+        "n_severe": 53,
+        "n": 913
+      },
+      "auc_gap_inside_minus_outside": 0.06614844839109257,
+      "auprc_lift_gap_inside_minus_outside": 2.889486117038148,
+      "gap_ci95": [
+        0.0029969423225732596,
+        0.12702301415074624
+      ],
+      "gap_p_two_sided": 0.044,
+      "median_slices_outside_subset": 4.999995871527778
+    }
+  }
+}
