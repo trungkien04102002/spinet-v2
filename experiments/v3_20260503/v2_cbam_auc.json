@@ -1,0 +1,96 @@
+{
+  "model": "cbam",
+  "checkpoint": "checkpoints/fresh_cbam/best_model_attention_sqrt_cw_e20.pth",
+  "val_split": 0.2,
+  "seed": 42,
+  "n_val_samples": 1942,
+  "inference_seconds": 11.83195565501228,
+  "inference_throughput_samples_per_sec": 164.1317848564895,
+  "per_condition": {
+    "spinal_canal": {
+      "per_class": {
+        "Normal/Mild": {
+          "auc": 0.9444541231126597,
+          "auprc": 0.992066455653273,
+          "brier": 0.09596754610538483,
+          "support": 1722
+        },
+        "Moderate": {
+          "auc": 0.8804390763595447,
+          "auprc": 0.2732173936319563,
+          "brier": 0.0782012939453125,
+          "support": 139
+        },
+        "Severe": {
+          "auc": 0.9678256081623448,
+          "auprc": 0.6625924514834327,
+          "brier": 0.028277212753891945,
+          "support": 81
+        }
+      },
+      "macro_auc": 0.9309062692115164,
+      "macro_auprc": 0.642625433589554,
+      "n_valid": 1942
+    },
+    "left_foraminal": {
+      "per_class": {
+        "Normal/Mild": {
+          "auc": 0.7977530819214186,
+          "auprc": 0.9260709084059665,
+          "brier": 0.24477818608283997,
+          "support": 1497
+        },
+        "Moderate": {
+          "auc": 0.6378337913055733,
+          "auprc": 0.25405752920417923,
+          "brier": 0.19982832670211792,
+          "support": 360
+        },
+        "Severe": {
+          "auc": 0.8505183091007,
+          "auprc": 0.17535996145947974,
+          "brier": 0.050784897059202194,
+          "support": 80
+        }
+      },
+      "macro_auc": 0.7620350607758972,
+      "macro_auprc": 0.45182946635654186,
+      "n_valid": 1937
+    },
+    "right_foraminal": {
+      "per_class": {
+        "Normal/Mild": {
+          "auc": 0.8151547507822812,
+          "auprc": 0.9334882578481201,
+          "brier": 0.2345215231180191,
+          "support": 1482
+        },
+        "Moderate": {
+          "auc": 0.6766472568621389,
+          "auprc": 0.2964468675205843,
+          "brier": 0.19897550344467163,
+          "support": 372
+        },
+        "Severe": {
+          "auc": 0.8517565407260109,
+          "auprc": 0.20445389781827672,
+          "brier": 0.04848567396402359,
+          "support": 83
+        }
+      },
+      "macro_auc": 0.7811861827901437,
+      "macro_auprc": 0.4781296743956604,
+      "n_valid": 1937
+    }
+  },
+  "overall": {
+    "macro_auc": 0.8247091709258525,
+    "macro_auprc": 0.5241948581139187,
+    "popular_auc": 0.8524539852721199,
+    "popular_auprc": 0.9505418739691199,
+    "rare_auc": 0.8108367637527186,
+    "rare_auprc": 0.31102135018631816,
+    "severe_auc": 0.8900334859963519,
+    "severe_auprc": 0.34746877025372974
+  }
+}

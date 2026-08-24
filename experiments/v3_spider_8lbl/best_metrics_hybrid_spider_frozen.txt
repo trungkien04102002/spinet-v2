@@ -1,0 +1,35 @@
+=== BEST HYBRID SPIDER MODEL (frozen) ===
+Saved at: 2026-05-15T07:02:42
+Epoch: 14
+Val loss: 0.5780
+Val mean acc:      78.88%
+Val mean F1 macro: 0.660
+Val mean AUC:      0.849
+Val mean AUPRC:    0.606
+Cumulative train time: 1106.8s (18.45 min)
+Val inference time:    61.58 ms/sample
+
+Pfirrmann             acc= 57.02%  F1_macro=0.581  AUC=0.869  AUPRC=0.657
+                      per-class F1=[0.591, 0.504, 0.588, 0.524, 0.7]
+                      precision=[0.605, 0.441, 0.686, 0.478, 0.778]  recall=[0.578, 0.588, 0.515, 0.579, 0.636]
+Modic                 acc= 77.87%  F1_macro=0.373  AUC=0.807  AUPRC=0.479
+                      per-class F1=[0.852, 0.0, 0.638, 0.0]
+                      precision=[0.841, 0.0, 0.634, 0.0]  recall=[0.863, 0.0, 0.643, 0.0]
+Disc Narrowing        acc= 85.11%  F1_macro=0.843  AUC=0.927  AUPRC=0.887
+                      per-class F1=[0.879, 0.807]
+                      precision=[0.888, 0.793]  recall=[0.87, 0.82]
+Spondylolisthesis     acc= 94.47%  F1_macro=0.676  AUC=0.806  AUPRC=0.283
+                      per-class F1=[0.971, 0.381]
+                      precision=[0.973, 0.364]  recall=[0.969, 0.4]
+UP Endplate           acc= 77.87%  F1_macro=0.765  AUC=0.836  AUPRC=0.761
+                      per-class F1=[0.822, 0.708]
+                      precision=[0.833, 0.692]  recall=[0.811, 0.724]
+LOW Endplate          acc= 74.89%  F1_macro=0.729  AUC=0.811  AUPRC=0.723
+                      per-class F1=[0.803, 0.655]
+                      precision=[0.784, 0.683]  recall=[0.822, 0.629]
+Disc Herniation       acc= 87.23%  F1_macro=0.549  AUC=0.855  AUPRC=0.191
+                      per-class F1=[0.931, 0.167]
+                      precision=[0.962, 0.12]  recall=[0.902, 0.273]
+Disc Bulging          acc= 76.60%  F1_macro=0.766  AUC=0.879  AUPRC=0.871
+                      per-class F1=[0.772, 0.76]
+                      precision=[0.744, 0.791]  recall=[0.802, 0.731]

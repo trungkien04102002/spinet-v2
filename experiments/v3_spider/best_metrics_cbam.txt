@@ -1,0 +1,16 @@
+=== BEST CBAM SPIDER MODEL ===
+Saved at: 2026-05-04T09:32:25
+Epoch: 16
+Train loss: 0.6762
+Val loss:   0.8407
+Val mean acc:      73.62%
+Val mean F1 macro: 0.577
+
+Pfirrmann Grading     acc= 54.89%  F1_macro=0.546  per-class F1=[0.561, 0.404, 0.591, 0.5, 0.675]
+                      precision=[0.484, 0.474, 0.723, 0.5, 0.56]  recall=[0.667, 0.353, 0.5, 0.5, 0.848]
+Modic                 acc= 69.79%  F1_macro=0.336  per-class F1=[0.78, 0.0, 0.562, 0.0]
+                      precision=[0.821, 0.0, 0.5, 0.0]  recall=[0.744, 0.0, 0.643, 0.0]
+Disc Narrowing        acc= 83.83%  F1_macro=0.832  per-class F1=[0.865, 0.798]
+                      precision=[0.897, 0.758]  recall=[0.836, 0.843]
+Spondylolisthesis     acc= 85.96%  F1_macro=0.595  per-class F1=[0.922, 0.267]
+                      precision=[0.98, 0.171]  recall=[0.871, 0.6]

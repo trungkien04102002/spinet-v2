@@ -1,0 +1,110 @@
+{
+  "tag": "unfreeze",
+  "epoch": 4,
+  "train_loss": 0.6410817397853076,
+  "val_loss": 0.7257543435941141,
+  "val_mean_acc": 0.7531914893617022,
+  "val_mean_f1_macro": 0.5185996731101996,
+  "val_accuracies": {
+    "pfirrmann": 0.42127659574468085,
+    "modic": 0.7787234042553192,
+    "disc_narrowing": 0.8680851063829788,
+    "spondylolisthesis": 0.9446808510638298
+  },
+  "val_f1_macro": {
+    "pfirrmann": 0.3551223192005612,
+    "modic": 0.3759823077253403,
+    "disc_narrowing": 0.8575172602632557,
+    "spondylolisthesis": 0.48577680525164113
+  },
+  "per_class_f1": {
+    "pfirrmann": [
+      0.6504065040650406,
+      0.33663366336633666,
+      0.36,
+      0.42857142857142855,
+      0.0
+    ],
+    "modic": [
+      0.8463949843260188,
+      0.0,
+      0.6575342465753424,
+      0.0
+    ],
+    "disc_narrowing": [
+      0.8963210702341137,
+      0.8187134502923976
+    ],
+    "spondylolisthesis": [
+      0.9715536105032823,
+      0.0
+    ]
+  },
+  "per_class_precision": {
+    "pfirrmann": [
+      0.5128205128205128,
+      0.34,
+      0.5625,
+      0.32432432432432434,
+      0.0
+    ],
+    "modic": [
+      0.8490566037735849,
+      0.0,
+      0.631578947368421,
+      0.0
+    ],
+    "disc_narrowing": [
+      0.8758169934640523,
+      0.8536585365853658
+    ],
+    "spondylolisthesis": [
+      0.9568965517241379,
+      0.0
+    ]
+  },
+  "per_class_recall": {
+    "pfirrmann": [
+      0.8888888888888888,
+      0.3333333333333333,
+      0.2647058823529412,
+      0.631578947368421,
+      0.0
+    ],
+    "modic": [
+      0.84375,
+      0.0,
+      0.6857142857142857,
+      0.0
+    ],
+    "disc_narrowing": [
+      0.9178082191780822,
+      0.7865168539325843
+    ],
+    "spondylolisthesis": [
+      0.9866666666666667,
+      0.0
+    ]
+  },
+  "args": {
+    "hybrid_checkpoint": "checkpoints/v3_20260503/hybrid/best_model_hybrid.pth",
+    "cbam_checkpoint": "checkpoints/v3_20260503/cbam/best_model_attention.pth",
+    "data_dir": "spider",
+    "modality": "t2",
+    "val_split": 0.2,
+    "epochs": 20,
+    "batch_size": 16,
+    "lr": 1e-05,
+    "weight_decay": 0.0001,
+    "num_workers": 4,
+    "save_freq": 5,
+    "early_stop_patience": 8,
+    "unfreeze_cbam": true,
+    "loss": "weighted",
+    "slice_strategy": "static",
+    "checkpoint_dir": "checkpoints/v3_spider",
+    "metrics_dir": "experiments/v3_spider",
+    "seed": 42,
+    "ablate_branch": "none"
+  }
+}

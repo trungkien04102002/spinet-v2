@@ -1,0 +1,18 @@
+=== SPIDER AUC eval ===
+Model:       hybrid
+Checkpoint:  checkpoints/spider_phase4/best_model_hybrid_spider_unfreeze.slim.pth
+Val samples: 235
+
+Per-condition (macro across classes):
+  Condition                 F1       Acc      Rec      Prec     AUC      AUPRC   
+  Pfirrmann Grading         0.580    0.583    0.612    0.574    0.875    0.667   
+  Modic                     0.387    0.804    0.390    0.385    0.841    0.435   
+  Disc Narrowing            0.878    0.885    0.877    0.879    0.944    0.937   
+  Spondylolisthesis         0.643    0.945    0.637    0.651    0.792    0.605   
+
+Mean across 4 conditions:
+  F1     0.622    Acc   0.804
+  Recall 0.629    Prec  0.622
+  AUC    0.863    AUPRC 0.661
+
+Inference: 42.9s for 235 samples

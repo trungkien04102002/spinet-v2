@@ -1,0 +1,8 @@
+=== TRAINING SUMMARY HYBRID SPIDER (frozen_seed123_biomedclip_only) ===
+Completed at:          2026-05-15T09:27:26
+Total wall-clock time: 1121.8s (18.70 min)
+Cumulative train time: 1117.9s (18.63 min)
+Epochs completed:      15
+Best val loss:         0.5814
+Last val inference:    69.10 ms/sample
+Final args: {'hybrid_checkpoint': 'checkpoints/v3_20260503/hybrid/best_model_hybrid.pth', 'cbam_checkpoint': 'checkpoints/v3_20260503/cbam/best_model_attention.pth', 'data_dir': 'spider', 'modality': 't2', 'val_split': 0.2, 'epochs': 15, 'batch_size': 16, 'lr': 0.001, 'weight_decay': 0.0001, 'num_workers': 4, 'save_freq': 5, 'early_stop_patience': 8, 'unfreeze_cbam': False, 'loss': 'weighted', 'slice_strategy': 'static', 'checkpoint_dir': 'checkpoints/v3_spider_8lbl', 'metrics_dir': 'experiments/v3_spider_8lbl', 'seed': 123, 'ablate_branch': 'biomedclip_only'}

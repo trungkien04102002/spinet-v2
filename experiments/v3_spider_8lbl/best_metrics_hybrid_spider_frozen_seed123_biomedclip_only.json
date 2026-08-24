@@ -1,0 +1,190 @@
+{
+  "tag": "frozen_seed123_biomedclip_only",
+  "epoch": 15,
+  "train_loss": 0.5444894301689277,
+  "val_loss": 0.5813527539372444,
+  "val_mean_acc": 0.7707446808510638,
+  "val_mean_f1_macro": 0.6178682938154133,
+  "val_mean_auc": 0.8150019229268997,
+  "val_mean_auprc": 0.55307931909232,
+  "cumulative_train_time_sec": 1117.9038920402527,
+  "val_inference_time_ms_per_sample": 69.09599507108648,
+  "val_accuracies": {
+    "pfirrmann": 0.4553191489361702,
+    "modic": 0.825531914893617,
+    "disc_narrowing": 0.7914893617021277,
+    "spondylolisthesis": 0.9659574468085106,
+    "up_endplate": 0.7191489361702128,
+    "low_endplate": 0.7489361702127659,
+    "disc_herniation": 0.8680851063829788,
+    "disc_bulging": 0.7914893617021277
+  },
+  "val_f1_macro": {
+    "pfirrmann": 0.43829568264652796,
+    "modic": 0.4018681691095484,
+    "disc_narrowing": 0.7798657974727102,
+    "spondylolisthesis": 0.49134199134199136,
+    "up_endplate": 0.7153919553728714,
+    "low_endplate": 0.73893313750965,
+    "disc_herniation": 0.585820683381659,
+    "disc_bulging": 0.7914289336883479
+  },
+  "val_auc": {
+    "pfirrmann": 0.8237084042957799,
+    "modic": 0.8021719602660095,
+    "disc_narrowing": 0.8785483870967742,
+    "spondylolisthesis": 0.7037845705967977,
+    "up_endplate": 0.7993445553403844,
+    "low_endplate": 0.8192488262910798,
+    "disc_herniation": 0.8118279569892473,
+    "disc_bulging": 0.8813807225391252
+  },
+  "val_auprc": {
+    "pfirrmann": 0.5375772257190965,
+    "modic": 0.46900868924557404,
+    "disc_narrowing": 0.8051133104235724,
+    "spondylolisthesis": 0.05671799653665331,
+    "up_endplate": 0.7210475448597683,
+    "low_endplate": 0.7510625814089771,
+    "disc_herniation": 0.24696486733373943,
+    "disc_bulging": 0.8371423372111786
+  },
+  "per_class_f1": {
+    "pfirrmann": [
+      0.5714285714285714,
+      0.5354330708661418,
+      0.35514018691588783,
+      0.4628099173553719,
+      0.26666666666666666
+    ],
+    "modic": [
+      0.877742946708464,
+      0.0,
+      0.7297297297297297,
+      0.0
+    ],
+    "disc_narrowing": [
+      0.8304498269896193,
+      0.7292817679558011
+    ],
+    "spondylolisthesis": [
+      0.9826839826839827,
+      0.0
+    ],
+    "up_endplate": [
+      0.7480916030534351,
+      0.6826923076923077
+    ],
+    "low_endplate": [
+      0.7900355871886121,
+      0.6878306878306878
+    ],
+    "disc_herniation": [
+      0.9277389277389277,
+      0.24390243902439024
+    ],
+    "disc_bulging": [
+      0.7949790794979079,
+      0.7878787878787878
+    ]
+  },
+  "per_class_precision": {
+    "pfirrmann": [
+      0.6451612903225806,
+      0.5396825396825397,
+      0.40425531914893614,
+      0.35443037974683544,
+      0.4
+    ],
+    "modic": [
+      0.875,
+      0.0,
+      0.72,
+      0.0
+    ],
+    "disc_narrowing": [
+      0.8955223880597015,
+      0.6534653465346535
+    ],
+    "spondylolisthesis": [
+      0.9742489270386266,
+      0.0
+    ],
+    "up_endplate": [
+      0.784,
+      0.6454545454545455
+    ],
+    "low_endplate": [
+      0.7985611510791367,
+      0.6770833333333334
+    ],
+    "disc_herniation": [
+      0.9386792452830188,
+      0.21739130434782608
+    ],
+    "disc_bulging": [
+      0.8636363636363636,
+      0.728
+    ]
+  },
+  "per_class_recall": {
+    "pfirrmann": [
+      0.5128205128205128,
+      0.53125,
+      0.31666666666666665,
+      0.6666666666666666,
+      0.2
+    ],
+    "modic": [
+      0.8805031446540881,
+      0.0,
+      0.7397260273972602,
+      0.0
+    ],
+    "disc_narrowing": [
+      0.7741935483870968,
+      0.825
+    ],
+    "spondylolisthesis": [
+      0.9912663755458515,
+      0.0
+    ],
+    "up_endplate": [
+      0.7153284671532847,
+      0.7244897959183674
+    ],
+    "low_endplate": [
+      0.7816901408450704,
+      0.6989247311827957
+    ],
+    "disc_herniation": [
+      0.9170506912442397,
+      0.2777777777777778
+    ],
+    "disc_bulging": [
+      0.7364341085271318,
+      0.8584905660377359
+    ]
+  },
+  "args": {
+    "hybrid_checkpoint": "checkpoints/v3_20260503/hybrid/best_model_hybrid.pth",
+    "cbam_checkpoint": "checkpoints/v3_20260503/cbam/best_model_attention.pth",
+    "data_dir": "spider",
+    "modality": "t2",
+    "val_split": 0.2,
+    "epochs": 15,
+    "batch_size": 16,
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "num_workers": 4,
+    "save_freq": 5,
+    "early_stop_patience": 8,
+    "unfreeze_cbam": false,
+    "loss": "weighted",
+    "slice_strategy": "static",
+    "checkpoint_dir": "checkpoints/v3_spider_8lbl",
+    "metrics_dir": "experiments/v3_spider_8lbl",
+    "seed": 123,
+    "ablate_branch": "biomedclip_only"
+  }
+}

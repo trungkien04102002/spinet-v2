@@ -1,0 +1,36 @@
+=== BEST BASELINE SPIDER MODEL ===
+Saved at: 2026-05-15T05:47:37
+Epoch: 15
+Train loss: 0.4396
+Val loss:   0.4419
+Val mean acc:      81.33%
+Val mean F1 macro: 0.649
+Val mean AUC:      0.845
+Val mean AUPRC:    0.601
+Cumulative train time: 1162.4s (19.37 min)
+Val inference time:    61.99 ms/sample
+
+Pfirrmann Grading     acc= 60.00%  F1_macro=0.613  AUC=0.879  AUPRC=0.643
+                      per-class F1=[0.56, 0.556, 0.599, 0.514, 0.839]
+                      precision=[0.7, 0.467, 0.594, 0.562, 0.897]  recall=[0.467, 0.686, 0.603, 0.474, 0.788]
+Modic                 acc= 79.57%  F1_macro=0.382  AUC=0.775  AUPRC=0.447
+                      per-class F1=[0.865, 0.0, 0.662, 0.0]
+                      precision=[0.849, 0.0, 0.667, 0.0]  recall=[0.881, 0.0, 0.657, 0.0]
+Disc Narrowing        acc= 84.26%  F1_macro=0.829  AUC=0.941  AUPRC=0.888
+                      per-class F1=[0.877, 0.781]
+                      precision=[0.852, 0.825]  recall=[0.904, 0.742]
+Spondylolisthesis     acc= 95.32%  F1_macro=0.565  AUC=0.808  AUPRC=0.260
+                      per-class F1=[0.976, 0.154]
+                      precision=[0.961, 0.333]  recall=[0.991, 0.1]
+UP Endplate           acc= 78.72%  F1_macro=0.763  AUC=0.827  AUPRC=0.760
+                      per-class F1=[0.839, 0.688]
+                      precision=[0.802, 0.753]  recall=[0.878, 0.632]
+LOW Endplate          acc= 76.60%  F1_macro=0.746  AUC=0.800  AUPRC=0.742
+                      per-class F1=[0.817, 0.675]
+                      precision=[0.794, 0.713]  recall=[0.842, 0.64]
+Disc Herniation       acc= 95.32%  F1_macro=0.488  AUC=0.835  AUPRC=0.208
+                      per-class F1=[0.976, 0.0]
+                      precision=[0.953, 0.0]  recall=[1.0, 0.0]
+Disc Bulging          acc= 80.85%  F1_macro=0.808  AUC=0.893  AUPRC=0.859
+                      per-class F1=[0.803, 0.813]
+                      precision=[0.814, 0.803]  recall=[0.793, 0.824]

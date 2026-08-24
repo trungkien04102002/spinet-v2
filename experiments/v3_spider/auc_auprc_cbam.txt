@@ -1,0 +1,18 @@
+=== SPIDER AUC eval ===
+Model:       cbam
+Checkpoint:  checkpoints/v3_spider/best_model_cbam.pth
+Val samples: 235
+
+Per-condition (macro across classes):
+  Condition                 F1       Acc      Rec      Prec     AUC      AUPRC   
+  Pfirrmann Grading         0.546    0.549    0.574    0.548    0.847    0.581   
+  Modic                     0.336    0.698    0.347    0.330    0.789    0.406   
+  Disc Narrowing            0.832    0.838    0.839    0.827    0.915    0.911   
+  Spondylolisthesis         0.595    0.860    0.736    0.576    0.871    0.609   
+
+Mean across 4 conditions:
+  F1     0.577    Acc   0.736
+  Recall 0.624    Prec  0.570
+  AUC    0.856    AUPRC 0.627
+
+Inference: 16.4s for 235 samples

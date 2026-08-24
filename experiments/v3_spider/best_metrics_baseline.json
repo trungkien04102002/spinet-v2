@@ -1,0 +1,107 @@
+{
+  "epoch": 8,
+  "train_loss": 0.6592296948035558,
+  "val_loss": 0.8252776684239507,
+  "val_mean_acc": 0.7691489361702128,
+  "val_mean_f1_macro": 0.6060525025424937,
+  "val_accuracies": {
+    "pfirrmann": 0.574468085106383,
+    "modic": 0.7531914893617021,
+    "disc_narrowing": 0.8765957446808511,
+    "spondylolisthesis": 0.8723404255319149
+  },
+  "val_f1_macro": {
+    "pfirrmann": 0.5820616533168207,
+    "modic": 0.36359351432880843,
+    "disc_narrowing": 0.8707444286391655,
+    "spondylolisthesis": 0.6078104138851803
+  },
+  "per_class_f1": {
+    "pfirrmann": [
+      0.6336633663366337,
+      0.4731182795698925,
+      0.5378151260504201,
+      0.4819277108433735,
+      0.7837837837837838
+    ],
+    "modic": [
+      0.8269230769230769,
+      0.0,
+      0.6274509803921569,
+      0.0
+    ],
+    "disc_narrowing": [
+      0.8982456140350877,
+      0.8432432432432433
+    ],
+    "spondylolisthesis": [
+      0.9299065420560748,
+      0.2857142857142857
+    ]
+  },
+  "per_class_precision": {
+    "pfirrmann": [
+      0.5714285714285714,
+      0.5238095238095238,
+      0.6274509803921569,
+      0.4444444444444444,
+      0.7073170731707317
+    ],
+    "modic": [
+      0.8486842105263158,
+      0.0,
+      0.5783132530120482,
+      0.0
+    ],
+    "disc_narrowing": [
+      0.920863309352518,
+      0.8125
+    ],
+    "spondylolisthesis": [
+      0.9802955665024631,
+      0.1875
+    ]
+  },
+  "per_class_recall": {
+    "pfirrmann": [
+      0.7111111111111111,
+      0.43137254901960786,
+      0.47058823529411764,
+      0.5263157894736842,
+      0.8787878787878788
+    ],
+    "modic": [
+      0.80625,
+      0.0,
+      0.6857142857142857,
+      0.0
+    ],
+    "disc_narrowing": [
+      0.8767123287671232,
+      0.8764044943820225
+    ],
+    "spondylolisthesis": [
+      0.8844444444444445,
+      0.6
+    ]
+  },
+  "args": {
+    "data_dir": "spider",
+    "modality": "t2",
+    "val_split": 0.2,
+    "model": "baseline",
+    "rsna_checkpoint": "checkpoints/fresh_baseline/best_model_baseline_full_e25.pth",
+    "freeze_backbone": true,
+    "epochs": 15,
+    "batch_size": 32,
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "loss": "weighted",
+    "num_workers": 4,
+    "save_freq": 5,
+    "early_stop_patience": 15,
+    "resume": null,
+    "checkpoint_dir": "checkpoints/v3_spider",
+    "metrics_dir": "experiments/v3_spider"
+  }
+}

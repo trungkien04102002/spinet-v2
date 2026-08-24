@@ -1,0 +1,18 @@
+=== SPIDER AUC eval ===
+Model:       baseline
+Checkpoint:  checkpoints/v3_spider/best_model_baseline.pth
+Val samples: 235
+
+Per-condition (macro across classes):
+  Condition                 F1       Acc      Rec      Prec     AUC      AUPRC   
+  Pfirrmann Grading         0.582    0.574    0.604    0.575    0.869    0.627   
+  Modic                     0.364    0.753    0.373    0.357    0.766    0.421   
+  Disc Narrowing            0.871    0.877    0.877    0.867    0.940    0.924   
+  Spondylolisthesis         0.608    0.872    0.742    0.584    0.853    0.640   
+
+Mean across 4 conditions:
+  F1     0.606    Acc   0.769
+  Recall 0.649    Prec  0.596
+  AUC    0.857    AUPRC 0.653
+
+Inference: 15.6s for 235 samples

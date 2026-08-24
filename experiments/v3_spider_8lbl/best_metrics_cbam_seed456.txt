@@ -1,0 +1,36 @@
+=== BEST CBAM SPIDER MODEL ===
+Saved at: 2026-05-15T10:24:07
+Epoch: 15
+Train loss: 0.4553
+Val loss:   0.5051
+Val mean acc:      77.66%
+Val mean F1 macro: 0.606
+Val mean AUC:      0.799
+Val mean AUPRC:    0.602
+Cumulative train time: 1105.8s (18.43 min)
+Val inference time:    67.70 ms/sample
+
+Pfirrmann Grading     acc= 52.77%  F1_macro=0.516  AUC=0.819  AUPRC=0.573
+                      per-class F1=[0.333, 0.458, 0.551, 0.442, 0.795]
+                      precision=[0.4, 0.5, 0.469, 0.576, 0.725]  recall=[0.286, 0.423, 0.667, 0.358, 0.879]
+Modic                 acc= 74.89%  F1_macro=0.363  AUC=0.736  AUPRC=0.530
+                      per-class F1=[0.809, 0.0, 0.642, 0.0]
+                      precision=[0.762, 0.0, 0.718, 0.0]  recall=[0.862, 0.0, 0.58, 0.0]
+Disc Narrowing        acc= 80.43%  F1_macro=0.801  AUC=0.878  AUPRC=0.858
+                      per-class F1=[0.827, 0.775]
+                      precision=[0.821, 0.782]  recall=[0.833, 0.767]
+Spondylolisthesis     acc= 97.45%  F1_macro=0.494  AUC=0.774  AUPRC=0.377
+                      per-class F1=[0.987, 0.0]
+                      precision=[0.974, 0.0]  recall=[1.0, 0.0]
+UP Endplate           acc= 71.91%  F1_macro=0.709  AUC=0.778  AUPRC=0.656
+                      per-class F1=[0.763, 0.656]
+                      precision=[0.746, 0.677]  recall=[0.779, 0.636]
+LOW Endplate          acc= 73.62%  F1_macro=0.733  AUC=0.794  AUPRC=0.733
+                      per-class F1=[0.762, 0.705]
+                      precision=[0.762, 0.705]  recall=[0.762, 0.705]
+Disc Herniation       acc= 94.47%  F1_macro=0.486  AUC=0.786  AUPRC=0.247
+                      per-class F1=[0.972, 0.0]
+                      precision=[0.945, 0.0]  recall=[1.0, 0.0]
+Disc Bulging          acc= 75.74%  F1_macro=0.748  AUC=0.825  AUPRC=0.839
+                      per-class F1=[0.698, 0.797]
+                      precision=[0.767, 0.752]  recall=[0.641, 0.848]

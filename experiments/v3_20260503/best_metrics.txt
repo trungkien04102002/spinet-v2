@@ -1,0 +1,20 @@
+=== ZERO-SHOT SPIDER EVAL ===
+Saved at: 2026-05-04T08:23:34
+Hybrid: checkpoints/v3_20260503/hybrid/best_model_hybrid.pth
+CBAM:   checkpoints/v3_20260503/cbam/best_model_attention.pth
+
+Summary by tier:
+  easy    avg_F1_macro=0.3884  n=1
+  medium  avg_F1_macro=0.4202  n=3
+  hard    avg_F1_macro=0.2892  n=4
+
+Per-disease:
+  Disease                   Tier       F1m  BalAcc     AUC      n
+  Modic                     hard     0.117   0.260     nan   1439
+  UP_endplate               hard     0.441   0.521   0.743   1439
+  LOW_endplate              hard     0.452   0.529   0.747   1439
+  Spondylolisthesis         medium   0.030   0.501   0.745   1439
+  Disc_herniation           medium   0.522   0.724   0.802   1439
+  Disc_narrowing            easy     0.388   0.499   0.836   1439
+  Disc_bulging              medium   0.709   0.712   0.806   1439
+  Pfirrman_grade            hard     0.147   0.279     nan   1439

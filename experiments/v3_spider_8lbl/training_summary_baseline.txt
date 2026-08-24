@@ -1,0 +1,8 @@
+=== TRAINING SUMMARY BASELINE SPIDER ===
+Completed at:          2026-05-15T05:47:37
+Total wall-clock time: 1167.2s (19.45 min)
+Cumulative train time: 1162.4s (19.37 min)
+Epochs completed:      15
+Best val loss:         0.4419
+Last val inference:    61.99 ms/sample
+Final args: {'data_dir': 'spider', 'modality': 't2', 'val_split': 0.2, 'model': 'baseline', 'rsna_checkpoint': 'checkpoints/v3_20260503/cbam/best_model_attention.pth', 'freeze_backbone': True, 'epochs': 15, 'batch_size': 16, 'lr': 0.001, 'weight_decay': 0.0001, 'loss': 'ce', 'num_workers': 4, 'save_freq': 5, 'early_stop_patience': 15, 'resume': None, 'checkpoint_dir': 'checkpoints/v3_spider_8lbl', 'metrics_dir': 'experiments/v3_spider_8lbl', 'seed': 42}

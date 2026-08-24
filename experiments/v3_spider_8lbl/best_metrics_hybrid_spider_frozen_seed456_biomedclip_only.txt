@@ -1,0 +1,35 @@
+=== BEST HYBRID SPIDER MODEL (frozen_seed456_biomedclip_only) ===
+Saved at: 2026-05-15T10:41:52
+Epoch: 14
+Val loss: 0.6116
+Val mean acc:      75.05%
+Val mean F1 macro: 0.605
+Val mean AUC:      0.793
+Val mean AUPRC:    0.536
+Cumulative train time: 1039.6s (17.33 min)
+Val inference time:    66.67 ms/sample
+
+Pfirrmann             acc= 42.13%  F1_macro=0.410  AUC=0.778  AUPRC=0.429
+                      per-class F1=[0.5, 0.27, 0.492, 0.386, 0.4]
+                      precision=[0.367, 0.455, 0.525, 0.533, 0.306]  recall=[0.786, 0.192, 0.464, 0.302, 0.576]
+Modic                 acc= 72.77%  F1_macro=0.363  AUC=0.671  AUPRC=0.518
+                      per-class F1=[0.763, 0.0, 0.689, 0.0]
+                      precision=[0.855, 0.0, 0.602, 0.0]  recall=[0.69, 0.0, 0.807, 0.0]
+Disc Narrowing        acc= 80.00%  F1_macro=0.799  AUC=0.880  AUPRC=0.843
+                      per-class F1=[0.811, 0.787]
+                      precision=[0.863, 0.737]  recall=[0.765, 0.845]
+Spondylolisthesis     acc= 92.34%  F1_macro=0.530  AUC=0.832  AUPRC=0.126
+                      per-class F1=[0.96, 0.1]
+                      precision=[0.977, 0.071]  recall=[0.943, 0.167]
+UP Endplate           acc= 73.62%  F1_macro=0.734  AUC=0.774  AUPRC=0.664
+                      per-class F1=[0.758, 0.71]
+                      precision=[0.808, 0.661]  recall=[0.713, 0.768]
+LOW Endplate          acc= 71.49%  F1_macro=0.712  AUC=0.773  AUPRC=0.695
+                      per-class F1=[0.739, 0.685]
+                      precision=[0.748, 0.676]  recall=[0.731, 0.695]
+Disc Herniation       acc= 90.21%  F1_macro=0.514  AUC=0.769  AUPRC=0.129
+                      per-class F1=[0.948, 0.08]
+                      precision=[0.946, 0.083]  recall=[0.95, 0.077]
+Disc Bulging          acc= 77.87%  F1_macro=0.778  AUC=0.866  AUPRC=0.886
+                      per-class F1=[0.761, 0.794]
+                      precision=[0.722, 0.833]  recall=[0.806, 0.758]
