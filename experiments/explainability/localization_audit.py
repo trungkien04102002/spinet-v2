@@ -73,6 +73,22 @@ COND_KEY = {
 }
 
 
+_GEO_CACHE = {}
+
+
+def _geo(study_id, series_id, instance_number):
+    """slice_geometry with memoisation.
+
+    Without this each case re-reads two DICOM headers, and neighbouring levels of
+    the same study read the same files over and over. Measured: this dominated
+    the runtime of a 120-case audit.
+    """
+    key = (study_id, series_id, instance_number)
+    if key not in _GEO_CACHE:
+        _GEO_CACHE[key] = slice_geometry(*key)
+    return _GEO_CACHE[key]
+
+
 def annotation_in_volume(study_id, level, condition, coords):
     """Map one annotation into (slice, row, col) of the (9,112,224) volume.
 
@@ -87,8 +103,8 @@ def annotation_in_volume(study_id, level, condition, coords):
         return None
     cr, tr = canal.iloc[0], target.iloc[0]
 
-    gc = slice_geometry(study_id, cr.series_id, cr.instance_number)
-    gt = slice_geometry(study_id, tr.series_id, tr.instance_number)
+    gc = _geo(study_id, cr.series_id, cr.instance_number)
+    gt = _geo(study_id, tr.series_id, tr.instance_number)
     if gc is None or gt is None or not gc["slice_gap"]:
         return None
 
