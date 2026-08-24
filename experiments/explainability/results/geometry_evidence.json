@@ -1,0 +1,39 @@
+{
+  "crop_window_px": {
+    "width": 240,
+    "height": 120
+  },
+  "border_clipping_applied": true,
+  "assumed_image_size": [
+    640,
+    640
+  ],
+  "conditions": {
+    "left_foraminal": {
+      "n": 9743,
+      "offset_from_canal_px": {
+        "dx_median": 26.686633750441842,
+        "dy_median": 23.66757821355702,
+        "dx_p90": 115.75598410057634,
+        "dy_p90": 114.96681748441223,
+        "euclidean_median": 37.337915242463716,
+        "euclidean_p90": 167.05546042132036
+      },
+      "inside_t2_crop_fraction": 0.7660884737760444,
+      "outside_t2_crop_fraction": 0.2339115262239556
+    },
+    "right_foraminal": {
+      "n": 9742,
+      "offset_from_canal_px": {
+        "dx_median": 26.389552341763675,
+        "dy_median": 23.9053088207898,
+        "dx_p90": 115.54772948816124,
+        "dy_p90": 113.73928075158338,
+        "euclidean_median": 37.32343209581664,
+        "euclidean_p90": 167.0863970686482
+      },
+      "inside_t2_crop_fraction": 0.7681174296858961,
+      "outside_t2_crop_fraction": 0.23188257031410386
+    }
+  }
+}
