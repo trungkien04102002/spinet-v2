@@ -1,0 +1,2120 @@
+This is XeTeX, Version 3.141592653-2.6-0.999997 (TeX Live 2025) (preloaded format=xelatex 2025.9.24)  15 MAY 2026 18:35
+entering extended mode
+ restricted \write18 enabled.
+ %&-line parsing enabled.
+**REPORT_DETAILED_VI.tex
+(./REPORT_DETAILED_VI.tex
+LaTeX2e <2024-11-01> patch level 2
+L3 programming layer <2025-01-18>
+(/usr/local/texlive/2025/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2024/06/29 v1.4n Standard LaTeX document class
+(/usr/local/texlive/2025/texmf-dist/tex/latex/base/size11.clo
+File: size11.clo 2024/06/29 v1.4n Standard LaTeX file (size option)
+)
+\c@part=\count192
+\c@section=\count193
+\c@subsection=\count194
+\c@subsubsection=\count195
+\c@paragraph=\count196
+\c@subparagraph=\count197
+\c@figure=\count198
+\c@table=\count199
+\abovecaptionskip=\skip49
+\belowcaptionskip=\skip50
+\bibindent=\dimen141
+)
+(/usr/local/texlive/2025/texmf-dist/tex/latex/fontspec/fontspec.sty
+(/usr/local/texlive/2025/texmf-dist/tex/latex/l3packages/xparse/xparse.sty
+(/usr/local/texlive/2025/texmf-dist/tex/latex/l3kernel/expl3.sty
+Package: expl3 2025-01-18 L3 programming layer (loader) 
+
+(/usr/local/texlive/2025/texmf-dist/tex/latex/l3backend/l3backend-xetex.def
+File: l3backend-xetex.def 2024-05-08 L3 backend support: XeTeX
+\g__graphics_track_int=\count266
+\l__pdf_internal_box=\box52
+\g__pdf_backend_annotation_int=\count267
+\g__pdf_backend_link_int=\count268
+))
+Package: xparse 2024-08-16 L3 Experimental document command parser
+)
+Package: fontspec 2024/05/11 v2.9e Font selection for XeLaTeX and LuaLaTeX
+
+(/usr/local/texlive/2025/texmf-dist/tex/latex/fontspec/fontspec-xetex.sty
+Package: fontspec-xetex 2024/05/11 v2.9e Font selection for XeLaTeX and LuaLaTe
+X
+\l__fontspec_script_int=\count269
+\l__fontspec_language_int=\count270
+\l__fontspec_strnum_int=\count271
+\l__fontspec_tmp_int=\count272
+\l__fontspec_tmpa_int=\count273
+\l__fontspec_tmpb_int=\count274
+\l__fontspec_tmpc_int=\count275
+\l__fontspec_em_int=\count276
+\l__fontspec_emdef_int=\count277
+\l__fontspec_strong_int=\count278
+\l__fontspec_strongdef_int=\count279
+\l__fontspec_tmpa_dim=\dimen142
+\l__fontspec_tmpb_dim=\dimen143
+\l__fontspec_tmpc_dim=\dimen144
+
+(/usr/local/texlive/2025/texmf-dist/tex/latex/base/fontenc.sty
+Package: fontenc 2021/04/29 v2.0v Standard LaTeX package
+)
+(/usr/local/texlive/2025/texmf-dist/tex/latex/fontspec/fontspec.cfg)))
+(/usr/local/texlive/2025/texmf-dist/tex/latex/polyglossia/polyglossia.sty
+Package: polyglossia 2025/01/31 v2.4 Modern multilingual typesetting with XeLaT
+eX and LuaLaTeX
+
+(/usr/local/texlive/2025/texmf-dist/tex/latex/etoolbox/etoolbox.sty
+Package: etoolbox 2025/02/11 v2.5l e-TeX tools for LaTeX (JAW)
+\etb@tempcnta=\count280
+)
+(/usr/local/texlive/2025/texmf-dist/tex/generic/iftex/iftex.sty
+Package: iftex 2024/12/12 v1.0g TeX engine tests
+)
+\l_xpg_alias_keyvals_int=\count281
+
+(/usr/local/texlive/2025/texmf-dist/tex/latex/polyglossia/gloss-latex.ldf
+File: gloss-latex.ldf polyglossia: module for default language
+))
+(/usr/local/texlive/2025/texmf-dist/tex/latex/polyglossia/gloss-vietnamese.ldf
+File: gloss-vietnamese.ldf polyglossia: module for Vietnamese
+)
+
+Package polyglossia Info: Default language is vietnamese
+
+(/usr/local/texlive/2025/texmf-dist/tex/latex/polyglossia/gloss-english.ldf
+File: gloss-english.ldf polyglossia: module for English
+)
+
+Package fontspec Info: 
+(fontspec)             Font family 'TimesNewRoman(0)' created for font 'Times
+(fontspec)             New Roman' with options [Ligatures=TeX].
+(fontspec)              
+(fontspec)              This font family consists of the following NFSS
+(fontspec)             series/shapes:
+(fontspec)              
+(fontspec)             - 'normal' (m/n) with NFSS spec.: <->"Times New
+(fontspec)             Roman/OT:script=latn;language=dflt;mapping=tex-text;"
+(fontspec)             - 'bold' (b/n) with NFSS spec.: <->"Times New
+(fontspec)             Roman/B/OT:script=latn;language=dflt;mapping=tex-text;"
+(fontspec)             - 'italic' (m/it) with NFSS spec.: <->"Times New
+(fontspec)             Roman/I/OT:script=latn;language=dflt;mapping=tex-text;"
+(fontspec)             - 'bold italic' (b/it) with NFSS spec.: <->"Times New
+(fontspec)             Roman/BI/OT:script=latn;language=dflt;mapping=tex-text;"
+
+
+
+(/usr/local/texlive/2025/texmf-dist/tex/latex/geometry/geometry.sty
+Package: geometry 2020/01/02 v5.9 Page Geometry
+
+(/usr/local/texlive/2025/texmf-dist/tex/latex/graphics/keyval.sty
+Package: keyval 2022/05/29 v1.15 key=value parser (DPC)
+\KV@toks@=\toks17
+)
+(/usr/local/texlive/2025/texmf-dist/tex/generic/iftex/ifvtex.sty
+Package: ifvtex 2019/10/25 v1.7 ifvtex legacy package. Use iftex instead.
+)
+\Gm@cnth=\count282
+\Gm@cntv=\count283
+\c@Gm@tempcnt=\count284
+\Gm@bindingoffset=\dimen145
+\Gm@wd@mp=\dimen146
+\Gm@odd@mp=\dimen147
+\Gm@even@mp=\dimen148
+\Gm@layoutwidth=\dimen149
+\Gm@layoutheight=\dimen150
+\Gm@layouthoffset=\dimen151
+\Gm@layoutvoffset=\dimen152
+\Gm@dimlist=\toks18
+)
+(/usr/local/texlive/2025/texmf-dist/tex/latex/amsmath/amsmath.sty
+Package: amsmath 2024/11/05 v2.17t AMS math features
+\@mathmargin=\skip51
+
+For additional information on amsmath, use the `?' option.
+(/usr/local/texlive/2025/texmf-dist/tex/latex/amsmath/amstext.sty
+Package: amstext 2021/08/26 v2.01 AMS text
+
+(/usr/local/texlive/2025/texmf-dist/tex/latex/amsmath/amsgen.sty
+File: amsgen.sty 1999/11/30 v2.0 generic functions
+\@emptytoks=\toks19
+\ex@=\dimen153
+))
+(/usr/local/texlive/2025/texmf-dist/tex/latex/amsmath/amsbsy.sty
+Package: amsbsy 1999/11/29 v1.2d Bold Symbols
+\pmbraise@=\dimen154
+)
+(/usr/local/texlive/2025/texmf-dist/tex/latex/amsmath/amsopn.sty
+Package: amsopn 2022/04/08 v2.04 operator names
+)
+\inf@bad=\count285
+LaTeX Info: Redefining \frac on input line 233.
+\uproot@=\count286
+\leftroot@=\count287
+LaTeX Info: Redefining \overline on input line 398.
+LaTeX Info: Redefining \colon on input line 409.
+\classnum@=\count288
+\DOTSCASE@=\count289
+LaTeX Info: Redefining \ldots on input line 495.
+LaTeX Info: Redefining \dots on input line 498.
+LaTeX Info: Redefining \cdots on input line 619.
+\Mathstrutbox@=\box53
+\strutbox@=\box54
+LaTeX Info: Redefining \big on input line 721.
+LaTeX Info: Redefining \Big on input line 722.
+LaTeX Info: Redefining \bigg on input line 723.
+LaTeX Info: Redefining \Bigg on input line 724.
+\big@size=\dimen155
+LaTeX Font Info:    Redeclaring font encoding OML on input line 742.
+LaTeX Font Info:    Redeclaring font encoding OMS on input line 743.
+\macc@depth=\count290
+LaTeX Info: Redefining \bmod on input line 904.
+LaTeX Info: Redefining \pmod on input line 909.
+LaTeX Info: Redefining \smash on input line 939.
+LaTeX Info: Redefining \relbar on input line 969.
+LaTeX Info: Redefining \Relbar on input line 970.
+\c@MaxMatrixCols=\count291
+\dotsspace@=\muskip17
+\c@parentequation=\count292
+\dspbrk@lvl=\count293
+\tag@help=\toks20
+\row@=\count294
+\column@=\count295
+\maxfields@=\count296
+\andhelp@=\toks21
+\eqnshift@=\dimen156
+\alignsep@=\dimen157
+\tagshift@=\dimen158
+\tagwidth@=\dimen159
+\totwidth@=\dimen160
+\lineht@=\dimen161
+\@envbody=\toks22
+\multlinegap=\skip52
+\multlinetaggap=\skip53
+\mathdisplay@stack=\toks23
+LaTeX Info: Redefining \[ on input line 2953.
+LaTeX Info: Redefining \] on input line 2954.
+)
+(/usr/local/texlive/2025/texmf-dist/tex/latex/amsfonts/amssymb.sty
+Package: amssymb 2013/01/14 v3.01 AMS font symbols
+
+(/usr/local/texlive/2025/texmf-dist/tex/latex/amsfonts/amsfonts.sty
+Package: amsfonts 2013/01/14 v3.01 Basic AMSFonts support
+\symAMSa=\mathgroup4
+\symAMSb=\mathgroup5
+LaTeX Font Info:    Redeclaring math symbol \hbar on input line 98.
+LaTeX Font Info:    Overwriting math alphabet `\mathfrak' in version `bold'
+(Font)                  U/euf/m/n --> U/euf/b/n on input line 106.
+))
+(/usr/local/texlive/2025/texmf-dist/tex/latex/booktabs/booktabs.sty
+Package: booktabs 2020/01/12 v1.61803398 Publication quality tables
+\heavyrulewidth=\dimen162
+\lightrulewidth=\dimen163
+\cmidrulewidth=\dimen164
+\belowrulesep=\dimen165
+\belowbottomsep=\dimen166
+\aboverulesep=\dimen167
+\abovetopsep=\dimen168
+\cmidrulesep=\dimen169
+\cmidrulekern=\dimen170
+\defaultaddspace=\dimen171
+\@cmidla=\count297
+\@cmidlb=\count298
+\@aboverulesep=\dimen172
+\@belowrulesep=\dimen173
+\@thisruleclass=\count299
+\@lastruleclass=\count300
+\@thisrulewidth=\dimen174
+)
+(/usr/local/texlive/2025/texmf-dist/tex/latex/tools/array.sty
+Package: array 2024/10/17 v2.6g Tabular extension package (FMi)
+\col@sep=\dimen175
+\ar@mcellbox=\box55
+\extrarowheight=\dimen176
+\NC@list=\toks24
+\extratabsurround=\skip54
+\backup@length=\skip55
+\ar@cellbox=\box56
+)
+(/usr/local/texlive/2025/texmf-dist/tex/latex/multirow/multirow.sty
+Package: multirow 2024/11/12 v2.9 Span multiple rows of a table
+\multirow@colwidth=\skip56
+\multirow@cntb=\count301
+\multirow@dima=\skip57
+\bigstrutjot=\dimen177
+)
+(/usr/local/texlive/2025/texmf-dist/tex/latex/tools/longtable.sty
+Package: longtable 2024-10-27 v4.22 Multi-page Table package (DPC)
+\LTleft=\skip58
+\LTright=\skip59
+\LTpre=\skip60
+\LTpost=\skip61
+\LTchunksize=\count302
+\LTcapwidth=\dimen178
+\LT@head=\box57
+\LT@firsthead=\box58
+\LT@foot=\box59
+\LT@lastfoot=\box60
+\LT@gbox=\box61
+\LT@cols=\count303
+\LT@rows=\count304
+\c@LT@tables=\count305
+\c@LT@chunks=\count306
+\LT@p@ftn=\toks25
+)
+(/usr/local/texlive/2025/texmf-dist/tex/latex/xcolor/xcolor.sty
+Package: xcolor 2024/09/29 v3.02 LaTeX color extensions (UK)
+
+(/usr/local/texlive/2025/texmf-dist/tex/latex/graphics-cfg/color.cfg
+File: color.cfg 2016/01/02 v1.6 sample color configuration
+)
+Package xcolor Info: Driver file: xetex.def on input line 274.
+
+(/usr/local/texlive/2025/texmf-dist/tex/latex/graphics-def/xetex.def
+File: xetex.def 2022/09/22 v5.0n Graphics/color driver for xetex
+)
+(/usr/local/texlive/2025/texmf-dist/tex/latex/graphics/mathcolor.ltx)
+Package xcolor Info: Model `cmy' substituted by `cmy0' on input line 1349.
+Package xcolor Info: Model `RGB' extended on input line 1365.
+Package xcolor Info: Model `HTML' substituted by `rgb' on input line 1367.
+Package xcolor Info: Model `Hsb' substituted by `hsb' on input line 1368.
+Package xcolor Info: Model `tHsb' substituted by `hsb' on input line 1369.
+Package xcolor Info: Model `HSB' substituted by `hsb' on input line 1370.
+Package xcolor Info: Model `Gray' substituted by `gray' on input line 1371.
+Package xcolor Info: Model `wave' substituted by `hsb' on input line 1372.
+)
+(/usr/local/texlive/2025/texmf-dist/tex/latex/colortbl/colortbl.sty
+Package: colortbl 2024/07/06 v1.0i Color table columns (DPC)
+\everycr=\toks26
+\minrowclearance=\skip62
+\rownum=\count307
+)
+(/usr/local/texlive/2025/texmf-dist/tex/latex/graphics/graphicx.sty
+Package: graphicx 2021/09/16 v1.2d Enhanced LaTeX Graphics (DPC,SPQR)
+
+(/usr/local/texlive/2025/texmf-dist/tex/latex/graphics/graphics.sty
+Package: graphics 2024/08/06 v1.4g Standard LaTeX Graphics (DPC,SPQR)
+
+(/usr/local/texlive/2025/texmf-dist/tex/latex/graphics/trig.sty
+Package: trig 2023/12/02 v1.11 sin cos tan (DPC)
+)
+(/usr/local/texlive/2025/texmf-dist/tex/latex/graphics-cfg/graphics.cfg
+File: graphics.cfg 2016/06/04 v1.11 sample graphics configuration
+)
+Package graphics Info: Driver file: xetex.def on input line 106.
+)
+\Gin@req@height=\dimen179
+\Gin@req@width=\dimen180
+)
+(/usr/local/texlive/2025/texmf-dist/tex/latex/hyperref/hyperref.sty
+Package: hyperref 2024-11-05 v7.01l Hypertext links for LaTeX
+
+(/usr/local/texlive/2025/texmf-dist/tex/latex/kvsetkeys/kvsetkeys.sty
+Package: kvsetkeys 2022-10-05 v1.19 Key value parser (HO)
+)
+(/usr/local/texlive/2025/texmf-dist/tex/generic/kvdefinekeys/kvdefinekeys.sty
+Package: kvdefinekeys 2019-12-19 v1.6 Define keys (HO)
+)
+(/usr/local/texlive/2025/texmf-dist/tex/generic/pdfescape/pdfescape.sty
+Package: pdfescape 2019/12/09 v1.15 Implements pdfTeX's escape features (HO)
+
+(/usr/local/texlive/2025/texmf-dist/tex/generic/ltxcmds/ltxcmds.sty
+Package: ltxcmds 2023-12-04 v1.26 LaTeX kernel commands for general use (HO)
+)
+(/usr/local/texlive/2025/texmf-dist/tex/generic/pdftexcmds/pdftexcmds.sty
+Package: pdftexcmds 2020-06-27 v0.33 Utility functions of pdfTeX for LuaTeX (HO
+)
+
+(/usr/local/texlive/2025/texmf-dist/tex/generic/infwarerr/infwarerr.sty
+Package: infwarerr 2019/12/03 v1.5 Providing info/warning/error messages (HO)
+)
+Package pdftexcmds Info: \pdf@primitive is available.
+Package pdftexcmds Info: \pdf@ifprimitive is available.
+Package pdftexcmds Info: \pdfdraftmode not found.
+))
+(/usr/local/texlive/2025/texmf-dist/tex/latex/hycolor/hycolor.sty
+Package: hycolor 2020-01-27 v1.10 Color options for hyperref/bookmark (HO)
+)
+(/usr/local/texlive/2025/texmf-dist/tex/latex/hyperref/nameref.sty
+Package: nameref 2023-11-26 v2.56 Cross-referencing by name of section
+
+(/usr/local/texlive/2025/texmf-dist/tex/latex/refcount/refcount.sty
+Package: refcount 2019/12/15 v3.6 Data extraction from label references (HO)
+)
+(/usr/local/texlive/2025/texmf-dist/tex/generic/gettitlestring/gettitlestring.s
+ty
+Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
+ (/usr/local/texlive/2025/texmf-dist/tex/latex/kvoptions/kvoptions.sty
+Package: kvoptions 2022-06-15 v3.15 Key value format for package options (HO)
+))
+\c@section@level=\count308
+)
+(/usr/local/texlive/2025/texmf-dist/tex/generic/stringenc/stringenc.sty
+Package: stringenc 2019/11/29 v1.12 Convert strings between diff. encodings (HO
+)
+)
+\@linkdim=\dimen181
+\Hy@linkcounter=\count309
+\Hy@pagecounter=\count310
+
+(/usr/local/texlive/2025/texmf-dist/tex/latex/hyperref/pd1enc.def
+File: pd1enc.def 2024-11-05 v7.01l Hyperref: PDFDocEncoding definition (HO)
+)
+(/usr/local/texlive/2025/texmf-dist/tex/generic/intcalc/intcalc.sty
+Package: intcalc 2019/12/15 v1.3 Expandable calculations with integers (HO)
+)
+\Hy@SavedSpaceFactor=\count311
+
+(/usr/local/texlive/2025/texmf-dist/tex/latex/hyperref/puenc.def
+File: puenc.def 2024-11-05 v7.01l Hyperref: PDF Unicode definition (HO)
+)
+Package hyperref Info: Hyper figures OFF on input line 4157.
+Package hyperref Info: Link nesting OFF on input line 4162.
+Package hyperref Info: Hyper index ON on input line 4165.
+Package hyperref Info: Plain pages OFF on input line 4172.
+Package hyperref Info: Backreferencing OFF on input line 4177.
+Package hyperref Info: Implicit mode ON; LaTeX internals redefined.
+Package hyperref Info: Bookmarks ON on input line 4424.
+\c@Hy@tempcnt=\count312
+
+(/usr/local/texlive/2025/texmf-dist/tex/latex/url/url.sty
+\Urlmuskip=\muskip18
+Package: url 2013/09/16  ver 3.4  Verb mode for urls, etc.
+)
+LaTeX Info: Redefining \url on input line 4763.
+\XeTeXLinkMargin=\dimen182
+
+(/usr/local/texlive/2025/texmf-dist/tex/generic/bitset/bitset.sty
+Package: bitset 2019/12/09 v1.3 Handle bit-vector datatype (HO)
+
+(/usr/local/texlive/2025/texmf-dist/tex/generic/bigintcalc/bigintcalc.sty
+Package: bigintcalc 2019/12/15 v1.5 Expandable calculations on big integers (HO
+)
+))
+\Fld@menulength=\count313
+\Field@Width=\dimen183
+\Fld@charsize=\dimen184
+Package hyperref Info: Hyper figures OFF on input line 6042.
+Package hyperref Info: Link nesting OFF on input line 6047.
+Package hyperref Info: Hyper index ON on input line 6050.
+Package hyperref Info: backreferencing OFF on input line 6057.
+Package hyperref Info: Link coloring OFF on input line 6062.
+Package hyperref Info: Link coloring with OCG OFF on input line 6067.
+Package hyperref Info: PDF/A mode OFF on input line 6072.
+
+(/usr/local/texlive/2025/texmf-dist/tex/latex/base/atbegshi-ltx.sty
+Package: atbegshi-ltx 2021/01/10 v1.0c Emulation of the original atbegshi
+package with kernel methods
+)
+\Hy@abspage=\count314
+\c@Item=\count315
+\c@Hfootnote=\count316
+)
+Package hyperref Info: Driver (autodetected): hxetex.
+
+(/usr/local/texlive/2025/texmf-dist/tex/latex/hyperref/hxetex.def
+File: hxetex.def 2024-11-05 v7.01l Hyperref driver for XeTeX
+\pdfm@box=\box62
+\c@Hy@AnnotLevel=\count317
+\HyField@AnnotCount=\count318
+\Fld@listcount=\count319
+\c@bookmark@seq@number=\count320
+
+(/usr/local/texlive/2025/texmf-dist/tex/latex/rerunfilecheck/rerunfilecheck.sty
+Package: rerunfilecheck 2022-07-10 v1.10 Rerun checks for auxiliary files (HO)
+(/usr/local/texlive/2025/texmf-dist/tex/latex/base/atveryend-ltx.sty
+Package: atveryend-ltx 2020/08/19 v1.0a Emulation of the original atveryend pac
+kage
+with kernel methods
+)
+(/usr/local/texlive/2025/texmf-dist/tex/generic/uniquecounter/uniquecounter.sty
+Package: uniquecounter 2019/12/15 v1.4 Provide unlimited unique counter (HO)
+)
+Package uniquecounter Info: New unique counter `rerunfilecheck' on input line 2
+85.
+)
+\Hy@SectionHShift=\skip63
+)
+Package hyperref Info: Option `colorlinks' set `true' on input line 35.
+ (/usr/local/texlive/2025/texmf-dist/tex/latex/enumitem/enumitem.sty
+Package: enumitem 2025/02/06 v3.11 Customized lists
+\labelindent=\skip64
+\enit@outerparindent=\dimen185
+\enit@toks=\toks27
+\enit@inbox=\box63
+\enit@count@id=\count321
+\enitdp@description=\count322
+)
+(/usr/local/texlive/2025/texmf-dist/tex/latex/titlesec/titlesec.sty
+Package: titlesec 2025/01/04 v2.17 Sectioning titles
+\ttl@box=\box64
+\beforetitleunit=\skip65
+\aftertitleunit=\skip66
+\ttl@plus=\dimen186
+\ttl@minus=\dimen187
+\ttl@toksa=\toks28
+\titlewidth=\dimen188
+\titlewidthlast=\dimen189
+\titlewidthfirst=\dimen190
+)
+(/usr/local/texlive/2025/texmf-dist/tex/latex/caption/caption.sty
+Package: caption 2023/08/05 v3.6o Customizing captions (AR)
+
+(/usr/local/texlive/2025/texmf-dist/tex/latex/caption/caption3.sty
+Package: caption3 2023/07/31 v2.4d caption3 kernel (AR)
+\caption@tempdima=\dimen191
+\captionmargin=\dimen192
+\caption@leftmargin=\dimen193
+\caption@rightmargin=\dimen194
+\caption@width=\dimen195
+\caption@indent=\dimen196
+\caption@parindent=\dimen197
+\caption@hangindent=\dimen198
+Package caption Info: Standard document class detected.
+)
+\c@caption@flags=\count323
+\c@continuedfloat=\count324
+Package caption Info: hyperref package is loaded.
+Package caption Info: longtable package is loaded.
+
+(/usr/local/texlive/2025/texmf-dist/tex/latex/caption/ltcaption.sty
+Package: ltcaption 2021/01/08 v1.4c longtable captions (AR)
+))
+(./REPORT_DETAILED_VI.aux)
+\openout1 = `REPORT_DETAILED_VI.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 57.
+LaTeX Font Info:    ... okay on input line 57.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 57.
+LaTeX Font Info:    ... okay on input line 57.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 57.
+LaTeX Font Info:    ... okay on input line 57.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 57.
+LaTeX Font Info:    ... okay on input line 57.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 57.
+LaTeX Font Info:    ... okay on input line 57.
+LaTeX Font Info:    Checking defaults for TU/lmr/m/n on input line 57.
+LaTeX Font Info:    ... okay on input line 57.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 57.
+LaTeX Font Info:    ... okay on input line 57.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 57.
+LaTeX Font Info:    ... okay on input line 57.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 57.
+LaTeX Font Info:    ... okay on input line 57.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 57.
+LaTeX Font Info:    ... okay on input line 57.
+
+Package fontspec Info: 
+(fontspec)             Adjusting the maths setup (use [no-math] to avoid
+(fontspec)             this).
+
+\symlegacymaths=\mathgroup6
+LaTeX Font Info:    Overwriting symbol font `legacymaths' in version `bold'
+(Font)                  OT1/cmr/m/n --> OT1/cmr/bx/n on input line 57.
+LaTeX Font Info:    Redeclaring math accent \acute on input line 57.
+LaTeX Font Info:    Redeclaring math accent \grave on input line 57.
+LaTeX Font Info:    Redeclaring math accent \ddot on input line 57.
+LaTeX Font Info:    Redeclaring math accent \tilde on input line 57.
+LaTeX Font Info:    Redeclaring math accent \bar on input line 57.
+LaTeX Font Info:    Redeclaring math accent \breve on input line 57.
+LaTeX Font Info:    Redeclaring math accent \check on input line 57.
+LaTeX Font Info:    Redeclaring math accent \hat on input line 57.
+LaTeX Font Info:    Redeclaring math accent \dot on input line 57.
+LaTeX Font Info:    Redeclaring math accent \mathring on input line 57.
+LaTeX Font Info:    Redeclaring math symbol \Gamma on input line 57.
+LaTeX Font Info:    Redeclaring math symbol \Delta on input line 57.
+LaTeX Font Info:    Redeclaring math symbol \Theta on input line 57.
+LaTeX Font Info:    Redeclaring math symbol \Lambda on input line 57.
+LaTeX Font Info:    Redeclaring math symbol \Xi on input line 57.
+LaTeX Font Info:    Redeclaring math symbol \Pi on input line 57.
+LaTeX Font Info:    Redeclaring math symbol \Sigma on input line 57.
+LaTeX Font Info:    Redeclaring math symbol \Upsilon on input line 57.
+LaTeX Font Info:    Redeclaring math symbol \Phi on input line 57.
+LaTeX Font Info:    Redeclaring math symbol \Psi on input line 57.
+LaTeX Font Info:    Redeclaring math symbol \Omega on input line 57.
+LaTeX Font Info:    Redeclaring math symbol \mathdollar on input line 57.
+LaTeX Font Info:    Redeclaring symbol font `operators' on input line 57.
+LaTeX Font Info:    Encoding `OT1' has changed to `TU' for symbol font
+(Font)              `operators' in the math version `normal' on input line 57.
+LaTeX Font Info:    Overwriting symbol font `operators' in version `normal'
+(Font)                  OT1/cmr/m/n --> TU/TimesNewRoman(0)/m/n on input line 5
+7.
+LaTeX Font Info:    Encoding `OT1' has changed to `TU' for symbol font
+(Font)              `operators' in the math version `bold' on input line 57.
+LaTeX Font Info:    Overwriting symbol font `operators' in version `bold'
+(Font)                  OT1/cmr/bx/n --> TU/TimesNewRoman(0)/m/n on input line 
+57.
+LaTeX Font Info:    Overwriting symbol font `operators' in version `normal'
+(Font)                  TU/TimesNewRoman(0)/m/n --> TU/TimesNewRoman(0)/m/n on 
+input line 57.
+LaTeX Font Info:    Overwriting math alphabet `\mathit' in version `normal'
+(Font)                  OT1/cmr/m/it --> TU/TimesNewRoman(0)/m/it on input line
+ 57.
+LaTeX Font Info:    Overwriting math alphabet `\mathbf' in version `normal'
+(Font)                  OT1/cmr/bx/n --> TU/TimesNewRoman(0)/b/n on input line 
+57.
+LaTeX Font Info:    Overwriting math alphabet `\mathsf' in version `normal'
+(Font)                  OT1/cmss/m/n --> TU/lmss/m/n on input line 57.
+LaTeX Font Info:    Overwriting math alphabet `\mathtt' in version `normal'
+(Font)                  OT1/cmtt/m/n --> TU/lmtt/m/n on input line 57.
+LaTeX Font Info:    Overwriting symbol font `operators' in version `bold'
+(Font)                  TU/TimesNewRoman(0)/m/n --> TU/TimesNewRoman(0)/b/n on 
+input line 57.
+LaTeX Font Info:    Overwriting math alphabet `\mathit' in version `bold'
+(Font)                  OT1/cmr/bx/it --> TU/TimesNewRoman(0)/b/it on input lin
+e 57.
+LaTeX Font Info:    Overwriting math alphabet `\mathsf' in version `bold'
+(Font)                  OT1/cmss/bx/n --> TU/lmss/b/n on input line 57.
+LaTeX Font Info:    Overwriting math alphabet `\mathtt' in version `bold'
+(Font)                  OT1/cmtt/m/n --> TU/lmtt/b/n on input line 57.
+
+*geometry* driver: auto-detecting
+*geometry* detected driver: xetex
+*geometry* verbose mode - [ preamble ] result:
+* driver: xetex
+* paper: a4paper
+* layout: <same size as paper>
+* layoutoffset:(h,v)=(0.0pt,0.0pt)
+* modes: 
+* h-part:(L,W,R)=(62.59596pt, 472.31595pt, 62.59596pt)
+* v-part:(T,H,B)=(62.59596pt, 719.85492pt, 62.59596pt)
+* \paperwidth=597.50787pt
+* \paperheight=845.04684pt
+* \textwidth=472.31595pt
+* \textheight=719.85492pt
+* \oddsidemargin=-9.67403pt
+* \evensidemargin=-9.67403pt
+* \topmargin=-46.67403pt
+* \headheight=12.0pt
+* \headsep=25.0pt
+* \topskip=11.0pt
+* \footskip=30.0pt
+* \marginparwidth=50.0pt
+* \marginparsep=10.0pt
+* \columnsep=10.0pt
+* \skip\footins=10.0pt plus 4.0pt minus 2.0pt
+* \hoffset=0.0pt
+* \voffset=0.0pt
+* \mag=1000
+* \@twocolumnfalse
+* \@twosidefalse
+* \@mparswitchfalse
+* \@reversemarginfalse
+* (1in=72.27pt=25.4mm, 1cm=28.453pt)
+
+Package hyperref Info: Link coloring ON on input line 57.
+(./REPORT_DETAILED_VI.out) (./REPORT_DETAILED_VI.out)
+\@outlinefile=\write3
+\openout3 = `REPORT_DETAILED_VI.out'.
+
+Package caption Info: Begin \AtBeginDocument code.
+Package caption Info: End \AtBeginDocument code.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 59.
+
+
+(/usr/local/texlive/2025/texmf-dist/tex/latex/amsfonts/umsa.fd
+File: umsa.fd 2013/01/14 v3.01 AMS symbols A
+)
+LaTeX Font Info:    Trying to load font information for U+msb on input line 59.
+
+
+(/usr/local/texlive/2025/texmf-dist/tex/latex/amsfonts/umsb.fd
+File: umsb.fd 2013/01/14 v3.01 AMS symbols B
+)
+(./REPORT_DETAILED_VI.toc
+
+[1
+
+]
+
+[2])
+\tf@toc=\write4
+\openout4 = `REPORT_DETAILED_VI.toc'.
+
+
+
+[3]
+
+[4]
+Overfull \hbox (68.51729pt too wide) in paragraph at lines 194--197
+\TU/TimesNewRoman(0)/b/n/10.95 Label convention\TU/TimesNewRoman(0)/m/n/10.95 :
+ nhãn $\OMS/cmsy/m/n/10.95 ^^@\OT1/cmr/m/n/10.95 1$ \TU/TimesNewRoman(0)/m/n/10
+.95 = “missing label” — phải preserve qua augmentation. [][]\TU/lmtt/m/n/10.95 
+FocalLoss []\TU/TimesNewRoman(0)/m/n/10.95 và [][]\TU/lmtt/m/n/10.95 compute_cl
+ass_weights
+ []
+
+
+
+[5]
+File: ../experiments/hybrid_architecture.png Graphic file (type bmp)
+<../experiments/hybrid_architecture.png>
+
+
+[6]
+
+[7]
+Underfull \hbox (badness 7486) in paragraph at lines 463--463
+[]|\TU/TimesNewRoman(0)/m/n/10 CBAM Channel + Spatial
+ []
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+
+
+[8]
+Overfull \hbox (16.90488pt too wide) in paragraph at lines 506--510
+\TU/TimesNewRoman(0)/b/n/10.95 Frozen hoàn toàn\TU/TimesNewRoman(0)/m/n/10.95 :
+ [][]\TU/lmtt/m/n/10.95 requires_grad=False []\TU/TimesNewRoman(0)/m/n/10.95 + 
+[][]\TU/lmtt/m/n/10.95 .eval() []\TU/TimesNewRoman(0)/m/n/10.95 mode. Verified 
+trong [][]\TU/lmtt/m/n/10.95 train_rsna_hybrid.py:91-98[]\TU/TimesNewRoman(0)/m
+/n/10.95 .
+ []
+
+
+Overfull \hbox (4.16075pt too wide) in paragraph at lines 523--528
+\TU/TimesNewRoman(0)/b/n/10.95 Tại sao cần MLP, không phải linear? \TU/TimesNew
+Roman(0)/m/n/10.95 Hai encoder train với objective khác nhau (supervised CE vs 
+contrastive
+ []
+
+
+
+[9]
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 578.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `\gamma' on input line 578.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 578.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 628.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `\times' on input line 628.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 628.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 628.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `\times' on input line 628.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 628.
+
+
+Overfull \hbox (18.91498pt too wide) in paragraph at lines 630--633
+\TU/TimesNewRoman(0)/b/n/10.95 Cơ chế\TU/TimesNewRoman(0)/m/n/10.95 : Mỗi sampl
+e Severe/Moderate được nhân bản 3-5 lần vào sampling pool trước khi shuffle. Im
+plementation:
+ []
+
+
+
+[10]
+Overfull \hbox (8.04678pt too wide) in paragraph at lines 699--702
+\TU/TimesNewRoman(0)/b/n/10.95 LR Hybrid thấp hơn \TU/TimesNewRoman(0)/m/n/10.9
+5 ($\OT1/cmr/m/n/10.95 10[]$\TU/TimesNewRoman(0)/m/n/10.95 ): chỉ train fusion 
+MLP nhỏ ($\OMS/cmsy/m/n/10.95 ^^X$\TU/TimesNewRoman(0)/m/n/10.95 500K params), 
+không train CBAM hay BiomedCLIP.
+ []
+
+
+Overfull \hbox (31.61829pt too wide) in paragraph at lines 716--718
+[]\TU/TimesNewRoman(0)/m/n/10.95 3-seed runs (42, 123, 456): kế hoạch, chưa chạ
+y. Ước tính $\OMS/cmsy/m/n/10.95 ^^X$\TU/TimesNewRoman(0)/m/n/10.95 $6, $\OMS/c
+msy/m/n/10.95 ^^X$\TU/TimesNewRoman(0)/m/n/10.95 10h. Script: [][]\TU/lmtt/m/n/
+10.95 scripts/run_hybrid_3seeds.sh[]\TU/TimesNewRoman(0)/m/n/10.95 . 
+ []
+
+
+
+[11]
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 809.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `\times' on input line 809.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 809.
+
+
+
+[12]
+Overfull \hbox (5.14104pt too wide) in paragraph at lines 849--851
+[]\TU/TimesNewRoman(0)/b/n/10.95 BMC-only converge ep3\TU/TimesNewRoman(0)/m/n/
+10.95 : Overfit sớm do capacity thấp. Linear probe BMC trực tiếp cần cho fair c
+omparison
+ []
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+
+
+[13]
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+
+
+[14]
+Overfull \hbox (0.8101pt too wide) in paragraph at lines 1041--1043
+\TU/TimesNewRoman(0)/m/n/10.95 Đây là \TU/TimesNewRoman(0)/m/it/10.95 contribut
+ion thứ 4 (finding mới)\TU/TimesNewRoman(0)/m/n/10.95 , không phải failure — pa
+ttern phản ánh structure của RSNA pretraining
+ []
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+
+
+[15]
+Overfull \hbox (29.48279pt too wide) in paragraph at lines 1117--1121
+\TU/TimesNewRoman(0)/m/n/10.95 Aggregate F1 SPIDER chỉ thay đổi nhẹ ($\OT1/cmr/
+m/n/10.95 0\OML/cmm/m/it/10.95 :\OT1/cmr/m/n/10.95 649 \OMS/cmsy/m/n/10.95 ! \O
+T1/cmr/m/n/10.95 0\OML/cmm/m/it/10.95 :\OT1/cmr/m/n/10.95 660$\TU/TimesNewRoman
+(0)/m/n/10.95 ) là do dominant của easy majority classes (Spondylolisthesis
+ []
+
+
+Overfull \hbox (0.87897pt too wide) in paragraph at lines 1140--1144
+\TU/TimesNewRoman(0)/b/n/10.95 Hybrid inference $\OT1/cmr/m/n/10.95 +73[]$ \TU/
+TimesNewRoman(0)/b/n/10.95 latency \TU/TimesNewRoman(0)/m/n/10.95 so với CBAM (
+do thêm BiomedCLIP forward pass) nhưng vẫn 103 sample/s
+ []
+
+File: ../experiments/v3_20260503/figures/grad_cam_severe.png Graphic file (type
+ bmp)
+<../experiments/v3_20260503/figures/grad_cam_severe.png>
+
+
+[16]
+File: ../experiments/v3_20260503/figures/confusion_matrix_cbam.png Graphic file
+ (type bmp)
+<../experiments/v3_20260503/figures/confusion_matrix_cbam.png>
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+File: ../experiments/v3_20260503/figures/pr_curves_severe.png Graphic file (typ
+e bmp)
+<../experiments/v3_20260503/figures/pr_curves_severe.png>
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+
+Overfull \hbox (60.81831pt too wide) in paragraph at lines 1189--1206
+ [][] 
+ []
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+
+Overfull \hbox (6.34346pt too wide) in paragraph at lines 1208--1210
+$[]$ \TU/TimesNewRoman(0)/m/n/10.95 Liu/Aktan 2025 dùng pixel-level segmentatio
+n, không phải severity classification — không direct comparator. 
+ []
+
+
+
+[17]
+Underfull \hbox (badness 10000) in paragraph at lines 1258--1258
+[]|[]\TU/TimesNewRoman(0)/b/n/10 3D ResNet-18/34
+ []
+
+
+Underfull \hbox (badness 7888) in paragraph at lines 1258--1258
+[]|\TU/TimesNewRoman(0)/m/n/10 Tencent MedicalNet, pretrain
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1258--1259
+[]|[]\TU/TimesNewRoman(0)/b/n/10 Comparable /
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1259--1259
+[]|\TU/TimesNewRoman(0)/m/n/10 Dense connectivity adapted
+ []
+
+
+Underfull \hbox (badness 2547) in paragraph at lines 1259--1259
+[]|\TU/TimesNewRoman(0)/m/n/10 Không có spine paper; brain
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1259--1260
+[]|\TU/TimesNewRoman(0)/m/n/10 Comparable,
+ []
+
+
+Underfull \hbox (badness 1577) in paragraph at lines 1259--1260
+\TU/TimesNewRoman(0)/m/n/10 nhưng không có
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1259--1260
+\TU/TimesNewRoman(0)/m/n/10 medical pretrain
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1260--1261
+[]|\TU/TimesNewRoman(0)/m/n/10 Yếu hơn cho
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1261--1261
+[]|\TU/TimesNewRoman(0)/m/n/10 MedicalNet
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1261--1261
+[]|\TU/TimesNewRoman(0)/m/n/10 Cùng row 1 — de-facto
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1261--1262
+[]|\TU/TimesNewRoman(0)/m/n/10 Equivalent (đây
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1262--1262
+[]|\TU/TimesNewRoman(0)/m/n/10 Inflated-2D + (2+1)D
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1262--1262
+\TU/TimesNewRoman(0)/m/n/10 conv backbones từ video
+ []
+
+
+Underfull \hbox (badness 1776) in paragraph at lines 1262--1262
+[]|\TU/TimesNewRoman(0)/m/n/10 Không có lumbar spine MRI
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1262--1263
+\TU/TimesNewRoman(0)/m/n/10 features transfer
+ []
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1283--1283
+[]|\TU/TimesNewRoman(0)/m/n/10 Swin UNETR /
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1283--1283
+[]|\TU/TimesNewRoman(0)/m/n/10 Hierarchical 3D Swin
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1283--1283
+\TU/TimesNewRoman(0)/m/n/10 Transformer với shifted
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1283--1283
+\TU/TimesNewRoman(0)/m/n/10 windows; SOTA cho
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1283--1283
+[]|\TU/TimesNewRoman(0)/m/n/10 Detector backbone cho 1
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1283--1283
+\TU/TimesNewRoman(0)/m/n/10 Kaggle solution; chính cho
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1283--1284
+[]|\TU/TimesNewRoman(0)/m/n/10 Comparable
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1283--1284
+\TU/TimesNewRoman(0)/m/n/10 nhưng heavier
+ []
+
+
+Underfull \hbox (badness 3428) in paragraph at lines 1283--1284
+\TU/TimesNewRoman(0)/m/n/10 ($\OMS/cmsy/m/n/10 ^^X \OT1/cmr/m/n/10 4\OMS/cmsy/m
+/n/10 ^^B$ \TU/TimesNewRoman(0)/m/n/10 params
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1283--1284
+\TU/TimesNewRoman(0)/m/n/10 và FLOPs của
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1284--1284
+[]|\TU/TimesNewRoman(0)/m/n/10 3D Swin (brain
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1284--1284
+[]|\TU/TimesNewRoman(0)/m/n/10 Domain-aware multi-task
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1285--1285
+[]|\TU/TimesNewRoman(0)/m/n/10 Pure ViT encoder + U-Net
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1285--1285
+\TU/TimesNewRoman(0)/m/n/10 decoder cho 3D medical
+ []
+
+
+Underfull \hbox (badness 5847) in paragraph at lines 1285--1285
+[]|\TU/TimesNewRoman(0)/m/n/10 Segmentation-only; không có
+ []
+
+
+Underfull \hbox (badness 1902) in paragraph at lines 1285--1286
+[]|\TU/TimesNewRoman(0)/m/n/10 Yếu hơn, không
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1285--1286
+\TU/TimesNewRoman(0)/m/n/10 classification
+ []
+
+
+Underfull \hbox (badness 3536) in paragraph at lines 1286--1286
+[]|\TU/TimesNewRoman(0)/m/n/10 2D ViT + CNN hybrid cho
+ []
+
+
+Underfull \hbox (badness 1325) in paragraph at lines 1286--1286
+[]|\TU/TimesNewRoman(0)/m/n/10 Segmentation, 2D. Không 3D
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1287--1287
+[]|\TU/TimesNewRoman(0)/m/n/10 MedViT-3D /
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1287--1287
+[]|\TU/TimesNewRoman(0)/m/n/10 3D Vision Transformer
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1287--1287
+\TU/TimesNewRoman(0)/m/n/10 adaptations; mostly research
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1287--1288
+[]|\TU/TimesNewRoman(0)/m/n/10 Yếu hơn cho
+ []
+
+
+Underfull \hbox (badness 1924) in paragraph at lines 1288--1289
+\OMS/cmsy/m/n/10 !$ \TU/TimesNewRoman(0)/m/n/10 MRI transfer
+ []
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+
+Overfull \hbox (6.8988pt too wide) in paragraph at lines 1293--1299
+\TU/TimesNewRoman(0)/m/it/10.95 classification \TU/TimesNewRoman(0)/m/n/10.95 p
+er-IVD crops nhỏ ($\OT1/cmr/m/n/10.95 9 \OMS/cmsy/m/n/10.95 ^^B \OT1/cmr/m/n/10
+.95 112 \OMS/cmsy/m/n/10.95 ^^B \OT1/cmr/m/n/10.95 224$\TU/TimesNewRoman(0)/m/n
+/10.95 ), \TU/TimesNewRoman(0)/b/n/10.95 không có transformer nào clearly beat 
+3D-ResNet+CBAM\TU/TimesNewRoman(0)/m/n/10.95 .
+ []
+
+
+
+[18]
+Underfull \hbox (badness 10000) in paragraph at lines 1316--1317
+[]|[]\TU/TimesNewRoman(0)/m/n/10 Yếu hơn[] (CBAM = SE +
+ []
+
+
+Underfull \hbox (badness 1939) in paragraph at lines 1317--1317
+[]|\TU/TimesNewRoman(0)/b/n/10 ECA \TU/TimesNewRoman(0)/m/n/10 (Wang CVPR
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1317--1317
+[]|\TU/TimesNewRoman(0)/m/n/10 Efficient channel attention,
+ []
+
+
+Underfull \hbox (badness 2359) in paragraph at lines 1317--1318
+[]|\TU/TimesNewRoman(0)/m/n/10 Marginal gain trên SE; []thiếu
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1318--1318
+[]|\TU/TimesNewRoman(0)/b/n/10 Triplet Attention
+ []
+
+
+Underfull \hbox (badness 5359) in paragraph at lines 1318--1318
+[]|\TU/TimesNewRoman(0)/m/n/10 3 cross-dim attention: C$\OMS/cmsy/m/n/10 ^^B$\T
+U/TimesNewRoman(0)/m/n/10 H,
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1319--1319
+[]|\TU/TimesNewRoman(0)/b/n/10 Coordinate
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1319--1319
+\TU/TimesNewRoman(0)/b/n/10 Attention \TU/TimesNewRoman(0)/m/n/10 (Hou
+ []
+
+
+Underfull \hbox (badness 6944) in paragraph at lines 1319--1319
+[]|\TU/TimesNewRoman(0)/m/n/10 Position-aware attention with
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1319--1319
+[]|[]\TU/TimesNewRoman(0)/m/n/10 Designed cho
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1320--1320
+[]|\TU/TimesNewRoman(0)/b/n/10 Non-local / Self-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1320--1320
+\TU/TimesNewRoman(0)/b/n/10 Attention \TU/TimesNewRoman(0)/m/n/10 (Wang
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1320--1320
+[]|\TU/TimesNewRoman(0)/m/n/10 Long-range pixel-pair
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1321--1321
+[]|\TU/TimesNewRoman(0)/m/n/10 Patch-based global self-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1322--1322
+[]|\TU/TimesNewRoman(0)/b/n/10 Dual Attention
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1322--1322
+\TU/TimesNewRoman(0)/b/n/10 Network (DANet)
+ []
+
+
+Underfull \hbox (badness 4967) in paragraph at lines 1322--1322
+[]|\TU/TimesNewRoman(0)/m/n/10 Position + Channel attention
+ []
+
+
+Underfull \hbox (badness 2351) in paragraph at lines 1325--1325
+[]|\TU/TimesNewRoman(0)/m/n/10 Channel + Spatial sequential,
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1325--1325
+[]|[]\TU/TimesNewRoman(0)/b/n/10 Có (CBAM-3D
+ []
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+
+Underfull \hbox (badness 2401) in paragraph at lines 1350--1353
+[]|$\OMS/cmsy/m/n/10.95 ^^@$ []\TU/TimesNewRoman(0)/m/n/10.95 Chỉ channel atten
+tion[],
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1350--1353
+\OMS/cmsy/m/n/10.95 ^^@$ \TU/TimesNewRoman(0)/m/n/10.95 Bottleneck dim
+ []
+
+
+Underfull \hbox (badness 3088) in paragraph at lines 1350--1353
+\OMS/cmsy/m/n/10.95 ^^@$ \TU/TimesNewRoman(0)/m/n/10.95 Marginal gain so với
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1354--1357
+[]|\TU/TimesNewRoman(0)/b/n/10.95 Yếu hơn CBAM về
+ []
+
+
+Underfull \hbox (badness 2671) in paragraph at lines 1354--1357
+\TU/TimesNewRoman(0)/b/n/10.95 thiết kế\TU/TimesNewRoman(0)/m/n/10.95 : CBAM = 
+SE
+ []
+
+
+Underfull \hbox (badness 2080) in paragraph at lines 1354--1357
+\TU/TimesNewRoman(0)/m/n/10.95 + Spatial. Trên medical
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1354--1357
+\TU/TimesNewRoman(0)/m/n/10.95 lesion detection, vùng
+ []
+
+
+Underfull \hbox (badness 4832) in paragraph at lines 1354--1357
+\TU/TimesNewRoman(0)/m/n/10.95 không gian quan trọng
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1354--1357
+\TU/TimesNewRoman(0)/m/n/10.95 không kém kênh đặc
+ []
+
+
+Underfull \hbox (badness 1394) in paragraph at lines 1354--1357
+\TU/TimesNewRoman(0)/m/n/10.95 trưng. Chọn SE = chấp
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1354--1357
+\TU/TimesNewRoman(0)/m/n/10.95 nhận missing 1 nửa
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1358--1358
+[]|\TU/TimesNewRoman(0)/b/n/10.95 ECA \TU/TimesNewRoman(0)/m/n/10.95 (Wang
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1359--1361
+\OT1/cmr/m/n/10.95 +$ \TU/TimesNewRoman(0)/m/n/10.95 Lightweight nhất
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1362--1364
+[]|$\OMS/cmsy/m/n/10.95 ^^@$ []\TU/TimesNewRoman(0)/m/n/10.95 Vẫn chỉ channel
+ []
+
+
+Underfull \hbox (badness 1661) in paragraph at lines 1362--1364
+\OMS/cmsy/m/n/10.95 ^^@$ \TU/TimesNewRoman(0)/m/n/10.95 1D conv local, không
+ []
+
+
+Underfull \hbox (badness 1540) in paragraph at lines 1365--1367
+\TU/TimesNewRoman(0)/m/n/10.95 SE. Không justify được
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1368--1368
+[]|\TU/TimesNewRoman(0)/b/n/10.95 Triplet
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1368--1368
+\TU/TimesNewRoman(0)/b/n/10.95 Attention
+ []
+
+
+Underfull \hbox (badness 1810) in paragraph at lines 1372--1375
+\TU/TimesNewRoman(0)/m/n/10.95 C-W, H-W); 3D phải có
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1372--1375
+\OMS/cmsy/m/n/10.95 ^^@$ \TU/TimesNewRoman(0)/m/n/10.95 Memory $\OMS/cmsy/m/n/1
+0.95 ^^B\OT1/cmr/m/n/10.95 2$ \TU/TimesNewRoman(0)/m/n/10.95 so với
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1376--1379
+[]|\TU/TimesNewRoman(0)/b/n/10.95 3D variant chưa
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1376--1379
+\TU/TimesNewRoman(0)/b/n/10.95 có peer-reviewed
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1376--1379
+\TU/TimesNewRoman(0)/b/n/10.95 implementation phổ
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1376--1379
+\TU/TimesNewRoman(0)/b/n/10.95 biến\TU/TimesNewRoman(0)/m/n/10.95 . Tự implemen
+t
+ []
+
+
+Underfull \hbox (badness 2762) in paragraph at lines 1376--1379
+\TU/TimesNewRoman(0)/m/n/10.95 risk cao. Marginal gain
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1380--1380
+[]|\TU/TimesNewRoman(0)/b/n/10.95 Coordinate
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1380--1380
+\TU/TimesNewRoman(0)/b/n/10.95 Attention
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1385--1388
+[]|$\OMS/cmsy/m/n/10.95 ^^@$ []\TU/TimesNewRoman(0)/m/n/10.95 Designed exclusiv
+ely
+ []
+
+
+Underfull \hbox (badness 6094) in paragraph at lines 1389--1391
+[]|\TU/TimesNewRoman(0)/b/n/10.95 Không có 3D variant
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1389--1391
+\TU/TimesNewRoman(0)/b/n/10.95 peer-reviewed\TU/TimesNewRoman(0)/m/n/10.95 . Se
+lf-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1389--1391
+\TU/TimesNewRoman(0)/m/n/10.95 implement = paper
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1392--1392
+[]|\TU/TimesNewRoman(0)/b/n/10.95 Non-local
+ []
+
+
+Underfull \hbox (badness 1062) in paragraph at lines 1392--1392
+\TU/TimesNewRoman(0)/b/n/10.95 Block / Self-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1392--1392
+\TU/TimesNewRoman(0)/b/n/10.95 Attention
+ []
+
+
+Underfull \hbox (badness 4479) in paragraph at lines 1396--1400
+\TU/TimesNewRoman(0)/m/n/10.95 samples) để train không
+ []
+
+
+Underfull \hbox (badness 5490) in paragraph at lines 1401--1403
+[]|\TU/TimesNewRoman(0)/b/n/10.95 Memory blow-up trên
+ []
+
+
+Underfull \hbox (badness 3838) in paragraph at lines 1401--1403
+\TU/TimesNewRoman(0)/b/n/10.95 3D volume\TU/TimesNewRoman(0)/m/n/10.95 . Trên R
+TX
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1401--1403
+\TU/TimesNewRoman(0)/m/n/10.95 4090 24GB không fit
+ []
+
+
+Underfull \hbox (badness 4927) in paragraph at lines 1401--1403
+\TU/TimesNewRoman(0)/m/n/10.95 batch $\OMS/cmsy/m/n/10.95 ^^U \OT1/cmr/m/n/10.9
+5 4$\TU/TimesNewRoman(0)/m/n/10.95 . Cần data
+ []
+
+
+Underfull \hbox (badness 4060) in paragraph at lines 1404--1404
+[]|\TU/TimesNewRoman(0)/b/n/10.95 ViT-3D Self-
+ []
+
+
+Underfull \hbox (badness 1728) in paragraph at lines 1405--1407
+[]|$\OT1/cmr/m/n/10.95 +$ \TU/TimesNewRoman(0)/m/n/10.95 Global context, không
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1405--1407
+\TU/TimesNewRoman(0)/m/n/10.95 (ImageNet-21K, JFT-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1408--1410
+[]|$\OMS/cmsy/m/n/10.95 ^^@$ []\TU/TimesNewRoman(0)/m/n/10.95 Thiếu inductive b
+ias[]
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1408--1410
+\TU/TimesNewRoman(0)/m/n/10.95 (translation equivariance,
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1408--1410
+\OMS/cmsy/m/n/10.95 ^^@$ \TU/TimesNewRoman(0)/m/n/10.95 Cần data $\OMS/cmsy/m/n
+/10.95 ^^U \OT1/cmr/m/n/10.95 10[]$
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1411--1414
+\TU/TimesNewRoman(0)/m/n/10.95 11.1.2. Reviews 2024
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1411--1414
+\TU/TimesNewRoman(0)/m/n/10.95 confirm transformers
+ []
+
+
+Underfull \hbox (badness 2486) in paragraph at lines 1411--1414
+\TU/TimesNewRoman(0)/m/n/10.95 underperform CNN trên
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1415--1415
+[]|\TU/TimesNewRoman(0)/b/n/10.95 DANet \TU/TimesNewRoman(0)/m/n/10.95 (Fu
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1416--1419
+[]|$\OT1/cmr/m/n/10.95 +$ \TU/TimesNewRoman(0)/m/n/10.95 Position + Channel
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1416--1419
+\TU/TimesNewRoman(0)/m/n/10.95 attention parallel (giống
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1416--1419
+\OT1/cmr/m/n/10.95 +$ \TU/TimesNewRoman(0)/m/n/10.95 Strong cho semantic
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1416--1419
+\OT1/cmr/m/n/10.95 +$ \TU/TimesNewRoman(0)/m/n/10.95 State-of-the-art trên
+ []
+
+
+Underfull \hbox (badness 2393) in paragraph at lines 1420--1424
+[]|$\OMS/cmsy/m/n/10.95 ^^@$ []$\OT1/cmr/m/n/10.95 +30[]$ \TU/TimesNewRoman(0)/
+m/n/10.95 params[] so với
+ []
+
+
+Underfull \hbox (badness 5064) in paragraph at lines 1420--1424
+\TU/TimesNewRoman(0)/m/n/10.95 CBAM (parallel thay vì
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1420--1424
+\TU/TimesNewRoman(0)/m/n/10.95 matrix multiplication
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1420--1424
+\OMS/cmsy/m/n/10.95 ^^@$ \TU/TimesNewRoman(0)/m/n/10.95 Designed cho
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1420--1424
+\TU/TimesNewRoman(0)/m/n/10.95 segmentation, không
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1425--1428
+[]|\TU/TimesNewRoman(0)/b/n/10.95 Comparable nhưng
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1425--1428
+\TU/TimesNewRoman(0)/b/n/10.95 nặng hơn \TU/TimesNewRoman(0)/m/n/10.95 mà không
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1425--1428
+\TU/TimesNewRoman(0)/m/n/10.95 có clear gain trên
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1425--1428
+\TU/TimesNewRoman(0)/m/n/10.95 classification. CBAM
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1425--1428
+\TU/TimesNewRoman(0)/m/n/10.95 sequential (channel
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1425--1428
+\OMS/cmsy/m/n/10.95 !$ \TU/TimesNewRoman(0)/m/n/10.95 spatial) attention
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1425--1428
+\TU/TimesNewRoman(0)/m/n/10.95 empirically tốt hơn
+ []
+
+
+Underfull \hbox (badness 4621) in paragraph at lines 1425--1428
+\TU/TimesNewRoman(0)/m/n/10.95 parallel cho recognition
+ []
+
+
+
+[19] [20]
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+
+
+[21]
+
+[22]
+Underfull \hbox (badness 10000) in paragraph at lines 1525--1525
+[]|\TU/TimesNewRoman(0)/m/n/10 Indirect; 2D image
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1526--1526
+[]|\TU/TimesNewRoman(0)/m/n/10 Decoupled image-text
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1526--1526
+\TU/TimesNewRoman(0)/m/n/10 contrastive trên chest X-ray
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1526--1527
+[]|[]\TU/TimesNewRoman(0)/m/n/10 Yếu hơn
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1527--1527
+[]|\TU/TimesNewRoman(0)/m/n/10 PMC-OA 1.6M pairs (Lin
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1528--1528
+[]|\TU/TimesNewRoman(0)/m/n/10 Chest-X-ray-specific CLIPs,
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1528--1528
+[]|\TU/TimesNewRoman(0)/m/n/10 Chest only — không
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1529--1529
+[]|\TU/TimesNewRoman(0)/m/n/10 Radiology VLM với slice-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1529--1529
+\TU/TimesNewRoman(0)/m/n/10 pooling cho volumetric (Lu
+ []
+
+
+Underfull \hbox (badness 2875) in paragraph at lines 1529--1529
+[]|\TU/TimesNewRoman(0)/m/n/10 Diverse radiology incl.
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1529--1529
+\TU/TimesNewRoman(0)/m/n/10 MRI; không spine
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1529--1530
+[]|\TU/TimesNewRoman(0)/m/n/10 Comparable —
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1530--1530
+[]|\TU/TimesNewRoman(0)/m/n/10 MedSAM /
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1530--1530
+[]|\TU/TimesNewRoman(0)/m/n/10 Foundation segmentation
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1530--1530
+[]|\TU/TimesNewRoman(0)/m/n/10 MedSAM2 train trên
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1530--1531
+[]|\TU/TimesNewRoman(0)/m/n/10 Không applicable
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1531--1531
+[]|\TU/TimesNewRoman(0)/m/n/10 Promptable 3D segmentation
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1533--1533
+[]|\TU/TimesNewRoman(0)/m/n/10 Native 3D-MRI VLM (GE
+ []
+
+
+Underfull \hbox (badness 3343) in paragraph at lines 1533--1533
+[]|\TU/TimesNewRoman(0)/m/n/10 Có spine, nhưng chưa
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1534--1535
+[]|\TU/TimesNewRoman(0)/m/n/10 Future work —
+ []
+
+
+Underfull \hbox (badness 2799) in paragraph at lines 1534--1535
+\TU/TimesNewRoman(0)/m/n/10 demonstrates 3D $\OML/cmm/m/it/10 >$
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1535--1535
+[]|\TU/TimesNewRoman(0)/m/n/10 Efficient 3D medical VLM
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1535--1535
+[]|\TU/TimesNewRoman(0)/m/n/10 Không có
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1564--1564
+[]|\TU/TimesNewRoman(0)/m/n/10 BiomedCLIP
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1564--1564
+[]|\TU/TimesNewRoman(0)/m/n/10 Scoliosis
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1565--1565
+[]|\TU/TimesNewRoman(0)/m/n/10 BiomedCLIP vs
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1565--1565
+[]|\TU/TimesNewRoman(0)/m/n/10 Implant
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1566--1566
+[]|\TU/TimesNewRoman(0)/m/n/10 CLIP scoliosis (Diagnostics
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1566--1566
+[]|\TU/TimesNewRoman(0)/m/n/10 Scoliosis
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1567--1567
+[]|\TU/TimesNewRoman(0)/m/n/10 3D-VLM
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1567--1567
+[]|[]\TU/TimesNewRoman(0)/m/n/10 Report
+ []
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+
+Overfull \hbox (4.49843pt too wide) in paragraph at lines 1574--1579
+\TU/TimesNewRoman(0)/b/n/10.95 Kết luận\TU/TimesNewRoman(0)/m/n/10.95 : 0/6 pap
+er target Pfirrmann grading hoặc RSNA-style stenosis severity từ MRI. 2 paper B
+iomedCLIP-
+ []
+
+
+
+[23]
+Overfull \hbox (3.36136pt too wide) in paragraph at lines 1593--1597
+[]\TU/TimesNewRoman(0)/b/n/10.95 arXiv 2506.18434 (2025) \TU/TimesNewRoman(0)/m
+/n/10.95 — Benchmarking Foundation Models and PEFT for Prognosis. Few-shot regi
+me,
+ []
+
+
+Overfull \hbox (18.13509pt too wide) in paragraph at lines 1597--1600
+[]\TU/TimesNewRoman(0)/b/n/10.95 arXiv 2510.16973 (2025) \TU/TimesNewRoman(0)/m
+/n/10.95 — Foundation Models in Medical Image Analysis Systematic Review. Recom
+mends
+ []
+
+
+Overfull \hbox (2.44441pt too wide) in paragraph at lines 1603--1606
+[]\TU/TimesNewRoman(0)/b/n/10.95 arXiv 2510.23807 (2025) \TU/TimesNewRoman(0)/m
+/n/10.95 — Why Foundation Models in Pathology Are Failing. Full fine-tuning fre
+quently
+ []
+
+
+Overfull \hbox (3.51721pt too wide) in paragraph at lines 1606--1610
+\TU/TimesNewRoman(0)/m/n/10.95 BiomedCLIP brittleness dưới class imbalance — \T
+U/TimesNewRoman(0)/b/n/10.95 lý do tại sao ta thêm CBAM-3D + Focal + oversampli
+ng
+ []
+
+
+Overfull \hbox (0.90459pt too wide) in paragraph at lines 1614--1617
+[]\TU/TimesNewRoman(0)/b/n/10.95 CLIP in Medical Imaging Survey \TU/TimesNewRom
+an(0)/m/n/10.95 (arXiv 2312.07353, Med Image Anal 2025). General survey support
+ing
+ []
+
+
+
+[24]
+Missing character: There is no ⭐ (U+2B50) in font Times New Roman/OT:script=lat
+n;language=dflt;mapping=tex-text;!
+
+Overfull \hbox (42.96515pt too wide) in alignment at lines 1659--1665
+ [] [] [] [] [] [] [] 
+ []
+
+
+Overfull \hbox (42.96515pt too wide) in alignment at lines 1665--1671
+ [] [] [] [] [] [] [] 
+ []
+
+
+Overfull \hbox (42.96515pt too wide) in alignment at lines 1671--1673
+ [] [] [] [] [] [] [] 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1674--1674
+[]|\TU/TimesNewRoman(0)/m/n/10.95 446+100
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1675--1676
+[]|\TU/TimesNewRoman(0)/m/n/10.95 Lin’s CCC
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1676--1676
+[]|\TU/TimesNewRoman(0)/m/n/10.95 SpineNetV2
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1677--1677
+[]|\TU/TimesNewRoman(0)/m/n/10.95 NFBC1966
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1677--1677
+[]|\TU/TimesNewRoman(0)/m/n/10.95 SpineNetV2
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1677--1678
+[]|\TU/TimesNewRoman(0)/m/n/10.95 Pfirr.
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1677--1678
+\TU/TimesNewRoman(0)/m/n/10.95 Bal.Acc
+ []
+
+Missing character: There is no ⭐ (U+2B50) in font Times New Roman/OT:script=lat
+n;language=dflt;mapping=tex-text;!
+
+Underfull \hbox (badness 10000) in paragraph at lines 1678--1678
+[]|\TU/TimesNewRoman(0)/m/n/10.95 SpineNetV2
+ []
+
+
+Overfull \hbox (37.96709pt too wide) in paragraph at lines 1679--1679
+[]|\TU/TimesNewRoman(0)/m/n/10.95 CNN+MHSAM+CBAM| 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1680--1680
+[]|\TU/TimesNewRoman(0)/m/n/10.95 MobileNetV2-
+ []
+
+Missing character: There is no ⭐ (U+2B50) in font Times New Roman/OT:script=lat
+n;language=dflt;mapping=tex-text;!
+
+Underfull \hbox (badness 10000) in paragraph at lines 1681--1681
+[]|\TU/TimesNewRoman(0)/m/n/10.95 Multi-view
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1681--1682
+[]|\TU/TimesNewRoman(0)/m/n/10.95 AUROC
+ []
+
+Missing character: There is no ⭐ (U+2B50) in font Times New Roman/OT:script=lat
+n;language=dflt;mapping=tex-text;!
+
+Underfull \hbox (badness 10000) in paragraph at lines 1682--1682
+[]|\TU/TimesNewRoman(0)/m/n/10.95 RSNA +
+ []
+
+
+Overfull \hbox (55.39192pt too wide) in paragraph at lines 1682--1682
+[]|\TU/TimesNewRoman(0)/m/n/10.95 VGG19/ConvNeXt/DINOv2| 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1683--1683
+[]|\TU/TimesNewRoman(0)/m/n/10.95 CNN vs
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1684--1684
+[]|\TU/TimesNewRoman(0)/m/n/10.95 SpineNetV2
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1684--1685
+[]|\TU/TimesNewRoman(0)/m/n/10.95 per-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1684--1685
+\TU/TimesNewRoman(0)/m/n/10.95 pathology
+ []
+
+
+Overfull \hbox (6.2292pt too wide) in paragraph at lines 1685--1685
+[]|\TU/TimesNewRoman(0)/m/n/10.95 YOLOv8+AFFM| 
+ []
+
+
+Overfull \hbox (3.79646pt too wide) in paragraph at lines 1686--1686
+[]|\TU/TimesNewRoman(0)/m/n/10.95 YOLOv9+SCSA| 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1686--1686
+[]|\TU/TimesNewRoman(0)/m/n/10.95 mAP50
+ []
+
+
+Overfull \hbox (28.80823pt too wide) in paragraph at lines 1688--1688
+[]|\TU/TimesNewRoman(0)/m/n/10.95 Unsup+CNN+saliency| 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1689--1689
+[]|\TU/TimesNewRoman(0)/m/n/10.95 RSNA 2024
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1689--1689
+[]|\TU/TimesNewRoman(0)/m/n/10.95 Faster R-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1689--1689
+\TU/TimesNewRoman(0)/m/n/10.95 CNN+Swin
+ []
+
+
+Overfull \hbox (11.69351pt too wide) in paragraph at lines 1690--1690
+[]|\TU/TimesNewRoman(0)/m/n/10.95 ConvNeXt+LSTM
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1692--1692
+[]|\TU/TimesNewRoman(0)/m/n/10.95 Disc-Centric
+ []
+
+
+Overfull \hbox (7.41083pt too wide) in paragraph at lines 1692--1692
+\TU/TimesNewRoman(0)/m/n/10.95 Contrastive+focal| 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1692--1692
+[]|\TU/TimesNewRoman(0)/m/n/10.95 Bal.Acc
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1694--1694
+[]|\TU/TimesNewRoman(0)/m/n/10.95 Faster R-
+ []
+
+Missing character: There is no ⭐ (U+2B50) in font Times New Roman/OT:script=lat
+n;language=dflt;mapping=tex-text;!
+
+Underfull \hbox (badness 10000) in paragraph at lines 1697--1697
+\TU/TimesNewRoman(0)/b/n/10.95 (1942 IVDs /
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1697--1697
+[]|[]\TU/TimesNewRoman(0)/b/n/10.95 3D
+ []
+
+
+Overfull \hbox (81.24844pt too wide) in paragraph at lines 1697--1697
+\TU/TimesNewRoman(0)/b/n/10.95 ResNet34+CBAM+BiomedCLIP[]| 
+ []
+
+
+Overfull \hbox (42.96515pt too wide) in alignment at lines 1673--1698
+ [] [] [] [] [] [] [] 
+ []
+
+[25]
+Missing character: There is no ⭐ (U+2B50) in font Times New Roman/OT:script=lat
+n;language=dflt;mapping=tex-text;!
+
+Underfull \hbox (badness 10000) in paragraph at lines 1743--1743
+[]|\TU/TimesNewRoman(0)/m/n/10 First BiomedCLIP-based RSNA
+ []
+
+
+Underfull \hbox (badness 5050) in paragraph at lines 1744--1744
+[]|\TU/TimesNewRoman(0)/m/n/10 First per-class AUC + AUPRC
+ []
+
+
+Underfull \hbox (badness 1515) in paragraph at lines 1744--1744
+[]|\TU/TimesNewRoman(0)/m/n/10 Kaggle research: 0/10 top teams report
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1745--1745
+[]|\TU/TimesNewRoman(0)/m/n/10 Liu IEEE-J-BHI 2024 (frozen +
+ []
+
+
+Underfull \hbox (badness 5175) in paragraph at lines 1745--1745
+\TU/TimesNewRoman(0)/m/n/10 lightweight clf $\OML/cmm/m/it/10 >$ \TU/TimesNewRo
+man(0)/m/n/10 full FT cho breast
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1745--1745
+\TU/TimesNewRoman(0)/m/n/10 cancer); arXiv 2506.18434 (PEFT
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1745--1745
+\TU/TimesNewRoman(0)/m/n/10 benchmark); arXiv 2506.14136
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1745--1746
+[]|\TU/TimesNewRoman(0)/m/n/10 Strong
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1746--1746
+[]|\TU/TimesNewRoman(0)/m/n/10 CBAM 3D + focal loss +
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1748--1748
+[]|\TU/TimesNewRoman(0)/m/n/10 Single-model architecture (vs
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1748--1749
+[]|\TU/TimesNewRoman(0)/m/n/10 Defensive
+ []
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+
+
+[26]
+
+[27]
+Overfull \hbox (18.2139pt too wide) in paragraph at lines 1835--1837
+[]\TU/TimesNewRoman(0)/b/n/10.95 3-seed mean$\OMS/cmsy/m/n/10.95 ^^F$\TU/TimesN
+ewRoman(0)/b/n/10.95 std run \TU/TimesNewRoman(0)/m/n/10.95 — $\OMS/cmsy/m/n/10
+.95 ^^X$\TU/TimesNewRoman(0)/m/n/10.95 $6 Vast.ai, cần làm trước submission. Sc
+ript: [][]\TU/lmtt/m/n/10.95 scripts/run_hybrid_3seeds.sh[]\TU/TimesNewRoman(0)
+/m/n/10.95 . 
+ []
+
+
+Overfull \hbox (11.41954pt too wide) in paragraph at lines 1837--1839
+[]\TU/TimesNewRoman(0)/b/n/10.95 RadCLIP slice-pooling \TU/TimesNewRoman(0)/m/n
+/10.95 (arXiv:2403.09948) — built-in volumetric adapter, drop-in thay SliceAtte
+ntionPool. 
+ []
+
+
+
+[28]
+Overfull \hbox (4.72816pt too wide) in paragraph at lines 1892--1896
+\TU/TimesNewRoman(0)/m/n/10.95 Verified [][]\TU/lmtt/m/n/10.95 train_rsna_hybri
+d.py:91-98[]\TU/TimesNewRoman(0)/m/n/10.95 : CBAM load $\OMS/cmsy/m/n/10.95 !$ 
+[][]\TU/lmtt/m/n/10.95 requires_grad=False $\OT1/cmr/m/n/10.95 +$ []\TU/lmtt/m/
+n/10.95 .eval()[]\TU/TimesNewRoman(0)/m/n/10.95 . BMC tương
+ []
+
+
+
+[29]
+
+[30]
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no │ (U+2502) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no │ (U+2502) in font [lmmono10-regular]:!
+Missing character: There is no │ (U+2502) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no │ (U+2502) in font [lmmono10-regular]:!
+Missing character: There is no │ (U+2502) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no │ (U+2502) in font [lmmono10-regular]:!
+Missing character: There is no │ (U+2502) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no │ (U+2502) in font [lmmono10-regular]:!
+Missing character: There is no │ (U+2502) in font [lmmono10-regular]:!
+Missing character: There is no └ (U+2514) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no │ (U+2502) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no │ (U+2502) in font [lmmono10-regular]:!
+Missing character: There is no └ (U+2514) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no │ (U+2502) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no │ (U+2502) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no │ (U+2502) in font [lmmono10-regular]:!
+Missing character: There is no └ (U+2514) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no └ (U+2514) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ├ (U+251C) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no └ (U+2514) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+Missing character: There is no ─ (U+2500) in font [lmmono10-regular]:!
+
+
+[31]
+
+[32] (./REPORT_DETAILED_VI.aux)
+ ***********
+LaTeX2e <2024-11-01> patch level 2
+L3 programming layer <2025-01-18>
+ ***********
+Package rerunfilecheck Info: File `REPORT_DETAILED_VI.out' has not changed.
+(rerunfilecheck)             Checksum: 3B6E0456B856E6D5EA18D21A23542854;12952.
+ ) 
+Here is how much of TeX's memory you used:
+ 15939 strings out of 473832
+ 308400 string characters out of 5729481
+ 812701 words of memory out of 5000000
+ 38774 multiletter control sequences out of 15000+600000
+ 568930 words of font info for 112 fonts, out of 8000000 for 9000
+ 1348 hyphenation exceptions out of 8191
+ 79i,17n,93p,609b,545s stack positions out of 10000i,1000n,20000p,200000b,200000s
+
+Output written on REPORT_DETAILED_VI.pdf (32 pages).

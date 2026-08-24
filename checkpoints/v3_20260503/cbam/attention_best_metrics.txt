@@ -1,0 +1,72 @@
+=== BEST MODEL METRICS (attention) ===
+Saved at:  2026-05-04T04:06:58
+Epoch:     14
+Train Loss: -1.4814
+Val Loss:   0.1601
+Avg Severe F1: 0.3044
+
+Validation Accuracies:
+  spinal_canal       0.8785
+  left_foraminal     0.6138
+  right_foraminal    0.5772
+
+Per-Class Metrics:
+
+  spinal_canal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.975  0.921  0.947     1722
+    Moderate         0.339  0.446  0.385      139
+    Severe           0.436  0.716  0.542       81
+
+  left_foraminal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.920  0.619  0.740     1497
+    Moderate         0.294  0.683  0.411      360
+    Severe           0.183  0.212  0.197       80
+
+  right_foraminal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.952  0.538  0.687     1482
+    Moderate         0.298  0.828  0.438      372
+    Severe           0.197  0.157  0.174       83
+
+AUC / AUPRC / Brier (per class, one-vs-rest):
+
+  spinal_canal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.947  0.993  0.105     1722
+    Moderate         0.884  0.319  0.082      139
+    Severe           0.963  0.602  0.031       81
+    macro            0.931  0.638
+
+  left_foraminal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.789  0.924  0.239     1497
+    Moderate         0.655  0.262  0.191      360
+    Severe           0.858  0.174  0.051       80
+    macro            0.767  0.453
+
+  right_foraminal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.807  0.931  0.250     1482
+    Moderate         0.657  0.283  0.209      372
+    Severe           0.837  0.181  0.050       83
+    macro            0.767  0.465
+
+AUC / AUPRC overall (averaged across 3 conditions):
+  macro AUC      : 0.822
+  macro AUPRC    : 0.519
+  popular AUPRC  : 0.949  (Normal/Mild)
+  rare    AUPRC  : 0.303  (Moderate + Severe)
+  Severe  AUPRC  : 0.319  (clinical priority)
+
+Extra:
+  val_weighted_logloss: 0.0
+  best_path: checkpoints/v3_20260503/cbam/best_model_attention.pth
+  total_train_seconds: 3374.9774408340454
+  avg_epoch_seconds: 241.0698172024318
+  eval_seconds: 10.87695050239563
+  eval_samples: 1942
+  eval_throughput_samples_per_sec: 178.54268984420568
+  eval_ms_per_sample: 5.600901391552847
+  args: {'data_dir': 'rsna_preprocessed', 'weights_dir': '/root/.spinenet/weights', 'val_split': 0.2, 'epochs': 25, 'batch_size': 64, 'lr': 0.001, 'weight_decay': 0.0001, 'use_cbam': True, 'freeze_backbone': True, 'use_focal': True, 'focal_gamma': 1.8, 'use_uncertainty': True, 'class_weight_mode': 'sqrt', 'augmentation': 'medium', 'hflip_swap_labels': False, 'oversample_factor': 5, 'num_workers': 4, 'save_dir': 'checkpoints/v3_20260503/cbam', 'save_freq': 5, 'early_stop_patience': 15, 'resume': None}

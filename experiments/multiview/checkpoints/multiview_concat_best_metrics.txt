@@ -1,0 +1,73 @@
+=== BEST MODEL METRICS (multiview_concat) ===
+Saved at:  2026-08-22T09:37:27
+Epoch:     4
+Train Loss: 0.6804
+Val Loss:   0.5373
+Avg Severe F1: 0.3323
+
+Validation Accuracies:
+  spinal_canal       0.8955
+  left_foraminal     0.6825
+  right_foraminal    0.6830
+
+Per-Class Metrics:
+
+  spinal_canal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.957  0.956  0.956     1722
+    Moderate         0.403  0.223  0.287      139
+    Severe           0.428  0.765  0.549       81
+
+  left_foraminal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.893  0.756  0.819     1497
+    Moderate         0.333  0.453  0.384      360
+    Severe           0.149  0.338  0.207       80
+
+  right_foraminal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.886  0.758  0.817     1482
+    Moderate         0.368  0.433  0.398      372
+    Severe           0.164  0.458  0.241       83
+
+AUC / AUPRC / Brier (per class, one-vs-rest):
+
+  spinal_canal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.939  0.991  0.065     1722
+    Moderate         0.883  0.318  0.057      139
+    Severe           0.960  0.602  0.030       81
+    macro            0.927  0.637
+
+  left_foraminal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.807  0.933  0.187     1497
+    Moderate         0.754  0.348  0.141      360
+    Severe           0.825  0.147  0.060       80
+    macro            0.796  0.476
+
+  right_foraminal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.803  0.925  0.184     1482
+    Moderate         0.748  0.338  0.143      372
+    Severe           0.831  0.177  0.062       83
+    macro            0.794  0.480
+
+AUC / AUPRC overall (averaged across 3 conditions):
+  macro AUC      : 0.839
+  macro AUPRC    : 0.531
+  popular AUPRC  : 0.950  (Normal/Mild)
+  rare    AUPRC  : 0.322  (Moderate + Severe)
+  Severe  AUPRC  : 0.309  (clinical priority)
+
+Extra:
+  val_weighted_logloss: 0.5383218228816986
+  best_path: experiments/multiview/checkpoints/best_model_multiview_concat.pth
+  total_train_seconds: 1203.5018239021301
+  avg_epoch_seconds: 300.87545597553253
+  eval_seconds: 32.60303711891174
+  eval_samples: 1942
+  eval_throughput_samples_per_sec: 59.56500288353572
+  eval_ms_per_sample: 16.788381626628087
+  fusion: concat
+  args: {'data_dir': 'rsna_preprocessed', 't1_dir': 'rsna_preprocessed_t1', 'allow_missing_t1': True, 'val_split': 0.2, 'fusion': 'concat', 'use_cbam': True, 'use_pretrained': True, 'cbam_checkpoint': 'checkpoints/rsna/best_model_attention.pth', 'unfreeze_backbone': False, 'resume': None, 'epochs': 20, 'batch_size': 16, 'lr': 0.001, 'weight_decay': 0.0001, 'num_workers': 4, 'class_weight_mode': 'effective', 'select_by': 'severe_f1', 'save_dir': 'experiments/multiview/checkpoints', 'save_freq': 5, 'early_stop_patience': 10, 'seed': 42, 'fast_dev': False, 'fast_dev_samples': 24}

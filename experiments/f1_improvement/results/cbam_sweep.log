@@ -1,0 +1,87 @@
+=== dump finished, npz present, running sweep ===
+==============================================================================
+Experiment #0 — threshold_sweep.py (post-hoc, no retraining)
+==============================================================================
+Loaded: experiments/f1_improvement/logits/cbam_seed42_val.npz
+Meta: {
+  "model": "cbam",
+  "seed": 42,
+  "val_split": 0.2,
+  "cbam_checkpoint": "checkpoints/v3_20260503/cbam_best.pth",
+  "hybrid_checkpoint": null,
+  "slice_strategy": "static",
+  "fusion": "concat_mlp",
+  "n_val_samples": 1942,
+  "n_val_patients": 395,
+  "device": "cpu"
+}
+Val samples: 1942
+  spinal_canal: class counts {0: 1722, 1: 139, 2: 81}
+  left_foraminal: class counts {0: 1497, 1: 360, 2: 80}
+  right_foraminal: class counts {0: 1482, 1: 372, 2: 83}
+
+==============================================================================
+STEP 2 — SANITY CHECK: does argmax on the dumped probs reproduce known numbers?
+==============================================================================
+ARGMAX (reconstructed)                 MeanAcc= 69.0%  MacroF1=0.502  SevereF1=0.304  SevereRec=0.362  SeverePrec=0.272  CostErr(1:2:4)=0.335
+    spinal_canal     F1=[N/M 0.947 Mod 0.385 Sev 0.542]  Recall=[N/M 0.921 Mod 0.446 Sev 0.716]  Prec=[N/M 0.975 Mod 0.339 Sev 0.436]
+    left_foraminal   F1=[N/M 0.740 Mod 0.411 Sev 0.197]  Recall=[N/M 0.619 Mod 0.683 Sev 0.212]  Prec=[N/M 0.920 Mod 0.294 Sev 0.183]
+    right_foraminal  F1=[N/M 0.687 Mod 0.438 Sev 0.174]  Recall=[N/M 0.538 Mod 0.828 Sev 0.157]  Prec=[N/M 0.952 Mod 0.298 Sev 0.197]
+
+  (no --sanity-check-json given or file not found — skipping numeric diff; report the numbers above against SOURCE_OF_TRUTH.md manually.)
+
+==============================================================================
+(a) Per-class decision-weight coordinate ascent (maximize macro-F1)
+==============================================================================
+  spinal_canal     fitted weights (Normal/Mild, Moderate, Severe) = [1.65, 1.28, 0.99]  in-fold macro-F1=0.672
+  left_foraminal   fitted weights (Normal/Mild, Moderate, Severe) = [1.08, 0.91, 0.99]  in-fold macro-F1=0.479
+  right_foraminal  fitted weights (Normal/Mild, Moderate, Severe) = [0.99, 0.84, 0.99]  in-fold macro-F1=0.497
+
+  IN-SPLIT (fit==eval on full val; OPTIMISTIC upper bound):
+  coord-ascent weights (in-split)        MeanAcc= 74.4%  MacroF1=0.550  SevereF1=0.368  SevereRec=0.418  SeverePrec=0.338  CostErr(1:2:4)=0.302
+    spinal_canal     F1=[N/M 0.956 Mod 0.449 Sev 0.613]  Recall=[N/M 0.947 Mod 0.504 Sev 0.605]  Prec=[N/M 0.965 Mod 0.405 Sev 0.620]
+    left_foraminal   F1=[N/M 0.802 Mod 0.405 Sev 0.231]  Recall=[N/M 0.727 Mod 0.536 Sev 0.300]  Prec=[N/M 0.895 Mod 0.325 Sev 0.188]
+    right_foraminal  F1=[N/M 0.781 Mod 0.451 Sev 0.260]  Recall=[N/M 0.675 Mod 0.661 Sev 0.349]  Prec=[N/M 0.927 Mod 0.343 Sev 0.207]
+
+  2-FOLD GROUP CROSS-VAL WITHIN VAL (fit on half A / eval on half B, grouped by patient — HONEST held-out estimate):
+    spinal_canal     held-out macro-F1 per fold: ['0.649', '0.684']  mean=0.666
+    left_foraminal   held-out macro-F1 per fold: ['0.474', '0.455']  mean=0.464
+    right_foraminal  held-out macro-F1 per fold: ['0.493', '0.492']  mean=0.492
+
+  Held-out mean macro-F1 across conditions: 0.541 (vs in-split 0.550, vs argmax 0.502)
+
+==============================================================================
+(b) Post-hoc logit adjustment (Menon et al. 2020): score_c = log p_c - tau * log(train_prior_c)
+==============================================================================
+  spinal_canal     train priors (N/M, Mod, Sev) = [0.875, 0.076, 0.050]
+  left_foraminal   train priors (N/M, Mod, Sev) = [0.776, 0.183, 0.041]
+  right_foraminal  train priors (N/M, Mod, Sev) = [0.784, 0.178, 0.038]
+  logit-adjust tau=0.5                   MeanAcc= 36.0%  MacroF1=0.310  SevereF1=0.300  SevereRec=0.771  SeverePrec=0.195  CostErr(1:2:4)=0.574
+  logit-adjust tau=1.0                   MeanAcc= 12.4%  MacroF1=0.147  SevereF1=0.242  SevereRec=0.890  SeverePrec=0.147  CostErr(1:2:4)=0.779
+  logit-adjust tau=1.5                   MeanAcc=  7.3%  MacroF1=0.101  SevereF1=0.210  SevereRec=0.947  SeverePrec=0.124  CostErr(1:2:4)=0.826
+  logit-adjust tau=2.0                   MeanAcc=  6.0%  MacroF1=0.082  SevereF1=0.181  SevereRec=0.967  SeverePrec=0.104  CostErr(1:2:4)=0.842
+
+  Best tau by macro-F1: 0.5
+    spinal_canal     F1=[N/M 0.747 Mod 0.200 Sev 0.476]  Recall=[N/M 0.598 Mod 0.619 Sev 0.790]  Prec=[N/M 0.996 Mod 0.119 Sev 0.340]
+    left_foraminal   F1=[N/M 0.332 Mod 0.227 Sev 0.213]  Recall=[N/M 0.200 Mod 0.456 Sev 0.825]  Prec=[N/M 0.971 Mod 0.151 Sev 0.122]
+    right_foraminal  F1=[N/M 0.151 Mod 0.239 Sev 0.210]  Recall=[N/M 0.082 Mod 0.551 Sev 0.699]  Prec=[N/M 0.984 Mod 0.152 Sev 0.124]
+
+==============================================================================
+(c) Tau-normalization (Kang et al. 2020) — needs classifier weight access
+==============================================================================
+  SKIPPED (mathematically a no-op for this architecture): the dumped model is Hybrid, whose classification score is cosine similarity against BiomedCLIP TEXT-PROMPT embeddings. Those prototypes are L2-normalized by construction, so ||w_c|| = 1 for EVERY class in every condition — there is no weight-norm imbalance for tau-normalization to correct. Pass --cbam-checkpoint together with a CBAM-model npz (--model cbam in dump_logits.py) to run a real tau-norm experiment instead.
+
+==============================================================================
+SUMMARY: BEFORE (argmax) -> AFTER (best of each method)
+==============================================================================
+BEFORE: argmax                         MeanAcc= 69.0%  MacroF1=0.502  SevereF1=0.304  SevereRec=0.362  SeverePrec=0.272  CostErr(1:2:4)=0.335
+AFTER:  coord-ascent (in-split, optimistic) MeanAcc= 74.4%  MacroF1=0.550  SevereF1=0.368  SevereRec=0.418  SeverePrec=0.338  CostErr(1:2:4)=0.302
+AFTER:  logit-adjust tau=0.5           MeanAcc= 36.0%  MacroF1=0.310  SevereF1=0.300  SevereRec=0.771  SeverePrec=0.195  CostErr(1:2:4)=0.574
+
+Severe F1 delta:  coord-ascent(in-split) +0.063   logit-adjust -0.005
+Macro F1 delta:   coord-ascent(in-split) +0.047   logit-adjust -0.192
+
+VERDICT: post-hoc threshold/logit-adjustment recovers Severe F1 by up to +0.063 (in-split) -> MODEST.
+CAVEAT: held-out (2-fold within-val) macro-F1 for coord-ascent is 0.541 vs in-split 0.550 vs argmax 0.502 — the gap between held-out and in-split is the overfitting risk on this small val set.
+
+Saved full results to /Users/kienha/spinet-v2/experiments/f1_improvement/results/cbam_seed42_threshold_results.json

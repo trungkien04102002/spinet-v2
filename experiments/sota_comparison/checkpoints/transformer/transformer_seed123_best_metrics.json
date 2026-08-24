@@ -1,0 +1,192 @@
+{
+  "prefix": "transformer_seed123",
+  "epoch": 15,
+  "timestamp": "2026-07-25T15:28:19",
+  "train_loss": 0.3851200441722987,
+  "val_loss": 0.4099345012537895,
+  "val_accuracies": {
+    "spinal_canal": 0.914708886618999,
+    "left_foraminal": 0.7957099080694586,
+    "right_foraminal": 0.7793138760880697
+  },
+  "avg_severe_f1": 0.2561107925726635,
+  "per_class_metrics": {
+    "spinal_canal": {
+      "precision": [
+        0.9607616849394114,
+        0.4900662251655629,
+        0.7027027027027027
+      ],
+      "recall": [
+        0.9697146185206756,
+        0.4713375796178344,
+        0.6190476190476191
+      ],
+      "f1": [
+        0.9652173913043478,
+        0.4805194805194805,
+        0.6582278481012658
+      ],
+      "support": [
+        1717,
+        157,
+        84
+      ]
+    },
+    "left_foraminal": {
+      "precision": [
+        0.8297752808988764,
+        0.4508670520231214,
+        0.6
+      ],
+      "recall": [
+        0.9559870550161812,
+        0.22413793103448276,
+        0.046153846153846156
+      ],
+      "f1": [
+        0.888421052631579,
+        0.29942418426103645,
+        0.08571428571428572
+      ],
+      "support": [
+        1545,
+        348,
+        65
+      ]
+    },
+    "right_foraminal": {
+      "precision": [
+        0.8021798365122615,
+        0.4336283185840708,
+        0.2
+      ],
+      "recall": [
+        0.9761273209549072,
+        0.1331521739130435,
+        0.012987012987012988
+      ],
+      "f1": [
+        0.8806461262339216,
+        0.20374220374220375,
+        0.024390243902439025
+      ],
+      "support": [
+        1508,
+        368,
+        77
+      ]
+    }
+  },
+  "auc_auprc_metrics": {
+    "spinal_canal": {
+      "per_class": {
+        "Normal/Mild": {
+          "auc": 0.9626048521376424,
+          "auprc": 0.9943592266754028,
+          "brier": 0.04667770117521286,
+          "support": 1717
+        },
+        "Moderate": {
+          "auc": 0.9249496917848188,
+          "auprc": 0.47338305640489103,
+          "brier": 0.052849337458610535,
+          "support": 157
+        },
+        "Severe": {
+          "auc": 0.9788013924886924,
+          "auprc": 0.7061160050567724,
+          "brier": 0.02044256217777729,
+          "support": 84
+        }
+      },
+      "macro_auc": 0.9554519788037178,
+      "macro_auprc": 0.7246194293790221
+    },
+    "left_foraminal": {
+      "per_class": {
+        "Normal/Mild": {
+          "auc": 0.8175149078884476,
+          "auprc": 0.9441571614403628,
+          "brier": 0.13006190955638885,
+          "support": 1545
+        },
+        "Moderate": {
+          "auc": 0.7804901120868136,
+          "auprc": 0.38092748023331946,
+          "brier": 0.12642347812652588,
+          "support": 348
+        },
+        "Severe": {
+          "auc": 0.8781421431183714,
+          "auprc": 0.2267359025053202,
+          "brier": 0.02892233245074749,
+          "support": 65
+        }
+      },
+      "macro_auc": 0.8253823876978775,
+      "macro_auprc": 0.5172735147263341
+    },
+    "right_foraminal": {
+      "per_class": {
+        "Normal/Mild": {
+          "auc": 0.8430229785712158,
+          "auprc": 0.9464903834385127,
+          "brier": 0.13411188125610352,
+          "support": 1508
+        },
+        "Moderate": {
+          "auc": 0.8010166643807435,
+          "auprc": 0.4139774542796703,
+          "brier": 0.13011537492275238,
+          "support": 368
+        },
+        "Severe": {
+          "auc": 0.8868413036856533,
+          "auprc": 0.22529078528510557,
+          "brier": 0.034681931138038635,
+          "support": 77
+        }
+      },
+      "macro_auc": 0.8436269822125375,
+      "macro_auprc": 0.5285862076677629
+    }
+  },
+  "auc_auprc_overall": {
+    "macro_auc": 0.8748204495713776,
+    "macro_auprc": 0.5901597172577063,
+    "popular_auc": 0.8743809128657686,
+    "popular_auprc": 0.9616689238514261,
+    "rare_auc": 0.8750402179241821,
+    "rare_auprc": 0.40440511396084644,
+    "severe_auc": 0.9145949464309057,
+    "severe_auprc": 0.38604756428239934
+  },
+  "extra": {
+    "val_weighted_logloss": 0.40408100187778473,
+    "best_path": "/root/spinet-v2/experiments/sota_comparison/checkpoints/transformer/best_model_transformer_seed123.pth",
+    "total_train_seconds": 293.7966306209564,
+    "avg_epoch_seconds": 19.586442041397095,
+    "eval_seconds": 1.6913108825683594,
+    "eval_samples": 1958,
+    "eval_throughput_samples_per_sec": 1157.6819023517762,
+    "eval_ms_per_sample": 0.863795139207538,
+    "args": {
+      "model": "transformer",
+      "data_dir": "/root/spinet-v2/rsna_preprocessed",
+      "val_split": 0.2,
+      "epochs": 30,
+      "batch_size": 32,
+      "lr": 0.001,
+      "weight_decay": 0.0001,
+      "num_workers": 4,
+      "freeze_backbone": false,
+      "save_dir": null,
+      "save_freq": 5,
+      "early_stop_patience": 10,
+      "seed": 123,
+      "fast_dev": false,
+      "fast_dev_samples": 20
+    }
+  }
+}

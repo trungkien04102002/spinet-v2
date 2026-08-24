@@ -1,0 +1,199 @@
+{
+  "prefix": "multiview_gated",
+  "epoch": 1,
+  "timestamp": "2026-07-25T21:13:10",
+  "train_loss": 1.0076011419296265,
+  "val_loss": 1.0430740118026733,
+  "val_accuracies": {
+    "spinal_canal": 0.25,
+    "left_foraminal": 0.5,
+    "right_foraminal": 0.75
+  },
+  "avg_severe_f1": 0.0,
+  "per_class_metrics": {
+    "spinal_canal": {
+      "precision": [
+        0.25,
+        0.0,
+        0.0
+      ],
+      "recall": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "f1": [
+        0.4,
+        0.0,
+        0.0
+      ],
+      "support": [
+        1,
+        2,
+        1
+      ]
+    },
+    "left_foraminal": {
+      "precision": [
+        0.5,
+        0.0,
+        0.0
+      ],
+      "recall": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "f1": [
+        0.6666666666666666,
+        0.0,
+        0.0
+      ],
+      "support": [
+        2,
+        2,
+        0
+      ]
+    },
+    "right_foraminal": {
+      "precision": [
+        0.75,
+        0.0,
+        0.0
+      ],
+      "recall": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "f1": [
+        0.8571428571428571,
+        0.0,
+        0.0
+      ],
+      "support": [
+        3,
+        1,
+        0
+      ]
+    }
+  },
+  "auc_auprc_metrics": {
+    "spinal_canal": {
+      "per_class": {
+        "Normal/Mild": {
+          "auc": 0.33333333333333337,
+          "auprc": 0.3333333333333333,
+          "brier": 0.23495882749557495,
+          "support": 1
+        },
+        "Moderate": {
+          "auc": 0.0,
+          "auprc": 0.41666666666666663,
+          "brier": 0.3136381208896637,
+          "support": 2
+        },
+        "Severe": {
+          "auc": 1.0,
+          "auprc": 1.0,
+          "brier": 0.17734375596046448,
+          "support": 1
+        }
+      },
+      "macro_auc": 0.4444444444444445,
+      "macro_auprc": 0.5833333333333334
+    },
+    "left_foraminal": {
+      "per_class": {
+        "Normal/Mild": {
+          "auc": 0.5,
+          "auprc": 0.5833333333333333,
+          "brier": 0.2549882233142853,
+          "support": 2
+        },
+        "Moderate": {
+          "auc": 0.25,
+          "auprc": 0.5,
+          "brier": 0.29060429334640503,
+          "support": 2
+        },
+        "Severe": {
+          "auc": NaN,
+          "auprc": NaN,
+          "brier": NaN,
+          "support": 0
+        }
+      },
+      "macro_auc": 0.375,
+      "macro_auprc": 0.5416666666666666
+    },
+    "right_foraminal": {
+      "per_class": {
+        "Normal/Mild": {
+          "auc": 0.3333333333333333,
+          "auprc": 0.8055555555555556,
+          "brier": 0.29878881573677063,
+          "support": 3
+        },
+        "Moderate": {
+          "auc": 1.0,
+          "auprc": 1.0,
+          "brier": 0.18699683248996735,
+          "support": 1
+        },
+        "Severe": {
+          "auc": NaN,
+          "auprc": NaN,
+          "brier": NaN,
+          "support": 0
+        }
+      },
+      "macro_auc": 0.6666666666666666,
+      "macro_auprc": 0.9027777777777778
+    }
+  },
+  "auc_auprc_overall": {
+    "macro_auc": 0.4953703703703704,
+    "macro_auprc": 0.6759259259259259,
+    "popular_auc": 0.3888888888888889,
+    "popular_auprc": 0.5740740740740741,
+    "rare_auc": 0.5625,
+    "rare_auprc": 0.7291666666666666,
+    "severe_auc": 1.0,
+    "severe_auprc": 1.0
+  },
+  "extra": {
+    "val_weighted_logloss": 1.0430740179240823,
+    "best_path": "experiments/multiview/checkpoints/best_model_multiview_gated.pth",
+    "total_train_seconds": 111.89108777046204,
+    "avg_epoch_seconds": 111.89108777046204,
+    "eval_seconds": 8.924677848815918,
+    "eval_samples": 4,
+    "eval_throughput_samples_per_sec": 0.4481954494896082,
+    "eval_ms_per_sample": 2231.1694622039795,
+    "fusion": "gated",
+    "args": {
+      "data_dir": "rsna_preprocessed",
+      "t1_dir": "rsna_preprocessed_t1",
+      "allow_missing_t1": false,
+      "val_split": 0.2,
+      "fusion": "gated",
+      "use_cbam": true,
+      "use_pretrained": false,
+      "cbam_checkpoint": "checkpoints/rsna/best_model_attention.pth",
+      "unfreeze_backbone": false,
+      "resume": null,
+      "epochs": 1,
+      "batch_size": 4,
+      "lr": 0.001,
+      "weight_decay": 0.0001,
+      "num_workers": 0,
+      "save_dir": "experiments/multiview/checkpoints",
+      "save_freq": 5,
+      "early_stop_patience": 10,
+      "seed": 42,
+      "fast_dev": true,
+      "fast_dev_samples": 24
+    }
+  }
+}

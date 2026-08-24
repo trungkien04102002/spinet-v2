@@ -1,0 +1,192 @@
+{
+  "prefix": "brendanartley",
+  "epoch": 17,
+  "timestamp": "2026-07-25T14:51:30",
+  "train_loss": 0.3352410753608727,
+  "val_loss": 0.3838598957804383,
+  "val_accuracies": {
+    "spinal_canal": 0.9309989701338826,
+    "left_foraminal": 0.7847186370676303,
+    "right_foraminal": 0.7929788332472896
+  },
+  "avg_severe_f1": 0.26390774305109993,
+  "per_class_metrics": {
+    "spinal_canal": {
+      "precision": [
+        0.9630051223676722,
+        0.580952380952381,
+        0.6875
+      ],
+      "recall": [
+        0.9825783972125436,
+        0.43884892086330934,
+        0.6790123456790124
+      ],
+      "f1": [
+        0.972693302673182,
+        0.5,
+        0.6832298136645962
+      ],
+      "support": [
+        1722,
+        139,
+        81
+      ]
+    },
+    "left_foraminal": {
+      "precision": [
+        0.8452669902912622,
+        0.44565217391304346,
+        0.3076923076923077
+      ],
+      "recall": [
+        0.9305277221108884,
+        0.3416666666666667,
+        0.05
+      ],
+      "f1": [
+        0.8858505564387917,
+        0.3867924528301887,
+        0.08602150537634409
+      ],
+      "support": [
+        1497,
+        360,
+        80
+      ]
+    },
+    "right_foraminal": {
+      "precision": [
+        0.8340224453632605,
+        0.5168067226890757,
+        0.16666666666666666
+      ],
+      "recall": [
+        0.9527665317139001,
+        0.33064516129032256,
+        0.012048192771084338
+      ],
+      "f1": [
+        0.8894488188976378,
+        0.40327868852459015,
+        0.02247191011235955
+      ],
+      "support": [
+        1482,
+        372,
+        83
+      ]
+    }
+  },
+  "auc_auprc_metrics": {
+    "spinal_canal": {
+      "per_class": {
+        "Normal/Mild": {
+          "auc": 0.9718482736775419,
+          "auprc": 0.9962407261105994,
+          "brier": 0.03807339072227478,
+          "support": 1722
+        },
+        "Moderate": {
+          "auc": 0.9368757905489252,
+          "auprc": 0.5281919447167767,
+          "brier": 0.045340392738580704,
+          "support": 139
+        },
+        "Severe": {
+          "auc": 0.9827452385217027,
+          "auprc": 0.6990162581634224,
+          "brier": 0.019408347085118294,
+          "support": 81
+        }
+      },
+      "macro_auc": 0.9638231009160566,
+      "macro_auprc": 0.7411496429969328
+    },
+    "left_foraminal": {
+      "per_class": {
+        "Normal/Mild": {
+          "auc": 0.8513405599076942,
+          "auprc": 0.951378963379742,
+          "brier": 0.12532953917980194,
+          "support": 1497
+        },
+        "Moderate": {
+          "auc": 0.8024483900514339,
+          "auprc": 0.4262961841454018,
+          "brier": 0.12575358152389526,
+          "support": 360
+        },
+        "Severe": {
+          "auc": 0.8860258481421648,
+          "auprc": 0.225271799738913,
+          "brier": 0.03521089255809784,
+          "support": 80
+        }
+      },
+      "macro_auc": 0.8466049327004309,
+      "macro_auprc": 0.534315649088019
+    },
+    "right_foraminal": {
+      "per_class": {
+        "Normal/Mild": {
+          "auc": 0.8575417834527147,
+          "auprc": 0.9498899001095058,
+          "brier": 0.12278424948453903,
+          "support": 1482
+        },
+        "Moderate": {
+          "auc": 0.8140557903054039,
+          "auprc": 0.46881553980238205,
+          "brier": 0.12436684221029282,
+          "support": 372
+        },
+        "Severe": {
+          "auc": 0.8886029555113657,
+          "auprc": 0.20989187958548677,
+          "brier": 0.03705750033259392,
+          "support": 83
+        }
+      },
+      "macro_auc": 0.8534001764231615,
+      "macro_auprc": 0.5428657731657915
+    }
+  },
+  "auc_auprc_overall": {
+    "macro_auc": 0.887942736679883,
+    "macro_auprc": 0.6061103550835811,
+    "popular_auc": 0.8935768723459835,
+    "popular_auprc": 0.9658365298666158,
+    "rare_auc": 0.8851256688468326,
+    "rare_auprc": 0.42624726769206384,
+    "severe_auc": 0.9191246807250777,
+    "severe_auprc": 0.37805997916260736
+  },
+  "extra": {
+    "val_weighted_logloss": 0.38430039087931317,
+    "best_path": "/root/spinet-v2/experiments/sota_comparison/checkpoints/brendanartley/best_model_brendanartley.pth",
+    "total_train_seconds": 324.3188827037811,
+    "avg_epoch_seconds": 19.077581335516538,
+    "eval_seconds": 1.6163380146026611,
+    "eval_samples": 1942,
+    "eval_throughput_samples_per_sec": 1201.4813624719427,
+    "eval_ms_per_sample": 0.8323058777562622,
+    "args": {
+      "model": "brendanartley",
+      "data_dir": "/root/spinet-v2/rsna_preprocessed",
+      "val_split": 0.2,
+      "epochs": 30,
+      "batch_size": 32,
+      "lr": 0.001,
+      "weight_decay": 0.0001,
+      "num_workers": 4,
+      "freeze_backbone": false,
+      "save_dir": null,
+      "save_freq": 5,
+      "early_stop_patience": 10,
+      "seed": 42,
+      "fast_dev": false,
+      "fast_dev_samples": 20
+    }
+  }
+}

@@ -1,0 +1,72 @@
+=== BEST MODEL METRICS (hybrid) ===
+Saved at:  2026-05-04T07:02:59
+Epoch:     10
+Train Loss: 0.9405
+Val Loss:   0.1436
+Avg Severe F1: 0.3434
+
+Validation Accuracies:
+  spinal_canal       0.8847
+  left_foraminal     0.6040
+  right_foraminal    0.6737
+
+Per-Class Metrics:
+
+  spinal_canal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.972  0.933  0.952     1722
+    Moderate         0.385  0.396  0.390      139
+    Severe           0.388  0.704  0.500       81
+
+  left_foraminal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.926  0.599  0.727     1497
+    Moderate         0.292  0.675  0.408      360
+    Severe           0.221  0.375  0.278       80
+
+  right_foraminal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.912  0.707  0.797     1482
+    Moderate         0.347  0.621  0.446      372
+    Severe           0.211  0.313  0.252       83
+
+AUC / AUPRC / Brier (per class, one-vs-rest):
+
+  spinal_canal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.946  0.993  0.141     1722
+    Moderate         0.872  0.299  0.090      139
+    Severe           0.962  0.594  0.038       81
+    macro            0.927  0.628
+
+  left_foraminal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.815  0.938  0.250     1497
+    Moderate         0.680  0.289  0.187      360
+    Severe           0.869  0.174  0.055       80
+    macro            0.788  0.467
+
+  right_foraminal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.823  0.939  0.230     1482
+    Moderate         0.708  0.312  0.180      372
+    Severe           0.858  0.195  0.053       83
+    macro            0.796  0.482
+
+AUC / AUPRC overall (averaged across 3 conditions):
+  macro AUC      : 0.837
+  macro AUPRC    : 0.526
+  popular AUPRC  : 0.956  (Normal/Mild)
+  rare    AUPRC  : 0.310  (Moderate + Severe)
+  Severe  AUPRC  : 0.321  (clinical priority)
+
+Extra:
+  best_path: checkpoints/v3_20260503/hybrid/best_model_hybrid.pth
+  cbam_checkpoint: checkpoints/v3_20260503/cbam/best_model_attention.pth
+  total_train_seconds: 1487.7468440532684
+  avg_epoch_seconds: 148.77468440532684
+  eval_seconds: 18.74429965019226
+  eval_samples: 1942
+  eval_throughput_samples_per_sec: 103.60483113489283
+  eval_ms_per_sample: 9.652059552107241
+  args: {'data_dir': 'rsna_preprocessed', 'cbam_checkpoint': 'checkpoints/v3_20260503/cbam/best_model_attention.pth', 'save_dir': 'checkpoints/v3_20260503/hybrid', 'val_split': 0.2, 'epochs': 20, 'batch_size': 32, 'lr': 0.0001, 'weight_decay': 0.0001, 'slice_strategy': 'static', 'use_focal': True, 'focal_gamma': 2.0, 'use_supcon': True, 'supcon_weight': 0.1, 'use_uncertainty': True, 'class_weight_mode': 'sqrt', 'augmentation': 'medium', 'hflip_swap_labels': False, 'oversample_factor': 3, 'num_workers': 4, 'save_freq': 5, 'early_stop_patience': 15, 'resume': None, 'seed': 42, 'ablate_branch': 'none', 'fusion': 'concat_mlp', 'modality_dropout': 0.0}

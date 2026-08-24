@@ -1,0 +1,203 @@
+{
+  "prefix": "hybrid_biomedclip_only",
+  "epoch": 3,
+  "timestamp": "2026-05-04T07:44:48",
+  "train_loss": 1.3219179384410382,
+  "val_loss": 0.16486372511650696,
+  "val_accuracies": {
+    "spinal_canal": 0.8341915550978373,
+    "left_foraminal": 0.6169334021683015,
+    "right_foraminal": 0.624677336086732
+  },
+  "avg_severe_f1": 0.22898003544553439,
+  "per_class_metrics": {
+    "spinal_canal": {
+      "precision": [
+        0.9504950495049505,
+        0.22580645161290322,
+        0.27722772277227725
+      ],
+      "recall": [
+        0.89198606271777,
+        0.2014388489208633,
+        0.691358024691358
+      ],
+      "f1": [
+        0.920311563810665,
+        0.21292775665399238,
+        0.3957597173144876
+      ],
+      "support": [
+        1722,
+        139,
+        81
+      ]
+    },
+    "left_foraminal": {
+      "precision": [
+        0.9334698055271239,
+        0.30077691453940064,
+        0.2033898305084746
+      ],
+      "recall": [
+        0.6092184368737475,
+        0.7527777777777778,
+        0.15
+      ],
+      "f1": [
+        0.7372675828617623,
+        0.42981760507533706,
+        0.17266187050359713
+      ],
+      "support": [
+        1497,
+        360,
+        80
+      ]
+    },
+    "right_foraminal": {
+      "precision": [
+        0.9188921859545005,
+        0.3123569794050343,
+        0.15384615384615385
+      ],
+      "recall": [
+        0.626855600539811,
+        0.7338709677419355,
+        0.0963855421686747
+      ],
+      "f1": [
+        0.7452868030485359,
+        0.43820224719101125,
+        0.11851851851851852
+      ],
+      "support": [
+        1482,
+        372,
+        83
+      ]
+    }
+  },
+  "auc_auprc_metrics": {
+    "spinal_canal": {
+      "per_class": {
+        "Normal/Mild": {
+          "auc": 0.8742714602470699,
+          "auprc": 0.9809793834338283,
+          "brier": 0.22365722060203552,
+          "support": 1722
+        },
+        "Moderate": {
+          "auc": 0.7829157638947079,
+          "auprc": 0.20329334490423598,
+          "brier": 0.10892830789089203,
+          "support": 139
+        },
+        "Severe": {
+          "auc": 0.9068534771561818,
+          "auprc": 0.33094242791379314,
+          "brier": 0.06250371783971786,
+          "support": 81
+        }
+      },
+      "macro_auc": 0.8546802337659866,
+      "macro_auprc": 0.5050717187506192
+    },
+    "left_foraminal": {
+      "per_class": {
+        "Normal/Mild": {
+          "auc": 0.8030545940365579,
+          "auprc": 0.9356959329090733,
+          "brier": 0.26544806361198425,
+          "support": 1497
+        },
+        "Moderate": {
+          "auc": 0.7095240611569082,
+          "auprc": 0.30586767986990276,
+          "brier": 0.18800906836986542,
+          "support": 360
+        },
+        "Severe": {
+          "auc": 0.8537224017232095,
+          "auprc": 0.16854296329001386,
+          "brier": 0.057051192969083786,
+          "support": 80
+        }
+      },
+      "macro_auc": 0.7887670189722252,
+      "macro_auprc": 0.47003552535633
+    },
+    "right_foraminal": {
+      "per_class": {
+        "Normal/Mild": {
+          "auc": 0.807732348623037,
+          "auprc": 0.9341587541166131,
+          "brier": 0.26487797498703003,
+          "support": 1482
+        },
+        "Moderate": {
+          "auc": 0.7054519220859529,
+          "auprc": 0.32495297491982267,
+          "brier": 0.1909240484237671,
+          "support": 372
+        },
+        "Severe": {
+          "auc": 0.8608544209199257,
+          "auprc": 0.15305495510305742,
+          "brier": 0.05696563795208931,
+          "support": 83
+        }
+      },
+      "macro_auc": 0.7913462305429718,
+      "macro_auprc": 0.4707222280464977
+    }
+  },
+  "auc_auprc_overall": {
+    "macro_auc": 0.8115978277603945,
+    "macro_auprc": 0.4819431573844823,
+    "popular_auc": 0.8283528009688883,
+    "popular_auprc": 0.9502780234865048,
+    "rare_auc": 0.8032203411561477,
+    "rare_auprc": 0.24777572433347095,
+    "severe_auc": 0.8738100999331057,
+    "severe_auprc": 0.21751344876895481
+  },
+  "extra": {
+    "best_path": "checkpoints/v3_20260503/bmc_only/best_model_hybrid_biomedclip_only.pth",
+    "cbam_checkpoint": "checkpoints/v3_20260503/cbam/best_model_attention.pth",
+    "total_train_seconds": 194.51680994033813,
+    "avg_epoch_seconds": 64.83893664677937,
+    "eval_seconds": 7.720509767532349,
+    "eval_samples": 1942,
+    "eval_throughput_samples_per_sec": 251.53779458538366,
+    "eval_ms_per_sample": 3.975545709336946,
+    "args": {
+      "data_dir": "rsna_preprocessed",
+      "cbam_checkpoint": "checkpoints/v3_20260503/cbam/best_model_attention.pth",
+      "save_dir": "checkpoints/v3_20260503/bmc_only",
+      "val_split": 0.2,
+      "epochs": 20,
+      "batch_size": 32,
+      "lr": 0.0001,
+      "weight_decay": 0.0001,
+      "slice_strategy": "static",
+      "use_focal": true,
+      "focal_gamma": 2.0,
+      "use_supcon": true,
+      "supcon_weight": 0.1,
+      "use_uncertainty": true,
+      "class_weight_mode": "sqrt",
+      "augmentation": "medium",
+      "hflip_swap_labels": false,
+      "oversample_factor": 3,
+      "num_workers": 4,
+      "save_freq": 5,
+      "early_stop_patience": 15,
+      "resume": null,
+      "seed": 42,
+      "ablate_branch": "biomedclip_only",
+      "fusion": "concat_mlp",
+      "modality_dropout": 0.0
+    }
+  }
+}

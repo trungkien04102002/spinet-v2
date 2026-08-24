@@ -1,0 +1,60 @@
+Device: cuda
+
+[1/4] Building val loader (val_split=0.2, seed=42)...
+✓ Loaded 9748 preprocessed samples from rsna_preprocessed
+  ✓ 1942 val samples
+
+[2/4] Loading model + checkpoint...
+/venv/main/lib/python3.12/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/venv/main/lib/python3.12/site-packages/torchvision/models/_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=None`.
+  warnings.warn(msg)
+  ✓ Model loaded (63,507,969 trainable params)
+
+[3/4] Running inference...
+Inference:   0%|          | 0/61 [00:00<?, ?it/s]Inference:   2%|▏         | 1/61 [00:00<00:45,  1.33it/s]Inference:   3%|▎         | 2/61 [00:00<00:24,  2.41it/s]Inference:   5%|▍         | 3/61 [00:01<00:18,  3.22it/s]Inference:   7%|▋         | 4/61 [00:01<00:14,  3.83it/s]Inference:   8%|▊         | 5/61 [00:01<00:13,  4.21it/s]Inference:  10%|▉         | 6/61 [00:01<00:12,  4.55it/s]Inference:  11%|█▏        | 7/61 [00:01<00:11,  4.84it/s]Inference:  13%|█▎        | 8/61 [00:02<00:10,  5.01it/s]Inference:  15%|█▍        | 9/61 [00:02<00:10,  5.07it/s]Inference:  16%|█▋        | 10/61 [00:02<00:09,  5.22it/s]Inference:  18%|█▊        | 11/61 [00:02<00:09,  5.27it/s]Inference:  20%|█▉        | 12/61 [00:02<00:09,  5.30it/s]Inference:  21%|██▏       | 13/61 [00:02<00:08,  5.34it/s]Inference:  23%|██▎       | 14/61 [00:03<00:08,  5.36it/s]Inference:  25%|██▍       | 15/61 [00:03<00:08,  5.38it/s]Inference:  26%|██▌       | 16/61 [00:03<00:08,  5.39it/s]Inference:  28%|██▊       | 17/61 [00:03<00:08,  5.40it/s]Inference:  30%|██▉       | 18/61 [00:03<00:07,  5.40it/s]Inference:  31%|███       | 19/61 [00:04<00:07,  5.41it/s]Inference:  33%|███▎      | 20/61 [00:04<00:07,  5.40it/s]Inference:  34%|███▍      | 21/61 [00:04<00:07,  5.40it/s]Inference:  36%|███▌      | 22/61 [00:04<00:07,  5.40it/s]Inference:  38%|███▊      | 23/61 [00:04<00:07,  5.40it/s]Inference:  39%|███▉      | 24/61 [00:05<00:06,  5.40it/s]Inference:  41%|████      | 25/61 [00:05<00:06,  5.33it/s]Inference:  43%|████▎     | 26/61 [00:05<00:06,  5.35it/s]Inference:  44%|████▍     | 27/61 [00:05<00:06,  5.42it/s]Inference:  46%|████▌     | 28/61 [00:05<00:06,  5.42it/s]Inference:  48%|████▊     | 29/61 [00:05<00:05,  5.42it/s]Inference:  49%|████▉     | 30/61 [00:06<00:05,  5.34it/s]Inference:  51%|█████     | 31/61 [00:06<00:05,  5.41it/s]Inference:  52%|█████▏    | 32/61 [00:06<00:05,  5.41it/s]Inference:  54%|█████▍    | 33/61 [00:06<00:05,  5.39it/s]Inference:  56%|█████▌    | 34/61 [00:06<00:05,  5.34it/s]Inference:  57%|█████▋    | 35/61 [00:07<00:04,  5.35it/s]Inference:  59%|█████▉    | 36/61 [00:07<00:04,  5.41it/s]Inference:  61%|██████    | 37/61 [00:07<00:04,  5.39it/s]Inference:  62%|██████▏   | 38/61 [00:07<00:04,  5.38it/s]Inference:  64%|██████▍   | 39/61 [00:07<00:04,  5.38it/s]Inference:  66%|██████▌   | 40/61 [00:07<00:03,  5.38it/s]Inference:  67%|██████▋   | 41/61 [00:08<00:03,  5.30it/s]Inference:  69%|██████▉   | 42/61 [00:08<00:03,  5.37it/s]Inference:  70%|███████   | 43/61 [00:08<00:03,  5.31it/s]Inference:  72%|███████▏  | 44/61 [00:08<00:03,  5.33it/s]Inference:  74%|███████▍  | 45/61 [00:08<00:02,  5.34it/s]Inference:  75%|███████▌  | 46/61 [00:09<00:02,  5.41it/s]Inference:  77%|███████▋  | 47/61 [00:09<00:02,  5.41it/s]Inference:  79%|███████▊  | 48/61 [00:09<00:02,  5.40it/s]Inference:  80%|████████  | 49/61 [00:09<00:02,  5.40it/s]Inference:  82%|████████▏ | 50/61 [00:09<00:02,  5.34it/s]Inference:  84%|████████▎ | 51/61 [00:10<00:01,  5.41it/s]Inference:  85%|████████▌ | 52/61 [00:10<00:01,  5.33it/s]Inference:  87%|████████▋ | 53/61 [00:10<00:01,  5.36it/s]Inference:  89%|████████▊ | 54/61 [00:10<00:01,  5.42it/s]Inference:  90%|█████████ | 55/61 [00:10<00:01,  5.47it/s]Inference:  92%|█████████▏| 56/61 [00:10<00:00,  5.50it/s]Inference:  93%|█████████▎| 57/61 [00:11<00:00,  5.52it/s]Inference:  95%|█████████▌| 58/61 [00:11<00:00,  5.54it/s]Inference:  97%|█████████▋| 59/61 [00:11<00:00,  5.55it/s]Inference:  98%|█████████▊| 60/61 [00:11<00:00,  5.56it/s]Inference: 100%|██████████| 61/61 [00:11<00:00,  6.12it/s]                                                            ✓ Inference done in 11.8s (164.1 samples/s)
+
+[4/4] Computing AUC + AUPRC + Brier...
+  ✓ JSON: experiments/v3_20260503/v2_cbam_auc.json
+  ✓ Probs: checkpoints/fresh_cbam/probs_best_model_attention_sqrt_cw_e20.npz
+
+==============================================================================
+  AUC / AUPRC summary — model=cbam
+  checkpoint: checkpoints/fresh_cbam/best_model_attention_sqrt_cw_e20.pth
+  n_val_samples: 1942
+==============================================================================
+
+spinal_canal (n_valid=1942):
+  Class              AUC    AUPRC    Brier  Support
+  --------------------------------------------------
+  Normal/Mild      0.944    0.992    0.096     1722
+  Moderate         0.880    0.273    0.078      139
+  Severe           0.968    0.663    0.028       81
+  macro            0.931    0.643
+
+left_foraminal (n_valid=1937):
+  Class              AUC    AUPRC    Brier  Support
+  --------------------------------------------------
+  Normal/Mild      0.798    0.926    0.245     1497
+  Moderate         0.638    0.254    0.200      360
+  Severe           0.851    0.175    0.051       80
+  macro            0.762    0.452
+
+right_foraminal (n_valid=1937):
+  Class              AUC    AUPRC    Brier  Support
+  --------------------------------------------------
+  Normal/Mild      0.815    0.933    0.235     1482
+  Moderate         0.677    0.296    0.199      372
+  Severe           0.852    0.204    0.048       83
+  macro            0.781    0.478
+
+------------------------------------------------------------------------------
+OVERALL (averaged across 3 conditions)
+------------------------------------------------------------------------------
+  macro AUC       : 0.825
+  macro AUPRC     : 0.524
+  popular AUPRC   : 0.951   (Normal/Mild only)
+  rare    AUPRC   : 0.311   (Moderate + Severe)
+  Severe  AUPRC   : 0.347   (clinical priority)
+==============================================================================
+

@@ -1,0 +1,72 @@
+=== BEST MODEL METRICS (baseline_seed123) ===
+Saved at:  2026-06-02T15:10:45
+Epoch:     22
+Train Loss: 0.4423
+Val Loss:   0.4508
+Avg Severe F1: 0.1451
+
+Validation Accuracies:
+  spinal_canal       0.8861
+  left_foraminal     0.7865
+  right_foraminal    0.7686
+
+Per-Class Metrics:
+
+  spinal_canal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.906  0.986  0.944     1717
+    Moderate         0.370  0.064  0.109      157
+    Severe           0.508  0.381  0.435       84
+
+  left_foraminal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.812  0.967  0.883     1545
+    Moderate         0.390  0.132  0.197      348
+    Severe           0.000  0.000  0.000       65
+
+  right_foraminal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.803  0.952  0.871     1508
+    Moderate         0.398  0.179  0.247      368
+    Severe           0.000  0.000  0.000       77
+
+AUC / AUPRC / Brier (per class, one-vs-rest):
+
+  spinal_canal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.908  0.985  0.070     1717
+    Moderate         0.868  0.341  0.061      157
+    Severe           0.936  0.470  0.030       84
+    macro            0.904  0.599
+
+  left_foraminal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.784  0.931  0.139     1545
+    Moderate         0.749  0.346  0.131      348
+    Severe           0.854  0.161  0.030       65
+    macro            0.796  0.479
+
+  right_foraminal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.798  0.930  0.143     1508
+    Moderate         0.758  0.362  0.136      368
+    Severe           0.845  0.180  0.035       77
+    macro            0.800  0.490
+
+AUC / AUPRC overall (averaged across 3 conditions):
+  macro AUC      : 0.833
+  macro AUPRC    : 0.523
+  popular AUPRC  : 0.949  (Normal/Mild)
+  rare    AUPRC  : 0.310  (Moderate + Severe)
+  Severe  AUPRC  : 0.270  (clinical priority)
+
+Extra:
+  val_weighted_logloss: 0.44983665148417157
+  best_path: checkpoints/v3_20260503/baseline/best_model_seed123.pth
+  total_train_seconds: 1162.0221405029297
+  avg_epoch_seconds: 52.819188204678625
+  eval_seconds: 10.44931173324585
+  eval_samples: 1958
+  eval_throughput_samples_per_sec: 187.38076248317554
+  eval_ms_per_sample: 5.336727136489198
+  args: {'data_dir': 'rsna_preprocessed', 'val_split': 0.2, 'use_pretrained': True, 'unfreeze_backbone': False, 'resume': None, 'epochs': 25, 'batch_size': 64, 'lr': 0.001, 'weight_decay': 0.0001, 'num_workers': 4, 'save_dir': 'checkpoints/v3_20260503/baseline', 'save_freq': 5, 'early_stop_patience': 10, 'class_weight_mode': 'none', 'seed': 123}

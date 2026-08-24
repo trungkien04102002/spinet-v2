@@ -1,0 +1,72 @@
+=== BEST MODEL METRICS (hybrid_biomedclip_only) ===
+Saved at:  2026-05-04T07:44:48
+Epoch:     3
+Train Loss: 1.3219
+Val Loss:   0.1649
+Avg Severe F1: 0.2290
+
+Validation Accuracies:
+  spinal_canal       0.8342
+  left_foraminal     0.6169
+  right_foraminal    0.6247
+
+Per-Class Metrics:
+
+  spinal_canal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.950  0.892  0.920     1722
+    Moderate         0.226  0.201  0.213      139
+    Severe           0.277  0.691  0.396       81
+
+  left_foraminal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.933  0.609  0.737     1497
+    Moderate         0.301  0.753  0.430      360
+    Severe           0.203  0.150  0.173       80
+
+  right_foraminal:
+    Class             Prec Recall     F1  Support
+    Normal/Mild      0.919  0.627  0.745     1482
+    Moderate         0.312  0.734  0.438      372
+    Severe           0.154  0.096  0.119       83
+
+AUC / AUPRC / Brier (per class, one-vs-rest):
+
+  spinal_canal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.874  0.981  0.224     1722
+    Moderate         0.783  0.203  0.109      139
+    Severe           0.907  0.331  0.063       81
+    macro            0.855  0.505
+
+  left_foraminal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.803  0.936  0.265     1497
+    Moderate         0.710  0.306  0.188      360
+    Severe           0.854  0.169  0.057       80
+    macro            0.789  0.470
+
+  right_foraminal:
+    Class              AUC  AUPRC  Brier  Support
+    Normal/Mild      0.808  0.934  0.265     1482
+    Moderate         0.705  0.325  0.191      372
+    Severe           0.861  0.153  0.057       83
+    macro            0.791  0.471
+
+AUC / AUPRC overall (averaged across 3 conditions):
+  macro AUC      : 0.812
+  macro AUPRC    : 0.482
+  popular AUPRC  : 0.950  (Normal/Mild)
+  rare    AUPRC  : 0.248  (Moderate + Severe)
+  Severe  AUPRC  : 0.218  (clinical priority)
+
+Extra:
+  best_path: checkpoints/v3_20260503/bmc_only/best_model_hybrid_biomedclip_only.pth
+  cbam_checkpoint: checkpoints/v3_20260503/cbam/best_model_attention.pth
+  total_train_seconds: 194.51680994033813
+  avg_epoch_seconds: 64.83893664677937
+  eval_seconds: 7.720509767532349
+  eval_samples: 1942
+  eval_throughput_samples_per_sec: 251.53779458538366
+  eval_ms_per_sample: 3.975545709336946
+  args: {'data_dir': 'rsna_preprocessed', 'cbam_checkpoint': 'checkpoints/v3_20260503/cbam/best_model_attention.pth', 'save_dir': 'checkpoints/v3_20260503/bmc_only', 'val_split': 0.2, 'epochs': 20, 'batch_size': 32, 'lr': 0.0001, 'weight_decay': 0.0001, 'slice_strategy': 'static', 'use_focal': True, 'focal_gamma': 2.0, 'use_supcon': True, 'supcon_weight': 0.1, 'use_uncertainty': True, 'class_weight_mode': 'sqrt', 'augmentation': 'medium', 'hflip_swap_labels': False, 'oversample_factor': 3, 'num_workers': 4, 'save_freq': 5, 'early_stop_patience': 15, 'resume': None, 'seed': 42, 'ablate_branch': 'biomedclip_only', 'fusion': 'concat_mlp', 'modality_dropout': 0.0}
