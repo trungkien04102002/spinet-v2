@@ -1,0 +1,72 @@
+{
+  "stage": "cbam4",
+  "condition": "spinal_canal",
+  "target_class": 2,
+  "n_cases": 8,
+  "methods": {
+    "grad_cam": {
+      "fc": {
+        "spearman_mean": 0.2607885715678103,
+        "spearman_sd": 0.11922514583639061,
+        "top_decile_overlap_mean": 0.4303977272727273
+      },
+      "fc+cbam4": {
+        "spearman_mean": 0.138208678116434,
+        "spearman_sd": 0.1110493021581995,
+        "top_decile_overlap_mean": 0.3977272727272727
+      },
+      "fc+cbam4+layer4": {
+        "spearman_mean": 0.0911670508911354,
+        "spearman_sd": 0.04881850146712129,
+        "top_decile_overlap_mean": 0.11363636363636365
+      },
+      "fc+cbam4+layer4+layer3": {
+        "spearman_mean": 0.26644330710581016,
+        "spearman_sd": 0.09760956637198596,
+        "top_decile_overlap_mean": 0.31534090909090906
+      },
+      "fc+cbam4+layer4+layer3+layer2": {
+        "spearman_mean": 0.0,
+        "spearman_sd": 0.0,
+        "top_decile_overlap_mean": 0.061079545454545456
+      },
+      "fc+cbam4+layer4+layer3+layer2+layer1": {
+        "spearman_mean": 0.0,
+        "spearman_sd": 0.0,
+        "top_decile_overlap_mean": 0.061079545454545456
+      }
+    },
+    "layer_cam": {
+      "fc": {
+        "spearman_mean": 0.9727382803857413,
+        "spearman_sd": 0.007283307860466737,
+        "top_decile_overlap_mean": 0.7798295454545454
+      },
+      "fc+cbam4": {
+        "spearman_mean": 0.25796616274938494,
+        "spearman_sd": 0.070344186805739,
+        "top_decile_overlap_mean": 0.33806818181818177
+      },
+      "fc+cbam4+layer4": {
+        "spearman_mean": 0.6045417699167033,
+        "spearman_sd": 0.04370209324585019,
+        "top_decile_overlap_mean": 0.5823863636363638
+      },
+      "fc+cbam4+layer4+layer3": {
+        "spearman_mean": 0.11172060591030811,
+        "spearman_sd": 0.07184042293170577,
+        "top_decile_overlap_mean": 0.05823863636363636
+      },
+      "fc+cbam4+layer4+layer3+layer2": {
+        "spearman_mean": 0.11720895360636788,
+        "spearman_sd": 0.07264538522410416,
+        "top_decile_overlap_mean": 0.08664772727272727
+      },
+      "fc+cbam4+layer4+layer3+layer2+layer1": {
+        "spearman_mean": -0.18793772858323132,
+        "spearman_sd": 0.0461508711925478,
+        "top_decile_overlap_mean": 0.022727272727272728
+      }
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "n_pairs": 796,
+  "n_studies": 80,
+  "skipped_missing_geometry": 0,
+  "crop_window_px": [
+    240,
+    120
+  ],
+  "sides": {
+    "left": {
+      "n": 398,
+      "inplane_mm_median": 9.656921184191669,
+      "inplane_mm_p90": 15.171330207895542,
+      "d_col_mm_median": 4.313440115515245,
+      "d_row_mm_median": 6.209526032844304,
+      "d_normal_mm_median": 16.000000371168092,
+      "d_normal_slices_median": 3.999975297432531,
+      "d_normal_slices_p90": 4.999993891083295,
+      "half_slice_mm_median": 18.4,
+      "outside_inplane_fraction": 0.002512562814070307,
+      "outside_slices_fraction": 0.321608040201005,
+      "outside_fraction": 0.321608040201005
+    },
+    "right": {
+      "n": 398,
+      "inplane_mm_median": 9.942583899194183,
+      "inplane_mm_p90": 15.01792471447882,
+      "d_col_mm_median": 5.233084435811895,
+      "d_row_mm_median": 6.713575230624146,
+      "d_normal_mm_median": 17.600000568403456,
+      "d_normal_slices_median": 3.9999999528298202,
+      "d_normal_slices_p90": 5.029795663730701,
+      "half_slice_mm_median": 18.4,
+      "outside_inplane_fraction": 0.002512562814070307,
+      "outside_slices_fraction": 0.4723618090452262,
+      "outside_fraction": 0.4748743718592965
+    }
+  }
+}

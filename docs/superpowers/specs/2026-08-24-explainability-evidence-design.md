@@ -60,28 +60,46 @@ confound.
 **Question 1 (no model involved).** How often is the foraminal finding
 physically absent from the T2 crop?
 
-Already measured, from `train_label_coordinates.csv` against the 240x120 window:
+CORRECTED 2026-08-24. The first version of this measurement was wrong and its
+numbers (23.5% / 23.3%) must not be used. It subtracted a foraminal annotation's
+pixel (x, y) from a canal annotation's pixel (x, y), but foraminal findings are
+annotated on Sagittal T1 and canal findings on Sagittal T2, and those are
+different series. Three of four sampled studies had mismatched grids:
+384x384 at 0.78 mm against 640x640 at 0.47 mm, and 384x384 at 0.78 mm against
+320x320 at 0.94 mm. A pixel offset across two such grids is not a physical
+distance.
+
+`geometry_evidence_mm.py` redoes it in the DICOM patient coordinate system,
+using ImagePositionPatient and ImageOrientationPatient, which all 40 sampled
+studies carry. Measured over 796 pairs in 80 studies:
 
 | | left foraminal | right foraminal |
 |---|---|---|
-| n | 9743 | 9742 |
-| median horizontal offset from canal point | 27 px | 26 px |
-| median vertical offset | 24 px | 24 px |
-| 90th percentile horizontal / vertical | 116 / 115 px | 116 / 114 px |
-| **falls outside the T2 crop window entirely** | **23.5%** | **23.3%** |
+| in-plane displacement from canal, median | 9.7 mm | 9.9 mm |
+| in-plane, 90th percentile | 15.2 mm | 15.0 mm |
+| through-plane (slice axis), median | 16.0 mm = 4.0 slices | 17.6 mm = 4.0 slices |
+| through-plane, 90th percentile | 5.0 slices | 5.0 slices |
+| outside the in-plane window (70 x 35 mm half-extent) | 0.3% | 0.3% |
+| **outside the 9-slice window (+/-4 slices)** | **32.2%** | **47.2%** |
 
-In roughly one case in four, the region the radiologist graded is not in the
-image the model was given. This is geometry, not inference: it does not depend
-on any model, any saliency method, or any threshold, and it cannot be answered
-by "well, the network might have learned a proxy".
+The claim survives the correction but changes axis, and is sharper for it. The
+in-plane window is generous, 70 x 35 mm half-extent against a 10 mm
+displacement, so the foraminal region is essentially always present in plane.
+The binding constraint is the **9-slice depth**: a third of left and nearly half
+of right foraminal findings sit beyond the +/-4 slices the crop spans. The
+model was asked to grade a structure outside its field of view along the
+slice axis.
 
-Caveat to state: the crop is clipped at image borders (`max(0, ...)`,
-`min(shape, ...)`), so for annotations near an edge the realised centre shifts
-and the true "outside" rate is a slight underestimate. Compute the exact rate
-with clipping applied before quoting the number in the thesis.
+This is geometry, not inference: no model, no saliency method, no threshold, and
+it cannot be dismissed with "the network might have learned a proxy". It also
+points directly at the fix that was already built, per-side T1 crops centred on
+each side's own annotated slice.
 
-**Question 2 (model behaviour, confound removed).** Restricted to the 76.5% of
-cases where the foraminal point **is** inside the T2 window: when the T2 model
+Worth investigating separately: the left/right asymmetry (32.2% against 47.2%)
+is large and is not explained by anything in this measurement.
+
+**Question 2 (model behaviour, confound removed).** Restricted to cases where
+the foraminal point **is** inside the crop, in plane and in slices: when the T2 model
 grades the foraminal label, does its evidence sit at that point?
 
 This asks about relative position *within one image*, so it is unaffected by

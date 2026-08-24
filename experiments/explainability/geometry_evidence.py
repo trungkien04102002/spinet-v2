@@ -1,5 +1,22 @@
 #!/usr/bin/env python3
-"""Model-free evidence that the T2 crop cannot contain the foraminal finding.
+"""SUPERSEDED AND WRONG. Use geometry_evidence_mm.py instead.
+
+Kept only so the error is traceable. This script compares a foraminal
+annotation's pixel (x, y) against a canal annotation's pixel (x, y) as if they
+shared a coordinate frame. They do not: foraminal findings are annotated on
+Sagittal T1 and canal findings on Sagittal T2, and three of four sampled
+studies had different pixel grids (384x384 at 0.78 mm against 640x640 at
+0.47 mm; 384x384 at 0.78 mm against 320x320 at 0.94 mm). A pixel offset across
+two such grids is not a physical distance, so the 23.4% / 23.2% it reports is
+meaningless.
+
+geometry_evidence_mm.py redoes the measurement in the DICOM patient coordinate
+system and finds the real gap is along the slice axis, not in plane: 0.3%
+outside in plane, but 32.2% (left) and 47.2% (right) outside the 9-slice window.
+
+Original docstring follows.
+
+Model-free evidence that the T2 crop cannot contain the foraminal finding.
 
 This is the strongest single piece of evidence for the series-routing claim, and
 the cheapest: it uses no model, no saliency method and no threshold, so there is
