@@ -1,0 +1,68 @@
+\chapter{KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN}
+Nghiên cứu này đã thực hiện quy trình đánh giá thực nghiệm toàn diện và độc lập đối với các mô hình học sâu tiên tiến cho hai bài toán cốt lõi: Phân vùng cấu trúc và phát hiện bất thường trên ảnh MRI cột sống thắt lưng. Kết quả thực nghiệm trên các tập dữ liệu chuẩn hóa đã cung cấp cơ sở định lượng vững chắc cho việc lựa chọn giải pháp kỹ thuật phù hợp với mục tiêu xây dựng hệ thống hỗ trợ gán nhãn tự động.
+\section{Tổng kết}
+Dựa trên các chỉ số đánh giá và phân tích định lượng, nghiên cứu rút ra các kết luận chính sau: \\
+
+\textbf{Đối với bài toán phân vùng cột sống:} Mô hình \textbf{TotalSpineSeg} được lựa chọn sau khi so sánh với 3 mô hình khác (SPINEPS, MedCLIP-SAMv2, SpineNetV2).
+    \begin{itemize}
+        \item Mô hình đạt độ chính xác dương tính lên tới \textbf{97.87\%}, đảm bảo vùng được trích xuất gần như không nhiễu, vượt trội so với SPINEPS (52.17\%), MedCLIP-SAMv2 (29.16\%) và SpineNetV2 (51.76\%).
+        \item Mặc dù chỉ số Recall thấp hơn (56.49\%) do khác biệt về định nghĩa nhãn thực tế (TotalSpineSeg chỉ tập trung thân đốt sống, không tính gai sau), nhưng độ ổn định và độ chính xác bề mặt (ASSD = 6.85 mm thấp nhất) khiến đây là lựa chọn tối ưu để trích xuất ROI sạch cho các bước xử lý sau.
+    \end{itemize}
+
+\textbf{Đối với bài toán phát hiện bất thường :} Mô hình \textbf{SpineNetV2} được lựa chọn làm backbone cho mô-đun grading.
+    \begin{itemize}
+        \item Trên 3 nhóm bệnh lý chính (Hẹp ống sống, Hẹp lỗ liên hợp trái và phải), SpineNetV2 đạt F1-Score trung bình \textbf{77.50\%}, thấp hơn Ning Shen (SOTA, F1 80.37\%) khoảng 3\% nhưng được ưu tiên nhờ mã nguồn mở, kiến trúc đơn giản, dễ tinh chỉnh sâu. Ning Shen là ensemble nhiều mô hình lớn, khó duy trì.
+        \item MedGemma bị loại do Recall quá thấp (6-21\%) trên các bệnh lý cột sống thắt lưng do chưa được chuyên biệt hóa.
+    \end{itemize}
+
+\textbf{Đối với đóng góp tinh chỉnh sâu mô-đun grading:} Kiến trúc Hybrid CBAM + BiomedCLIP được đề xuất và đánh giá kĩ trên hai dataset độc lập.
+    \begin{itemize}
+        \item Trên RSNA 2024, Hybrid đánh đổi khoảng 9\% Mean Accuracy (SpineNetV2 đạt cao nhất do thiên về lớp đa số Normal/Mild) để cải thiện các chỉ số quan trọng hơn về lâm sàng: Mean F1 macro tăng từ 0.420 lên \textbf{0.528} (+0.108), Mean Recall macro từ 0.411 lên 0.592, Mean AUC từ 0.826 lên 0.837, Mean AUPRC từ 0.523 lên 0.526.
+        \item Cải thiện đáng kể nhất nằm ở \textbf{Severe class}: Severe Recall tăng từ 11.5\% (SpineNetV2) lên \textbf{46.4\%} (Hybrid), gấp 4 lần. Severe F1 tăng từ 0.149 lên 0.343. Đây là cải tiến có ý nghĩa lâm sàng rõ rệt vì Severe chính là nhóm bệnh nặng cần ưu tiên phát hiện.
+        \item Pipeline xử lý mất cân bằng lớp (FocalLoss + UncertaintyLoss + minority oversampling) đã được triển khai và chứng minh hiệu quả trong việc cải thiện Severe Recall.
+    \end{itemize}
+
+\textbf{Phạm vi đã hoàn thành và phần còn lại.} Giai đoạn thực tập (TT2) là bước tiền đề của Đồ án tốt nghiệp (ĐATN), tập trung vào việc lựa chọn mô hình cho từng nhánh và tinh chỉnh sâu mô-đun grading. Ở giai đoạn này, hai nhánh phân vùng và đánh giá bệnh lý mới sinh ra hai output độc lập (mặt nạ và nhãn bệnh lý); việc \emph{tích hợp} hai output thành một giải pháp hoàn chỉnh và xây dựng phần mềm giao diện cho bác sĩ -- nhằm đạt đầy đủ mục tiêu ở Chương 1 -- chưa được thực hiện và được đưa vào kế hoạch ĐATN (Mục~\ref{sec:datn_plan}).
+
+\section{Đề xuất hướng phát triển}
+Để khắc phục các hạn chế hiện tại và hoàn thiện hệ thống hướng tới ứng dụng thực tế, một số hướng nghiên cứu trọng tâm tiếp theo được đề xuất:
+
+\subsection{Tối ưu hóa TotalSpineSeg cho mặt cắt Axial}
+Mặc dù TotalSpineSeg đang hoạt động tốt trong việc định vị thân đốt sống trên mặt phẳng dọc, nhưng chẩn đoán các bệnh lý như hẹp ống sống hay hẹp ngách bên lại phụ thuộc rất lớn vào thông tin từ mặt cắt ngang .
+
+Do đó, cần nghiên cứu huấn luyện lại hoặc tinh chỉnh  TotalSpineSeg để thực hiện phân vùng chính xác các cấu trúc (đĩa đệm, ống sống, rễ thần kinh) trên ảnh Axial. Việc có được mặt nạ phân vùng chính xác trên cả hai mặt phẳng sẽ giúp hệ thống định vị vùng tổn thương (ROI) chính xác hơn gấp nhiều lần, từ đó nâng cao đáng kể độ chính xác của mô hình chẩn đoán bệnh lý.
+
+\subsection{Hoàn thiện phần mềm với giao diện cho bác sĩ}
+Một hướng phát triển trực tiếp là hoàn thiện hệ thống thành một sản phẩm phần mềm cho bác sĩ. Các tính năng chính bao gồm: (a) giao diện trực quan để xem kết quả phân vùng và highlight vùng bất thường ngay trên ảnh DICOM, (b) cho phép bác sĩ chỉnh sửa nhãn và điều chỉnh vùng khoanh, (c) xuất ảnh đã gán nhãn dưới dạng độc lập, thuận tiện cho việc lưu trữ và chia sẻ. Sản phẩm sẽ tích hợp pipeline 2 mô-đun đã xây dựng (TotalSpineSeg + Hybrid grading) thành một quy trình end-to-end. Dự kiến hoàn thiện trong giai đoạn nghiên cứu tiếp theo.
+
+\subsection{Tích hợp Vision-Language Model cho việc sinh báo cáo chẩn đoán}
+Một hướng phát triển khác là tích hợp một mô hình Vision-Language lớn (VLM) như MedGemma vào pipeline để tự động sinh báo cáo chẩn đoán bằng ngôn ngữ tự nhiên. Trong khảo sát của báo cáo (Chương 5), MedGemma nguyên bản có Recall rất thấp (6 -21\%) trên bệnh lý thắt lưng do chưa được chuyên biệt hóa nên không được đưa vào pipeline đề xuất. Hai hướng cải thiện cho việc tích hợp VLM:
+\begin{itemize}
+    \item \textbf{Fine-tune trên dữ liệu MRI thắt lưng:} dùng các cặp (ảnh, văn bản chẩn đoán) từ RSNA và SPIDER để fine-tune nhánh thị giác và nhánh ngôn ngữ của VLM. Mục tiêu cải thiện độ nhạy với các thuật ngữ và pattern hình ảnh cụ thể của bệnh thắt lưng.
+    \item \textbf{Tích hợp VLM với output phân vùng:} mở rộng prompt cho VLM để bao gồm cả mặt nạ phân vùng từ TotalSpineSeg (overlay màu lên ảnh gốc), giúp VLM có thông tin spatial rõ ràng hơn khi viết báo cáo chẩn đoán. Hướng này cũng có thể được mở rộng để xử lý cả mặt cắt Axial bên cạnh mặt cắt Sagittal hiện tại.
+\end{itemize}
+
+\subsection{Cải thiện qua phản hồi từ bác sĩ chẩn đoán}
+Một hướng cải tiến dài hạn là tích hợp cơ chế \textbf{Human-in-the-Loop} . Cụ thể: thông qua giao diện phần mềm tương lai, bác sĩ có thể chỉnh sửa các nhãn AI gán sai trong quá trình sử dụng thực tế. Các cặp ảnh + nhãn đã được chỉnh sửa sẽ được lưu lại dưới dạng dataset mới, dùng để huấn luyện lại mô hình theo định kì, tạo ra một vòng lặp cải tiến liên tục. Hướng này hiện chưa nằm trong scope LVTN do đòi hỏi sự phối hợp với bệnh viện thực tế và một khoảng thời gian đủ dài để thu thập đủ phản hồi, được đặt như định hướng nghiên cứu cho các giai đoạn tiếp theo.
+
+\section{Kế hoạch thực hiện trong giai đoạn Đồ án tốt nghiệp}
+\label{sec:datn_plan}
+Trên cơ sở những gì đã đạt được ở giai đoạn thực tập là lựa chọn mô hình và tinh chỉnh mô-đun grading, giai đoạn Đồ án tốt nghiệp sẽ hoàn thiện giải pháp thành một sản phẩm hoàn chỉnh. Ưu tiên trước hết là hoàn thiện pipeline tích hợp và xây dựng phần mềm giao diện cho bác sĩ, sau đó tiếp tục tinh chỉnh mô-đun grading vì kết quả hiện tại vẫn còn dư địa cải thiện. Trong khuôn khổ thời gian một học kỳ, kế hoạch gồm 4 giai đoạn, chi tiết ở Bảng~\ref{tab:datn_plan}.
+
+\begin{table}[H]
+\centering
+\caption{Kế hoạch thực hiện giai đoạn Đồ án tốt nghiệp.}
+\label{tab:datn_plan}
+\renewcommand{\arraystretch}{1.3}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{|c|p{4.7cm}|p{4.3cm}|c|}
+\hline
+\textbf{GĐ} & \textbf{Nội dung công việc} & \textbf{Phương pháp / công cụ} & \textbf{Thời lượng} \\ \hline
+1 & \textbf{Tích hợp pipeline:} kết hợp hai output mặt nạ (TotalSpineSeg) và nhãn bệnh lý (grading) thành luồng end-to-end thống nhất; dùng mặt nạ để định vị ROI và trực quan hóa kết quả grading trên cùng một ảnh. & Hiện thực bước hợp nhất output, overlay nhãn bệnh lý lên mặt nạ phân vùng. & 3 tuần \\ \hline
+2 & \textbf{Xây dựng phần mềm giao diện cho bác sĩ:} xem kết quả phân vùng, highlight vùng bất thường, chỉnh sửa nhãn, xuất ảnh đã gán nhãn. & Phát triển ứng dụng web hoặc desktop trên nền pipeline đã tích hợp ở giai đoạn 1. & 6 tuần \\ \hline
+3 & \textbf{Tinh chỉnh tiếp mô-đun grading:} mở rộng đánh giá mặt cắt Axial, cải thiện thêm kết quả. & Huấn luyện trên Vast.ai (RTX 4090), PyTorch. & 3 tuần \\ \hline
+4 & Viết Đồ án tốt nghiệp hoàn chỉnh và chuẩn bị bảo vệ. & Tổng hợp kết quả, hoàn thiện báo cáo và slide. & 3 tuần \\ \hline
+\end{tabular}
+\end{table}
+
+Đúng theo định hướng ưu tiên, giai đoạn 1 và 2 -- tích hợp pipeline và xây dựng phần mềm -- là trọng tâm, hiện thực hóa mục tiêu \emph{hệ thống tương tác hoàn chỉnh} (Mục 1.2) vốn chưa được giải quyết ở giai đoạn thực tập. Giai đoạn 3 tiếp tục cải thiện chất lượng mô-đun grading, và giai đoạn 4 hoàn thiện báo cáo để bảo vệ. Việc đánh giá toàn hệ thống trên dữ liệu thực và thu thập phản hồi từ bác sĩ là bước mở rộng tùy chọn, sẽ thực hiện nếu thời gian cho phép.

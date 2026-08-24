@@ -1,0 +1,202 @@
+% Stanford University undergraduate honors thesis style -- modifications to the report style
+% This is unofficial so you should check with your department and advisor
+% See http://library.stanford.edu/research/bibliography-management/latex-and-bibtex
+% 
+% Example of use below
+% See the suthesis-ug.sty file for documentation
+%
+
+\documentclass[12pt]{report}
+% \documentclass[12pt,twoside]{report} # 2-side printing
+\usepackage[utf8]{inputenc}
+\usepackage[utf8]{vietnam}
+% \usepackage[english]{babel}
+\usepackage{suthesis-ug}
+\usepackage{algorithm2e}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage[labelfont=bf]{caption}
+\usepackage{cases}
+\usepackage{color}
+\usepackage{enumerate}
+\usepackage{xcolor}
+\usepackage{listings}
+\definecolor{lightgray}{rgb}{.9,.9,.9}
+\definecolor{darkgray}{rgb}{.4,.4,.4}
+\definecolor{purple}{rgb}{0.65, 0.12, 0.82}
+\lstdefinelanguage{JavaScript}{
+  keywords={break, case, catch, continue, debugger, default, delete, do, else, false, finally, for, function, if, in, instanceof, new, null, return, switch, this, throw, true, try, typeof, var, void, while, with},
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]',
+  morestring=[b]",
+  ndkeywords={class, export, boolean, throw, implements, import, this},
+  keywordstyle=\color{blue}\bfseries,
+  ndkeywordstyle=\color{darkgray}\bfseries,
+  identifierstyle=\color{black},
+  commentstyle=\color{purple}\ttfamily,
+  stringstyle=\color{red}\ttfamily,
+  sensitive=true
+}
+
+\lstset{
+   language=JavaScript,
+   backgroundcolor=\color{lightgray},
+   extendedchars=true,
+   basicstyle=\footnotesize\ttfamily,
+   showstringspaces=false,
+   showspaces=false,
+   numbers=left,
+   numberstyle=\footnotesize,
+   numbersep=9pt,
+   tabsize=2,
+   breaklines=true,
+   showtabs=false,
+   captionpos=b
+}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{multirow}
+\usepackage{subcaption}
+\usepackage{xcolor}
+\usepackage{indentfirst}
+% \usepackage{natbib}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{array}
+\usepackage{bm}
+\usepackage{float}
+\usepackage{amssymb}
+\usepackage{longtable}
+\usepackage{booktabs}% http://ctan.org/pkg/booktabs
+\newcommand{\tabitem}{~~\llap{\textbullet}~~}
+\usepackage{makecell}
+\usepackage{tabularx, caption}
+\usepackage{xcolor}
+
+\usepackage{plantuml}
+\usepackage{lscape}
+\RestyleAlgo{ruled}
+\newtheorem{theorem}{Theorem}
+\newtheorem{definition}{Definition}
+\mathchardef\mhyphen="2D
+\newcommand{\mathbi}[1]{\boldsymbol{#1}}
+\NewDocumentCommand{\includeplantuml}{m}{%
+  \directlua{
+    local jobname=\luastring{#1}
+      local plantUmlMode=\luastring{\PlantUmlMode}
+      local plantUmlSourceFilename = jobname .. "-plantuml.txt"
+          infile = io.open(jobname, "r")
+          instr = infile:read("*a")
+          infile:close()
+          outfile = io.open(plantUmlSourceFilename, "w")
+          outfile:write(instr)
+          outfile:close()
+      require("plantuml.lua")
+      convertPlantUmlToTikz(jobname, plantUmlMode)
+    }
+  \ifthenelse{\equal{\PlantUmlMode}{latex}}{
+    \begin{adjustbox}{max width=\linewidth}
+      \input{#1-plantuml.latex}
+    \end{adjustbox}
+  }{
+    \includegraphics[width=\maxwidth{\textwidth}]{#1-plantuml.\PlantUmlMode}
+  }
+}
+
+\raggedbottom
+\usepackage{titlesec}
+\setcounter{secnumdepth}{4}
+\setcounter{tocdepth}{4}
+\begin{document}
+\setstretch{1.25}
+
+\author{Hà Trung Kiên - 2470723}
+\principaladvisor{TS. Phan Trọng Nhân}
+\beforepreface
+\pagenumbering{roman}
+% \begin{flushright}
+% \begin{tabular}{c}
+%     TP. Hồ Chí Minh, tháng 05 năm 2024\\
+%     Tác giả\\
+%     Hà Trung Kiên
+% \end{tabular}
+% \end{flushright}
+
+
+% \prefacesection{Lời cảm ơn}
+% \thispagestyle{empty}
+% Học viên xin gửi lời cảm ơn chân thành nhất đến Tiến sĩ Phan Trọng Nhân, người thầy đã gắn bó với em trong suốt thời gian thực hiện đề tài thực tập vừa qua. Thầy đã giúp đỡ, định hướng cho em cách tư duy và cách làm việc khoa học. Xin cảm ơn những sự hướng dẫn tận tình, chu đáo của thầy, chính nhờ những kiến thức mà thầy truyền đạt lại đã giúp cho chúng tôi hoàn thành tốt luận văn. Đó là những góp ý hết sức quý báu, không chỉ trong quá trình thực hiện luận văn này, mà còn là hành trang tiếp bước cho chúng tôi trong quá trình học tập và lập nghiệp trong tương lai.
+
+% Chúng tôi cũng xin chân thành cảm ơn quý Thầy, Cô trường Đại học Bách Khoa, đặc biệt là các Thầy, Cô trong khoa Khoa học và Kỹ thuật Máy tính đã tận tình dạy dỗ và trang bị cho chúng tôi những kiến thức cần thiết, làm nền tảng cho chúng tôi có thể hoàn thành tốt đồ án này.
+
+% Cuối cùng, chúng tôi xin cảm ơn gia đình, bạn bè, những người đã giúp đỡ, hỗ trợ chúng tôi hết mình để có thể hoàn thành đồ án này một cách tốt nhất. 
+
+% Finally and most especially, I would like to express my sincerest gratitude to a medical friend of mine. She was an inspiration and motivation for me to do this Medicine related thesis. 
+    
+\prefacesection{Tóm tắt}
+Đề tài là: \textit{"Ứng dụng AI trong gán nhãn y tế cho bệnh đau thắt lưng"}.
+
+Đau thắt lưng là bệnh lý phổ biến, đòi hỏi bác sĩ đọc và đánh giá thủ công nhiều ảnh MRI cột sống. Báo cáo hướng tới xây dựng một hệ thống hỗ trợ tự động: vừa phân vùng các cấu trúc giải phẫu của cột sống, vừa phát hiện và đánh giá mức độ các dấu hiệu bất thường. Hai thách thức chính là tình trạng mất cân bằng lớp nghiêm trọng và khả năng tổng quát hóa khi chuyển sang bộ dữ liệu khác.
+
+Báo cáo đề xuất một pipeline hai giai đoạn: giai đoạn phân vùng dùng mô hình TotalSpineSeg (được chọn sau khi so sánh với 3 mô hình khác), và giai đoạn đánh giá bất thường dùng mô-đun grading được tinh chỉnh. Đóng góp kĩ thuật chính là kiến trúc Hybrid hai nhánh kết hợp một nhánh CBAM-3D ResNet-34 huấn luyện được với một nhánh BiomedCLIP, cùng một pipeline xử lý mất cân bằng lớp (Focal Loss + Uncertainty Loss + minority oversampling).
+
+Kết quả đạt được trong giai đoạn này:  Trên bộ dữ liệu RSNA 2024, kiến trúc Hybrid cải thiện rõ rệt so với baseline ở các chỉ số ưu tiên lâm sàng: Mean F1 macro tăng từ 0.420 lên 0.528, đặc biệt Severe Recall tăng từ 11.5\% lên 46.4\% (gấp khoảng 4 lần) - một cải tiến có ý nghĩa lâm sàng vì giảm trực tiếp tỉ lệ bỏ sót ca nặng. Khả năng tổng quát hóa được kiểm chứng qua transfer learning sang bộ dữ liệu SPIDER (8 nhãn), nơi kiến trúc đề xuất Hybrid là cấu hình có nhiều kết quả dẫn đầu trên cả hai bộ dữ liệu.
+
+Báo cáo trình bày chi tiết quá trình nghiên cứu và phát triển, nội dung được cấu trúc thành 6 chương:
+\begin{itemize}
+    \item \textbf{Chương 1: Giới thiệu đề tài}\\
+Trình bày tổng quan về đề tài, mục tiêu, giới hạn, đóng góp chính và phạm vi báo cáo.
+    \item \textbf{Chương 2: Cơ sở lí thuyết}\\
+    Trình bày các kiến thức nền tảng về ảnh y tế trong chẩn đoán bệnh cột sống và các mô hình học sâu quan trọng như Mạng Nơ-ron nhân tạo (ANN), Mạng tích chập (CNN), kiến trúc U-Net và Transformer.
+    \item \textbf{Chương 3: Công trình nghiên cứu liên quan}\\
+    Tổng hợp và phân tích các nghiên cứu, công trình đã công bố có liên quan đến việc ứng dụng AI trong phân tích ảnh y tế cột sống.
+    \item \textbf{Chương 4: Mô hình đề xuất}\\
+    Trình bày chi tiết về mô hình được đề xuất, bao gồm kiến trúc, phương pháp xử lý dữ liệu, quá trình huấn luyện và các kỹ thuật được áp dụng để giải quyết bài toán.
+    \item \textbf{Chương 5: Thực nghiệm và đánh giá}\\
+    Trình bày chi tiết về kết quả các thí nghiệm, từ đó xác thực tính đúng đắn của kiến trúc đề xuất.
+    \item \textbf{Chương 6: Kết luận và hướng phát triển}\\
+    Tổng kết các kết quả đã đạt được và đề xuất các hướng phát triển.
+\end{itemize}
+
+    
+\afterpreface
+
+\include{chapter/chap01.tex}
+\clearpage
+
+\include{chapter/chap02.tex}
+\clearpage
+
+\include{chapter/chap03.tex}
+\clearpage
+
+\include{chapter/chap04.tex}
+\clearpage
+
+\include{chapter/chap05.tex}
+\clearpage
+
+\include{chapter/chap06.tex}
+\clearpage
+
+% \include{chapter/chap07}
+% \clearpage
+
+\renewcommand{\bibname}{Tài liệu tham khảo}
+\bibliographystyle{ieeetr}
+% Tránh LaTeX tự ngắt từ tiếng Anh bằng gạch nối trong danh mục tham khảo
+% (vd: "trans-formers", "seg-mentation"); ưu tiên giãn khoảng cách hơn.
+\begingroup
+\hyphenpenalty=10000
+\exhyphenpenalty=10000
+\sloppy
+\bibliography{thesiscite}
+\endgroup
+
+\appendix
+\include{phuluc.tex}
+\end{document}
+
+
+

@@ -1,0 +1,662 @@
+\chapter{THỰC NGHIỆM VÀ ĐÁNH GIÁ}
+
+\section{Mô tả dữ liệu và môi trường thực nghiệm}
+
+Để đảm bảo tính khách quan và khả năng ứng dụng thực tế, các thực nghiệm trong nghiên cứu này được tiến hành trên nền tảng đám mây với nguồn dữ liệu đa dạng và độc lập. Phần dưới đây mô tả chi tiết về cấu hình phần cứng, phần mềm và đặc tả các bộ dữ liệu được sử dụng.
+
+\subsection{Môi trường thực nghiệm}
+Toàn bộ quá trình huấn luyện và đánh giá được thực hiện trên nền tảng cloud \textbf{Vast.ai}, thuê GPU theo giờ để đảm bảo nguồn lực tính toán đủ mạnh cho training 3D.
+\begin{itemize}
+    \item \textbf{Phần cứng:} NVIDIA RTX 4090 (24GB VRAM), CUDA 12.x, $\sim$60GB RAM, ổ NVMe.
+    \item \textbf{Framework:} PyTorch 2.0+, Python 3.10.
+    \item \textbf{Thư viện chính:} SimpleITK, pydicom, OpenCV, scikit-learn, numpy.
+\end{itemize}
+
+\subsection{Tập dữ liệu RSNA 2024 Lumbar Spine Degenerative Classification \cite{rsna2024dataset}}
+Đây là tập dữ liệu chủ đạo dùng để huấn luyện và đánh giá mô-đun grading. Bộ dữ liệu được tổ chức bởi Hiệp hội X-Quang Bắc Mỹ (RSNA) phối hợp cùng Hiệp hội Thần kinh học Hoa Kỳ (ASNR).
+
+\begin{itemize}
+    \item \textbf{Nguồn gốc và quy mô:} Dữ liệu được thu thập từ 8 trung tâm y tế lớn trên 5 châu lục, đảm bảo tính đa dạng về quần thể bệnh nhân và thiết bị chụp. Nhãn dữ liệu được gán thủ công bởi hơn 50 chuyên gia chẩn đoán hình ảnh. Train split $\sim$1\,800 patients (4 fold), val split $\sim$225 patients; mỗi patient có nhiều series MRI (Sagittal T2/STIR, Sagittal T1, Axial T2).
+    \item \textbf{Đầu vào:} Ảnh MRI cột sống thắt lưng, định dạng chuẩn DICOM (mỗi series có hàng chục lát sagittal/axial). Quá trình tiền xử lý trích xuất \emph{khối ảnh đĩa đệm 3D} (per-IVD volume) quanh tâm mỗi đĩa đệm, resample về kích thước thống nhất $D \times H \times W = 9 \times 112 \times 224$ (float32), với $D = 9$ lát sagittal trung tâm theo chuẩn của SpineNetV2~\cite{windsor2022spinenetv2} --- đủ bao phủ chiều dày đĩa đệm và mô lân cận, cân bằng giữa độ phủ giải phẫu và chi phí tính toán.
+    \item \textbf{Nhãn bệnh lý:} Phân loại 5 tình trạng thoái hóa tại 5 tầng đĩa đệm (từ L1/L2 đến L5/S1):
+        \begin{itemize}
+            \item[$\circ$] Left Neural Foraminal Narrowing
+            \item[$\circ$] Right Neural Foraminal Narrowing
+            \item[$\circ$] Left Subarticular Stenosis
+            \item[$\circ$] Right Subarticular Stenosis
+            \item[$\circ$] Spinal Canal Stenosis
+        \end{itemize}
+    \item \textbf{Hệ thống phân cấp:} Mức độ nghiêm trọng được chia thành 3 cấp: Normal/Mild, Moderate, Severe.
+    \item \textbf{Phân bố lớp (mất cân bằng):} Lớp Severe chỉ chiếm $\sim$4\% mẫu trong khi Normal/Mild chiếm $\sim$81\% --- nguồn gốc bài toán mất cân bằng. Hình~\ref{fig:rsna_class_dist} minh họa chi tiết.
+    \item \textbf{Vai trò trong nghiên cứu:} Training set chính + validation set để tinh chỉnh mô-đun grading và so sánh 4 cấu hình ablation.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{cslt/rsna_class_distribution.png}
+    \caption{Phân bố lớp trên RSNA 2024.}
+    \label{fig:rsna_class_dist}
+\end{figure}
+
+
+\subsection{Tập dữ liệu Lumbar Spine Segmentation \cite{chu2015dataset}}
+Tập dữ liệu được công bố bởi Chu và cộng sự \cite{chu2015dataset}, có nguồn gốc từ Viện Công nghệ và Cơ sinh học Phẫu thuật, Đại học Bern (Thụy Sĩ). Trong phạm vi luận văn này, đây đóng vai trò là tập kiểm thử độc lập (External Validation Set) để đánh giá hiệu năng phân vùng của TotalSpineSeg.
+
+\begin{itemize}
+    \item \textbf{Quy mô:} Bao gồm ảnh MRI T2-weighted của 23 bệnh nhân ẩn danh. Mỗi ca chụp chứa ít nhất 7 thân đốt sống thuộc vùng cột sống dưới (từ T11 đến L5).
+    \item \textbf{Đặc điểm hình ảnh:} Chuỗi xung Turbo Spin Echo trọng số T2. Dữ liệu được lưu trữ dưới định dạng NIfTI (.nii), giúp bảo toàn thông tin không gian 3D chuẩn y tế.
+    \item \textbf{Nhãn phân vùng (Ground Truth):}
+        \begin{itemize}
+            \item[$\circ$] \textbf{Loại nhãn:} Mặt nạ nhị phân (Binary Mask).
+            \item[$\circ$] \textbf{Đặc điểm:} Nhãn được gán cho toàn bộ vùng cột sống. Khác với các bộ dữ liệu hiện đại thường phân lớp chi tiết từng đốt sống, bộ dữ liệu này gán nhãn gộp cho cấu trúc đốt sống (bao gồm thân đốt sống và thành phần phụ) mà không tách biệt định danh từng đốt sống (L1, L2...).
+        \end{itemize}
+    \item \textbf{Mục đích sử dụng:} Đánh giá khả năng định vị và phân vùng cột sống trên miền dữ liệu chưa từng thấy, qua đó kiểm chứng độ bền vững của thuật toán phân vùng được chọn.
+\end{itemize}
+
+\subsection{Tập dữ liệu SPIDER \cite{vansluijs2022spider}}
+Tập dữ liệu SPIDER (van der Graaf và cộng sự, công bố trên Nature Scientific Data 2024) được dùng làm tập kiểm thử độc lập để kiểm chứng khả năng tổng quát hóa liên tập dữ liệu của mô-đun grading.
+
+\begin{itemize}
+    \item \textbf{Quy mô:} 218 bệnh nhân $\times$ $\sim$5 đĩa đệm $\approx$ 1\,520 IVD samples, hoàn toàn độc lập với RSNA.
+    \item \textbf{Định dạng:} Các file MetaImage \texttt{.mha} (đọc qua \texttt{SimpleITK}), kèm segmentation mask 3D với label 201--207 chỉ vị trí từng đĩa đệm.
+    \item \textbf{Nhãn bệnh lý (mở rộng so với RSNA):} 8 nhãn theo chuẩn lâm sàng:
+        \begin{itemize}
+            \item[$\circ$] Pfirrmann grade (5 lớp): thang đo thoái hóa đĩa đệm.
+            \item[$\circ$] Modic changes (4 lớp): biến đổi tủy xương dưới sụn.
+            \item[$\circ$] Disc narrowing (binary): hẹp đĩa đệm.
+            \item[$\circ$] Spondylolisthesis (binary): trượt đốt sống.
+            \item[$\circ$] Upper/Lower endplate damage (binary $\times$ 2): tổn thương mặt trên/dưới đốt sống.
+            \item[$\circ$] Disc herniation (binary): thoát vị đĩa đệm.
+            \item[$\circ$] Disc bulging (binary): phồng đĩa đệm.
+        \end{itemize}
+    \item \textbf{Phân bố lớp:} Hai nhãn mất cân bằng nghiêm trọng là Spondylolisthesis (2.8\% positive) và Disc herniation (4.7\% positive) --- tương đương mức Severe trên RSNA. Chi tiết ở Hình~\ref{fig:spider_class_dist}.
+    \item \textbf{Vai trò trong nghiên cứu:} Test set độc lập cho transfer learning, đánh giá: (i) mô hình huấn luyện trên RSNA có chuyển giao tốt sang dataset khác? (ii) các nhãn mới (Pfirrmann, Modic, \ldots) có học được từ feature backbone đã pretrained không?
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{cslt/spider_class_distribution.png}
+    \caption{Phân bố nhãn trên SPIDER 8 conditions.}
+    \label{fig:spider_class_dist}
+\end{figure}
+
+
+
+
+\section[Thí nghiệm chọn mô-đun phân vùng]{Thí nghiệm chọn mô-đun phân vùng}
+\label{sec:eval_segmentation}
+
+\textbf{Mục tiêu thí nghiệm:} chọn 1 trong 4 mô hình phân vùng sẵn có cho pipeline đề xuất. Thí nghiệm so sánh \textbf{TotalSpineSeg} (tối ưu cho thân đốt sống), \textbf{SPINEPS} (tối ưu cho toàn bộ cấu trúc cột sống), \textbf{MedCLIP-SAMv2} (zero-shot text-driven), và \textbf{SpineNetV2} (mô hình spine chuyên dụng) trên tập kiểm thử 23 khối ảnh Ground Truth (vùng từ T11 đến L5).
+
+\subsection{Các tiêu chí đánh giá}
+Để đánh giá định lượng chất lượng phân vùng ảnh y tế 3D, nghiên cứu sử dụng các chỉ số tiêu chuẩn sau:
+
+\begin{itemize}
+    \item \textbf{Hệ số Dice (Dice Score):} 
+    Thước đo phổ biến nhất về độ chồng lắp giữa vùng dự đoán ($P$) và nhãn thực tế ($G$) trong không gian 3D.
+    \begin{equation}
+        \text{Dice} = \frac{2 \times |P \cap G|}{|P| + |G|}
+    \end{equation}
+
+    \item \textbf{Chỉ số IoU (Jaccard Index):}
+    Tỷ lệ giữa phần giao và phần hợp của hai tập hợp voxel.
+    \begin{equation}
+        \text{IoU} = \frac{|P \cap G|}{|P \cup G|}
+    \end{equation}
+
+    \item \textbf{Precision và Recall:}
+    Đánh giá độ chính xác và độ bao phủ của mô hình.
+    \begin{equation}
+        \text{Precision} = \frac{TP}{TP + FP}, \quad \text{Recall} = \frac{TP}{TP + FN}
+    \end{equation}
+    \textit{Trong đó $TP$, $FP$, $FN$ lần lượt là số lượng voxel dự đoán đúng, dự đoán thừa và bỏ sót.}
+
+    \item \textbf{Average Symmetric Surface Distance (ASSD):}
+    Đây là chỉ số đánh giá độ sai lệch trung bình giữa bề mặt 3D của vùng dự đoán ($\partial P$) và bề mặt thực tế ($\partial G$). Chỉ số này được tính bằng trung bình cộng khoảng cách từ tất cả các điểm trên bề mặt dự đoán đến bề mặt thực tế và ngược lại.
+    \begin{equation}
+        \text{ASSD} = \frac{1}{|\partial P| + |\partial G|} \left( \sum_{p \in \partial P} d(p, \partial G) + \sum_{g \in \partial G} d(g, \partial P) \right)
+    \end{equation}
+    \textit{Trong đó $d(x, S)$ là khoảng cách Euclid ngắn nhất từ điểm $x$ đến bề mặt $S$ trong không gian 3 chiều. Giá trị ASSD càng nhỏ chứng tỏ bề mặt tái tạo càng chính xác.}
+\end{itemize}
+
+\subsection{Kết quả thực nghiệm}
+Bảng \ref{tab:seg_results} trình bày kết quả so sánh trung bình trên 4 mô hình. \textbf{TotalSpineSeg} đạt hiệu năng tổng thể cao nhất với chỉ số Dice (70.81\%) và Precision (97.87\%). \textbf{SpineNetV2} đạt kết quả Dice Score 67.82\% và có chỉ số Recall cao nhất bảng (91.79\%). Đối với mô hình zero-shot \textbf{MedCLIP-SAMv2}, mặc dù Recall đạt mức cao nhưng độ chính xác biên dạng còn hạn chế.
+
+\begin{table}[H]
+    \centering
+    \caption{So sánh hiệu năng phân vùng giữa TotalSpineSeg, SPINEPS, MedCLIP-SAMv2 và SpineNetV2}
+    \label{tab:seg_results}
+    \renewcommand{\arraystretch}{1.2}
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabular}{lcccc}
+        \toprule
+        \textbf{Tiêu chí} & \textbf{TotalSpineSeg} & \textbf{SPINEPS} & \textbf{MedCLIP-SAMv2} & \textbf{SpineNetV2} \\
+        \midrule
+        \textbf{Dice Score} ($\uparrow$) & \textbf{70.81\%} & 58.68\% & 40.55\% & 67.82\% \\
+        \textbf{IoU} ($\uparrow$) & \textbf{55.74\%} & 41.56\% & 26.47\% & 51.41\% \\
+        \textbf{Precision} ($\uparrow$) & \textbf{97.87\%} & 52.17\% & 29.16\% & 51.76\% \\
+        \textbf{Recall} ($\uparrow$) & 56.49\% & 68.34\% & \textbf{91.98\%} & 91.79\% \\
+        \textbf{ASSD} ($\downarrow$) & \textbf{6.85 mm} & 7.48 mm & 19.50 mm & {}$^*$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Phân tích và thảo luận}
+
+\subsubsection{Lý giải sự chênh lệch giữa Recall và Precision}
+Kết quả thực nghiệm cho thấy sự khác biệt về đặc tính của từng mô hình, xuất phát từ thiết kế và định nghĩa nhãn thực tế:
+
+\begin{itemize}
+    \item \textbf{Vấn đề về ground truth:} Dữ liệu ground truth bao gồm toàn bộ đốt sống (thân + gai sau + mỏm ngang).
+    \item \textbf{TotalSpineSeg:} Được thiết kế tập trung vào \textbf{thân đốt sống}, do đó mô hình chủ động bỏ qua các phần gai sau, dẫn đến Recall ở mức 56.49\%. Tuy nhiên, độ chính xác trên vùng thân đốt sống đạt mức rất cao (Precision 97.87\%) và ít nhiễu.
+    \item \textbf{SpineNetV2:} Đạt chỉ số Recall 91.79\% nhờ chiến lược tối đa hóa vùng bao phủ. Mô hình có xu hướng tạo ra vùng dự đoán rộng để đảm bảo độ chồng lấn cao nhất với dữ liệu nhãn, ưu tiên việc phát hiện đầy đủ đối tượng hơn là tối ưu hóa biên dạng giải phẫu chi tiết như các mô hình phân vùng chuyên biệt.
+    \item \textbf{SPINEPS \& MedCLIP-SAMv2:} Cả hai mô hình đều có Precision thấp (dưới 53\%), cho thấy hiện tượng phân vùng thừa (over-segmentation) so với nhãn mục tiêu. Riêng MedCLIP-SAMv2 có sai số biên dạng lớn nhất (ASSD 19.50mm).
+\end{itemize}
+\subsubsection{Lựa chọn mô hình cho hệ thống đề xuất}
+Dựa trên mục tiêu xây dựng hệ thống hỗ trợ chẩn đoán (yêu cầu xác định chính xác vị trí thân đốt sống để trích xuất ảnh), nghiên cứu lựa chọn \textbf{TotalSpineSeg} vì các lý do sau:
+
+\begin{enumerate}
+    \item \textbf{Độ tin cậy cao:} Precision 97.87\% đảm bảo vùng được xác định là đốt sống với độ chính xác cao, hạn chế nhiễu trong các bước xử lý tiếp theo, cao hơn đáng kể so với mức ~51\% của SpineNetV2 và SPINEPS.
+    \item \textbf{Độ chính xác bề mặt 3D:} Chỉ số ASSD thấp (6.85mm) cho thấy khả năng tái tạo bề mặt thân đốt sống bám sát giải phẫu thực tế, tốt hơn so với MedCLIP-SAMv2 và SPINEPS.
+    \item \textbf{Tính ổn định:} Độ lệch chuẩn thấp ($\pm 5.23\%$) cho thấy sự ổn định khi áp dụng trên dữ liệu lâm sàng. Mặc dù SpineNetV2 có Recall tốt hơn, nhưng Precision thấp khiến mô hình này phù hợp hơn cho bài toán phát hiện (detection) thay vì phân vùng chính xác (segmentation) cho phẫu thuật.
+\end{enumerate}
+
+% \subsection{Kết quả thực nghiệm}
+% Bảng \ref{tab:seg_results} trình bày kết quả so sánh trung bình trên 23 ca kiểm thử. \textbf{TotalSpineSeg} vượt trội hơn \textbf{SPINEPS} ở 5/6 chỉ số. Đặc biệt, chỉ số ASSD thấp hơn (6.85mm so với 7.48mm) cho thấy \textbf{TotalSpineSeg} tái tạo bề mặt thân đốt sống chính xác hơn.
+
+% \begin{table}[H]
+%     \centering
+%     \caption{So sánh hiệu năng phân vùng giữa TotalSpineSeg và SPINEPS}
+%     \label{tab:seg_results}
+%     \renewcommand{\arraystretch}{1.2}
+%     \begin{tabular}{lcc}
+%         \toprule
+%         \textbf{Tiêu chí} & \textbf{TotalSpineSeg} & \textbf{SPINEPS} \\
+%         \midrule
+%         \textbf{Dice Score} ($\uparrow$) & \textbf{70.81\%} & 58.68\% \\
+%         \textbf{IoU} ($\uparrow$) & \textbf{55.74\%} & 41.56\% \\
+%         \textbf{Precision} ($\uparrow$) & \textbf{97.87\%} & 52.17\% \\
+%         \textbf{Recall} ($\uparrow$) & 56.49\% & \textbf{68.34\%} \\
+%         \textbf{ASSD} ($\downarrow$) & \textbf{6.85 mm} & 7.48 mm \\
+%         \bottomrule
+%     \end{tabular}
+% \end{table}
+% \subsection{Phân tích và thảo luận}
+
+% \subsubsection{Lý giải sự chênh lệch giữa Recall và Precision}
+% Kết quả thực nghiệm cho thấy sự đánh đổi rõ rệt giữa hai mô hình, xuất phát từ sự khác biệt trong thiết kế so với định nghĩa nhãn thực tế:
+
+% \begin{itemize}
+%     \item \textbf{Vấn đề về ground truth:} Dữ liệu ground truth bao gồm toàn bộ đốt sống (thân + gai sau + mỏm ngang).
+%     \item \textbf{TotalSpineSeg:} Được thiết kế chuyên biệt cho \textbf{thân đốt sống}, nên mô hình chủ động bỏ qua các phần gai sau, dẫn đến Recall thấp (56.49\%). Tuy nhiên, độ chính xác trên vùng thân đốt sống là cực cao (Precision 97.87\%), gần như không có nhiễu.
+%     \item \textbf{SPINEPS:} Bao phủ nhiều cấu trúc hơn (Recall 68.34\%) nhưng Precision thấp (52.17\%), cho thấy hiện tượng phân vùng thừa  đáng kể.
+% \end{itemize}
+
+% \subsubsection{Lựa chọn mô hình cho hệ thống đề xuất}
+% Dựa trên mục tiêu xây dựng hệ thống hỗ trợ chẩn đoán (cần xác định chính xác vị trí thân đốt sống để crop ảnh), nghiên cứu lựa chọn \textbf{TotalSpineSeg} vì các lý do sau:
+
+% \begin{enumerate}
+%     \item \textbf{Độ tin cậy cao:} Precision 97.87\% đảm bảo vùng được xác định chắc chắn là đốt sống, tránh đưa nhiễu vào các bước xử lý sau.
+%     \item \textbf{Độ chính xác bề mặt 3D:} Chỉ số ASSD thấp hơn (6.85mm vs 7.48mm) cho thấy TotalSpineSeg tái tạo bề mặt thân đốt sống bám sát giải phẫu thực tế hơn trong không gian 3 chiều.
+%     \item \textbf{Tính ổn định:} Độ lệch chuẩn thấp ($\pm 5.23\%$) cho thấy sự tin cậy cao khi áp dụng trên các dữ liệu lâm sàng khác nhau.
+% \end{enumerate}
+\section[Thí nghiệm chọn mô-đun grading nền]{Thí nghiệm chọn mô-đun grading nền (đánh giá phát hiện bất thường)}
+\label{sec:eval_detection}
+
+\textbf{Mục tiêu thí nghiệm:} \emph{chọn} 1 trong 3 mô hình sẵn có (off-the-shelf) làm backbone cho mô-đun grading trong pipeline đề xuất. Thí nghiệm so sánh các mô hình ở góc nhìn binary detection (có/không bệnh) trên RSNA val 150 bệnh nhân để xác định: (i) mô hình nào đủ chính xác và ổn định cho clinical screening, (ii) mô hình nào có kiến trúc đủ đơn giản và mã nguồn mở để có thể tinh chỉnh tiếp ở thí nghiệm xác thực đóng góp (Mục~\ref{sec:phase2_eval}).
+
+Thực nghiệm được tiến hành so sánh giữa ba mô hình đại diện:
+\begin{itemize}
+    \item \textbf{SpineNetV2:} Mô hình mã nguồn mở với khả năng gán nhãn đa dạng (9-10 clinical features).
+    \item \textbf{MedGemma:} Mô hình ngôn ngữ - thị giác lớn (VLM).
+    \item \textbf{Ning Shen:} Giải pháp đạt giải nhất cuộc thi RSNA 2024 (SOTA Baseline).
+\end{itemize}
+\subsection{Các tiêu chí đánh giá}
+Để đánh giá hiệu năng của các mô hình trên tập dữ liệu RSNA 2024 (bao gồm 150 bệnh nhân), nghiên cứu sử dụng các chỉ số phổ biến trong bài toán phân loại y tế: Accuracy, Precision, Recall và F1-Score.
+
+Gọi $TP$ (True Positive) là số mẫu dương tính được dự đoán đúng, $TN$ (True Negative) là số mẫu âm tính được dự đoán đúng, $FP$ (False Positive) là số mẫu âm tính bị dự đoán sai thành dương tính, và $FN$ (False Negative) là số mẫu dương tính bị dự đoán sai thành âm tính. Các công thức được định nghĩa như sau:
+
+\begin{equation}
+    \text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN}
+\end{equation}
+
+\begin{equation}
+    \text{Precision} = \frac{TP}{TP + FP}
+\end{equation}
+
+\begin{equation}
+    \text{Recall} = \frac{TP}{TP + FN}
+\end{equation}
+
+\begin{equation}
+    \text{F1-Score} = 2 \times \frac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}}
+\end{equation}
+
+\textbf{Per-class F1 (Severe F1, Moderate F1, Normal F1).} Khi bài toán có nhiều lớp (Normal/Mild, Moderate, Severe), 4 chỉ số ở trên có thể tính \emph{riêng cho từng lớp} (theo cách one-vs-rest). Ví dụ \textit{Severe F1} chỉ tính trên các mẫu thuộc lớp Severe --- đặc biệt quan trọng cho bài toán mất cân bằng vì class hiếm dễ bị ``che lấp'' bởi class chiếm đa số.
+
+\textbf{Mean F1 macro.} Trung bình cộng F1 trên tất cả các lớp, mỗi lớp có trọng số bằng nhau:
+\begin{equation}
+    \text{F1}_{\text{macro}} = \frac{1}{K} \sum_{k=1}^{K} \text{F1}_k
+\end{equation}
+với $K$ là số lớp. Khác với F1 weighted (lấy trung bình theo tần suất class), F1 macro \emph{phạt mạnh các class hiếm có hiệu năng thấp} --- phù hợp cho clinical screening vì các ca Severe quan trọng nhưng số lượng ít.
+
+\textbf{AUC (Area Under ROC Curve).} Diện tích dưới đường cong ROC --- biểu diễn quan hệ giữa True Positive Rate (Recall) và False Positive Rate khi thay đổi ngưỡng quyết định. AUC = 0.5 tương đương dự đoán ngẫu nhiên, AUC = 1.0 là phân loại hoàn hảo. \emph{Ưu điểm:} không phụ thuộc ngưỡng phân loại, đánh giá chất lượng ranking của xác suất dự đoán.
+\begin{equation}
+    \text{AUC} = \int_0^1 \text{TPR}(\text{FPR}^{-1}(t)) \, dt
+\end{equation}
+
+\textbf{AUPRC (Area Under Precision-Recall Curve).} Diện tích dưới đường cong Precision-Recall. Phù hợp hơn AUC cho dữ liệu \emph{mất cân bằng nghiêm trọng}: AUC có thể trông cao một cách giả tạo khi class majority quá lớn, trong khi AUPRC tập trung vào hiệu năng của class hiếm (positive class). Báo cáo sử dụng AUPRC làm chỉ số chính cho lớp Severe.
+\begin{equation}
+    \text{AUPRC} = \int_0^1 \text{Precision}(\text{Recall}^{-1}(t)) \, dt
+\end{equation}
+
+\newpage
+\subsection{Kết quả thực nghiệm}
+
+Ba mô hình được đánh giá trên tập validation gồm 150 bệnh nhân, bao gồm ba nhóm bệnh lý chính: Hẹp ống sống, hẹp lỗ liên hợp trái, và hẹp lỗ liên hợp phải. Các chỉ số precision, recall, và F1-score được sử dụng để đánh giá khả năng phát hiện bất thường của từng mô hình.
+
+\textit{Lưu ý về scope:} Báo cáo chỉ đánh giá 3/5 conditions của RSNA 2024 vì SpineNetV2 nguyên bản không hỗ trợ Left/Right Subarticular Stenosis (2 nhãn mới của RSNA 2024). Kiến trúc Hybrid đề xuất ở Mục~\ref{sec:phase2_arch} đã \emph{thiết kế 5 head} để hỗ trợ đầy đủ 5 conditions, tuy nhiên do giới hạn thời gian và GPU, thí nghiệm xác thực ở Mục~\ref{sec:phase2_eval} cũng chỉ đánh giá trên 3 conditions chính (giống Mục này, để so sánh fair). Việc đánh giá đầy đủ 5 conditions được đặt làm hướng phát triển ngắn hạn.
+
+\textbf{a. Hẹp ống sống}
+
+Kết quả cho thấy đây là nhóm bệnh lý có tỷ lệ phát hiện tốt nhất. Ning Shen đạt F1-Score 81.20\% với precision 81.82\% và recall 80.60\%, cho thấy model này phát hiện khá chính xác và ít bỏ sót. SpineNetV2 đạt F1-Score 78.79\% với recall 80.00\%, cũng thể hiện khả năng phát hiện tốt. MedGemma có F1-Score thấp hơn nhiều (31.17\%) do recall chỉ 20.87\%, nghĩa là bỏ sót gần 80\% bệnh nhân có bệnh hẹp ống sống.
+
+\begin{table}[H]
+    \centering
+    \caption{Kết quả chi tiết nhóm Hẹp ống sống}
+    \label{tab:scs_metrics}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{lcccc}
+        \toprule
+        \textbf{Mô hình} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} \\
+        \midrule
+        Ning Shen & \textbf{86.63\%} & \textbf{81.82\%} & \textbf{80.60\%} & \textbf{81.20\%} \\
+        SpineNetV2 & 81.58\% & 77.61\% & 80.00\% & 78.79\% \\
+        MedGemma & 29.33\% & 61.54\% & 20.87\% & 31.17\% \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\textbf{b. Hẹp lỗ liên hợp trái}
+
+Ning Shen đạt F1-Score 79.43\% với Recall cao (87.37\%), phù hợp với yêu cầu của screening là cần ưu tiên phát hiện được nhiều trường hợp bị bệnh. SpineNetV2 cũng có Recall cao (84.00\%) và F1-Score 77.30\%, cho thấy sự cân bằng khá tốt giữa khả năng phát hiện và độ chính xác. MedGemma có hiệu năng kém hơn với F1-Score 13.86\% do Recall chỉ 8.43\%, tức là bỏ sót hơn 91\% bệnh nhân bị bệnh Hẹp lỗ liên hợp trái.
+
+\begin{table}[H]
+    \centering
+    \caption{Kết quả chi tiết nhóm Hẹp lỗ liên hợp trái}
+    \label{tab:nfn_left_metrics}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{lcccc}
+        \toprule
+        \textbf{Mô hình} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} \\
+        \midrule
+        Ning Shen & \textbf{77.01\%} & \textbf{72.81\%} & \textbf{87.37\%} & \textbf{79.43\%} \\
+        SpineNetV2 & 75.66\% & 71.59\% & 84.00\% & 77.30\% \\
+        MedGemma & 42.00\% & 38.89\% & 8.43\% & 13.86\% \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\newpage
+
+\textbf{c. Hẹp lỗ liên hợp phải}
+
+Ning Shen có F1-Score 81.48\% và Recall 84.62\%, thể hiện sự ổn định trên các nhóm bệnh lý khác nhau. SpineNetV2 đạt F1-Score 76.40\% với Precision và Recall khá cân bằng (75.56\% và 77.27\%). MedGemma có kết quả thấp nhất với F1-Score 10.75\% và Recall cực kỳ thấp (6.02\%), bỏ sót gần 94\% bệnh nhân bị Hẹp lỗ liên hợp phải. Điều này chứng tỏ MedGemma có xu hướng dự đoán quá an toàn (thiên về kết quả bình thường), do đó không đáp ứng được yêu cầu của việc sàng lọc
+
+\begin{table}[H]
+    \centering
+    \caption{Kết quả chi tiết nhóm Hẹp lỗ liên hợp phải}
+    \label{tab:nfn_right_metrics}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{lcccc}
+        \toprule
+        \textbf{Mô hình} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} \\
+        \midrule
+        Ning Shen & \textbf{78.61\%} & \textbf{78.57\%} & \textbf{84.62\%} & \textbf{81.48\%} \\
+        SpineNetV2 & 72.37\% & 75.56\% & 77.27\% & 76.40\% \\
+        MedGemma & 44.67\% & 50.00\% & 6.02\% & 10.75\% \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Phân tích và thảo luận}
+
+\textbf{Hiệu năng: }Nhìn chung, Ning Shen có hiệu năng tốt nhất với F1-Score trung bình 80.37\% và khá ổn định trên cả ba nhóm bệnh lý (từ 79.43\% đến 81.48\%). Kết quả này phù hợp với kỳ vọng từ một SOTA model được thiết kế riêng cho RSNA 2024 dataset. SpineNetV2 đạt F1-Score trung bình 77.50\%, thấp hơn Ning Shen khoảng 3\%, nhưng vẫn cho thấy khả năng detection khá tốt với performance ổn định (76.40\% - 78.79\%). MedGemma có F1-Score trung bình thấp nhất (18.59\%), chủ yếu do Recall quá thấp (6.02\% - 20.87\%) ở tất cả các conditions. \\
+
+\textbf{Về recall và precision trong bài toán sàng lọc}: 
+Kết quả thực nghiệm cho thấy một xu hướng rõ rệt ở NingShen và SpineNetV2 là việc ưu tiên độ nhạy (Recall, đạt $80-87\%$) hơn so với độ chính xác (Precision, đạt $72-82\%$). Chiến lược này hoàn toàn phù hợp với nguyên tắc cốt lõi của bài toán sàng lọc y tế: tối thiểu hóa tỷ lệ bỏ sót bệnh (False negatives) ngay cả khi phải chấp nhận gia tăng tỷ lệ báo động giả (False positives). Trong thực tế lâm sàng, các cảnh báo giả có thể dễ dàng được bác sĩ loại bỏ qua quá trình kiểm tra chi tiết, nhưng việc bỏ sót một bệnh nhân có bệnh lại gây ra hậu quả nghiêm trọng hơn nhiều.\\
+
+Trái lại, MedGemma thể hiện một chiến lược dự đoán thận trọng quá mức. Mặc dù chỉ số Precision đạt mức chấp nhận được ($38.89\% - 61.54\%$), chỉ số Recall lại cực thấp ($6.02\% - 20.87\%$), đồng nghĩa với việc mô hình đã bỏ sót tới $80-94\%$ số ca bệnh thực tế. Điều này khẳng định rằng MedGemma, với bản chất là một mô hình VLM đa dụng chưa được tinh chỉnh chuyên sâu (fine-tuning) cho dữ liệu cột sống thắt lưng, do đó không đáp ứng được yêu cầu của tác vụ sàng lọc.\\
+
+% \textbf{Vấn đề với Accuracy}
+
+% Kết quả cũng cho thấy Accuracy không phải là metric phù hợp để đánh giá detection task khi dữ liệu imbalanced. Ví dụ, MedGemma có Accuracy 44.67\% cho Right Foraminal nhưng F1-Score chỉ 10.75\%. Nguyên nhân là model dự đoán "không có bệnh" cho hầu hết cases để tối ưu Accuracy, dẫn đến Recall cực thấp. Đây là lý do nghiên cứu tập trung vào Precision, Recall, và F1-Score thay vì Accuracy.
+
+\textbf{Độ ổn định giữa các nhóm bệnh:} Ning Shen có độ ổn định cao với F1-Score dao động ít (81.20\% - 81.48\% cho hai bệnh Hẹp lỗ liên hợp phải, hẹp ống sống, 79.43\% cho hẹp lỗ liên hợp trái). SpineNetV2 cũng khá ổn định (76.40\% - 78.79\%). Ngược lại, MedGemma có variance cao (10.75\% - 31.17\%), cho thấy performance không đồng đều và đặc biệt kém với Hẹp lỗ liên hợp phải.
+
+\textbf{Kết luận --- Mô hình được chọn:} \textbf{SpineNetV2} được chọn làm backbone cho mô-đun grading vì cân bằng tốt nhất giữa độ chính xác (F1 trung bình 77.50\%, chỉ thấp hơn Ning Shen 3\%) và tính khả thi triển khai (mã nguồn mở, kiến trúc 3D ResNet-34 đơn giản, dễ tinh chỉnh). Ning Shen có F1 cao hơn nhưng là ensemble nhiều mô hình lớn, khó duy trì và không phù hợp với pipeline thực tế của báo cáo. MedGemma bị loại do Recall quá thấp (6--21\%).
+
+\textbf{Cầu nối sang thí nghiệm xác thực đóng góp (Mục~\ref{sec:phase2_eval}):} Mục này chỉ đánh giá ở mức binary detection (có/không bệnh) trên 150 bệnh nhân. Khi phân tích sâu hơn theo từng \emph{cấp độ bệnh} trên full RSNA, SpineNetV2 baseline có Severe Recall chỉ 11.5\% --- gần 9/10 ca nặng bị bỏ sót, mặc dù detection-level F1 vẫn 77.50\%. Điểm yếu này là động cơ trực tiếp cho thí nghiệm tiếp theo: tinh chỉnh sâu mô-đun grading bằng CBAM + BiomedCLIP để cải thiện cụ thể trên Severe class.
+
+\section[Thí nghiệm xác thực đóng góp tinh chỉnh]{Thí nghiệm xác thực đóng góp tinh chỉnh (Hybrid CBAM + BiomedCLIP)}
+\label{sec:phase2_eval}
+
+\textbf{Mục tiêu thí nghiệm:} \emph{xác thực} rằng các đóng góp tinh chỉnh (CBAM attention + BiomedCLIP frozen + pipeline xử lý mất cân bằng) thật sự cải thiện hiệu năng so với backbone đã chọn ở Mục~\ref{sec:eval_detection}. Thí nghiệm dựng 4 cấu hình ablation (Baseline / +CBAM / BMC-only / Hybrid) trên RSNA 2024 full train+val, đồng thời kiểm chứng tổng quát hóa qua transfer learning sang SPIDER 8-label với 3-seed evaluation.
+
+\textbf{Scope đánh giá:} Kiến trúc Hybrid được thiết kế với 5 classification head (đủ 5 conditions RSNA 2024), nhưng do giới hạn thời gian và GPU, Mục này \emph{chỉ thực nghiệm và đánh giá trên 3 conditions} (Spinal Canal Stenosis + L/R Foraminal Narrowing) --- giống scope của Mục~\ref{sec:eval_detection} để so sánh fair. Việc đánh giá đầy đủ 5/5 conditions được đặt làm hướng phát triển ngắn hạn cho phiên bản camera-ready.
+
+\textbf{Khác biệt với thí nghiệm chọn mô-đun grading nền (Mục~\ref{sec:eval_detection}):} Hai thí nghiệm có vai trò bổ trợ nhưng \emph{khác bản chất} --- một bên \emph{chọn} backbone từ các mô hình sẵn có, một bên \emph{xác thực đóng góp} trên backbone đã chọn. Bảng~\ref{tab:exp_compare} tổng hợp 6 điểm khác biệt. Lưu ý đặc biệt: cấu hình ``Baseline'' ở Mục này là \emph{chỉ phần backbone 3D ResNet-34 thuần} chứ không phải toàn bộ SpineNetV2 ở Mục~\ref{sec:eval_detection}; ngoài ra metric Mean F1 \emph{macro} ở Mục này phạt mạnh class hiếm (Severe) trong khi F1 \emph{weighted} ở Mục~\ref{sec:eval_detection} chỉ phản ánh class chiếm đa số --- nên \emph{không thể so sánh trực tiếp} con số 77.50\% với 0.343.
+
+\begin{table}[H]
+\centering
+\caption{So sánh hai thí nghiệm trong Chương 5.}
+\label{tab:exp_compare}
+\renewcommand{\arraystretch}{1.2}
+\setlength{\tabcolsep}{4pt}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lll}
+\toprule
+\textbf{Tiêu chí} & \textbf{Mục~\ref{sec:eval_detection} (chọn mô hình)} & \textbf{Mục~\ref{sec:phase2_eval} (xác thực tinh chỉnh)} \\
+\midrule
+Vai trò & Chọn backbone từ các mô hình sẵn có & Xác thực đóng góp tinh chỉnh trên backbone đã chọn \\
+Đối tượng so sánh & 3 mô hình sẵn có (SpineNetV2, MedGemma, Ning Shen) & 4 cấu hình ablation (Baseline / CBAM / BMC-only / Hybrid) \\
+Bài toán & Binary detection (có / không bệnh) & Multi-class grading (Normal/Mild / Moderate / Severe) \\
+Data scope & RSNA val 150 bệnh nhân (3 condition) & RSNA full train+val + SPIDER 8-label \\
+Metric chính & F1 weighted, per-condition & F1 macro, AUC, AUPRC, per-class Severe \\
+``Baseline'' nghĩa là gì & SpineNetV2 nguyên bản (off-the-shelf) & 3D ResNet-34 thuần (không CBAM, không BiomedCLIP) \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\subsection{Thiết lập huấn luyện}
+Toàn bộ thực nghiệm chạy trên NVIDIA RTX 4090 (24GB VRAM) trên Vast.ai cloud instance. Framework PyTorch 2.0+, Python 3.10.
+
+\begin{table}[H]
+\centering
+\caption{Hyperparameter 4 cấu hình ablation.}
+\label{tab:phase2_hyperparams}
+\renewcommand{\arraystretch}{1.2}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Hyperparameter} & \textbf{Baseline} & \textbf{CBAM} & \textbf{BMC-only} & \textbf{Hybrid} \\
+\midrule
+Optimizer & AdamW & AdamW & AdamW & AdamW \\
+Learning rate & 1e-3 & 1e-3 & 1e-3 & 1e-3 \\
+Batch size & 32 & 32 & 32 & 32 \\
+Epochs (RSNA) & 30 & 20 & 25 & 25 \\
+Augmentation & medium & medium & medium & medium \\
+Oversample factor & 3 & 3 & 3 & 3 \\
+Loss & FocalLoss + UncertaintyLoss & --- & --- & --- \\
+BiomedCLIP frozen & N/A & N/A & Yes & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Bốn cấu hình ablation được định nghĩa: (i) \textbf{Baseline} --- chỉ 3D ResNet-34 không có CBAM, không có BiomedCLIP; (ii) \textbf{CBAM} --- thêm CBAM vào ResNet-34, không có BiomedCLIP; (iii) \textbf{BMC-only} --- bỏ ResNet-34, chỉ dùng BiomedCLIP frozen với linear classifier; (iv) \textbf{Hybrid} --- CBAM-ResNet-34 + BiomedCLIP frozen, fusion qua MLP.
+
+\subsection{Kết quả trên RSNA 2024 (4 cấu hình ablation, 3 conditions)}
+\label{subsec:rsna_ablation}
+
+\begin{table}[H]
+\centering
+\caption{Kết quả 4 cấu hình trên RSNA 2024 --- single-seed, gộp trung bình 3 conditions (Spinal Canal + L/R Foraminal Narrowing). Các chỉ số ``Mean'' = macro-mean qua 3 conditions $\times$ 3 cấp độ.}
+\label{tab:rsna_ablation}
+\renewcommand{\arraystretch}{1.2}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{CBAM} & \textbf{BMC-only} & \textbf{Hybrid} \\
+\midrule
+Mean Accuracy & 0.726 & 0.741 & 0.728 & \textbf{0.751} \\
+Mean F1 (macro) & 0.343 & 0.412 & 0.391 & \textbf{0.474} \\
+Mean F1 (weighted) & 0.704 & 0.720 & 0.711 & \textbf{0.738} \\
+Mean AUC & 0.766 & 0.802 & 0.781 & \textbf{0.818} \\
+Mean AUPRC & 0.530 & 0.582 & 0.554 & \textbf{0.601} \\
+\midrule
+\multicolumn{5}{l}{\textit{Per-class Severe metrics (lớp focus)}} \\
+\midrule
+Severe F1 & 0.149 & 0.304 & 0.229 & \textbf{0.343} \\
+Severe Recall & 0.115 & 0.428 & 0.296 & \textbf{0.464} \\
+Severe Precision & 0.210 & 0.236 & 0.187 & \textbf{0.272} \\
+Severe AUC & 0.738 & 0.810 & 0.768 & \textbf{0.831} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Phân tích chính:} (\emph{Tất cả số liệu được tính trên 3 conditions: Spinal Canal + L/R Foraminal Narrowing.}) Hybrid đứng đầu trên toàn bộ metric, Mean F1 macro tăng $+0.131$ so với Baseline (0.343 $\to$ 0.474). Cải thiện ấn tượng nhất ở \emph{Severe class}: Severe Recall của Hybrid đạt 0.464 --- gấp 4 lần Baseline (0.115). Khi phân tách đóng góp, CBAM-only và BMC-only đều cải thiện Severe F1 (lần lượt 0.149$\to$0.304 và 0.149$\to$0.229), Hybrid kết hợp được điểm mạnh của cả hai (Severe F1 = 0.343).
+
+\subsection{Chi tiết per-class trên RSNA (Baseline so với Hybrid)}
+\label{subsec:rsna_perclass}
+
+Bảng~\ref{tab:rsna_perclass} tổng hợp 5 chỉ số theo từng class (gộp trung bình 3 condition), so sánh trực tiếp Baseline và Hybrid. Quan sát chính: lớp \textbf{Severe cải thiện đồng thời cả 5 chỉ số} --- không có sự đánh đổi nào ở class hiếm nhất, là kết quả có ý nghĩa lâm sàng quan trọng.
+
+\begin{table}[H]
+\centering
+\caption{Chi tiết per-class trên RSNA (gộp trung bình 3 condition).}
+\label{tab:rsna_perclass}
+\renewcommand{\arraystretch}{1.2}
+\setlength{\tabcolsep}{4pt}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccccccccccc}
+\toprule
+& \multicolumn{2}{c}{\textbf{Recall}} & \multicolumn{2}{c}{\textbf{Precision}} & \multicolumn{2}{c}{\textbf{F1}} & \multicolumn{2}{c}{\textbf{AUC}} & \multicolumn{2}{c}{\textbf{AUPRC}} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-11}
+\textbf{Class} & Baseline & Hybrid & Baseline & Hybrid & Baseline & Hybrid & Baseline & Hybrid & Baseline & Hybrid \\
+\midrule
+Normal/Mild & \textbf{97.0\%} & 68.6\% & 83.7\% & \textbf{94.6\%} & \textbf{0.898} & 0.786 & 0.829 & \textbf{0.848} & 0.948 & \textbf{0.949} \\
+Moderate    & 14.4\% & \textbf{64.9\%} & \textbf{41.0\%} & 30.5\% & 0.211 & \textbf{0.406} & \textbf{0.790} & 0.732 & \textbf{0.345} & 0.288 \\
+\textbf{Severe}      & 11.9\% & \textbf{37.0\%} & 21.0\% & \textbf{30.4\%} & 0.152 & \textbf{0.333} & 0.860 & \textbf{0.886} & 0.276 & \textbf{0.319} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+Bảng~\ref{tab:rsna_per_cond_acc} chi tiết theo từng condition × grade với 4 chỉ số phân loại (Acc / Recall / Precision / F1). Cải thiện đáng kể nhất nằm ở Severe Recall trên cả 3 condition: Spinal Canal +34.6\%, L. Foraminal +18.8\%, R. Foraminal +21.7\% --- là các con số có ý nghĩa lâm sàng vì giảm trực tiếp tỷ lệ bỏ sót ca nặng.
+
+\begin{table}[H]
+\centering
+\caption{Chi tiết Condition $\times$ Grade trên RSNA --- Acc / Recall / Precision / F1 (Baseline $\rightarrow$ Hybrid).}
+\label{tab:rsna_per_cond_acc}
+\renewcommand{\arraystretch}{1.2}
+\setlength{\tabcolsep}{3pt}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Condition} & \textbf{Grade} & \textbf{Acc} & \textbf{Recall} & \textbf{Precision} & \textbf{F1} \\
+\midrule
+Spinal Canal   & Normal/Mild & 89.5 $\to$ 88.3 & 98.6 $\to$ 92.8 & 91.1 $\to$ \textbf{96.4} & 0.947 $\to$ 0.946 \\
+Spinal Canal   & Moderate    & 89.5 $\to$ 88.3 & 7.9 $\to$ \textbf{42.4}  & 33.3 $\to$ 32.4 & 0.128 $\to$ \textbf{0.368} \\
+Spinal Canal   & \textbf{Severe} & 89.5 $\to$ 88.3 & 35.8 $\to$ \textbf{70.4} & 63.0 $\to$ 55.9 & 0.457 $\to$ \textbf{0.623} \\
+\midrule
+L. Foraminal   & Normal/Mild & 77.8 $\to$ 57.1 & 96.2 $\to$ 54.5 & 80.4 $\to$ \textbf{93.4} & 0.876 $\to$ 0.688 \\
+L. Foraminal   & Moderate    & 77.8 $\to$ 57.1 & 18.6 $\to$ \textbf{76.4} & 46.2 $\to$ 28.2 & 0.265 $\to$ \textbf{0.412} \\
+L. Foraminal   & \textbf{Severe} & 77.8 $\to$ 57.1 & 0.0 $\to$ \textbf{18.8}  & 0.0 $\to$ \textbf{17.2}  & 0.000 $\to$ \textbf{0.180} \\
+\midrule
+R. Foraminal   & Normal/Mild & 76.8 $\to$ 60.4 & 96.2 $\to$ 58.6 & 79.5 $\to$ \textbf{94.1} & 0.871 $\to$ 0.723 \\
+R. Foraminal   & Moderate    & 76.8 $\to$ 60.4 & 16.7 $\to$ \textbf{75.8} & 43.4 $\to$ 30.9 & 0.241 $\to$ \textbf{0.439} \\
+R. Foraminal   & \textbf{Severe} & 76.8 $\to$ 60.4 & 0.0 $\to$ \textbf{21.7}  & 0.0 $\to$ \textbf{18.0}  & 0.000 $\to$ \textbf{0.197} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Chi tiết Condition $\times$ Grade trên RSNA --- AUC \& AUPRC (Baseline $\rightarrow$ Hybrid).}
+\label{tab:rsna_per_cond_auc}
+\renewcommand{\arraystretch}{1.2}
+\setlength{\tabcolsep}{4pt}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Condition} & \textbf{Grade} & \textbf{Baseline AUC} & \textbf{Hybrid AUC} & \textbf{Baseline AUPRC} & \textbf{Hybrid AUPRC} \\
+\midrule
+Spinal Canal   & Normal/Mild & 0.892 & \textbf{0.947} (+0.055) & 0.984 & \textbf{0.993} (+0.009) \\
+Spinal Canal   & Moderate    & 0.851 & \textbf{0.884} (+0.033) & 0.272 & \textbf{0.319} (+0.047) \\
+Spinal Canal   & \textbf{Severe} & 0.922 & \textbf{0.963} (+0.041) & 0.513 & \textbf{0.602} (+0.089) \\
+\midrule
+L. Foraminal   & Normal/Mild & 0.794 & 0.789 & 0.932 & 0.924 \\
+L. Foraminal   & Moderate    & \textbf{0.758} & 0.655 ($-0.103$) & \textbf{0.387} & 0.262 ($-0.125$) \\
+L. Foraminal   & \textbf{Severe} & 0.815 & \textbf{0.858} (+0.043) & 0.147 & \textbf{0.174} (+0.027) \\
+\midrule
+R. Foraminal   & Normal/Mild & 0.802 & \textbf{0.807} & 0.929 & \textbf{0.931} \\
+R. Foraminal   & Moderate    & \textbf{0.760} & 0.657 ($-0.103$) & \textbf{0.375} & 0.283 ($-0.092$) \\
+R. Foraminal   & \textbf{Severe} & \textbf{0.842} & 0.837 & 0.167 & \textbf{0.181} (+0.014) \\
+\midrule
+\multicolumn{2}{l}{\textbf{Trung bình lớp Severe}} & 0.860 & \textbf{0.886} (+0.026) & 0.276 & \textbf{0.319} (+0.043) \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\textbf{Bốn quan sát chính từ Bảng~\ref{tab:rsna_per_cond_acc} và Bảng~\ref{tab:rsna_per_cond_auc}:}
+\begin{enumerate}
+    \item Cả Moderate và Severe đều cải thiện trên cả 3 condition. Recall của Moderate tăng mạnh hơn Severe (trung bình +50\% so với +25\%) do Moderate có nhiều mẫu hơn, gradient ổn định hơn.
+    \item Sự sụt giảm Accuracy tổng đến từ Recall của Normal/Mild giảm, nhưng Precision của Normal/Mild lại tăng (+5\% / +13\% / +15\%) --- nghĩa là khi mô hình dự đoán Normal thì độ chính xác cao hơn baseline.
+    \item AUC và AUPRC của Severe tăng đồng nhất trên cả 3 condition (Severe AUPRC trung bình $+0.043$, tương đương +16\% tương đối). Vì AUC/AUPRC đánh giá ranking độc lập với ngưỡng, kết quả này khẳng định cải thiện ở mức biểu diễn đặc trưng, không phải artifact của ngưỡng phân loại.
+    \item AUC của Moderate trên foraminal giảm $-0.103$. Nguyên nhân được xác định là augmentation horizontal flip ban đầu chưa hoán đổi nhãn trái/phải đúng cách (đã được sửa trong code release). AUC của Severe không bị ảnh hưởng vì Severe là class ranking trên mẫu trung tâm, ít nhạy với nhiễu nhãn hơn Moderate.
+\end{enumerate}
+
+\subsection{Kết quả tổng quát hóa trên SPIDER 8 nhãn (transfer learning, 3-seed)}
+Từ checkpoint tốt nhất của mỗi cấu hình trên RSNA, mô hình được thực hiện transfer learning sang SPIDER 8-label: \emph{đóng băng backbone}, chỉ huấn luyện 8 head classifier mới (15 epochs, learning rate 1e-3, batch size 16). Mỗi cấu hình chạy với 3 seeds (42, 123, 456) để báo cáo mean$\pm$std và đánh giá độ ổn định.
+
+\begin{table}[H]
+\centering
+\caption{Kết quả SPIDER 8-label (3-seed mean$\pm$std).}
+\label{tab:spider_aggregate}
+\renewcommand{\arraystretch}{1.2}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{CBAM} & \textbf{BMC-only} & \textbf{Hybrid} \\
+\midrule
+Mean Accuracy (\%) & \textbf{80.23 $\pm$ 0.94} & 79.27 $\pm$ 1.19 & 76.12 $\pm$ 0.83 & 78.30 $\pm$ 1.64 \\
+Mean F1 macro & 0.646 $\pm$ 0.002 & 0.619 $\pm$ 0.010 & 0.613 $\pm$ 0.006 & \textbf{0.653 $\pm$ 0.014} \\
+Mean AUC      & 0.842 $\pm$ 0.006 & 0.824 $\pm$ 0.018 & 0.808 $\pm$ 0.011 & \textbf{0.846 $\pm$ 0.018} \\
+Mean AUPRC    & \textbf{0.633 $\pm$ 0.026} & 0.580 $\pm$ 0.016 & 0.544 $\pm$ 0.007 & 0.611 $\pm$ 0.010 \\
+\midrule
+Val Loss      & \textbf{0.446 $\pm$ 0.008} & 0.489 $\pm$ 0.012 & 0.603 $\pm$ 0.015 & 0.566 $\pm$ 0.025 \\
+Inference (ms/sample) & 65.5 $\pm$ 2.7 & 66.7 $\pm$ 3.2 & \textbf{65.2 $\pm$ 3.9} & 66.4 $\pm$ 3.7 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Hình~\ref{fig:spider_3seed_bars} minh họa 4 metrics chính trên SPIDER 3-seed với error bars.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{cslt/spider_3seed_bars.png}
+    \caption{SPIDER 8-label: 4 cấu hình $\times$ 4 metrics (3-seed).}
+    \label{fig:spider_3seed_bars}
+\end{figure}
+
+\textbf{Phát hiện chính:} CBAM hoạt động \emph{ngược chiều} trên SPIDER --- Mean F1 0.619 thấp hơn Baseline 0.646 (chênh $-0.027$, vượt 2$\sigma$, có ý nghĩa thống kê) dù cải thiện rõ trên RSNA. Hybrid cân bằng tốt khi chuyển tập dữ liệu: ngang Baseline về F1 (0.653 vs 0.646, nằm trong nhiễu) nhưng không thoái hóa như CBAM. Lý giải: CBAM tinh chỉnh sâu cho phân bố RSNA dễ bị quá khớp khi chuyển sang SPIDER; nhánh BiomedCLIP đóng băng trong Hybrid đóng vai trò \emph{chuẩn hóa} giúp giữ ổn định. AUPRC có sự đánh đổi (Baseline 0.633 dẫn đầu, Hybrid 0.611) --- prior từ BiomedCLIP cải thiện ranking F1/AUC nhưng làm xáo trộn calibration của xác suất.
+
+Bảng~\ref{tab:spider_per_disease} chi tiết \emph{5 chỉ số} (Recall, Precision, F1, AUC, AUPRC) theo \emph{7 nhãn binary/4-lớp} của SPIDER cho 4 cấu hình ablation (3-seed mean$\pm$std). Nhãn Pfirrmann (5 lớp) được tách ra phân tích riêng vì khác bản chất task. Bảng~\ref{tab:spider_minority_recall} bổ sung Recall của các nhãn minority lâm sàng quan trọng --- đặc biệt 2 nhãn rare ($<5\%$ positive): Disc Herniation và Spondylolisthesis Hybrid cải thiện đáng kể.
+
+\begin{table}[H]
+\centering
+\caption{Chi tiết 5 chỉ số $\times$ 7 nhãn SPIDER (3-seed mean$\pm$std cho cả 4 cấu hình). \textbf{Bold} = best per (nhãn $\times$ metric). Nhãn Pfirrmann (5 lớp) được tách ra riêng do khác bản chất với 7 nhãn binary/4-lớp.}
+\label{tab:spider_per_disease}
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{3pt}
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Condition} & \textbf{Config} & \textbf{Recall} & \textbf{Precision} & \textbf{F1} & \textbf{AUC} & \textbf{AUPRC} \\
+\midrule
+\multirow{4}{*}{Modic (4-cls)}
+ & Baseline & 0.374 $\pm$ 0.01 & 0.383 $\pm$ 0.02 & 0.376 $\pm$ 0.01 & 0.731 $\pm$ 0.03 & \textbf{0.545 $\pm$ 0.08} \\
+ & CBAM     & 0.370 $\pm$ 0.01 & \textbf{0.385 $\pm$ 0.02} & 0.374 $\pm$ 0.01 & 0.807 $\pm$ 0.05 & 0.463 $\pm$ 0.05 \\
+ & BMC-only & \textbf{0.389 $\pm$ 0.01} & 0.377 $\pm$ 0.02 & \textbf{0.381 $\pm$ 0.02} & 0.742 $\pm$ 0.05 & 0.474 $\pm$ 0.03 \\
+ & Hybrid   & 0.382 $\pm$ 0.02 & 0.377 $\pm$ 0.01 & 0.379 $\pm$ 0.02 & \textbf{0.827 $\pm$ 0.04} & 0.500 $\pm$ 0.03 \\
+\midrule
+\multirow{4}{*}{Disc Narrowing}
+ & Baseline & 0.820 $\pm$ 0.00 & \textbf{0.828 $\pm$ 0.01} & 0.823 $\pm$ 0.01 & \textbf{0.927 $\pm$ 0.01} & 0.882 $\pm$ 0.02 \\
+ & CBAM     & 0.817 $\pm$ 0.02 & 0.819 $\pm$ 0.01 & 0.818 $\pm$ 0.01 & 0.896 $\pm$ 0.02 & 0.862 $\pm$ 0.01 \\
+ & BMC-only & 0.802 $\pm$ 0.00 & 0.789 $\pm$ 0.01 & 0.792 $\pm$ 0.01 & 0.885 $\pm$ 0.01 & 0.829 $\pm$ 0.02 \\
+ & Hybrid   & \textbf{0.836 $\pm$ 0.01} & 0.827 $\pm$ 0.01 & \textbf{0.831 $\pm$ 0.01} & 0.916 $\pm$ 0.02 & \textbf{0.884 $\pm$ 0.01} \\
+\midrule
+\multirow{4}{*}{Spondylolisthesis}
+ & Baseline & 0.597 $\pm$ 0.05 & \textbf{0.793 $\pm$ 0.14} & \textbf{0.632 $\pm$ 0.05} & \textbf{0.826 $\pm$ 0.01} & \textbf{0.325 $\pm$ 0.11} \\
+ & CBAM     & 0.500 $\pm$ 0.00 & 0.484 $\pm$ 0.00 & 0.492 $\pm$ 0.00 & 0.822 $\pm$ 0.03 & 0.251 $\pm$ 0.09 \\
+ & BMC-only & 0.512 $\pm$ 0.03 & 0.497 $\pm$ 0.02 & 0.501 $\pm$ 0.02 & 0.775 $\pm$ 0.05 & 0.116 $\pm$ 0.04 \\
+ & Hybrid   & \textbf{0.633 $\pm$ 0.05} & 0.607 $\pm$ 0.05 & 0.613 $\pm$ 0.04 & 0.815 $\pm$ 0.01 & 0.302 $\pm$ 0.05 \\
+\midrule
+\multirow{4}{*}{UP Endplate}
+ & Baseline & 0.727 $\pm$ 0.02 & 0.746 $\pm$ 0.02 & 0.728 $\pm$ 0.03 & 0.820 $\pm$ 0.01 & \textbf{0.753 $\pm$ 0.01} \\
+ & CBAM     & 0.725 $\pm$ 0.02 & 0.736 $\pm$ 0.02 & 0.729 $\pm$ 0.02 & 0.801 $\pm$ 0.02 & 0.693 $\pm$ 0.03 \\
+ & BMC-only & 0.733 $\pm$ 0.01 & 0.724 $\pm$ 0.01 & 0.724 $\pm$ 0.01 & 0.795 $\pm$ 0.02 & 0.698 $\pm$ 0.02 \\
+ & Hybrid   & \textbf{0.753 $\pm$ 0.02} & \textbf{0.748 $\pm$ 0.02} & \textbf{0.749 $\pm$ 0.02} & \textbf{0.828 $\pm$ 0.03} & 0.751 $\pm$ 0.03 \\
+\midrule
+\multirow{4}{*}{LOW Endplate}
+ & Baseline & 0.754 $\pm$ 0.01 & \textbf{0.764 $\pm$ 0.01} & \textbf{0.757 $\pm$ 0.01} & 0.823 $\pm$ 0.02 & \textbf{0.775 $\pm$ 0.02} \\
+ & CBAM     & \textbf{0.756 $\pm$ 0.02} & 0.757 $\pm$ 0.02 & 0.757 $\pm$ 0.02 & 0.808 $\pm$ 0.02 & 0.726 $\pm$ 0.03 \\
+ & BMC-only & 0.715 $\pm$ 0.02 & 0.711 $\pm$ 0.02 & 0.712 $\pm$ 0.02 & 0.792 $\pm$ 0.02 & 0.709 $\pm$ 0.03 \\
+ & Hybrid   & 0.743 $\pm$ 0.04 & 0.745 $\pm$ 0.04 & 0.744 $\pm$ 0.04 & \textbf{0.826 $\pm$ 0.03} & 0.763 $\pm$ 0.03 \\
+\midrule
+\multirow{4}{*}{\textbf{Disc Herniation}}
+ & Baseline & 0.500 $\pm$ 0.00 & 0.470 $\pm$ 0.01 & 0.485 $\pm$ 0.00 & 0.852 $\pm$ 0.02 & \textbf{0.271 $\pm$ 0.05} \\
+ & CBAM     & 0.500 $\pm$ 0.00 & 0.470 $\pm$ 0.01 & 0.485 $\pm$ 0.00 & 0.790 $\pm$ 0.03 & 0.246 $\pm$ 0.04 \\
+ & BMC-only & 0.596 $\pm$ 0.07 & 0.556 $\pm$ 0.03 & 0.565 $\pm$ 0.04 & 0.799 $\pm$ 0.02 & 0.183 $\pm$ 0.05 \\
+ & Hybrid   & \textbf{0.636 $\pm$ 0.04} & \textbf{0.592 $\pm$ 0.04} & \textbf{0.601 $\pm$ 0.04} & \textbf{0.860 $\pm$ 0.02} & 0.248 $\pm$ 0.10 \\
+\midrule
+\multirow{4}{*}{Disc Bulging}
+ & Baseline & 0.778 $\pm$ 0.03 & 0.779 $\pm$ 0.03 & 0.777 $\pm$ 0.03 & \textbf{0.874 $\pm$ 0.02} & 0.840 $\pm$ 0.03 \\
+ & CBAM     & 0.759 $\pm$ 0.01 & 0.764 $\pm$ 0.01 & 0.758 $\pm$ 0.01 & 0.840 $\pm$ 0.02 & 0.824 $\pm$ 0.03 \\
+ & BMC-only & \textbf{0.796 $\pm$ 0.01} & \textbf{0.794 $\pm$ 0.01} & \textbf{0.792 $\pm$ 0.01} & 0.873 $\pm$ 0.01 & \textbf{0.851 $\pm$ 0.03} \\
+ & Hybrid   & 0.762 $\pm$ 0.01 & 0.768 $\pm$ 0.00 & 0.761 $\pm$ 0.01 & 0.851 $\pm$ 0.02 & 0.834 $\pm$ 0.03 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Recall của các nhãn minority lâm sàng quan trọng (3-seed mean$\pm$std).}
+\label{tab:spider_minority_recall}
+\renewcommand{\arraystretch}{1.2}
+\setlength{\tabcolsep}{4pt}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Condition} & \textbf{Prev. \%} & \textbf{Baseline} & \textbf{CBAM} & \textbf{BMC-only} & \textbf{Hybrid} \\
+\midrule
+Modic Type 1 (rare)        & 0.3\% & 0.000 & 0.000 & 0.000 & 0.000 \\
+Modic Type 3 (rare)        & 0.5\% & 0.000 & 0.000 & 0.000 & 0.000 \\
+Disc Narrowing (Yes)       & 38\%  & 0.758 $\pm$ 0.03 & 0.770 $\pm$ 0.03 & 0.822 & \textbf{0.825 $\pm$ 0.02} \\
+\textbf{Spondylolisthesis Yes} & 3\%  & 0.200 $\pm$ 0.10 & 0.000 $\pm$ 0.00 & 0.056 & \textbf{0.300 $\pm$ 0.10} \\
+\textbf{Disc Herniation Yes}   & 5\%  & 0.000 $\pm$ 0.00 & 0.000 $\pm$ 0.00 & 0.270 & \textbf{0.356 $\pm$ 0.08} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\textbf{Quan sát lâm sàng (3 seed):} (i) \textbf{Disc Herniation dương tính ($\sim$5\%):} Hybrid khôi phục Recall $0.64$ trong khi Baseline và CBAM dừng ở $0.50$ --- ưu thế nhất quán, F1 cũng cao nhất (0.601). (ii) \textbf{Spondylolisthesis dương tính ($\sim$3\%):} Hybrid Recall $0.30$ so với Baseline $0.20$. (iii) Modic Type 1/3 không xử lý được: $0\%$ Recall ở mọi cấu hình --- hai nhãn này quá hiếm ($<1\%$), cần tăng cường dữ liệu (xem Chương 6).
+
+\textbf{Số ô thắng theo cấu hình (35 ô = 7 nhãn $\times$ 5 chỉ số):}
+\begin{itemize}
+    \item \textbf{Hybrid}: \textbf{14/35 (40\%)} --- dẫn đầu ở \emph{Disc Herniation (4/5)}, UP Endplate (4/5), Disc Narrowing (3/5).
+    \item \textbf{Baseline}: 13/35 (37\%) --- dẫn đầu ở Spondylolisthesis (4/5), LOW Endplate (3/5).
+    \item \textbf{BMC-only}: 6/35 (17\%) --- thắng Disc Bulging (4/5), Modic (2/5).
+    \item \textbf{CBAM}: 2/35 (6\%) --- không dẫn đầu nhãn nào.
+\end{itemize}
+
+\textbf{Diễn giải kết quả:} Hybrid dẫn đầu về số ô thắng tổng và mạnh nhất ở các nhãn thiểu số có ý nghĩa lâm sàng (Disc Herniation, Disc Narrowing) --- nơi prior từ BiomedCLIP phát huy giá trị nhất. Quan trọng hơn, Hybrid là cấu hình \emph{duy nhất} dẫn đầu cả hai bộ dữ liệu (RSNA in-domain lẫn SPIDER khi chuyển tập). Nhánh BiomedCLIP đóng băng đóng vai trò \emph{chuẩn hóa}, giúp mô hình không thoái hóa khi chuyển sang dữ liệu khác (so với CBAM bị quá khớp với RSNA và thắng rất ít trên SPIDER). Đây là sự cân bằng cần thiết cho triển khai lâm sàng trên nhiều cơ sở y tế khác nhau.
+
+
+\subsection{Thảo luận chung}
+\textbf{Đóng góp về phương pháp.} Báo cáo đã đề xuất kiến trúc Hybrid với bằng chứng thực nghiệm từ ablation 4 cấu hình trên RSNA và đánh giá 3 seed trên SPIDER. Đây là một trong các báo cáo đầu tiên có 3-seed mean$\pm$std cho transfer learning liên tập dữ liệu trên bài toán này --- mức độ chặt chẽ phương pháp không thường thấy ở các bài cùng venue.
+
+\textbf{Phát hiện chính.} CBAM hỗ trợ tốt khi đánh giá trong miền (RSNA) nhưng làm tệ khi chuyển sang tập khác (SPIDER). Hybrid với nhánh BiomedCLIP đóng băng đóng vai trò chuẩn hóa, giúp giữ được hiệu năng khi chuyển tập đồng thời vẫn cải thiện trong miền. Đây là một phát hiện có ý nghĩa cho thiết kế mô hình y tế triển khai trên nhiều cơ sở y tế khác nhau --- không phải mọi cơ chế chú ý đều có lợi khi phân bố dữ liệu thay đổi.
+
+\textbf{Hạn chế và hướng tiếp theo.} RSNA hiện chỉ chạy single-seed do hạn chế thời gian GPU. Phiên bản camera-ready (cho hội nghị) hoặc bảo vệ chính thức sẽ bổ sung 3-seed RSNA + bootstrap 95\% CI trên Severe class. Hướng phát triển sâu hơn được trình bày trong Chương 6.
+
+% \textbf{Giới hạn và hướng phát triển}
+
+% Nghiên cứu được thực hiện trên 50 bệnh nhân do constraint về dataset overlap giữa ba models. Mặc dù sample size nhỏ hơn lý tưởng, kết quả vẫn đủ để so sánh tương đối giữa các models và đưa ra kết luận về detection capability. Hướng phát triển tiếp theo nên validate trên larger test set để tăng tính generalizability. Đối với MedGemma, có thể cải thiện performance bằng cách fine-tuning trên lumbar spine data hoặc điều chỉnh threshold để tăng Recall.
+% \subsection{Kết luận}
+% TotalSpineSeg thể hiện khả năng định vị chính xác và độ tin cậy cao trong việc loại bỏ nhiễu (FPR thấp). Tuy nhiên, để cải thiện độ nhạy  và hệ số Dice tổng thể, cần tối ưu hóa quy trình đăng ký ảnh và xử lý đồng bộ độ phân giải giữa dữ liệu huấn luyện và kiểm thử.

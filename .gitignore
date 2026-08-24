@@ -205,3 +205,8 @@ experiments/f1_improvement/**/__pycache__/
 
 # Local checkpoint/metrics backup tarballs (upload to Drive, never commit)
 checkpoints_canonical_backup_*.tar.gz
+
+# Private: personal profile and unpublished advisor feedback (public repo)
+docs/scholarship_assessment.md
+ANSWERS_THAY_20260428.md
+MEETING_NOTES_20260428.md

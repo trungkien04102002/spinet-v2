@@ -1,0 +1,48 @@
+%% Kiến trúc khi huấn luyện (Training mode)
+%% Render: mmdc -i training_architecture.mmd -o training_architecture.png -w 1800 -H 1100 --backgroundColor white
+flowchart LR
+    subgraph TRAIN [" Chế độ Huấn luyện (Training) "]
+        direction LR
+
+        Input["MRI 3D Volume<br/>9 × 112 × 224"]
+        Aug["Augmentation<br/>+ Oversampling<br/>(Severe ×3)"]
+        CBAM["Nhánh 1 (Trainable)<br/>3D ResNet-34 + CBAM<br/>21.3M params"]
+        BMC["Nhánh 2 (Frozen)<br/>BiomedCLIP ViT-B/16<br/>86.2M params"]
+        Fcnn(["f_cnn 512-d"])
+        Fvlm(["f_vlm 512-d"])
+        Concat["Concat<br/>1024-d"]
+        MLP["MLP Fusion<br/>256-d (Trainable)"]
+        Heads["5 Classification<br/>Heads"]
+        Loss["Loss = Focal Loss γ=2.0<br/>+ Uncertainty Loss"]
+
+        Input --> Aug
+        Aug --> CBAM
+        Aug --> BMC
+        CBAM --> Fcnn
+        BMC --> Fvlm
+        Fcnn --> Concat
+        Fvlm --> Concat
+        Concat --> MLP
+        MLP --> Heads
+        Heads --> Loss
+        Loss -.->|Backprop chỉ qua nhánh trainable| CBAM
+        Loss -.-> MLP
+    end
+
+    classDef trainable fill:#4a90e2,stroke:#1c5a99,color:#fff,font-weight:bold;
+    classDef frozen fill:#9b9b9b,stroke:#555,color:#fff,font-weight:bold;
+    classDef io fill:#f5a623,stroke:#a86e0c,color:#fff,font-weight:bold;
+    classDef fusion fill:#bd10e0,stroke:#6a0982,color:#fff,font-weight:bold;
+    classDef output fill:#7ed321,stroke:#3f8b0c,color:#fff,font-weight:bold;
+    classDef loss fill:#e74c3c,stroke:#922b21,color:#fff,font-weight:bold;
+    classDef emb fill:#ecf0f1,stroke:#7f8c8d,color:#333;
+
+    class CBAM,MLP trainable;
+    class BMC frozen;
+    class Input io;
+    class Aug,Concat fusion;
+    class Heads output;
+    class Loss loss;
+    class Fcnn,Fvlm emb;
+
+    style TRAIN fill:#eaf3ff,stroke:#1c5a99,stroke-width:2.5px,color:#1c5a99

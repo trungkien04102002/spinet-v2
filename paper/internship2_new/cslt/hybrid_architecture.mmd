@@ -1,0 +1,26 @@
+%% Kiến trúc Hybrid hai nhánh — overall view (no tensor shapes)
+%% Render: mmdc -i hybrid_architecture.mmd -o hybrid_architecture.png -w 1600 -H 900 --backgroundColor white
+flowchart TD
+    Input["Ảnh MRI đĩa đệm"]
+
+    Input --> CBAM["CBAM 3D ResNet-34<br/>(Trainable)"]
+    Input --> BMC["BiomedCLIP Image Encoder<br/>(Frozen)"]
+
+    CBAM --> Concat(["Concatenate đặc trưng"])
+    BMC --> Concat
+
+    Concat --> MLP["Fusion MLP<br/>(Trainable)"]
+
+    MLP --> Heads["Classification Heads"]
+
+    classDef trainable fill:#4a90e2,stroke:#1c5a99,color:#fff,font-weight:bold;
+    classDef frozen fill:#9b9b9b,stroke:#555,color:#fff,font-weight:bold;
+    classDef io fill:#f5a623,stroke:#a86e0c,color:#fff,font-weight:bold;
+    classDef output fill:#7ed321,stroke:#3f8b0c,color:#fff,font-weight:bold;
+    classDef fusion fill:#bd10e0,stroke:#6a0982,color:#fff,font-weight:bold;
+
+    class CBAM,MLP trainable;
+    class BMC frozen;
+    class Input io;
+    class Heads output;
+    class Concat fusion;

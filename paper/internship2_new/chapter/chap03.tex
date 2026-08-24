@@ -1,0 +1,159 @@
+\chapter{CÔNG TRÌNH NGHIÊN CỨU LIÊN QUAN}
+\section{Các kỹ thuật phân vùng cấu trúc giải phẫu cột sống}
+\subsection{Phương pháp tinh chỉnh phân vùng bằng quy trình khuếch tán ngược}
+Một nghiên cứu tiêu biểu cho hướng tiếp cận này là bài báo của Monzon và các cộng sự~\cite{monzon2024diffusion}, giới thiệu một mô hình có tên là \textbf{SpineSegDiff}. \\
+
+SpineSegDiff là một framework phân vùng ảnh 2D dựa trên \textbf{Mô hình khuếch tán xác suất khử nhiễu (Denoising diffusion probabilistic models - DDPM)}, được thiết kế để phân vùng các cấu trúc cột sống như đốt sống, đĩa đệm , và ống sống  từ ảnh MRI T1-weighted (T1w) và T2-weighted (T2w).\\
+
+Điểm khác biệt và sáng tạo chính của SpineSegDiff nằm ở chiến lược tiền phân vùng. Thay vì bắt đầu quá trình khuếch tán từ nhiễu Gaussian hoàn toàn, mô hình này sử dụng một mạng \textbf{nnU-Net}~\cite{isensee2021nnunet} đã được huấn luyện trước để tạo ra một mặt nạ phân vùng ban đầu ($\hat{x}_{pre}$). Sau đó, mô hình khuếch tán SpineSegDiff chỉ cần một số bước khuếch tán ngắn để tinh chỉnh và khử nhiễu từ mặt nạ ban đầu này, giúp phục hồi lại mặt nạ phân vùng chính xác ($x_0$). Kiến trúc của SpineSegDiff bao gồm một mạng U-Net để khử nhiễu và một bộ mã hóa hình ảnh bổ sung để trích xuất các đặc trưng đa tỷ lệ từ ảnh MRI đầu vào.\\
+
+Nghiên cứu được thực hiện trên bộ dữ liệu công khai SPIDER, bao gồm ảnh MRI của 218 bệnh nhân bị đau thắt lưng với nhiều tình trạng bệnh lý khác nhau. Kết quả cho thấy SpineSegDiff đạt hiệu suất vượt trội so với các mô hình state-of-the-art không sử dụng diffusion như nnU-Net, đặc biệt là trong việc phân vùng đĩa đệm. Cụ thể, trên tập dữ liệu kết hợp T1w và T2w, SpineSegDiff đạt chỉ số Dice trung bình (mDICE) là \textbf{0.913}, cao hơn so với \textbf{0.890} của nnU-Net. Sự cải thiện rõ rệt nhất là ở lớp đĩa đệm (IVD), nơi SpineSegDiff đạt Dice score là \textbf{0.90} trong khi nnU-Net chỉ đạt \textbf{0.84}.\\
+
+Mô hình SpineSegDiff cho thấy nhiều ưu điểm nổi bật. Quan trọng nhất là độ chính xác cao trong việc phân vùng, đặc biệt là với các cấu trúc khó như đĩa đệm (IVD), một yếu tố then chốt trong chẩn đoán đau thắt lưng. Bên cạnh đó, nhờ áp dụng chiến lược tiền phân vùng, mô hình đã cải thiện đáng kể hiệu quả tính toán, giúp cân bằng giữa độ chính xác và tốc độ xử lý, làm tăng tính thực tiễn cho ứng dụng lâm sàng. Thêm vào đó, mô hình còn thể hiện tính linh hoạt khi có thể hoạt động hiệu quả trên cả ảnh MRI T1w và T2w mà không cần tùy chỉnh riêng.\\
+
+Tuy nhiên, mô hình vẫn tồn tại một số hạn chế cần khắc phục. Hạn chế lớn nhất là chi phí tính toán vẫn còn cao, có thể gây khó khăn cho việc triển khai rộng rãi. Đồng thời, hiệu suất của mô hình bị suy giảm đáng kể khi gặp phải các trường hợp bệnh lý nặng như trượt đốt sống hay hẹp đĩa đệm. Cuối cùng, các tác giả cũng chỉ ra rằng mô hình cần được kiểm chứng trên các tập dữ liệu lớn và đa dạng hơn để đảm bảo khả năng tổng quát hóa trên nhiều nhóm bệnh nhân và quy trình chụp ảnh khác nhau.\\
+\subsection{Phương pháp phân vùng nối tiếp có định hướng bởi cột mốc giải phẫu}
+Một hướng tiếp cận toàn diện hơn được giới thiệu bởi Warszawer, Molinier và các cộng sự~\cite{warszawer2025totalspineseg} với mô hình \textbf{TotalSpineSeg}. Đây là một công cụ mạnh mẽ được thiết kế để tự động phân vùng và gán nhãn cho toàn bộ các cấu trúc cột sống bao gồm đốt sống, đĩa đệm, tủy sống và ống sống trên ảnh MRI.\\
+
+Phương pháp cốt lõi của TotalSpineSeg dựa trên kiến trúc gồm \textbf{hai mô hình nnU-Net hoạt động nối tiếp (cascaded)}. Mô hình đầu tiên thực hiện việc phân vùng ban đầu cho các cấu trúc chính và đồng thời xác định vị trí của các đĩa đệm cột mốc quan trọng (C2-C3, C7-T1, T12-L1, và L5-S1). Các mốc này đóng vai trò như các điểm tham chiếu giải phẫu, tương tự như cách con người định vị.\\
+
+Điểm sáng tạo nhất của phương pháp này nằm ở bước tiếp theo. Đầu ra từ mô hình thứ nhất, cụ thể là mặt nạ của các \textit{đĩa đệm số lẻ (odd IVDs)}, được sử dụng làm một kênh đầu vào bổ sung cho mô hình thứ hai, bên cạnh ảnh MRI gốc. Mô hình thứ hai này được huấn luyện để phân biệt và phân vùng riêng biệt giữa các \textit{đốt sống số chẵn (even vertebrae)} và \textit{đốt sống số lẻ (odd vertebrae)}. Chiến lược này giải quyết một cách thông minh thách thức lớn nhất trong phân vùng cột sống: việc tách các đốt sống liền kề vốn có hình thái rất giống nhau. Cuối cùng, một thuật toán lặp (iterative algorithm) sẽ sử dụng các cột mốc đã được xác định để gán nhãn chính xác cho từng đốt sống và đĩa đệm đã được phân tách.\\
+
+Nghiên cứu được huấn luyện trên một bộ dữ liệu lớn gồm 1,404 ảnh MRI từ nhiều nguồn khác nhau. Về mặt hiệu suất, TotalSpineSeg đạt chỉ số Dice score là \textbf{0.88} cho đốt sống và \textbf{0.80} cho đĩa đệm. Tuy nhiên, kết quả ấn tượng nhất là \textbf{độ chính xác gán nhãn lên tới 99\%}, vượt trội đáng kể so với các phương pháp state-of-the-art khác. Kết quả này cho thấy mô hình không chỉ phân vùng tốt mà còn định danh chính xác vị trí của từng cấu trúc.\\
+
+Ưu điểm chính của TotalSpineSeg là độ chính xác gán nhãn gần như hoàn hảo và tính bền vững rất cao. Nhờ chiến lược tăng cường dữ liệu đa dạng, mô hình có khả năng tổng quát hóa tốt trên nhiều loại ảnh MRI với các độ tương phản, độ phân giải khác nhau, và thậm chí hoạt động được trên cả ảnh CT dù không được huấn luyện trực tiếp trên đó. Kiến trúc hai mô hình nối tiếp cũng là một giải pháp độc đáo và hiệu quả để tách các đốt sống liền kề. Hơn nữa, việc mô hình được công bố mã nguồn mở và tích hợp vào công cụ Spinal Cord Toolbox (SCT) giúp nó dễ dàng tiếp cận và ứng dụng trong cộng đồng nghiên cứu và lâm sàng.\\
+
+Mặc dù vậy, phương pháp này cũng có một số hạn chế. Các tác giả thừa nhận chất lượng của một phần dữ liệu huấn luyện, đặc biệt là cho ống sống, chưa tối ưu do được tạo ra bằng phương pháp đăng ký template, có thể dẫn đến sai sót. Ngoài ra, việc đánh giá định lượng hiệu suất phân vùng cho vùng cột sống cổ và ngực còn bị hạn chế do thiếu dữ liệu gán nhãn thủ công trong bộ dữ liệu kiểm thử. Cuối cùng, các chỉ số đánh giá phổ biến như Dice score có thể không phản ánh hoàn toàn chính xác hiệu suất trên các cấu trúc nhỏ như đĩa đệm.
+
+\subsection{Phương pháp phát hiện đối tượng bằng hồi quy trường vector}
+Một hướng tiếp cận khác biệt, tập trung vào việc định vị thay vì phân vùng chi tiết, được trình bày trong nghiên cứu \textbf{SpineNetV2} của Windsor và các cộng sự~\cite{windsor2022spinenetv2}. Mô hình này được xây dựng để tự động phát hiện và gán nhãn các đốt sống trên nhiều loại chuỗi xung và trường nhìn khác nhau của ảnh MRI.\\
+
+Phương pháp phát hiện đốt sống của SpineNetV2 không dựa trên segmentation mà sử dụng một kỹ thuật gọi là \textbf{Hồi quy trường Vector (Vector field regression - VFR)}. Thay vì tô màu từng pixel của đốt sống, một mạng U-Net được huấn luyện để dự đoán vị trí của các điểm mốc giải phẫu quan trọng: bốn góc và tâm của mỗi đốt sống trên từng lát cắt sagittal. Điểm cốt lõi của kỹ thuật này là mạng cũng dự đoán một trường vector tương ứng với mỗi góc, với các vector này về phía tâm của đốt sống mà nó thuộc về. Điều này cho phép nhóm các góc và tâm lại với nhau thành một thực thể đốt sống hoàn chỉnh một cách hiệu quả. Cuối cùng, các thực thể 2D này được liên kết lại với nhau qua các lát cắt bằng cách đo lường chỉ số Intersection-over-Union (IOU) để tạo thành các hộp giới hạn (bounding box) 3D.\\
+
+Đối với việc gán nhãn, SpineNetV2 sử dụng một phương pháp hai giai đoạn. Đầu tiên, một \textbf{mạng appearance} sẽ xem xét hình ảnh bên trong mỗi hộp giới hạn 3D và đưa ra một dự đoán xác suất ban đầu cho nhãn của đốt sống đó (ví dụ: L5, L4,...). Sau đó, các dự đoán này được sắp xếp theo chiều dọc để tạo ra một \textit{bản đồ xác suất-chiều cao}. Bản đồ này được đưa vào một \textbf{mạng context} để tinh chỉnh các dự đoán, cho phép mô hình xem xét vị trí tương đối của các đốt sống với nhau. Cuối cùng, một thuật toán tìm kiếm chùm  được sử dụng để tìm ra chuỗi nhãn hợp lý nhất về mặt giải phẫu (ví dụ: S1 phải ở dưới L5), giúp mô hình bền vững trước các trường hợp bị sót đốt sống.\\
+
+Về kết quả, SpineNetV2 cho thấy hiệu suất phát hiện và gán nhãn rất cao. Trên bộ dữ liệu Genodisc (ảnh thắt lưng), mô hình đạt Tỷ lệ Nhận dạng (Identification Rate - IDR) lên tới \textbf{98.4\%}. Trên bộ dữ liệu OWS (ảnh toàn bộ cột sống), IDR vẫn rất ấn tượng ở mức \textbf{96.5\%}, cho thấy khả năng tổng quát hóa tốt trên các trường nhìn rộng hơn.\\
+
+Ưu điểm lớn nhất của SpineNetV2 là độ chính xác gán nhãn cao và tính bền vững trên nhiều loại ảnh MRI và trường nhìn khác nhau. Kỹ thuật gán nhãn kết hợp appearance và context, cùng với beam search, là một giải pháp rất thông minh và không phụ thuộc vào việc phải nhìn thấy một đốt sống mỏ neo (như S1) trong ảnh. Ngoài ra, mô hình này rất nhanh, chỉ mất vài giây để xử lý một ca chụp, và được cung cấp dưới dạng mã nguồn mở, giúp tăng tính ứng dụng thực tế.\\
+
+Tuy nhiên, hạn chế chính của phương pháp này là nó tập trung vào việc phát hiện (detection) dưới dạng các hộp giới hạn thay vì phân vùng chi tiết ở cấp độ pixel (pixel-level segmentation). Điều này có nghĩa là SpineNetV2 cung cấp vị trí và nhãn của đốt sống, nhưng không cung cấp mặt nạ (mask) chính xác về hình dạng giải phẫu của chúng. Do đó, nếu mục tiêu của một ứng dụng là đo lường các thông số hình thái học chính xác hoặc phân tích kết cấu bên trong đốt sống, phương pháp này sẽ cần được kết hợp với một mô hình segmentation khác.\\
+
+\subsection{Phương pháp phân vùng ngữ nghĩa và thực thể kết hợp}
+\label{subsec:seg_concept}
+
+Trong bài toán phân vùng cột sống, các phương pháp truyền thống thường gặp khó khăn khi cố gắng phân tách trực tiếp từng đốt sống riêng biệt do sự tương đồng cao về hình thái giữa các đốt sống lân cận và sự thay đổi đa dạng của trường nhìn.
+
+Để giải quyết vấn đề này, một hướng tiếp cận tiên tiến hiện nay là sử dụng chiến lược phân vùng hai giai đoạn. Phương pháp này không gán nhãn thực thể ngay từ đầu mà chia quy trình thành hai bước xử lý tuần tự:
+
+\begin{enumerate}
+    \item \textbf{Giai đoạn phân vùng ngữ nghĩa:} 
+    Mạng nơ-ron đầu tiên tập trung vào việc phân loại từng điểm ảnh (voxel) vào các lớp giải phẫu chung (ví dụ: lớp "xương đốt sống", lớp "đĩa đệm", lớp "ống sống") mà không cần phân biệt thứ tự của chúng (không phân biệt L1 hay L2). Việc này giúp mô hình học các đặc trưng hình thái dễ dàng hơn.
+
+    \item \textbf{Giai đoạn phân vùng thực thể:}
+    Dựa trên bản đồ ngữ nghĩa thu được, một mô hình thứ hai được áp dụng để tách rời các cấu trúc dính liền. Điểm mấu chốt của phương pháp này là sử dụng kỹ thuật cửa sổ trượt  hoặc trích xuất bản cắt Thay vì cố gắng học vị trí tuyệt đối của đốt sống trong toàn bộ ảnh, mô hình chỉ quan sát một vùng cục bộ và xác định mối quan hệ tương đối (ví dụ: đốt sống trung tâm, đốt trên và đốt dưới).
+\end{enumerate}
+
+Cách tiếp cận dựa trên vị trí tương đối này giúp loại bỏ sự phụ thuộc vào số lượng đốt sống trong ảnh, cho phép thuật toán hoạt động ổn định trên cả các ảnh chụp khu trú (chỉ chụp thắt lưng) hoặc toàn trục cột sống.
+
+\textbf{Phương pháp phân vùng Zero-shot.} Trong xu hướng phát triển của các mô hình nền tảng, việc kết hợp thông tin ngữ nghĩa và hình ảnh đang mở ra hướng đi mới cho bài toán phân vùng y tế mà không cần dữ liệu huấn luyện có nhãn (Zero-shot). Điển hình cho hướng tiếp cận này là kiến trúc \textbf{MedCLIP-SAMv2} \cite{koleilat2025medclipsamv2}, một framework)tích hợp sức mạnh của mô hình Ngôn ngữ - Thị giác và mô hình phân vùng
+
+Phương pháp này giải quyết bài toán phân vùng thông qua quy trình ba giai đoạn chính:
+
+\begin{enumerate}
+    \item \textbf{Tinh chỉnh mô hình Vision-Language (BiomedCLIP):} 
+    Mô hình sử dụng BiomedCLIP làm backbone để mã hóa đặc trưng hình ảnh và văn bản. Để tăng cường khả năng phân biệt các đặc điểm y tế vi mô, tác giả đề xuất hàm mất mát mới \textit{Decoupled Hard Negative Noise Contrastive Estimation (DHN-NCE)}. Hàm này giúp mô hình tập trung học các mẫu khó  và cải thiện đáng kể độ chính xác trong việc so khớp giữa ảnh y tế và các câu lệnh văn bản mô tả vùng giải phẫu \cite{koleilat2025medclipsamv2}.
+
+    \item \textbf{Tạo gợi ý hình ảnh từ văn bản:} 
+    Thay vì sử dụng các phương pháp class activation map truyền thống, MedCLIP-SAMv2 áp dụng kỹ thuật \textit{Multi-modal Information Bottleneck (M2IB)}. Kỹ thuật này tối đa hóa thông tin chung giữa ảnh và văn bản để tạo ra bản đồ saliency map chất lượng cao, giúp định vị chính xác vùng quan tâm (ROI). Bản đồ này sau đó được xử lý để tạo ra các gợi ý hình ảnh (như bounding box hoặc điểm) cho bước tiếp theo.
+
+    \item \textbf{Phân vùng với Segment Anything Model (SAM):} 
+    Các gợi ý hình ảnh được đưa vào mô hình SAM để sinh ra mặt nạ phân vùng chi tiết (segmentation mask). Quá trình này hoàn toàn không yêu cầu huấn luyện lại SAM trên dữ liệu mới (Zero-shot). Ngoài ra, mô hình còn đề xuất cơ chế học giám sát yếu  bằng cách sử dụng nhãn giả (pseudo-labels) từ bước Zero-shot để huấn luyện mạng nnU-Net, giúp tinh chỉnh kết quả và ước lượng độ không chắc chắn  \cite{koleilat2025medclipsamv2}.
+\end{enumerate}
+
+Ưu điểm nổi bật của phương pháp này là khả năng tổng quát hóa cao trên đa dạng các phương thức hình ảnh (CT, MRI, X-ray, Siêu âm) mà không cần dữ liệu gán nhãn thủ công tốn kém. Tuy nhiên, như các kết quả thực nghiệm đã chỉ ra, độ chính xác biên dạng (boundary accuracy) của phương pháp Zero-shot này thường thấp hơn so với các mô hình chuyên biệt được huấn luyện có giám sát như U-Net hay TotalSpineSeg.
+
+\section{Các kỹ thuật phát hiện và khoanh vùng bất thường}
+
+Bên cạnh việc định vị các cấu trúc giải phẫu, các mô hình hiện đại còn hướng đến việc tự động đánh giá các dấu hiệu bệnh lý. Hướng tiếp cận phổ biến là xem đây như một bài toán phân loại trên các vùng ảnh đã được xác định trước.
+
+\subsection{Phương pháp phân loại trực tiếp trên khối ảnh 3D bằng CNN}
+
+Nghiên cứu SpineNetV2 của Windsor và các cộng sự~\cite{windsor2022spinenetv2} trình bày một phương pháp hiệu quả để tự động đánh giá (grading) hàng loạt các dấu hiệu thoái hóa cột sống phổ biến.\\
+
+Để thực hiện việc này, sau khi đã phát hiện và gán nhãn các đốt sống, mô hình sẽ tự động trích xuất các khối ảnh 3D tập trung vào từng đĩa đệm (Intervertebral Volumes - IVVs). Các khối ảnh này sau đó được chuẩn hóa về kích thước và đưa vào một mạng \textbf{CNN 3D} duy nhất. Kiến trúc này sử dụng một bộ backbone chung để trích xuất các đặc trưng hình ảnh từ khối ảnh, sau đó các đặc trưng này được đưa qua nhiều nhánh đầu ra (projection heads) khác nhau. Mỗi nhánh là một mạng MLP nhỏ, chịu trách nhiệm dự đoán cho một loại bệnh lý cụ thể, ví dụ như hẹp ống sống, thoát vị đĩa đệm, hay phân độ Pfirrmann. Cách tiếp cận đa nhiệm này cho phép mô hình học hỏi các đặc trưng dùng chung một cách hiệu quả và đưa ra dự đoán cho 8 loại bất thường khác nhau chỉ trong một lần xử lý.\\
+
+Kết quả cho thấy phương pháp này đạt được độ chính xác khá tốt trên nhiều hạng mục. Ví dụ, balanced accuracy cho việc phát hiện Trượt đốt sống là \textbf{95\%} và Thoát vị đĩa đệmlà \textbf{80.4\%}. Mô hình cũng có khả năng phân loại các bệnh lý có nhiều cấp độ như hẹp ống sống (4 cấp độ) với độ chính xác \textbf{64.9\%}.\\
+
+Ưu điểm lớn nhất của phương pháp này là tính hiệu quả và toàn diện. Chỉ với một mô hình duy nhất, SpineNetV2 có thể đưa ra đánh giá cho 8 loại bệnh lý khác nhau, giúp tiết kiệm đáng kể thời gian so với việc đánh giá thủ công. Việc sử dụng một bộ xương sống chung cho tất cả các tác vụ cũng giúp mô hình học được các đặc trưng hình ảnh mạnh mẽ và tổng quát về các dấu hiệu thoái hóa.\\
+
+Tuy nhiên, phương pháp này cũng có những hạn chế rõ ràng. Đầu tiên, nó chỉ hoạt động trên ảnh MRI T2-weighted vùng thắt lưng, làm giảm tính linh hoạt so với mô-đun phát hiện đốt sống. Thứ hai, hiệu suất của mô hình phụ thuộc hoàn toàn vào kết quả của giai đoạn phát hiện trước đó; nếu một đốt sống bị bỏ sót, đĩa đệm tương ứng sẽ không được đánh giá. Cuối cùng, độ chính xác trên các bài toán phân loại đa lớp (multi-class) như phân độ Pfirrmann (70.9\%) hay hẹp ống sống (64.9\%) vẫn còn khiêm tốn, cho thấy mô hình vẫn gặp khó khăn trong việc phân biệt các mức độ nghiêm trọng khác nhau của bệnh lý.\\
+
+\subsection{Phương pháp phát hiện bất thường dựa trên mô hình Ngôn ngữ-Thị giác Lớn MedGemma}
+
+Một hướng tiếp cận hoàn toàn mới cho việc phát hiện bất thường là sử dụng các Mô hình Ngôn ngữ-Thị giác lớn. Thay vì xây dựng các mô hình chuyên biệt cho từng tác vụ, hướng đi này sử dụng một mô hình nền tảng duy nhất có khả năng hiểu và lý luận trên cả hình ảnh và văn bản. Một ví dụ tiêu biểu cho phương pháp này là \textbf{MedGemma}, được giới thiệu trong báo cáo kỹ thuật của Google~\cite{google2025medgemma}.\\
+
+Không giống như các mô hình CNN 3D truyền thống, MedGemma không tiếp cận bài toán phát hiện bất thường như một tác vụ phân loại thông thường. Thay vào đó, nó biến bài toán thành một dạng \textbf{hỏi-đáp thị giác} theo phương pháp zero-shot. Cụ thể, thay vì huấn luyện mô hình để trả về một nhãn, người ta sẽ đưa cho mô hình hình ảnh y tế kèm theo một câu hỏi trực tiếp bằng ngôn ngữ tự nhiên, ví dụ: "Is there pneumothorax in this image?" (Có tràn khí màng phổi trong ảnh này không?). Mô hình sau đó sẽ tạo ra một câu trả lời dạng văn bản (ví dụ: "Yes" hoặc "No"). Cách làm này cho phép một mô hình duy nhất có thể phát hiện hàng loạt các loại bất thường khác nhau trên nhiều chuyên khoa (X-quang, da liễu, giải phẫu bệnh) mà không cần phải thiết kế lại kiến trúc hay huấn luyện lại từ đầu.\\
+
+MedGemma cho thấy hiệu suất rất cạnh tranh, đặc biệt khi so sánh với các mô hình nền tảng đa năng khác. Trong tác vụ phát hiện 5 bệnh lý phổ biến trên bộ dữ liệu X-quang ngực MIMIC-CXR, mô hình MedGemma 4B đạt chỉ số macro F1 là \textbf{88.9\%}. Đối với các chuyên khoa khác, mô hình đạt độ chính xác \textbf{71.8\%} trên bài toán phân loại các bệnh về da và \textbf{69.8\%} trên bài toán phân loại mẫu mô giải phẫu bệnh. Kết quả này cho thấy khả năng am hiểu đa chuyên khoa của một mô hình nền tảng duy nhất.\\
+
+Ưu điểm vượt trội của phương pháp này là tính \textbf{linh hoạt và tổng quát hóa}. MedGemma giống như một chuyên gia đa năng, có thể được áp dụng cho nhiều loại bệnh lý và nhiều loại ảnh khác nhau chỉ bằng cách thay đổi câu hỏi đầu vào. Khả năng zero-shot giúp giảm đáng kể nhu cầu về dữ liệu huấn luyện cho từng tác vụ cụ thể, một lợi thế cực lớn trong lĩnh vực y tế nơi dữ liệu gán nhãn rất khan hiếm và đắt đỏ. Hơn nữa, mô hình còn có khả năng lý giải cho câu trả lời của mình, tăng thêm tính minh bạch.\\
+
+Tuy nhiên, hạn chế lớn nhất và mang tính cốt lõi của phương pháp này là nó chỉ thực hiện việc phân loại chứ không thực hiện việc định vị. Nói cách khác, MedGemma có thể cho biết \textbf{có} một khối u trong ảnh, nhưng nó không chỉ ra được khối u đó \textbf{nằm ở đâu}. Nó không tạo ra bounding box hay mặt nạ phân vùng  cho vùng bất thường. Ngoài ra, dù rất mạnh mẽ, hiệu suất zero-shot của các mô hình nền tảng thường vẫn thấp hơn so với các mô hình chuyên biệt được huấn luyện kỹ lưỡng trên một tác vụ duy nhất.
+
+\section{Các giải pháp tiên tiến từ cuộc thi RSNA 2024}
+
+Gần đây, cuộc thi RSNA 2024 Lumbar Spine Degenerative Classification đã thúc đẩy sự phát triển của nhiều phương pháp học sâu hiện đại nhằm giải quyết bài toán phân loại thoái hóa cột sống thắt lưng với độ chính xác cao. Một trong những giải pháp top tiêu biểu là của \textbf{Ning Shen (nshen7)}, được công bố trên Kaggle \cite{nshen7_rsna2024}.\\
+
+Tác giả đề xuất kiến trúc hai bước: phân vùng đĩa đệm trước (segmentation) rồi mới phân loại mức độ thoái hóa (classification). Bước segmentation dùng \textbf{nnU-Net} để khoanh vùng quan tâm (ROI) cho từng đĩa đệm L1/L2 đến L5/S1; bước classification dùng một \textbf{CNN 2D} trên các lát cắt axial T2/STIR đã được crop. Đây là một trong những baseline mạnh nhất hiện có công khai trên RSNA 2024.\\
+
+Một điểm sáng tạo đáng chú ý của giải pháp này là chiến lược xử lý vấn đề mất cân bằng dữ liệu nghiêm trọng, khi tỷ lệ các ca bệnh nặng trong thực tế thường rất thấp. Tác giả đề xuất sử dụng hàm mất mát Cross-Entropy có trọng số, được định nghĩa như sau:
+\begin{equation}
+    L_{WCE} = - \frac{1}{N} \sum_{i=1}^{N} \sum_{c=1}^{C} w_c \cdot y_{i,c} \cdot \log(\hat{y}_{i,c})
+\end{equation}
+Trong đó, trọng số phạt $w_c$ được gán cao hơn cho các lớp thiểu số theo tỷ lệ 1:2:4 (tương ứng với các mức độ từ nhẹ đến nặng). Việc áp dụng trọng số $w_{Severe} = 4$ ép buộc mô hình phải cập nhật tham số mạnh mẽ hơn đối với các ca bệnh nặng, giúp cải thiện đáng kể độ nhạy và giảm thiểu tỷ lệ bỏ sót bệnh trong chẩn đoán lâm sàng.\\
+
+Tác giả báo cáo Mean F1 macro khoảng 0.42 trên 5 nhãn RSNA và Severe F1 = 0.501 (cho riêng Spinal Canal Stenosis). Lưu ý rằng chỉ số Severe F1 0.501 được tính trên một condition cụ thể, trong khi báo cáo này tính macro qua cả 3 conditions chính (canal + left/right foraminal) nên số 0.343 ở Chương 5 không hoàn toàn so sánh trực tiếp. Tác giả công bố mã nguồn trên Kaggle nhưng \emph{chưa qua bình duyệt chính thức (peer-review)}, nên rất khó đánh giá độ tin cậy về methodology.
+
+% \section{Đối chiếu các công trình liên quan với mục tiêu đề tài}
+% Phần này tổng hợp xem các công trình đã khảo sát trong các mục trước đáp ứng được những mục tiêu nào của đề tài (đã trình bày ở Chương 1) và còn thiếu sót ở đâu, từ đó biện minh cho lựa chọn pipeline và các đóng góp tinh chỉnh sâu của báo cáo.
+
+% \begin{table}[h!]
+% \centering
+% \caption{Đối chiếu mô hình tham khảo với mục tiêu đề tài.}
+% \label{tab:rw_objectives}
+% \renewcommand{\arraystretch}{1.3}
+% \setlength{\tabcolsep}{4pt}
+% \begin{tabular}{p{3.5cm}cccc}
+% \toprule
+% \textbf{Mô hình} & \textbf{Phân vùng} & \textbf{Phát hiện} & \textbf{Tổng quát} & \textbf{Mở rộng} \\
+%  & \textbf{giải phẫu} & \textbf{bất thường} & \textbf{cross-domain} & \textbf{nhãn mới} \\
+% \midrule
+% TotalSpineSeg & \checkmark Tốt & -- & \checkmark Vừa & -- \\
+% SPINEPS & \checkmark Vừa & -- & \checkmark Vừa & -- \\
+% SpineSegDiff & \checkmark Tốt & -- & - & -- \\
+% SpineNetV2 & ? Bounding box & \checkmark Vừa & ? Hạn chế & -- \\
+% MedGemma & -- & \checkmark Yếu & \checkmark Tốt & \checkmark VQA \\
+% MedCLIP-SAMv2 & \checkmark Vừa & -- & \checkmark Tốt & \checkmark Zero-shot \\
+% Ning Shen (Kaggle) & \checkmark Vừa & \checkmark Tốt & ? Hạn chế & -- \\
+% \midrule
+% \textbf{Báo cáo này (Hybrid)} & --$^a$ & \checkmark \textbf{Tốt} & \checkmark \textbf{Tốt} & \checkmark \textbf{Transfer} \\
+% \bottomrule
+% \end{tabular}\\[1mm]
+% {\footnotesize $^a$ Đóng góp tinh chỉnh không trực tiếp làm segmentation; sử dụng output từ TotalSpineSeg.}
+% \end{table}
+
+% Từ bảng trên có thể rút ra một số nhận xét:
+% \begin{itemize}
+%     \item Không có một mô hình nào đáp ứng được \emph{cả 4 mục tiêu} cùng lúc, đây là lí do đề tài cần một pipeline đa-stage thay vì một mô hình duy nhất.
+%     \item Pipeline đề xuất giải quyết phần phân vùng giải phẫu bằng cách chọn TotalSpineSeg (mạnh nhất trên metric Precision và ASSD).
+%     \item Phần phát hiện bất thường có hai ứng cử viên , SpineNetV2 (chuyên biệt, 9-10 nhãn lâm sàng) và Ning Shen (hiệu năng cao hơn trên RSNA nhưng chỉ 5 nhãn). Báo cáo chọn SpineNetV2 vì phạm vi rộng hơn và mã nguồn mở.
+%     \item Phần tổng quát cross-domain và mở rộng nhãn mới chưa được giải quyết tốt bởi bất kì baseline nào. Đây là khoảng trống mà báo cáo này đề xuất giải pháp Hybrid CBAM + BiomedCLIP và đánh giá transfer learning trên SPIDER.
+% \end{itemize}
+
+% Cụ thể, đối chiếu mục tiêu (Mục 1.2) với những gì các baseline có sẵn:
+% \begin{itemize}
+%     \item Mục tiêu tự động gán nhãn và phân vùng: TotalSpineSeg + SpineNetV2 đã đáp ứng được. Đóng góp tinh chỉnh không thay đổi phần này.
+%     \item Mục tiêu highlight bất thường: Trên ablation 4 cấu hình của báo cáo (Chương 5), Mean F1 macro tăng từ \textbf{0.343} (Baseline) lên \textbf{0.474} (Hybrid), tương ứng cải thiện $+0.131$ absolute. Đáng kể nhất là Severe Recall tăng từ \textbf{11.5\%} lên \textbf{46.4\%} , cải thiện $\sim 4$ lần, có ý nghĩa lâm sàng rõ rệt.
+%     \item Mục tiêu tăng cường độ tin cậy và hiệu quả: chưa có baseline nào đánh giá cross-dataset rigorous. Báo cáo này cung cấp evidence statistical cho việc lựa chọn cấu hình triển khai.
+%     \item Mục tiêu hệ thống tương tác: đây là phần liên quan đến giao diện cho bác sĩ, không có baseline nào tích hợp UI, đây là khoảng trống lớn cho hướng phát triển tương lai (Chương 6).
+% \end{itemize}

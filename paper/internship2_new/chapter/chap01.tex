@@ -1,0 +1,70 @@
+\chapter{GIỚI THIỆU ĐỀ TÀI}
+
+\section{Giới thiệu chung}
+Đề tài  tập trung vào việc phát triển một công cụ phần mềm ứng dụng Trí tuệ nhân tạo (AI) để tự động hóa và hỗ trợ quá trình gán nhãn các cấu trúc giải phẫu và các vùng bất thường trên ảnh y tế (X-quang, MRI, CT) của bệnh nhân đau thắt lưng. Công cụ này được xây dựng như một hệ thống hỗ trợ hiệu quả cho các bác sĩ trong quá trình chẩn đoán và phân tích hình ảnh, nhằm nâng cao độ chính xác và tiết kiệm thời gian.
+
+\section{Mục tiêu và nhiệm vụ của đề tài}
+\subsection*{Mục tiêu chính}
+\begin{itemize}
+    \item \textbf{Tự động gán nhãn và phân vùng:} Phát triển khả năng tự động phân vùng và gán nhãn các cấu trúc sinh học của cột sống (ví dụ: đốt sống, đĩa đệm, tủy sống, dây thần kinh) trên các loại ảnh y tế.
+    \item \textbf{Highlight bất thường:} Tự động phát hiện và làm nổi bật các vùng có dấu hiệu bất thường (ví dụ: thoát vị đĩa đệm, hẹp ống sống, khối u, viêm nhiễm) để bác sĩ dễ dàng nhận biết.
+    \item \textbf{Tăng cường độ tin cậy và hiệu quả:} Hỗ trợ bác sĩ giảm thời gian đọc ảnh và tăng cường độ chính xác trong việc xác định các vùng cần chú ý, từ đó cải thiện quá trình chẩn đoán cuối cùng.
+    \item \textbf{Hệ thống tương tác:} Cung cấp giao diện cho phép bác sĩ chỉnh sửa, điều chỉnh các nhãn và vùng phân vùng mà AI đã tạo ra.
+\end{itemize}
+
+\subsection*{Các điểm trọng tâm của công cụ/giải pháp}
+\begin{itemize}
+    \item \textbf{Input:} Tập hợp các ảnh y tế (X-quang, MRI, CT) của bệnh nhân đau thắt lưng. Các loại ảnh này có thể khác nhau về tín hiệu, độ phức tạp và hướng chụp (ngang, dọc, cắt lớp). Có thể thu hẹp phạm vi để tập trung vào một loại ảnh cụ thể.
+    \item \textbf{Output:}
+    \begin{itemize}
+        \item Một công cụ phần mềm với giao diện người dùng trực quan cho bác sĩ.
+        \item Ảnh y tế đã được tô màu hoặc phân vùng rõ ràng các cấu trúc sinh học của cột sống.
+        \item Các vùng bất thường được đánh dấu (ví dụ: highlight, khoanh vùng) trực tiếp trên ảnh.
+    \end{itemize}
+    \item \textbf{Tính năng tương tác và lưu trữ:}
+    \begin{itemize}
+        \item Cho phép bác sĩ chỉnh sửa các nhãn đã được AI gán (ví dụ: thay đổi tên nhãn, điều chỉnh vùng khoanh).
+        \item Cho phép bác sĩ thay đổi kích thước và vị trí của vùng tô màu/phân vùng.
+        \item Có khả năng xuất ra ảnh gốc và ảnh đã dán nhãn độc lập, thuận tiện cho việc lưu trữ và chia sẻ.
+    \end{itemize}
+\end{itemize}
+
+\section{Giới hạn của đề tài}
+\begin{itemize}
+    \item \textbf{Loại dữ liệu y tế:} Đề tài chỉ tập trung vào việc phân tích và gán nhãn trên \textbf{hình ảnh Cộng hưởng từ (MRI)}. Đây là một hạn chế của đề tài vì chưa mở rộng khả năng áp dụng trên các phương pháp chẩn đoán hình ảnh phổ biến khác cho bệnh đau thắt lưng như X-quang và CT scan.
+    \item \textbf{Phạm vi giải phẫu:} Nghiên cứu giới hạn trong việc phân tích các cấu trúc giải phẫu của cột sống, đặc biệt là vùng thắt lưng.
+\end{itemize}
+
+\section{Đóng góp của đề tài}
+\subsection*{Đóng góp chính của đề tài}
+Báo cáo đóng góp các kết quả nghiên cứu cụ thể sau:
+\begin{enumerate}
+    \item \textbf{Tinh chỉnh module grading với CBAM}: Tích hợp cơ chế attention (CBAM) vào backbone 3D Resnet-34 của SpinetNetV2, giúp cái thiện đáng kể độ nhạy với nhóm bệnh lý nặng.
+    \item \textbf{Kiến trúc hybrid}: Đề xuất kế hợp nhánh CBAM-3D Resnet-34 với nhánh BiomedCLIP. Chứng minh khả năng tổng quát hóa 2 bộ dữ liệu độc lập, đồng thời mở được phạm
+    vi chuẩn đoán so với baseline.
+    \item \textbf{Pipeline xử lí mất cân bằng lớp}: Kết hợp Focal loss, uncertainty loss và minority oversample để giải quyết vấn đề Severe class chỉ chiếm ~4\% mẫu trên dataset RSNA.
+\end{enumerate}
+\subsection*{Các bước thực hiện}
+\begin{enumerate}
+    \item \textbf{Nghiên cứu tổng quan:} Nghiên cứu sâu về giải phẫu cột sống vùng thắt lưng và các dấu hiệu hình ảnh của các nguyên nhân phổ biến gây đau thắt lưng (thoát vị đĩa đệm, hẹp ống sống, thoái hóa) để hiểu rõ các yếu tố cần gán nhãn.
+    \item \textbf{Thu thập dữ liệu:} Tìm kiếm, xác định và thu thập các bộ dữ liệu ảnh MRI, X-quang, và/hoặc CT của cột sống có sẵn công khai (Open dataset), ưu tiên các bộ dữ liệu đã có chú thích.
+    \item \textbf{Khảo sát kỹ thuật và mô hình AI:}
+    \begin{itemize}
+        \item Nghiên cứu các kỹ thuật và mô hình học sâu (Deep Learning) tiên tiến trong lĩnh vực phân vùng ảnh y tế.
+        \item Khảo sát các phương pháp phát hiện và khoanh vùng bất thường.
+        \item Tập trung vào các nghiên cứu và mô hình được công bố trong khoảng 3 năm gần nhất (2023-nay) và tham khảo các bài báo khoa học liên quan.
+    \end{itemize}
+\end{enumerate}
+
+\subsection*{Những thách thức và câu hỏi nghiên cứu}
+
+Đề tài hướng tới giải quyết các thách thức và câu hỏi nghiên cứu quan trọng sau:
+\begin{itemize}
+    \item \textbf{Độ chính xác của gán nhãn:} Làm thế nào để đảm bảo mô hình AI nhận diện và phân vùng các cấu trúc sinh học một cách chính xác và đáng tin cậy trên các ảnh phức tạp hoặc có độ phân giải khác nhau?
+    \item \textbf{Xác định tiêu chí bất thường:} Cần định nghĩa rõ ràng các đặc điểm hình ảnh cụ thể cho từng loại bất thường để mô hình có thể học.
+    \item \textbf{Khả năng tổng quát hóa:} Làm thế nào để đảm bảo mô hình hoạt động tốt trên các loại ảnh (X-quang, MRI, CT) và các góc chụp khác nhau?
+    \item \textbf{Vấn đề dữ liệu:} Làm thế nào để giải quyết vấn đề tìm kiếm và sử dụng các bộ dữ liệu công khai chất lượng cao, phù hợp với các cấu trúc và bất thường cần quan tâm?
+    \item \textbf{Vấn đề mất cân bằng lớp:} Làm thế nào để mô hình học được các lớp hiếm (như Severe trên RSNA chỉ chiếm $\sim$4\%) mà không bị thiên lệch sang các lớp đa số?
+    \item \textbf{Đánh giá khả năng tổng quát cross-dataset:} Mô hình huấn luyện trên một dataset có thực sự chuyển giao tốt sang dataset khác (nhãn khác, phân bố khác) hay không?
+    \item \textbf{Tích hợp phản hồi từ chuyên gia (Tùy chọn):} Làm thế nào để xây dựng cơ chế hiệu quả nhằm thu thập phản hồi từ bác sĩ và sử dụng chúng để cập nhật, cải thiện mô hình một cách liên tục?
+\end{itemize}

@@ -1,0 +1,112 @@
+<meta charset="utf-8">
+<title>Paper 122 - Response to reviewers</title>
+
+<h1 style="font-family:Arial,sans-serif;font-size:16pt;font-weight:bold;color:#000;margin-bottom:4pt">Response to reviewers</h1>
+
+<p style="font-family:Arial,sans-serif;font-size:11pt;color:#000;margin-top:0;margin-bottom:12pt">MIWAI 2026, paper 122<br>
+A Two-Branch Hybrid Model for Imbalanced Lumbar Disc Grading and Zero-Shot Label Extension<br>
+Trung Kien Ha, Trong Nhan Phan</p>
+
+<p style="font-family:Arial,sans-serif;font-size:11pt;color:#000">We thank the three reviewers for reading the paper closely. We have revised the paper following their comments, and reply to each one below.</p>
+
+<p style="font-family:Arial,sans-serif;font-size:11pt;color:#000">Section, equation and table numbers refer to the camera-ready version. We did not rerun any experiment, so all reported result values are the same as in the submitted paper except for one new row in Table 3 (Severe Recall), which was computed from the runs we already had.</p>
+
+<h2 style="font-family:Arial,sans-serif;font-size:13pt;font-weight:bold;color:#000;margin-top:18pt;margin-bottom:6pt">Reviewer 1</h2>
+
+<table style="border-collapse:collapse;width:100%">
+<tr>
+<td style="border:1px solid #999999;padding:6px;width:25%;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;font-weight:bold;color:#000;margin:0">Comment</p></td>
+<td style="border:1px solid #999999;padding:6px;width:52%;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;font-weight:bold;color:#000;margin:0">Our reply</p></td>
+<td style="border:1px solid #999999;padding:6px;width:23%;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;font-weight:bold;color:#000;margin:0">Where</p></td>
+</tr>
+
+<tr>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">C1. All metrics remain low, which suggests the model's predictive power can be equivalent to a mere guessing.</p></td>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">We do not think the model is guessing. On the Severe class it reaches AUC 0.899 and AUPRC 0.333, while Severe prevalence is only about 5%. A random classifier gives AUC 0.5 and AUPRC around 0.05, so the AUPRC is roughly 6.7 times chance. Macro-F1 looks low because we keep the task in its original form: three classes, the native 5% Severe rate, and macro averaging rather than accuracy. We did not resample the test set or merge classes to make the numbers look better.</p></td>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">Sec. 4.2, paragraph after Table 3; Severe AUC and AUPRC rows of Table 3.</p></td>
+</tr>
+
+<tr>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">C2. Notation in Section 3.1 is not defined clearly. Rewrite equations with number labelling and define the notation.</p></td>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">Rewritten. The three expressions that used to be inline are now numbered display equations (1) to (3), and every symbol is defined where it first appears: the encoder, the embedding dimension, the head, the label set, the prompts, the text anchors and the logit scale.</p></td>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">Sec. 3.1, Eq. (1) to (3).</p></td>
+</tr>
+
+<tr>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">C3. Why use a capital letter in S for the word severe?</p></td>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">Severe is the class name used by RSNA 2024, where the three grades are Normal/Mild, Moderate and Severe. We capitalise it when we mean the dataset label and not the ordinary adjective, and we checked that this is consistent throughout the paper. We kept it as it is.</p></td>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">No change made, explanation only.</p></td>
+</tr>
+
+<tr>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">C4. What is the c and d in the feature map of the CBAM block?</p></td>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">We have made the notation explicit. The CBAM input is now written as a rank-4 tensor with C channels over a grid of depth D, height H and width W. The c in Eq. (1) is the head function, while d is the embedding dimension (512, see Table 2); neither denotes the CBAM channel count C.</p></td>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">Sec. 3.1, after Eq. (1); Sec. 3.2, before Eqs. (4) and (5).</p></td>
+</tr>
+
+<tr>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">C5. The Hybrid's F1 (0.527) only exceeds others by 0.045, not 4.5 points.</p></td>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">Correct, and we have fixed it. F1 is on a 0 to 1 scale, so the gap is 0.045 to 0.050 in absolute macro-F1. The phrase "4.5 points" is gone.</p></td>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">Sec. 4.2, first sentence after Table 3.</p></td>
+</tr>
+
+<tr>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">C6. The paper claims Severe Recall improves about 4 times (12.3% to 48.6%) but Table 3 has no Severe recall row.</p></td>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">Added. Table 3 now carries a Severe Recall row next to the existing Severe F1 row, with 0.123, 0.288, 0.316 and 0.486 for the four configurations. The values come from the same three seeds as the rest of the table. We report the row on the 0 to 1 scale so that it matches every other row of that table; the running text still quotes the same numbers as 12.3% and 48.6%.</p></td>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">Table 3, new Severe Recall row.</p></td>
+</tr>
+</table>
+
+<h2 style="font-family:Arial,sans-serif;font-size:13pt;font-weight:bold;color:#000;margin-top:18pt;margin-bottom:6pt">Reviewer 2</h2>
+
+<table style="border-collapse:collapse;width:100%">
+<tr>
+<td style="border:1px solid #999999;padding:6px;width:25%;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;font-weight:bold;color:#000;margin:0">Comment</p></td>
+<td style="border:1px solid #999999;padding:6px;width:52%;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;font-weight:bold;color:#000;margin:0">Our reply</p></td>
+<td style="border:1px solid #999999;padding:6px;width:23%;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;font-weight:bold;color:#000;margin:0">Where</p></td>
+</tr>
+
+<tr>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">C1. A deeper discussion of computational cost.</p></td>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">Training is parameter-efficient: only about 1.18 M of 260 M parameters are updated, since both backbones stay frozen, although both still run at inference. Inference is not cheap, because both backbones still have to run. The Hybrid takes 66.4 ms per IVD, about the same as the single-branch variants, and peak GPU memory is around 16 GB. The Discussion now states both sides.</p></td>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">Discussion, new sentence on inference cost; Table 2; Table 5; hardware row of the configuration table.</p></td>
+</tr>
+
+<tr>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">C2. Prompt engineering sensitivity.</p></td>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">We used a single prompt template, fixed before evaluating on SPIDER and not tuned using SPIDER examples or results. So the reported numbers are not prompt-optimised. On the other hand we have not tested paraphrases, prompt ensembles or learned prompts, so we cannot say how stable the results are. We now state this as a limitation rather than leaving it out.</p></td>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">Discussion, limitations paragraph; Sec. 4.3.</p></td>
+</tr>
+
+<tr>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">C3. Broader comparisons with recent vision-language medical foundation models.</p></td>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">We picked BiomedCLIP because it is publicly available and gives a shared image-text space that fits our slice-based input. Section 2 positions it against RadCLIP and the lumbar-specific CLIP work. A fair comparison with newer medical vision-language backbones would mean rerunning every configuration with each alternative backbone, which we could not do in the time available, so we name it as future work instead of adding a partial comparison.</p></td>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">Sec. 2; Discussion, future work.</p></td>
+</tr>
+</table>
+
+<h2 style="font-family:Arial,sans-serif;font-size:13pt;font-weight:bold;color:#000;margin-top:18pt;margin-bottom:6pt">Reviewer 3</h2>
+
+<table style="border-collapse:collapse;width:100%">
+<tr>
+<td style="border:1px solid #999999;padding:6px;width:25%;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;font-weight:bold;color:#000;margin:0">Comment</p></td>
+<td style="border:1px solid #999999;padding:6px;width:52%;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;font-weight:bold;color:#000;margin:0">Our reply</p></td>
+<td style="border:1px solid #999999;padding:6px;width:23%;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;font-weight:bold;color:#000;margin:0">Where</p></td>
+</tr>
+
+<tr>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">C1. The zero-shot claim depends on the fused representation staying aligned with the BiomedCLIP text space, but the fusion MLP is trained through task-specific supervised heads and no loss explicitly constrains its output to match text embeddings.</p></td>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">We have made the procedure explicit. For the Multimodal-only and Hybrid configurations there is no linear head: the supervised RSNA loss is already a focal loss on cosine logits against the frozen BiomedCLIP text anchors, Eq. (3). Training therefore does pull the fused embedding toward the text embeddings of the source labels. What we do not have is an additional image-text contrastive objective, so nothing forces alignment with arbitrary unseen prompts. Compatibility holds for the source anchors and is only partial for distant prompts, which is what Table 4 shows. We rewrote Sections 3.1 to 3.3 so the training procedure is stated explicitly, and added a limitation naming a dedicated alignment loss as future work.</p></td>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">Sec. 3.1, Eq. (2) for the baselines against Eq. (3) for Multimodal and Hybrid; Sec. 3.2, task heads; Sec. 3.3; Discussion; Table 4.</p></td>
+</tr>
+
+<tr>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">C2. Explain why cosine similarity between the fused representation and unseen prompts should be semantically meaningful.</p></td>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">For source prompts the answer is direct: cosine is exactly what the training objective optimises, so the geometry is not accidental. For unseen prompts the property carries over only as far as the new label is semantically close to a source anchor, and we do not claim a general guarantee. Table 4 shows both sides. On disc-morphology labels that are close to the RSNA schema, cosine scoring reaches mean F1 0.587 against 0.433 for off-the-shelf BiomedCLIP, but across all eight labels the Hybrid falls below the off-the-shelf model, 0.362 against 0.394. We report the weaker case as well.</p></td>
+<td style="border:1px solid #999999;padding:6px;vertical-align:top"><p style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:0">Sec. 3.1 and 3.2; Sec. 4.3 and Table 4; Discussion.</p></td>
+</tr>
+</table>
+
+
+
+<p style="font-family:Arial,sans-serif;font-size:11pt;color:#000;margin-top:12pt">The comments were useful, in particular C4 to C6 of Reviewer 1 and C1 of Reviewer 3, and we think the paper is clearer for them.</p>

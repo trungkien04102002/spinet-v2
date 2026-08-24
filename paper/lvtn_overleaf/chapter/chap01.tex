@@ -1,0 +1,80 @@
+\chapter{GIỚI THIỆU ĐỀ TÀI}
+
+\section{Giới thiệu chung}
+Đề tài  tập trung vào việc phát triển một công cụ phần mềm ứng dụng Trí tuệ nhân tạo (AI) để tự động hóa và hỗ trợ quá trình gán nhãn các cấu trúc giải phẫu và các vùng bất thường trên ảnh y tế (X-quang, MRI, CT) của bệnh nhân đau thắt lưng. Công cụ này được xây dựng như một hệ thống hỗ trợ hiệu quả cho các bác sĩ trong quá trình chẩn đoán và phân tích hình ảnh, nhằm nâng cao độ chính xác và tiết kiệm thời gian.
+
+Đề tài đề xuất một pipeline gồm hai mô-đun chính: TotalSpineSeg cho phân vùng cột sống và một mô-đun grading dựa trên SpineNetV2 đã được tinh chỉnh sâu để đánh giá các bệnh lý thoái hóa. Báo cáo này tập trung tinh chỉnh sâu mô-đun grading dùng kết hợp cơ chế chú ý CBAM và prior từ mô hình vision-language y khoa BiomedCLIP, nhằm cải thiện hiệu năng trên nhóm bệnh nặng (Severe class) và kiểm chứng khả năng tổng quát hóa qua hai bộ dữ liệu độc lập (RSNA 2024 và SPIDER). Báo cáo cũng khảo sát một mô hình Vision-Language lớn (MedGemma) như giải pháp thay thế cho mô-đun grading, nhưng kết quả thực nghiệm cho thấy MedGemma chưa phù hợp cho bài toán cụ thể này (xem Chương 5) nên không nằm trong pipeline đề xuất. Việc xây dựng giao diện phần mềm hoàn chỉnh cho bác sĩ là một hướng phát triển tiếp theo, không nằm trong phạm vi báo cáo này.
+
+\section{Mục tiêu và nhiệm vụ của đề tài}
+\subsection*{Mục tiêu chính}
+\begin{itemize}
+    \item \textbf{Tự động gán nhãn và phân vùng:} Phát triển khả năng tự động phân vùng và gán nhãn các cấu trúc sinh học của cột sống (ví dụ: đốt sống, đĩa đệm, tủy sống, dây thần kinh) trên các loại ảnh y tế.
+    \item \textbf{Highlight bất thường:} Tự động phát hiện và làm nổi bật các vùng có dấu hiệu bất thường (ví dụ: thoát vị đĩa đệm, hẹp ống sống, khối u, viêm nhiễm) để bác sĩ dễ dàng nhận biết.
+    \item \textbf{Tăng cường độ tin cậy và hiệu quả:} Hỗ trợ bác sĩ giảm thời gian đọc ảnh và tăng cường độ chính xác trong việc xác định các vùng cần chú ý, từ đó cải thiện quá trình chẩn đoán cuối cùng.
+    \item \textbf{Hệ thống tương tác:} Cung cấp giao diện cho phép bác sĩ chỉnh sửa, điều chỉnh các nhãn và vùng phân vùng mà AI đã tạo ra.
+\end{itemize}
+
+\subsection*{Các điểm trọng tâm của công cụ/giải pháp}
+\begin{itemize}
+    \item \textbf{Input:} Tập hợp các ảnh y tế (X-quang, MRI, CT) của bệnh nhân đau thắt lưng. Các loại ảnh này có thể khác nhau về tín hiệu, độ phức tạp và hướng chụp (ngang, dọc, cắt lớp). Có thể thu hẹp phạm vi để tập trung vào một loại ảnh cụ thể.
+    \item \textbf{Output:}
+    \begin{itemize}
+        \item[$\circ$] Một công cụ phần mềm với giao diện người dùng trực quan cho bác sĩ.
+        \item[$\circ$] Ảnh y tế đã được tô màu hoặc phân vùng rõ ràng các cấu trúc sinh học của cột sống.
+        \item[$\circ$] Các vùng bất thường được đánh dấu (ví dụ: highlight, khoanh vùng) trực tiếp trên ảnh.
+    \end{itemize}
+    \item \textbf{Tính năng tương tác và lưu trữ:}
+    \begin{itemize}
+        \item[$\circ$] Cho phép bác sĩ chỉnh sửa các nhãn đã được AI gán (ví dụ: thay đổi tên nhãn, điều chỉnh vùng khoanh).
+        \item[$\circ$] Cho phép bác sĩ thay đổi kích thước và vị trí của vùng tô màu/phân vùng.
+        \item[$\circ$] Có khả năng xuất ra ảnh gốc và ảnh đã dán nhãn độc lập, thuận tiện cho việc lưu trữ và chia sẻ.
+    \end{itemize}
+\end{itemize}
+
+\section{Giới hạn của đề tài}
+\begin{itemize}
+    \item \textbf{Loại dữ liệu y tế:} Đề tài chỉ tập trung vào việc phân tích và gán nhãn trên \textbf{hình ảnh Cộng hưởng từ (MRI)}. Đây là một hạn chế của đề tài vì chưa mở rộng khả năng áp dụng trên các phương pháp chẩn đoán hình ảnh phổ biến khác cho bệnh đau thắt lưng như X-quang và CT scan.
+    \item \textbf{Phạm vi giải phẫu:} Nghiên cứu giới hạn trong việc phân tích các cấu trúc giải phẫu của cột sống, đặc biệt là vùng thắt lưng.
+\end{itemize}
+
+\section{Đóng góp của đề tài}
+\subsection*{Đóng góp chính của đề tài}
+Báo cáo đóng góp các kết quả nghiên cứu cụ thể sau:
+\begin{enumerate}
+    \item \textbf{Tinh chỉnh mô-đun grading với CBAM}: Tích hợp cơ chế attention (CBAM) vào backbone 3D ResNet-34 của SpineNetV2, giúp cải thiện đáng kể độ nhạy với nhóm bệnh lý nặng.
+    \item \textbf{Kiến trúc hybrid}: Đề xuất kết hợp nhánh CBAM-3D ResNet-34 với nhánh BiomedCLIP. Chứng minh khả năng tổng quát hóa trên 2 bộ dữ liệu độc lập, đồng thời mở rộng được phạm vi chẩn đoán so với baseline.
+    \item \textbf{Pipeline xử lý mất cân bằng lớp}: Kết hợp Focal Loss, Uncertainty Loss và minority oversampling để giải quyết vấn đề lớp Severe chỉ chiếm $\sim$4\% mẫu trên dataset RSNA.
+\end{enumerate}
+
+\subsection*{Các bước thực hiện}
+\begin{enumerate}
+    \item \textbf{Nghiên cứu tổng quan:} Nghiên cứu sâu về giải phẫu cột sống vùng thắt lưng và các dấu hiệu hình ảnh của các nguyên nhân phổ biến gây đau thắt lưng (thoát vị đĩa đệm, hẹp ống sống, thoái hóa) để hiểu rõ các yếu tố cần gán nhãn.
+    \item \textbf{Thu thập dữ liệu:} Tìm kiếm, xác định và thu thập các bộ dữ liệu ảnh MRI, X-quang, và/hoặc CT của cột sống có sẵn công khai (Open Dataset), ưu tiên các bộ dữ liệu đã có chú thích.
+    \item \textbf{Khảo sát kỹ thuật và mô hình AI:}
+    \begin{itemize}
+        \item Nghiên cứu các kỹ thuật và mô hình học sâu (Deep Learning) tiên tiến trong lĩnh vực phân vùng ảnh y tế (Medical Image Segmentation).
+        \item Khảo sát các phương pháp phát hiện và khoanh vùng bất thường (Anomaly Detection/Segmentation), đặc biệt trong bối cảnh ít dữ liệu.
+        \item Tập trung vào các nghiên cứu và mô hình được công bố trong khoảng 3 năm gần nhất (2023-nay) và tham khảo các bài báo khoa học liên quan.
+    \end{itemize}
+    \item \textbf{Tinh chỉnh và đánh giá thực nghiệm:} Triển khai kiến trúc Hybrid CBAM + BiomedCLIP, huấn luyện trên RSNA 2024 (4 cấu hình ablation), đánh giá transfer learning trên SPIDER 8-label với 3-seed evaluation.
+\end{enumerate}
+
+\subsection*{Những thách thức và câu hỏi nghiên cứu}
+Đề tài hướng tới giải quyết các thách thức và câu hỏi nghiên cứu quan trọng sau:
+\begin{itemize}
+    \item \textbf{Độ chính xác của gán nhãn:} Làm thế nào để đảm bảo mô hình AI nhận diện và phân vùng các cấu trúc sinh học một cách chính xác và đáng tin cậy trên các ảnh phức tạp hoặc có độ phân giải khác nhau?
+    \item \textbf{Xác định tiêu chí "bất thường":} Cần định nghĩa rõ ràng các đặc điểm hình ảnh cụ thể cho từng loại bất thường để mô hình có thể học. Điều này đòi hỏi sự hợp tác chặt chẽ với các chuyên gia y tế.
+    \item \textbf{Khả năng tổng quát hóa:} Làm thế nào để đảm bảo mô hình hoạt động tốt trên các loại ảnh (X-quang, MRI, CT) và các góc chụp khác nhau?
+    \item \textbf{Vấn đề dữ liệu:} Làm thế nào để giải quyết vấn đề tìm kiếm và sử dụng các bộ dữ liệu công khai chất lượng cao, phù hợp với các cấu trúc và bất thường cần quan tâm?
+    \item \textbf{Vấn đề mất cân bằng lớp:} Làm thế nào để mô hình học được các lớp hiếm (như Severe trên RSNA chỉ chiếm $\sim$4\%) mà không bị thiên lệch sang các lớp đa số?
+    \item \textbf{Đánh giá khả năng tổng quát cross-dataset:} Mô hình huấn luyện trên một dataset có thực sự chuyển giao tốt sang dataset khác (nhãn khác, phân bố khác) hay không?
+\end{itemize}
+
+\section{Phạm vi báo cáo}
+Báo cáo trình bày một pipeline hoàn chỉnh gồm:
+\begin{itemize}
+    \item \textbf{Pipeline tổng thể:} 2 mô-đun chính (TotalSpineSeg cho phân vùng + Hybrid grading cho đánh giá bệnh lý) cùng các kết quả đánh giá phân vùng trên dataset Chu 2015 và đánh giá grading baseline trên RSNA 2024 (Chương 4 và Chương 5).
+    \item \textbf{Đóng góp tinh chỉnh sâu:} kiến trúc Hybrid hai nhánh CBAM + BiomedCLIP, kết quả ablation 4 cấu hình trên RSNA 2024 và 3-seed transfer learning trên SPIDER 8-label (Chương 4 và Chương 5).
+\end{itemize}
+
+Việc xây dựng giao diện phần mềm cho bác sĩ và tích hợp toàn bộ pipeline thành sản phẩm hoàn chỉnh sẽ được thực hiện trong các giai đoạn tiếp theo, không nằm trong phạm vi báo cáo này. Một số hướng phát triển dài hạn (ví dụ thu thập phản hồi bác sĩ để retrain liên tục --- Human-in-the-Loop) được đề cập trong Chương 6.

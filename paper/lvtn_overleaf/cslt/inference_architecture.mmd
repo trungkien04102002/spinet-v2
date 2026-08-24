@@ -1,0 +1,44 @@
+%% Kiến trúc khi suy luận (Inference mode) — KHÔNG có MLP (theo ý thầy)
+%% Render: mmdc -i inference_architecture.mmd -o inference_architecture.png -w 1800 -H 900 --backgroundColor white
+flowchart LR
+    subgraph INFER [" Chế độ Suy luận (Inference) "]
+        direction LR
+
+        Input["MRI 3D Volume<br/>9 × 112 × 224"]
+        CBAM["Nhánh 1<br/>3D ResNet-34 + CBAM<br/>(forward only)"]
+        BMC["Nhánh 2 (Frozen)<br/>BiomedCLIP ViT-B/16<br/>(forward only)"]
+        Fcnn(["f_cnn 512-d"])
+        Fvlm(["f_vlm 512-d"])
+        Concat["Concat<br/>1024-d"]
+        Heads["5 Classification<br/>Heads"]
+        Out["Output<br/>Softmax probs + argmax labels<br/>JSON / CSV"]
+
+        Input --> CBAM
+        Input --> BMC
+        CBAM --> Fcnn
+        BMC --> Fvlm
+        Fcnn --> Concat
+        Fvlm --> Concat
+        Concat --> Heads
+        Heads --> Out
+    end
+
+    Note["⏱ Inference: ~66 ms / sample (NVIDIA RTX 4090)"]
+
+    classDef trainable fill:#4a90e2,stroke:#1c5a99,color:#fff,font-weight:bold;
+    classDef frozen fill:#9b9b9b,stroke:#555,color:#fff,font-weight:bold;
+    classDef io fill:#f5a623,stroke:#a86e0c,color:#fff,font-weight:bold;
+    classDef fusion fill:#bd10e0,stroke:#6a0982,color:#fff,font-weight:bold;
+    classDef output fill:#7ed321,stroke:#3f8b0c,color:#fff,font-weight:bold;
+    classDef emb fill:#ecf0f1,stroke:#7f8c8d,color:#333;
+    classDef note fill:none,stroke:none,color:#555,font-style:italic;
+
+    class CBAM trainable;
+    class BMC frozen;
+    class Input io;
+    class Concat fusion;
+    class Heads,Out output;
+    class Fcnn,Fvlm emb;
+    class Note note;
+
+    style INFER fill:#eafce0,stroke:#3f8b0c,stroke-width:2.5px,color:#3f8b0c

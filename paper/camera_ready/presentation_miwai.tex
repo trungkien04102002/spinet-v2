@@ -1,0 +1,360 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Beamer Presentation - MIWAI 2026 (Paper 122, oral)
+% Two-Branch Hybrid Model for Imbalanced Lumbar Disc Grading
+% Template: Madrid + HCMUT institute (follows thesis-defense deck style)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass{beamer}
+
+\mode<presentation> {
+\usetheme{Madrid}
+}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,fit,backgrounds,calc}
+
+\graphicspath{{figures/}}
+
+% Best-cell highlight (matches the paper)
+\definecolor{best}{HTML}{1A4DAB}
+\newcommand{\bst}[1]{\textcolor{best}{\textbf{#1}}}
+
+% Custom three-part footline (same layout as the thesis-defense deck)
+\setbeamertemplate{footline}
+{%
+  \leavevmode%
+  \hbox{%
+  \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,center]{author in head/foot}%
+    \usebeamerfont{title in head/foot}\insertshorttitle
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,center]{title in head/foot}%
+    \usebeamerfont{title in head/foot}\insertsectionhead
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,leftskip=2ex,rightskip=2ex,sep=0pt]{date in head/foot}%
+    \hfill%
+    \usebeamerfont{date in head/foot}\insertshortdate{}\hfill%
+    \usebeamercolor[fg]{page number in head/foot}%
+    \usebeamerfont{page number in head/foot}%
+    \usebeamertemplate{page number in head/foot}%
+  \end{beamercolorbox}}%
+  \vskip0pt%
+}
+\setbeamertemplate{caption}[numbered]
+
+%----------------------------------------------------------------------------------------
+%	TITLE PAGE
+%----------------------------------------------------------------------------------------
+\title[Two-Branch Hybrid Lumbar Disc Grading]{A Two-Branch Hybrid Model for Imbalanced Lumbar Disc Grading and Zero-Shot Label Extension}
+
+\author[T.\,K.~Ha, T.\,N.~Phan]{Trung Kien Ha \and Trong Nhan Phan}
+\institute[HCMUT, VNU-HCM]
+{
+Faculty of Computer Science and Engineering \\
+Ho Chi Minh City University of Technology (HCMUT), VNU-HCM \\
+\medskip
+\textit{MIWAI 2026 Oral Presentation (Paper 122)}
+}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}
+\frametitle{Outline}
+\tableofcontents
+\end{frame}
+
+%----------------------------------------------------------------------------------------
+\section{Motivation}
+%----------------------------------------------------------------------------------------
+\begin{frame}
+\frametitle{Two open problems in lumbar MRI grading}
+\begin{columns}[c]
+\column{.55\textwidth}
+\begin{itemize}
+    \item[\textbf{P1}] \textbf{Class imbalance} \\ {\small Severe $<5\%$ $\Rightarrow$ recall near zero}
+    \item[]
+    \item[\textbf{P2}] \textbf{Fixed label space} \\ {\small new schema $\Rightarrow$ retrain a new head}
+\end{itemize}
+\column{.45\textwidth}
+\centering
+\includegraphics[width=\linewidth]{rsna_class_distribution_en.png}\\[2pt]
+{\scriptsize RSNA 2024: Severe under 5\%.}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{Contributions}
+\begin{enumerate}
+    \item Attention helps Severe \textbf{in-domain} but hurts \textbf{transfer}; frozen prior fixes it.
+    \item Complementary \textbf{two-branch} design (attention + biomedical VLM).
+    \item \textbf{Zero-shot} label extension: labels become a prompt input, no retraining.
+    \item Imbalance recipe lifts Severe recall \textbf{12.3\% $\to$ 48.6\%} ($\sim$4$\times$).
+\end{enumerate}
+\end{frame}
+
+%----------------------------------------------------------------------------------------
+\section{Proposed Method}
+%----------------------------------------------------------------------------------------
+\begin{frame}
+\frametitle{Two-branch hybrid architecture}
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{hybrid_arch_generic.pdf}
+\end{figure}
+\vspace{2pt}
+\begin{itemize}\small
+    \item[--] \textbf{Attention:} CBAM 3D ResNet-34: localizes the lesion.
+    \item[--] \textbf{Multimodal:} frozen BiomedCLIP: text-aligned prior.
+    \item[--] Fusion MLP $\to$ cosine vs.\ prompts. \textbf{Only 1.18\,M / 260\,M trained.}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Handling class imbalance}
+\begin{itemize}
+    \item[\textbf{1.}] \textbf{Focal loss} ($\gamma{=}2$): focus on hard cases.
+    \item[\textbf{2.}] \textbf{$\sqrt{}$ class weights}: gradient ratio $15\times \to 4\times$.
+    \item[\textbf{3.}] \textbf{Oversampling} (3 to 5$\times$): see Severe more often.
+\end{itemize}
+\vspace{6pt}
+\begin{block}{Why it works}
+Frozen prior anchors the scarce Severe class; attention zooms into the small lesion.
+\end{block}
+\end{frame}
+
+\begin{frame}
+\frametitle{Zero-shot label extension by prompts}
+Same encoder $\Phi$, only the head changes ($h = c \circ \Phi$):
+\begin{equation*}
+\hat{y} = \arg\max_{k}\; s\cdot \hat{f}_{\text{img}}^{\top}\, t_k ,
+\qquad t_k = \psi(q_k)/\|\psi(q_k)\|_2 .
+\end{equation*}
+\begin{itemize}
+    \item[--] Prompt: \textit{``a magnetic resonance image of [label]''}.
+    \item[$\Rightarrow$] New label = new prompt. \textbf{No new head, no retraining.}
+\end{itemize}
+\end{frame}
+
+%----------------------------------------------------------------------------------------
+\section{Experiments}
+%----------------------------------------------------------------------------------------
+\begin{frame}
+\frametitle{Setup}
+\begin{table}
+\centering
+\footnotesize
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Dataset} & \textbf{Validation} & \textbf{Role} \\
+\midrule
+RSNA 2024 & 1{,}942 IVDs / 395 pts & train + in-domain \\
+SPIDER & 1{,}439 IVDs / 208 pts & held-out transfer \\
+\bottomrule
+\end{tabular}
+\end{table}
+\vspace{4pt}
+\begin{itemize}\small
+    \item[--] 4 configs: SpineNetV2 / CBAM / Multimodal / \textbf{Hybrid}.
+    \item[--] Macro R/P/F1/AUC/AUPRC + Severe. 3 seeds, 1$\times$ RTX 4090.
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{In-domain results \& ablation on RSNA 2024}
+\begin{table}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Metric} & \textbf{SpineNetV2} & \textbf{CBAM} & \textbf{Multimodal} & \textbf{Hybrid} \\
+\midrule
+Mean Accuracy        & \bst{81.0} & 69.5 & 71.2 & 72.4 \\
+Mean F1 (macro)      & 0.420 & 0.477 & 0.482 & \bst{0.527} \\
+Mean Recall          & 0.412 & 0.531 & 0.532 & \bst{0.592} \\
+Mean AUC             & 0.835 & 0.803 & 0.826 & \bst{0.838} \\
+Mean AUPRC           & 0.530 & 0.498 & 0.513 & \bst{0.533} \\
+\midrule
+\textbf{Severe Recall} & 0.123 & 0.288 & 0.316 & \bst{0.486} \\
+\textbf{Severe F1}   & 0.152 & 0.262 & 0.268 & \bst{0.356} \\
+\textbf{Severe AUC}  & 0.872 & 0.865 & 0.885 & \bst{0.899} \\
+\bottomrule
+\end{tabular}
+\caption{RSNA 2024 validation, mean over 3 seeds. \bst{Bold} = best.}
+\end{table}
+\begin{itemize}\small
+    \item[$\rightarrow$] Trades $\sim$9 pts accuracy for \textbf{Severe Recall $\times 4$}, F1 $\times 2.3$.
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Not ``guessing'': well above chance}
+\begin{columns}[c]
+\column{.5\textwidth}
+\begin{itemize}
+    \item[--] Severe prevalence $\approx$\textbf{0.05}.
+    \item[--] Severe \textbf{AUC 0.899}, \textbf{AUPRC 0.333} = \textbf{6.7$\times$} chance.
+    \item[--] Grad-CAM: $p(\text{Severe})$ $0.26 \to 0.53$.
+\end{itemize}
+\column{.5\textwidth}
+\centering
+\includegraphics[width=\linewidth]{grad_cam_nocbam_vs_cbam.png}\\[2pt]
+{\scriptsize Severe canal case: without vs.\ with CBAM.}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{Cross-dataset zero-shot transfer to SPIDER}
+\begin{columns}[c]
+\column{.42\textwidth}
+\begin{itemize}\small
+    \item[--] 8 \textbf{unseen} labels, no SPIDER training.
+    \item[--] Wins on disc-morphology \\ (\bst{0.587} vs.\ 0.433).
+    \item[--] Distant labels: off-the-shelf wins (honest limit).
+\end{itemize}
+\column{.58\textwidth}
+\begin{table}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lcc}
+\toprule
+\textbf{SPIDER label} & \textbf{Off-shelf} & \textbf{Hybrid} \\
+\midrule
+Disc bulging       & 0.363 & \bst{0.613} \\
+Disc herniation    & 0.532 & \bst{0.563} \\
+Disc narrowing     & 0.403 & \bst{0.586} \\
+\midrule
+Upper/Lower endplate & \bst{0.56} & 0.47 \\
+Spondylolisthesis  & \bst{0.500} & 0.028 \\
+\midrule
+Mean (disc-morph.) & 0.433 & \bst{0.587} \\
+Mean (all 8)       & \bst{0.394} & 0.362 \\
+\bottomrule
+\end{tabular}
+\end{table}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{Supervised transfer on SPIDER (8 labels)}
+\begin{table}
+\centering
+\footnotesize
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Metric} & \textbf{SpineNetV2} & \textbf{CBAM} & \textbf{Multimodal} & \textbf{Hybrid} \\
+\midrule
+Mean Accuracy (\%) & \bst{80.2} & 79.3 & 76.1 & 78.3 \\
+Mean F1 (macro)    & 0.646 & 0.619 & 0.613 & \bst{0.653} \\
+Mean AUC           & 0.842 & 0.824 & 0.808 & \bst{0.846} \\
+\bottomrule
+\end{tabular}
+\end{table}
+\begin{itemize}\small
+    \item[--] Hybrid $\approx$ SpineNetV2 (\textbf{parity}, $p{=}0.57$).
+    \item[$\rightarrow$] CBAM \textbf{drops} below SpineNetV2 on transfer; Hybrid \textbf{recovers} ($+0.034$) $\Rightarrow$ frozen branch = \textbf{regularizer}.
+    \item[--] {\footnotesize Exploratory: 3 seeds, $p{=}0.011$. Not a powered test.}
+\end{itemize}
+\end{frame}
+
+%----------------------------------------------------------------------------------------
+\section{Conclusion}
+%----------------------------------------------------------------------------------------
+\begin{frame}
+\frametitle{Take-aways}
+\begin{itemize}
+    \item[\textbf{1.}] Recovers Severe class: Recall $\times 4$, F1 $\times 2.3$, AUC 0.899.
+    \item[\textbf{2.}] \textbf{Zero-shot} to 8 unseen labels, no retraining.
+    \item[\textbf{3.}] Frozen branch = \textbf{cross-dataset regularizer}.
+\end{itemize}
+\vspace{6pt}
+\begin{block}{Future work}
+Explicit alignment loss $\cdot$ native-3D medical VLM $\cdot$ axial-T2 fusion.
+\end{block}
+\vspace{4pt}
+{\footnotesize Clinical use: second-reader assistant (Severe recall still below screening bar).}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}
+\centering
+\vfill
+{\LARGE Thank you! \quad Questions?}
+\vfill
+{\footnotesize Trung Kien Ha \, $\cdot$ \, Trong Nhan Phan \quad$\cdot$\quad HCMUT, VNU-HCM}
+\vfill
+\end{frame}
+
+%------------------------------------------------
+% BACKUP SLIDES
+%------------------------------------------------
+\appendix
+\begin{frame}
+\frametitle{Backup: full RSNA metrics}
+\begin{table}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Metric} & \textbf{SpineNetV2} & \textbf{CBAM} & \textbf{Multimodal} & \textbf{Hybrid} \\
+\midrule
+Mean Precision  & 0.493 & 0.499 & 0.508 & \bst{0.526} \\
+Severe AUPRC    & 0.284 & 0.278 & 0.275 & \bst{0.333} \\
+Inference (ms/IVD) & 65.5 & 66.7 & 65.2 & 66.4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+\end{frame}
+
+\begin{frame}
+\frametitle{Backup: core equations}
+\textbf{CBAM (3D):}\;
+$F' = M_c(F)\otimes F,\quad F'' = M_s(F')\otimes F'$,\;
+$F\in\mathbb{R}^{C\times D\times H\times W}$.\\[6pt]
+\textbf{Focal loss} ($\gamma{=}2$):
+$\;\mathrm{FL}_t(p_t) = -\,w_{c(t)}\,(1-p_t)^{\gamma}\,\log(p_t).$\\[6pt]
+\textbf{Slice-attention pool:}
+$\;\alpha_i = \dfrac{\exp(w_a^\top z_i)}{\sum_j \exp(w_a^\top z_j)},\quad
+f_{\text{bmc}} = \sum_i \alpha_i z_i .$
+\end{frame}
+
+\begin{frame}
+\frametitle{Backup: full training objective}
+\begin{itemize}\small
+    \item[--] No linear head. Logits = \textbf{cosine} vs.\ frozen text anchors:
+      $\;s\cdot\hat f^\top t_k$, with $s$ a \textbf{learned} logit scale (clamp 100).
+    \item[--] Focal loss ($\gamma{=}2$) applied \textbf{to those cosine logits}.
+    \item[--] $+$ per-task \textbf{supervised contrastive} term ($\lambda{=}0.1$, $\tau{=}0.07$).
+    \item[--] Tasks combined by learned \textbf{homoscedastic uncertainty} weighting, not a plain sum.
+    \item[--] Missing labels ($-1$) excluded from both terms.
+    \item[--] SpineNetV2 baseline uses plain \textbf{cross-entropy}; the other three use focal.
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Backup: parameters \& statistics}
+\begin{itemize}\small
+    \item[--] CBAM 3D ResNet-34 21.3\,M (frozen) + BiomedCLIP $\sim$86\,M (frozen).
+    \item[--] Trained: fusion MLP, slice-pool, logit scale, uncertainty scalars = \textbf{1.18\,M} (0.45\% of 260\,M).
+    \item[--] Hybrid vs.\ CBAM: $\Delta{=}{+}0.034$, $p{=}0.011$, CI $[0.018,0.049]$.
+    \item[--] Hybrid vs.\ SpineNetV2: parity, $p{=}0.57$. Exploratory (3 seeds).
+\end{itemize}
+\end{frame}
+
+\end{document}

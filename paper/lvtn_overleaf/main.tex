@@ -1,0 +1,213 @@
+% Stanford University undergraduate honors thesis style -- modifications to the report style
+% This is unofficial so you should check with your department and advisor
+% See http://library.stanford.edu/research/bibliography-management/latex-and-bibtex
+% 
+% Example of use below
+% See the suthesis-ug.sty file for documentation
+%
+
+\documentclass[12pt]{report}
+% \documentclass[12pt,twoside]{report} # 2-side printing
+\usepackage[utf8]{inputenc}
+\usepackage[utf8]{vietnam}
+% \usepackage[english]{babel}
+\usepackage{suthesis-ug}
+\usepackage{algorithm2e}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage[labelfont=bf]{caption}
+\usepackage{cases}
+\usepackage{color}
+\usepackage{enumerate}
+\usepackage{xcolor}
+\usepackage{listings}
+\definecolor{lightgray}{rgb}{.9,.9,.9}
+\definecolor{darkgray}{rgb}{.4,.4,.4}
+\definecolor{purple}{rgb}{0.65, 0.12, 0.82}
+\lstdefinelanguage{JavaScript}{
+  keywords={break, case, catch, continue, debugger, default, delete, do, else, false, finally, for, function, if, in, instanceof, new, null, return, switch, this, throw, true, try, typeof, var, void, while, with},
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]',
+  morestring=[b]",
+  ndkeywords={class, export, boolean, throw, implements, import, this},
+  keywordstyle=\color{blue}\bfseries,
+  ndkeywordstyle=\color{darkgray}\bfseries,
+  identifierstyle=\color{black},
+  commentstyle=\color{purple}\ttfamily,
+  stringstyle=\color{red}\ttfamily,
+  sensitive=true
+}
+
+\lstset{
+   language=JavaScript,
+   backgroundcolor=\color{lightgray},
+   extendedchars=true,
+   basicstyle=\footnotesize\ttfamily,
+   showstringspaces=false,
+   showspaces=false,
+   numbers=left,
+   numberstyle=\footnotesize,
+   numbersep=9pt,
+   tabsize=2,
+   breaklines=true,
+   showtabs=false,
+   captionpos=b
+}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,positioning}
+\usepackage{hyperref}
+\usepackage{multirow}
+\usepackage{subcaption}
+\usepackage{xcolor}
+\usepackage{indentfirst}
+% \usepackage{natbib}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{array}
+\usepackage{bm}
+\usepackage{float}
+\usepackage{amssymb}
+\usepackage{longtable}
+\usepackage{booktabs}% http://ctan.org/pkg/booktabs
+\newcommand{\tabitem}{~~\llap{\textbullet}~~}
+\usepackage{makecell}
+\usepackage{tabularx, caption}
+\usepackage{xcolor}
+
+\usepackage{plantuml}
+\usepackage{lscape}
+\RestyleAlgo{ruled}
+\newtheorem{theorem}{Theorem}
+\newtheorem{definition}{Definition}
+\mathchardef\mhyphen="2D
+\newcommand{\mathbi}[1]{\boldsymbol{#1}}
+\NewDocumentCommand{\includeplantuml}{m}{%
+  \directlua{
+    local jobname=\luastring{#1}
+      local plantUmlMode=\luastring{\PlantUmlMode}
+      local plantUmlSourceFilename = jobname .. "-plantuml.txt"
+          infile = io.open(jobname, "r")
+          instr = infile:read("*a")
+          infile:close()
+          outfile = io.open(plantUmlSourceFilename, "w")
+          outfile:write(instr)
+          outfile:close()
+      require("plantuml.lua")
+      convertPlantUmlToTikz(jobname, plantUmlMode)
+    }
+  \ifthenelse{\equal{\PlantUmlMode}{latex}}{
+    \begin{adjustbox}{max width=\linewidth}
+      \input{#1-plantuml.latex}
+    \end{adjustbox}
+  }{
+    \includegraphics[width=\maxwidth{\textwidth}]{#1-plantuml.\PlantUmlMode}
+  }
+}
+
+\raggedbottom
+\usepackage{titlesec}
+\setcounter{secnumdepth}{4}
+\setcounter{tocdepth}{4}
+\begin{document}
+\setstretch{1.25}
+
+\author{Hà Trung Kiên - 2470723}
+\principaladvisor{TS. Phan Trọng Nhân}
+\beforepreface
+\pagenumbering{roman}
+% \begin{flushright}
+% \begin{tabular}{c}
+%     TP. Hồ Chí Minh, tháng 05 năm 2024\\
+%     Tác giả\\
+%     Hà Trung Kiên
+% \end{tabular}
+% \end{flushright}
+
+
+% \prefacesection{Lời cảm ơn}
+% \thispagestyle{empty}
+% Học viên xin gửi lời cảm ơn chân thành nhất đến Tiến sĩ Phan Trọng Nhân, người thầy đã gắn bó với em trong suốt thời gian thực hiện đề tài thực tập vừa qua. Thầy đã giúp đỡ, định hướng cho em cách tư duy và cách làm việc khoa học. Xin cảm ơn những sự hướng dẫn tận tình, chu đáo của thầy, chính nhờ những kiến thức mà thầy truyền đạt lại đã giúp cho chúng tôi hoàn thành tốt luận văn. Đó là những góp ý hết sức quý báu, không chỉ trong quá trình thực hiện luận văn này, mà còn là hành trang tiếp bước cho chúng tôi trong quá trình học tập và lập nghiệp trong tương lai.
+
+% Chúng tôi cũng xin chân thành cảm ơn quý Thầy, Cô trường Đại học Bách Khoa, đặc biệt là các Thầy, Cô trong khoa Khoa học và Kỹ thuật Máy tính đã tận tình dạy dỗ và trang bị cho chúng tôi những kiến thức cần thiết, làm nền tảng cho chúng tôi có thể hoàn thành tốt đồ án này.
+
+% Cuối cùng, chúng tôi xin cảm ơn gia đình, bạn bè, những người đã giúp đỡ, hỗ trợ chúng tôi hết mình để có thể hoàn thành đồ án này một cách tốt nhất. 
+
+% Finally and most especially, I would like to express my sincerest gratitude to a medical friend of mine. She was an inspiration and motivation for me to do this Medicine related thesis. 
+    
+\prefacesection{Lời cam đoan}
+Học viên xin cam đoan luận văn \textit{``Ứng dụng AI trong gán nhãn ảnh y tế cho bệnh đau thắt lưng''} là công trình nghiên cứu của bản thân, được thực hiện dưới sự hướng dẫn của TS. Phan Trọng Nhân. Các kết quả, số liệu và phân tích trình bày trong báo cáo là trung thực, do học viên trực tiếp thực hiện. Mọi tài liệu, công trình của tác giả khác được sử dụng trong luận văn đều được trích dẫn đầy đủ trong phần \textit{Tài liệu tham khảo}.
+
+\textbf{Về việc sử dụng công cụ AI:}
+\begin{itemize}
+    \item[$\circ$] Trong quá trình thực hiện luận văn, học viên có sử dụng một số công cụ AI hỗ trợ (ChatGPT, Claude, GitHub Copilot) với mục đích: tìm tài liệu tham khảo, gợi ý cách trình bày, kiểm tra ngữ pháp, hỗ trợ viết và rà soát mã nguồn.
+    \item[$\circ$] Toàn bộ ý tưởng nghiên cứu, thiết kế thực nghiệm, phân tích kết quả và kết luận đều do học viên trực tiếp thực hiện. Học viên không nộp sản phẩm do AI tạo ra toàn bộ hoặc phần lớn nội dung.
+    \item[$\circ$] Học viên cam kết tuân thủ các quy định về liêm chính học thuật của Trường Đại học Bách Khoa --- Đại học Quốc gia Thành phố Hồ Chí Minh. Mọi hành vi lạm dụng AI nhằm gian lận, nếu có, học viên xin chịu hoàn toàn trách nhiệm theo quy định của nhà trường.
+\end{itemize}
+
+\begin{flushright}
+\begin{tabular}{c}
+    TP. Hồ Chí Minh, tháng 06 năm 2026 \\
+    Học viên thực hiện \\[1.5em]
+    Hà Trung Kiên
+\end{tabular}
+\end{flushright}
+
+\newpage
+
+\prefacesection{Tóm tắt}
+Đề tài luận văn là: \textit{"Ứng dụng AI trong gán nhãn ảnh y tế cho bệnh đau thắt lưng"}. Báo cáo trình bày một pipeline gán nhãn tự động gồm 2 mô-đun chính (TotalSpineSeg cho phân vùng cấu trúc và mô-đun grading dựa trên SpineNetV2 được tinh chỉnh sâu). Đóng góp kĩ thuật là kiến trúc Hybrid hai nhánh cho mô-đun grading, kết hợp CBAM-3D ResNet-34 (trainable) với BiomedCLIP frozen embeddings (2.5D), cùng pipeline xử lý mất cân bằng lớp (Focal Loss + Uncertainty Loss + minority oversampling). Mô hình được đánh giá ablation trên RSNA 2024 (4 cấu hình) và transfer learning trên SPIDER 8-label với 3-seed evaluation. Báo cáo cũng khảo sát mô hình Vision-Language MedGemma như một giải pháp thay thế nhưng thực nghiệm cho thấy chưa phù hợp cho bài toán cụ thể này.
+
+Kết quả chính: trên RSNA 2024, Hybrid cải thiện Mean F1 macro từ 0.343 lên 0.474 (+0.131), Severe Recall tăng từ 11.5\% lên 46.4\% (gấp 4 lần). Trên SPIDER, Hybrid cân bằng được hiệu năng cross-dataset trong khi CBAM-only bị thoái hóa --- một finding methodology có ý nghĩa cho thiết kế model y tế multi-dataset.
+
+Nội dung báo cáo được cấu trúc thành 6 chương:
+\begin{itemize}
+    \item \textbf{Chương 1: Giới thiệu đề tài}\\
+    Trình bày tổng quan về đề tài, mục tiêu, giới hạn, đóng góp chính và phạm vi báo cáo.
+    \item \textbf{Chương 2: Cơ sở lí thuyết}\\
+    Trình bày các kiến thức nền tảng về ảnh y tế cột sống, các mô hình học sâu (ANN, CNN, U-Net, Transformer, SAM, BiomedCLIP), cơ chế chú ý CBAM và nhúng đông cứng từ vision-language model.
+    \item \textbf{Chương 3: Công trình nghiên cứu liên quan}\\
+    Tổng hợp các nghiên cứu liên quan về phân vùng cột sống, phát hiện bất thường, các giải pháp cuộc thi RSNA 2024 và các nghiên cứu peer-reviewed gần đây (2024--2026).
+    \item \textbf{Chương 4: Mô hình đề xuất}\\
+    Mô tả pipeline tổng thể 3-stage và đóng góp tinh chỉnh sâu --- kiến trúc Hybrid hai nhánh với chi tiết kĩ thuật về CBAM-3D ResNet, BiomedCLIP frozen, mô-đun fusion và pipeline xử lý mất cân bằng lớp.
+    \item \textbf{Chương 5: Thực nghiệm và đánh giá}\\
+    Trình bày kết quả phân vùng trên Chu 2015, grading baseline trên RSNA và đóng góp tinh chỉnh (4-config ablation trên RSNA, 3-seed transfer learning trên SPIDER 8-label).
+    \item \textbf{Chương 6: Kết luận và hướng phát triển}\\
+    Tổng kết các kết quả đã đạt được và đề xuất các hướng phát triển bao gồm hoàn thiện phần mềm với UI cho bác sĩ, 3-seed RSNA + bootstrap CI và Human-in-the-Loop dài hạn.
+\end{itemize}
+
+    
+\afterpreface
+
+\include{chapter/chap01.tex}
+\clearpage
+
+\include{chapter/chap02.tex}
+\clearpage
+
+\include{chapter/chap03.tex}
+\clearpage
+
+\include{chapter/chap04.tex}
+\clearpage
+
+\include{chapter/chap05.tex}
+\clearpage
+
+\include{chapter/chap06.tex}
+\clearpage
+
+% \include{chapter/chap07}
+% \clearpage
+
+\renewcommand{\bibname}{Tài liệu tham khảo}
+\bibliographystyle{ieeetr}
+\bibliography{thesiscite}
+
+\appendix
+\include{phuluc.tex}
+\end{document}
+
+
+

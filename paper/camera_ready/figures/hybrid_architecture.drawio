@@ -1,0 +1,66 @@
+<mxfile host="app.diagrams.net" type="device">
+  <diagram name="hybrid-architecture" id="hybridarch1">
+    <mxGraphModel dx="1100" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="700" math="1" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ===== Panel (a) ===== -->
+        <mxCell id="lbla" value="(a)" style="text;html=1;fontStyle=1;fontSize=16;" vertex="1" parent="1"><mxGeometry x="20" y="20" width="40" height="20" as="geometry"/></mxCell>
+
+        <mxCell id="in" value="Per-IVD volume&#10;(9 × 112 × 224)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1"><mxGeometry x="40" y="170" width="100" height="60" as="geometry"/></mxCell>
+
+        <mxCell id="cbam" value="3D ResNet-34 + CBAM" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#3b5b9b;" vertex="1" parent="1"><mxGeometry x="230" y="60" width="180" height="60" as="geometry"/></mxCell>
+
+        <mxCell id="bmc" value="BiomedCLIP ViT-B/16&#10;(9 sagittal slices)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6d0f5;strokeColor=#7d4fa0;" vertex="1" parent="1"><mxGeometry x="230" y="290" width="180" height="60" as="geometry"/></mxCell>
+
+        <mxCell id="pool" value="slice attention pool" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0e6fa;strokeColor=#7d4fa0;" vertex="1" parent="1"><mxGeometry x="450" y="295" width="110" height="50" as="geometry"/></mxCell>
+
+        <mxCell id="cat" value="⊕&#10;concat 1024" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;verticalLabelPosition=bottom;verticalAlign=top;" vertex="1" parent="1"><mxGeometry x="620" y="175" width="50" height="50" as="geometry"/></mxCell>
+
+        <mxCell id="mlp" value="fusion MLP&#10;1024→768→512, L2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1"><mxGeometry x="720" y="175" width="170" height="50" as="geometry"/></mxCell>
+
+        <mxCell id="cos" value="cosine similarity" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8e4;strokeColor=#2d7d6f;" vertex="1" parent="1"><mxGeometry x="940" y="175" width="120" height="50" as="geometry"/></mxCell>
+
+        <mxCell id="prompt" value="text prompts {q_k}&#10;→ BiomedCLIP text encoder" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f4f2;strokeColor=#2d7d6f;" vertex="1" parent="1"><mxGeometry x="920" y="60" width="180" height="50" as="geometry"/></mxCell>
+
+        <mxCell id="rsna" value="RSNA severity&#10;(Normal/Mild, Moderate, Severe)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#4f8a3d;" vertex="1" parent="1"><mxGeometry x="1130" y="120" width="150" height="60" as="geometry"/></mxCell>
+
+        <mxCell id="spider" value="SPIDER unseen labels&#10;(Pfirrmann, Modic, herniation, …)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#4f8a3d;" vertex="1" parent="1"><mxGeometry x="1130" y="250" width="160" height="60" as="geometry"/></mxCell>
+
+        <!-- edges (a) -->
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="in" target="cbam"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="in" target="bmc"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="bmc" target="pool"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4" value="f_cbam ∈ ℝ^512" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="cbam" target="cat"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e5" value="f_bmc ∈ ℝ^512" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="pool" target="cat"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="cat" target="mlp"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e7" value="f̂_img" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="mlp" target="cos"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="prompt" target="cos"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="cos" target="rsna"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="cos" target="spider"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ===== Panel (b): CBAM block ===== -->
+        <mxCell id="lblb" value="(b) CBAM block" style="text;html=1;fontStyle=1;fontSize=16;" vertex="1" parent="1"><mxGeometry x="20" y="430" width="160" height="20" as="geometry"/></mxCell>
+
+        <mxCell id="bF" value="F" style="text;html=1;align=center;fontSize=14;" vertex="1" parent="1"><mxGeometry x="60" y="480" width="30" height="30" as="geometry"/></mxCell>
+        <mxCell id="bmc2" value="Channel attention M_c&#10;(avg+max pool, MLP, σ)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#3b5b9b;" vertex="1" parent="1"><mxGeometry x="120" y="470" width="160" height="50" as="geometry"/></mxCell>
+        <mxCell id="bmul1" value="⊗" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;" vertex="1" parent="1"><mxGeometry x="310" y="480" width="30" height="30" as="geometry"/></mxCell>
+        <mxCell id="bFp" value="F'" style="text;html=1;align=center;fontSize=14;" vertex="1" parent="1"><mxGeometry x="360" y="480" width="30" height="30" as="geometry"/></mxCell>
+        <mxCell id="bms2" value="Spatial attention M_s&#10;(channel pool, 7×7×7 conv, σ)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#3b5b9b;" vertex="1" parent="1"><mxGeometry x="420" y="470" width="170" height="50" as="geometry"/></mxCell>
+        <mxCell id="bmul2" value="⊗" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;" vertex="1" parent="1"><mxGeometry x="620" y="480" width="30" height="30" as="geometry"/></mxCell>
+        <mxCell id="bFpp" value="F''" style="text;html=1;align=center;fontSize=14;" vertex="1" parent="1"><mxGeometry x="670" y="480" width="40" height="30" as="geometry"/></mxCell>
+
+        <mxCell id="be1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="bF" target="bmc2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="be2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="bmc2" target="bmul1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="be3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="bmul1" target="bFp"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="be4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="bFp" target="bms2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="be5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="bms2" target="bmul2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="be6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="bmul2" target="bFpp"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="be7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;dashed=1;exitX=0.5;exitY=1;entryX=0.5;entryY=1;" edge="1" parent="1" source="bF" target="bmul1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="be8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;dashed=1;exitX=0.5;exitY=1;entryX=0.5;entryY=1;" edge="1" parent="1" source="bFp" target="bmul2"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

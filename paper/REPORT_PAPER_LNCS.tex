@@ -1,0 +1,886 @@
+% =============================================================================
+%  REPORT_PAPER_LNCS.tex — Conference paper (Springer LNCS/LNAI format)
+%
+%  Target venues: MIWAI 2026 (LNAI), SoICT 2026 (CCIS)
+%
+%  Compile:
+%    cd /Users/kienha/spinet-v2/paper
+%    pdflatex REPORT_PAPER_LNCS.tex
+%    pdflatex REPORT_PAPER_LNCS.tex
+%
+%  Self-contained: no external .bib needed (uses thebibliography).
+% =============================================================================
+
+\documentclass[runningheads]{llncs}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{xspace}
+\usepackage{enumitem}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+
+\graphicspath{{../experiments/v3_20260503/figures/}{../experiments/}{../experiments/paper_results/spider_zeroshot/}}
+
+\definecolor{best}{HTML}{1A4DAB}
+\newcommand{\best}[1]{\textcolor{best}{\textbf{#1}}}
+
+% Compact float spacing
+\setlength{\textfloatsep}{6pt}
+\setlength{\intextsep}{6pt}
+\setlength{\dbltextfloatsep}{6pt}
+\setlength{\abovedisplayskip}{4pt}
+\setlength{\belowdisplayskip}{4pt}
+
+\begin{document}
+
+\title{Hybrid 3D-CBAM Attention with Frozen Vision-Language
+Embeddings for Lumbar Intervertebral Disc Grading
+with Cross-Dataset Zero-Shot Transfer}
+
+\titlerunning{Hybrid CBAM-BiomedCLIP for Lumbar IVD Grading}
+
+\author{Trung Kien Ha\inst{1}\orcidID{0000-0000-0000-0000} \and
+        Nh\^an Phan\inst{1}\orcidID{0000-0000-0000-0000}}
+
+\authorrunning{T. K. Ha and N. Phan}
+
+\institute{Faculty of Computer Science and Engineering,\\
+           Ho Chi Minh City University of Technology (HCMUT), VNU-HCM,\\
+           Ho Chi Minh City, Vietnam\\
+           \email{\{kien.ha,nhanphan\}@hcmut.edu.vn}}
+
+\maketitle
+
+% =============================================================================
+\begin{abstract}
+Automated grading of lumbar intervertebral disc (IVD) pathologies on MRI is
+a clinically valuable but technically difficult task: severity classes are
+heavily imbalanced, scanner protocols vary across sites, and large-scale
+labeled volumetric corpora are scarce. We present a two-branch hybrid
+architecture that fuses a 3D ResNet-34 with Convolutional Block Attention
+Modules (CBAM) and a frozen BiomedCLIP image-text encoder, trained on
+the RSNA 2024 Lumbar Degenerative Classification dataset. The CBAM-3D
+branch captures cross-slice anatomical context; the BiomedCLIP branch
+contributes a semantic prior learned from 15 million biomedical
+image-caption pairs. A trainable concat-MLP fuses the two streams into a
+single 512-dimensional embedding aligned with text-prompt embeddings,
+enabling both supervised classification and zero-shot label-space
+extension. Combined with focal loss, square-root inverse class weights,
+minority oversampling, and SpineNetV2-style augmentation, the hybrid
+model improves Severe-class recall from 11.5\% to 46.4\% (4.0$\times$),
+Severe F1 from 0.149 to 0.343 (+130\%), Severe AUC to 0.896, and Severe
+AUPRC to 0.321 (7.6$\times$ over the class-prevalence random-baseline
+AUPRC of 0.042) over a 3D ResNet-34 baseline. Cross-dataset
+zero-shot transfer to SPIDER yields mean F1~$=$~0.362 across eight
+unseen pathology labels using only text prompts. With lightweight
+supervised transfer (15-epoch frozen-backbone heads, 3 random seeds),
+Hybrid matches Baseline on aggregate SPIDER F1 ($0.653 \pm 0.014$
+vs.\ $0.646 \pm 0.002$) while \emph{recovering above CBAM-only}
+($0.619 \pm 0.010$, $\Delta = +0.034$, $> 2\sigma$) --- evidence that
+the BiomedCLIP branch acts as a cross-dataset regularizer when CBAM
+overfits RSNA-specific patterns. On clinical minority classes Hybrid
+leads consistently: Disc Herniation recall from $0$ to $0.36 \pm
+0.08$, Spondylolisthesis from $0.20$ to $0.30$, Pfirrmann Grade~4
+from $0.47$ to $0.53$. To our knowledge no prior peer-reviewed
+work has applied BiomedCLIP to RSNA 2024 lumbar classification at
+the time of submission.
+\end{abstract}
+
+\keywords{Spine MRI \and Intervertebral disc \and Attention \and
+Vision-language models \and BiomedCLIP \and CBAM \and Zero-shot
+classification \and Class imbalance.}
+
+% =============================================================================
+\section{Introduction}
+\label{sec:intro}
+
+Low back pain is the leading cause of disability worldwide, with lumbar
+disc degeneration driving most surgical and conservative interventions.
+Quantitative MRI grading of intervertebral disc (IVD) pathology --- spinal
+canal stenosis, left/right foraminal stenosis, Pfirrmann grade, and
+related conditions --- remains predominantly manual and subject to
+significant inter-rater variability~\cite{hallinan2021,nigru2024}.
+
+Recent automated systems based on 3D convolutional networks
+(SpineNet~\cite{jamaludin2017}, SpineNetV2~\cite{windsor2022}) have made
+substantial progress, but two open problems persist:
+\begin{enumerate}
+\item \textbf{Class imbalance}: clinically the most important class
+      (Severe) is typically less than 5\% of training data. Standard
+      cross-entropy training yields models that ignore the minority
+      class entirely (Severe Recall $\approx 0$\%).
+\item \textbf{Limited label space}: a model trained on one schema (e.g.\
+      RSNA 2024's 3-condition $\times$ 3-severity grid) cannot answer
+      a query in another (e.g.\ SPIDER's Pfirrmann/spondylolisthesis/
+      herniation schema) without retraining a fixed-class head.
+\end{enumerate}
+
+We address both problems with a single hybrid model. Our contributions,
+ordered by strength of multi-seed evidence, are: (1) a
+\textbf{cross-dataset regularization finding}: in a 3-seed SPIDER
+transfer experiment, adding CBAM to the ResNet-34 backbone degrades
+aggregate F1 by $-0.027$ (exceeds pooled seed $\sigma$), revealing
+that the same attention module which helps in-domain RSNA Severe
+metrics hurts cross-center generalization; the proposed Hybrid
+(CBAM~+~frozen BiomedCLIP) recovers above CBAM-only by $+0.034$
+($> 2\sigma$), establishing the BiomedCLIP branch as a regularizer.
+(2) A \textbf{two-branch hybrid architecture} combining a CBAM-3D
+ResNet-34~\cite{woo2018cbam,he2016resnet} with frozen
+BiomedCLIP~\cite{zhang2023biomedclip} and a learned concat-MLP
+fusion head. (3) \textbf{Cross-dataset label-space extension} via
+cosine similarity against text-prompt embeddings, transferring to
+SPIDER's eight unseen labels without fine-tuning (mean F1~=~0.362
+zero-shot; Hybrid leads rare-class recall: Disc Herniation
+$0.36 \pm 0.08$ vs.\ $0$ for Baseline/CBAM). (4) A
+\textbf{class-imbalance handling pipeline} (focal
+loss~\cite{lin2017focal} + square-root class weights + minority
+oversampling + medical augmentation) lifting Severe-class recall
+from 11.5\% to 46.4\% on RSNA 2024 (single-seed; 3-seed RSNA
+evaluation pending, see \S\ref{sec:disc}).
+
+To our knowledge no prior peer-reviewed work has applied BiomedCLIP to
+RSNA 2024 lumbar classification, and no prior work has reported a
+zero-shot label-space extension on the same architecture for lumbar
+spine MRI.
+
+% =============================================================================
+\section{Related Work}
+\label{sec:related}
+
+\textbf{Lumbar disc grading.}
+Jamaludin~et~al.~\cite{jamaludin2017} introduced SpineNet (VGG-style
+2D); Windsor~et~al.~\cite{windsor2022} upgraded to a 3D ResNet-34
+on per-IVD volumetric crops $(9,112,224)$, providing the
+architectural foundation we adopt. Nigru~et~al.~\cite{nigru2024}
+externally validated SpineNetV2 reporting foraminal balanced
+accuracy $\approx 0.69$--$0.70$, which we treat as the sagittal-only
+literature ceiling.
+
+\textbf{Attention for medical imaging.}
+The CBAM module~\cite{woo2018cbam} has been widely adapted to medical
+2D problems. Lin~et~al.~\cite{lin2024cbam} combined CBAM with
+multi-head self-attention on a \emph{balanced binary single-level}
+RSNA 2024 subset, achieving F1~=~0.945 in that simplified setting.
+We extend CBAM into a fully 3D form and combine it with a
+foundation-model branch for full multi-level 3-class grading under
+heavy imbalance.
+
+\textbf{Vision-language models for medical imaging.}
+BiomedCLIP~\cite{zhang2023biomedclip} pretrained a CLIP-style
+image-text model on PMC-15M (15M PubMed caption pairs). Recent
+benchmarking~\cite{datascarcity2024} shows BiomedCLIP linear
+probing dominates supervised training in the few-shot regime,
+motivating its use as a frozen extractor on small clinical
+datasets. RadCLIP~\cite{lu2024radclip} extends CLIP with a
+slice-pooling adapter and is the closest architectural alternative;
+native 3D MRI VLMs (Decipher-MR~\cite{yang2026deciphermr}) were not
+publicly available during this work.
+
+\textbf{Positioning against prior RSNA 2024 methods.}
+Table~\ref{tab:sota} summarizes published RSNA 2024 methods. Direct
+numerical comparison is precluded by inconsistent setups:
+binarization collapses the clinically critical Moderate--Severe
+boundary, single-level (L4--L5) evaluation ignores spatial
+heterogeneity, balanced-subset construction eliminates the very
+class imbalance that motivates the problem, and Kaggle entries
+report only weighted log-loss on $\geq 10$-backbone ensembles. Our
+setup is intentionally the more difficult variant: full 3-class
+severity grading across all five IVD levels on the natively
+imbalanced distribution, evaluated as a single model.
+
+\begin{table}[t]
+\centering
+\caption{Reported metrics from prior work on RSNA 2024 or closely
+related lumbar spine MRI grading. Setups are inconsistent across
+columns; see footnotes. ``—'' = not reported in the cited form.}
+\label{tab:sota}
+\renewcommand{\arraystretch}{1.05}
+\setlength{\tabcolsep}{4pt}
+\footnotesize
+\begin{tabular}{@{}lcccl@{}}
+\toprule
+Method & Yr & Data & F1\,/\,AUC & Setup\,$^\dagger$ \\
+\midrule
+Lin~et~al.~\cite{lin2024cbam}            & '24 & RSNA\,sub & \best{.945}\,/\,.97 & Bin., bal., 1-lvl \\
+Liu~et~al.~\cite{aktan2025}              & '25 & RSNA    & \best{.957}\,/\,—   & Bin., bal., joint seg \\
+M-SCAN~\cite{hong2025mscan}              & '25 & RSNA    & —\,/\,.971 (canal) & Multi-view (sag.\,+\,ax.) \\
+Phaphuang.~\cite{phaphuangwittayakul2026}& '26 & RSNA+ext. & \best{.956}\,/\,.99 & Bin., ext.\,bal. \\
+nshen7~\cite{nshen2024}                  & '24 & RSNA & Sev.\,F1 \best{.501} & 3-cls, public split \\
+\midrule
+\textbf{Ours} (Hybrid)                   & '26 & RSNA    & \textbf{.528\,/\,.837} (Sev.\,F1 \textbf{.343}) & \textbf{3-cls, full multi-lvl, single model} \\
+\bottomrule
+\end{tabular}
+
+\vspace{2pt}
+\par
+{\raggedright\scriptsize
+$^\dagger$Setup abbreviations: Bin.~=~binarized to 2-class;
+bal.~=~class-balanced subset; 1-lvl~=~single level (typically L4--L5);
+ext.~=~external dataset.\par}
+\end{table}
+
+
+% =============================================================================
+\section{Method}
+\label{sec:method}
+
+\subsection{Per-IVD Volume Extraction}
+
+Given a sagittal T2 lumbar scan, we extract one volumetric region of
+interest per intervertebral disc (L1--L2 through L5--S1) using the
+keypoint annotations supplied with RSNA 2024. Each region is a tensor
+$V \in \mathbb{R}^{1 \times 9 \times 112 \times 224}$ centered at the
+disc midpoint, covering the full anatomical thickness of a single IVD.
+Pixel intensities are clipped to the 1\textsuperscript{st}--99\textsuperscript{th}
+percentile range and rescaled to $[0, 1]$. We follow the SpineNetV2
+\cite{windsor2022} convention so that pretrained 3D ResNet-34 weights
+can be loaded without modification.
+
+\subsection{Hybrid Two-Branch Architecture}
+
+Figure~\ref{fig:arch} illustrates the architecture. Two branches encode
+the same per-IVD volume in complementary ways.
+
+\textbf{CBAM-3D ResNet-34 branch (trainable).}
+A 3D ResNet-34 with $3\!\times\!3\!\times\!3$ convolutions and BatchNorm3D
+extracts volumetric features. After each of the four ResNet stages, given
+an intermediate feature map
+$F \in \mathbb{R}^{C \times D \times H \times W}$, a CBAM block
+applies channel attention $M_c(F) = \sigma(\text{MLP}(\text{AvgPool}(F))
++ \text{MLP}(\text{MaxPool}(F)))$ (bottleneck ratio $r=16$),
+followed by spatial attention $M_s(F') = \sigma(f^{7 \times 7
+\times 7}([\text{AvgPool}_c(F'); \text{MaxPool}_c(F')]))$ using a
+3D convolution. The composed refinement is $F'' = M_s(M_c(F) \otimes
+F) \otimes (M_c(F) \otimes F)$, with $\otimes$ element-wise
+multiplication. After global average pooling the branch outputs
+$f_{\text{cbam}} \in \mathbb{R}^{512}$.
+
+\textbf{BiomedCLIP branch (frozen, 2.5D).}
+We split the volume into its 9 sagittal slices
+$\{s_i\}_{i=1}^{9}$, replicate each slice to 3 channels, resize to
+$224\!\times\!224$, and encode independently with frozen BiomedCLIP
+ViT-B/16, $g_\theta : \mathbb{R}^{3\times 224 \times 224} \to
+\mathbb{R}^{512}$. The 9 slice embeddings $z_i = g_\theta(s_i)$ are
+aggregated by a learned attention pool:
+\begin{equation}
+\alpha_i = \frac{\exp(w_a^\top z_i)}{\sum_{j=1}^{9} \exp(w_a^\top z_j)},
+\quad
+f_{\text{bmc}} = \sum_{i=1}^{9} \alpha_i \, z_i,
+\label{eq:slicepool}
+\end{equation}
+where $w_a \in \mathbb{R}^{512}$ is the only trainable parameter of
+this branch. Replacing mean pooling with this attention pool allows the
+branch to up-weight slices in which the lesion is most clearly visible.
+
+\textbf{Fusion head (trainable).}
+The two embeddings are concatenated and projected through a two-layer
+MLP: $f_{\text{img}} = W_2\,\phi(W_1\,[f_{\text{cbam}};f_{\text{bmc}}]
++ b_1) + b_2$ with $W_1 \in \mathbb{R}^{768 \times 1024}$,
+$W_2 \in \mathbb{R}^{512 \times 768}$, ReLU $\phi$, dropout $0.1$,
+followed by L2 normalization $\hat{f}_{\text{img}} = f_{\text{img}}
+/ \|f_{\text{img}}\|_2$.
+
+\textbf{Classification heads.}
+For RSNA we attach three task-specific 3-class linear heads (canal,
+left foraminal, right foraminal). For zero-shot transfer we replace
+each head with cosine similarity against text-prompt embeddings
+$\{t_k\}$ produced by the BiomedCLIP text encoder, predicting
+$\hat{y} = \arg\max_{k} s \cdot \hat{f}_{\text{img}}^{\top} t_k$
+where $s$ is the BiomedCLIP-pretrained temperature. Changing the
+prompt vocabulary changes the label space without retraining.
+
+The trainable parameter budget is approximately 1.18\,M (CBAM-3D
+fine-tuning + slice attention pool + fusion MLP), versus 218\,M
+total parameters once the frozen backbones are counted.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.98\linewidth]{hybrid_architecture.png}
+\caption{Two-branch hybrid architecture. CBAM-3D learns RSNA-specific
+volumetric features; frozen BiomedCLIP provides a semantic prior. The
+fusion MLP and slice attention pool ($\sim$1.18\,M trainable parameters)
+are the only learned components, and the cosine-similarity head allows
+both supervised and zero-shot classification.}
+\label{fig:arch}
+\end{figure}
+
+\subsection{Training Objective}
+
+We address class imbalance with a four-component pipeline. The
+per-task loss is the focal cross-entropy~\cite{lin2017focal}
+$\mathrm{FL}_t(p_t) = -w_{c(t)}(1 - p_t)^{\gamma} \log(p_t)$ with
+$\gamma = 2.0$, summed over the three RSNA conditions, with missing
+labels excluded via \verb|ignore_index = -1|. Class imbalance is
+further addressed by (i) \emph{square-root inverse class weights}
+$w_c = (1/\sqrt{n_c})/Z$ with $Z$ normalizing the mean to 1, which
+reduces the Severe/Normal gradient ratio from $\sim15\times$
+(linear $1/n_c$) to $\sim 4\times$; (ii) \emph{minority oversampling}
+factor 3--5 at the sampler stage, complementary to $w_c$ as it
+changes batch composition rather than per-sample gradient; and
+(iii) \emph{medical augmentation} following
+SpineNetV2~\cite{windsor2022} \S4.4.3 (horizontal flip with
+left/right label swap, rotation $\pm 10^{\circ}$, brightness/contrast
+$\pm 20\%$, Gaussian noise $\sigma = 0.05$ at probability $0.3$).
+Training uses AdamW, lr $10^{-4}$, batch size 32, weight decay
+$10^{-4}$, up to 20 epochs with patience-5 early stopping on a
+single NVIDIA RTX 4090 (16\,GB peak memory).
+
+% =============================================================================
+\section{Experiments}
+\label{sec:exp}
+
+\subsection{Datasets}
+
+\textbf{RSNA 2024 LumbarDISC.} Approximately 2{,}000 patients with
+sagittal T2 stacks. We use a patient-level 80/20 train/validation split
+(\verb|random_state=42|), yielding 1{,}942 validation IVDs from 395
+patients. Labels span 5 levels $\times$ 5 conditions $\times$ 3
+severities. We restrict evaluation to three of the five conditions
+(canal stenosis, left and right neural foraminal narrowing) for which
+sagittal-only input is most clinically appropriate; left and right
+subarticular stenosis, which are best assessed on axial reformats,
+are left to future work and discussed in \S\ref{sec:disc}. Class
+distribution per evaluated condition averages Normal/Mild $\approx 85\%$,
+Moderate $\approx 10\%$, Severe $\approx 5\%$.
+
+\textbf{SPIDER.}~\cite{vandergraaf2024spider} Approximately 1{,}400
+IVDs from 218 patients across four Dutch hospitals (T1 and T2-FS
+sagittal sequences). For consistency with the RSNA-trained encoder we
+use the T2-FS sagittal series only. The label schema differs from
+RSNA: Pfirrmann grades 1--5~\cite{pfirrmann2001}, Modic
+changes 0--3~\cite{modic1988},
+spondylolisthesis (binary), disc herniation (binary), disc narrowing
+(binary), disc bulging (binary), upper-/lower-endplate damage
+(binary). Used for cross-dataset zero-shot evaluation only; no SPIDER
+images are seen during RSNA training.
+
+\subsection{Evaluation Metrics}
+
+We report macro-averaged Recall, Precision, F1, AUC (one-vs-rest), and
+AUPRC, plus per-class Severe metrics. With $TP$, $FP$, $FN$ denoting
+true positives, false positives, and false negatives at a threshold,
+the threshold-dependent metrics are
+\begin{equation}
+\mathrm{Recall} = \frac{TP}{TP + FN},\quad
+\mathrm{Precision} = \frac{TP}{TP + FP},
+\label{eq:recprec}
+\end{equation}
+\begin{equation}
+\mathrm{F1} = 2\cdot\frac{\mathrm{Precision}\cdot\mathrm{Recall}}
+                         {\mathrm{Precision} + \mathrm{Recall}}.
+\label{eq:f1}
+\end{equation}
+The threshold-free metrics integrate the ROC and PR curves:
+\begin{equation}
+\mathrm{AUC} = \int_{0}^{1} \mathrm{TPR}\!\big(\mathrm{FPR}^{-1}(u)\big)\,du,
+\;\;
+\mathrm{AUPRC} = \int_{0}^{1} P(R)\,dR.
+\label{eq:auc_auprc}
+\end{equation}
+Macro averaging across the $C{=}3$ severities, $\frac{1}{C}\sum_{c}
+\mathrm{metric}_c$, prevents the dominant Normal/Mild class (85\%
+prevalence) from concealing failure on the minority Severe class. AUPRC
+is reported alongside AUC because, on heavily imbalanced data, AUC can
+remain high while a model fails to rank Severe cases meaningfully; the
+AUPRC random-baseline equals the positive-class prevalence
+($\approx 0.05$ for Severe).
+
+% =============================================================================
+\section{Results}
+\label{sec:results}
+
+\subsection{Main Results: Ablation Across Four Configurations}
+
+Table~\ref{tab:main} reports nine metrics on the RSNA 2024 validation
+split for four configurations: a 3D ResNet-34 baseline, CBAM-only
+(no BiomedCLIP branch), BMC-only (no CBAM branch), and the full
+hybrid. The hybrid wins 8/9 metrics; the only metric on which it does
+not win is Mean Accuracy, which we discuss below. We note that the
+nshen7~\cite{nshen2024} Severe F1 of $0.501$ in Table~\ref{tab:sota}
+appears higher than our $0.343$, but reflects a different evaluation
+protocol (alternative per-condition aggregation and a different
+validation split) reported only as a public GitHub artifact without
+peer review; our
+$0.343$ is the macro-averaged Severe F1 over all three RSNA
+conditions (canal, left foraminal, right foraminal), where the two
+foraminal conditions are known to exhibit a sagittal-only ceiling
+near $0.18$--$0.20$ (\S\ref{sec:disc}). A like-for-like comparison
+under matched evaluation protocol is not currently possible from
+public artifacts.
+
+\begin{table}[t]
+\centering
+\caption{Ablation on RSNA 2024 validation (1{,}942 IVDs / 395 patients).
+\textbf{Bold} = best per row.}
+\label{tab:main}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Metric & Base & CBAM-only & BMC-only & \best{Hybrid} \\
+\midrule
+Mean Accuracy        & \best{81.4\%} & 68.98\% & 69.19\% & 72.1\% \\
+Mean F1 macro        & 0.420 & 0.502 & 0.464 & \best{0.528} \\
+Mean Recall macro    & 0.411 & 0.569 & 0.528 & \best{0.592} \\
+Mean Precision macro & 0.486 & 0.510 & 0.475 & \best{0.517} \\
+Mean AUC macro       & 0.826 & 0.822 & 0.812 & \best{0.837} \\
+Mean AUPRC macro     & 0.523 & 0.519 & 0.482 & \best{0.526} \\
+\midrule
+\textbf{Severe F1}    & 0.149 & 0.304 & 0.229 & \best{0.343} \\
+\textbf{Severe AUC}   & 0.860 & 0.886 & 0.874 & \best{0.896} \\
+\textbf{Severe AUPRC} & 0.276 & 0.319 & 0.218 & \best{0.321} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Hybrid $>$ either branch alone.} CBAM-only achieves F1~=~0.502,
+BMC-only achieves F1~=~0.464; the hybrid achieves 0.528. Each branch
+addresses a blind spot of the other: CBAM-3D provides volumetric and
+RSNA-specific features that the frozen 2D BiomedCLIP cannot learn,
+while BiomedCLIP provides a semantic prior from 15M PubMed Central
+pairs that the small RSNA training set cannot match. The fusion gain
+(+2.6 percentage points over the better single branch) confirms the
+two information sources are complementary rather than redundant.
+
+\textbf{Severe class is the headline result.} Severe F1 increases
+2.3$\times$ from 0.149 (baseline) to 0.343 (hybrid), Severe Recall
+4.0$\times$ from 11.5\% to 46.4\%, and Severe AUC from 0.860 to 0.896.
+Severe AUPRC of 0.321 against the class-prevalence random-baseline AUPRC
+of 0.042 (Severe support averages 4.20\% across the three conditions)
+represents a 7.6$\times$ gain over chance on the rare class.
+
+\textbf{Why Mean Accuracy decreases.} The 9.3 percentage-point
+accuracy drop is a direct consequence of rebalancing: the baseline's
+high accuracy reflects a model that predicts Normal/Mild on most cases
+(Severe Recall $= 11.5\%$). The hybrid trades majority-class accuracy
+for minority-class recall, which is the clinically appropriate
+trade-off in a screening setting where missing a Severe case is more
+costly than a false alert.
+
+\subsection{Cross-Dataset Zero-Shot Transfer to SPIDER}
+
+We freeze the RSNA-trained Hybrid and evaluate on SPIDER directly,
+replacing the classification heads with cosine similarity against
+text prompts of the eight SPIDER label categories (no SPIDER
+training data used). Table~\ref{tab:spider} reports per-disease
+zero-shot F1; mean F1 across the eight unseen labels is $0.362$,
+which is structurally impossible for Baseline and CBAM-only because
+their fixed 3-class heads cannot accommodate the new label space
+without retraining.
+
+\begin{table}[t]
+\centering
+\caption{Zero-shot transfer of RSNA-trained Hybrid to SPIDER (no SPIDER
+fine-tuning). Disc-related labels (top group) transfer strongly;
+non-disc labels (bottom group) show a clear semantic gap.}
+\label{tab:spider}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+SPIDER label              & F1     & AUC \\
+\midrule
+Disc bulging              & \best{0.709} & 0.806 \\
+Disc herniation           & 0.522 & 0.802 \\
+Disc narrowing            & 0.388 & 0.836 \\
+\midrule
+Lower endplate            & 0.452 & 0.747 \\
+Upper endplate            & 0.441 & 0.743 \\
+Pfirrmann (5-class)       & 0.147 & --     \\
+Modic (4-class)           & 0.117 & --     \\
+Spondylolisthesis         & 0.030 & 0.745 \\
+\midrule
+\textbf{Mean (all 8)}     & \best{0.362} & --     \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The selective-transfer pattern is itself a finding: disc-pathology
+labels (bulging, herniation, narrowing) transfer well while
+semantically distant labels (Modic, Pfirrmann, spondylolisthesis)
+show a measurable domain gap, suggesting text-prompt zero-shot
+inherits the semantic proximity of the contrastive pretraining
+corpus. A Naked-BiomedCLIP baseline (no CBAM, no RSNA training)
+underperforms our Hybrid on the same disc-related labels,
+confirming that CBAM and the RSNA-supervised fusion head contribute
+features that transfer beyond the original training domain.
+
+\subsection{Cross-Dataset Transfer Learning on SPIDER 8-Label Schema}
+\label{sec:spider_transfer}
+
+To assess the full transfer learning potential beyond zero-shot, we
+fine-tune lightweight task-specific heads (RSNA backbone frozen) on
+the SPIDER training split for 15 epochs across all four configurations
+and the complete 8-label schema (Pfirrmann 5-class, Modic 4-class, six
+binary labels). The validation split has 234 IVDs from 34 patients;
+backbone parameters are frozen for fair comparison across the four
+configurations; only condition-specific heads (and the fusion MLP for
+Hybrid/BMC-only) are trained. This is the natural complement to the
+zero-shot evaluation above: zero-shot tests emergent text-prompt
+extension, while supervised transfer tests how well each pretrained
+representation maps to a different label space with minimal SPIDER
+supervision.
+
+\begin{table}[t]
+\centering
+\caption{SPIDER transfer learning, 4 configurations, mean across 8
+conditions. All metrics on val (234 IVDs), reported as mean $\pm$
+standard deviation across 3 random seeds ($\{42, 123, 456\}$).
+\textbf{Bold} = best per row when the gap to second place exceeds
+$2\sigma$ (the pooled standard deviation).}
+\label{tab:spider_transfer_agg}
+\renewcommand{\arraystretch}{1.05}
+\footnotesize
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Metric & Base & CBAM & BMC-only & Hybrid \\
+\midrule
+Mean Accuracy        & \best{80.23 $\pm$ 0.94} & 79.27 $\pm$ 1.19 & 76.12 $\pm$ 0.83 & 78.30 $\pm$ 1.64 \\
+Mean F1 macro        & 0.646 $\pm$ 0.002 & 0.619 $\pm$ 0.010 & 0.613 $\pm$ 0.006 & 0.653 $\pm$ 0.014\,$^\ast$ \\
+Mean AUC             & 0.842 $\pm$ 0.006 & 0.824 $\pm$ 0.018 & 0.808 $\pm$ 0.011 & 0.846 $\pm$ 0.018\,$^\ast$ \\
+Mean AUPRC           & \best{0.633 $\pm$ 0.026} & 0.580 $\pm$ 0.016 & 0.544 $\pm$ 0.007 & 0.611 $\pm$ 0.010 \\
+\midrule
+Inference (ms/sa)    & 65.5 $\pm$ 2.7 & 66.7 $\pm$ 3.2 & 65.2 $\pm$ 3.9 & 66.4 $\pm$ 3.7 \\
+\bottomrule
+\end{tabular}
+
+\vspace{2pt}
+\par
+{\raggedright\scriptsize
+$^\ast$Hybrid and Baseline are within $2\sigma$ on Mean F1 / Mean AUC;
+both pass-zone results. The Hybrid--CBAM gap on Mean F1 (Hybrid
+$0.653$ vs.\ CBAM $0.619$, $\Delta = +0.034$, pooled $\sigma =
+0.012$) and on Mean AUPRC ($\Delta = +0.031$, pooled $\sigma =
+0.013$) exceeds $2\sigma$ and is therefore reported as a substantive
+gap.\par}
+\end{table}
+
+\textbf{Aggregate result (3 seeds).} Three findings emerge from the
+multi-seed analysis:
+
+\begin{enumerate}[leftmargin=*,topsep=0pt]
+\item \emph{Hybrid vs.\ Baseline}: the F1 gap of $+0.006$ is within
+single-seed noise (pooled $\sigma = 0.010$). On Mean AUPRC, Baseline
+actually leads slightly ($0.633$ vs.\ $0.611$). We do not claim
+Hybrid surpasses Baseline on aggregate SPIDER metrics; instead, we
+report that the two are at parity within seed variability, with the
+relative ordering depending on the metric chosen.
+
+\item \emph{Hybrid vs.\ CBAM}: this gap is significant and consistent
+($+0.034$ F1, pooled $\sigma = 0.012$; $+0.031$ AUPRC, pooled
+$\sigma = 0.013$). CBAM alone, optimized for RSNA's spatial patterns,
+degrades on cross-dataset transfer; Hybrid recovers this loss by
+fusing CBAM with BiomedCLIP's dataset-agnostic semantic prior.
+
+\item \emph{CBAM hurts cross-dataset transfer}: CBAM Mean F1
+($0.619$) is below Baseline ($0.646$) by $-0.027$, exceeding the
+pooled CBAM--Baseline noise ($\sigma_{\text{pooled}} = 0.007$,
+$|\Delta|/\sigma = 3.8$). This is a substantive
+observation: the same CBAM module that improves in-domain (RSNA)
+Severe-class metrics produces a measurable regression when the
+backbone is reused on a different dataset. We discuss the implications
+in \S\ref{sec:disc}.
+\end{enumerate}
+
+\textbf{Per-condition F1 and rare-class recovery.}
+Table~\ref{tab:spider_minority} highlights conditions with rare
+positive class ($\leq 5\%$ prevalence). For Spondylolisthesis
+(positive prevalence $2.8\%$), Hybrid recovers $30.0\% \pm 9.8$ of
+positive cases vs.\ Baseline $20.0\% \pm 9.8$, CBAM $0.0\%$, and
+BMC-only $5.6\% \pm 7.9$. For Disc Herniation (positive prevalence
+$4.7\%$), Hybrid achieves $35.6\% \pm 7.9$ recall while Baseline and
+CBAM both fail to recall any positive cases ($0.0\%$). We highlight
+that BMC-only (BiomedCLIP branch without CBAM) already achieves
+$27.0\% \pm 15.4$ recall on this label; the BiomedCLIP semantic
+prior is responsible for the bulk of the herniation recovery, while
+the CBAM volumetric branch contributes an incremental
+$+0.086~\pm~17.3$ when fused into the Hybrid. The two branches
+therefore play complementary roles: BiomedCLIP enables minority-class
+recovery via dataset-agnostic semantic features, and CBAM contributes
+volumetric refinement on top. For Pfirrmann
+Grade~4, Hybrid leads with $0.534 \pm 0.043$ vs.\ Baseline
+$0.473 \pm 0.062$. Modic Types~1 and 3 (population prevalence $0.3\%$
+and $0.5\%$ respectively) remain at $0\%$ recall across all four
+configurations and are not amenable to 15-epoch frozen-backbone
+training; they represent the lower end of what supervised transfer
+can achieve on this dataset.
+
+\begin{table}[t]
+\centering
+\caption{Minority-class recall on SPIDER (positive label for binary,
+Grade~4 for Pfirrmann). Rare positive prevalence (\%) shown
+parenthetically. Hybrid leads on rare/severe classes; aggregate F1
+gains are concentrated in these cases.}
+\label{tab:spider_minority}
+\renewcommand{\arraystretch}{1.05}
+\footnotesize
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Condition (prevalence)              & Base   & CBAM   & BMC    & Hybrid \\
+\midrule
+Spondylolisthesis Yes (2.8\%)       & 0.200 $\pm$ 0.098 & 0.000 $\pm$ 0.000 & 0.056 $\pm$ 0.079 & \best{0.300 $\pm$ 0.098} \\
+Disc Herniation Yes (4.7\%)         & 0.000 $\pm$ 0.000 & 0.000 $\pm$ 0.000 & 0.270 $\pm$ 0.154 & \best{0.356 $\pm$ 0.079} \\
+Pfirrmann Grade~4 (19\%)            & 0.473 $\pm$ 0.062 & 0.396 $\pm$ 0.038 & 0.437 $\pm$ 0.163 & \best{0.534 $\pm$ 0.043} \\
+Modic Type~1 (0.3\%)                & 0.000  & 0.000  & 0.000  & 0.000 \\
+Modic Type~3 (0.5\%)                & 0.000  & 0.000  & 0.000  & 0.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Architectural advantage: zero-shot label extension.} Two of
+the four configurations (BMC-only and Hybrid) accommodate new labels
+at inference time by encoding a new text prompt through BiomedCLIP's
+text encoder, requiring no retraining. Baseline and CBAM, which use
+fixed linear heads, cannot extend their label space without retraining.
+This is an architectural property independent of the F1 metric and
+relevant for clinical deployment in centers that may need to
+incorporate additional pathology labels (e.g.\ Schmorl's nodes,
+Tarlov cysts) without additional supervised data collection.
+
+\subsection{Per-condition Severe recall and qualitative analysis}
+
+Per-condition Severe recall breakdown shows $70.4\%$ on canal
+stenosis but only $18$--$22\%$ on left/right foraminal stenosis;
+the foraminal recall floor is consistent with the sagittal-only
+literature ceiling reported by Nigru~et~al.~\cite{nigru2024}
+(foraminal balanced accuracy $\approx 0.69$--$0.70$). Grad-CAM
+activation on Severe-class canal stenosis cases (computed against
+the final CBAM stage and trilinearly upsampled) concentrates on the
+central canal narrowing rather than diffusing across the disc,
+providing qualitative support for the CBAM spatial-attention
+hypothesis. Hybrid precision-recall curves for the Severe class
+dominate the moderate-recall regime ($\mathrm{Recall} \in [0.2,
+0.6]$), the operating range relevant to clinical triage.
+
+\subsection{Computational Cost}
+
+On a single RTX 4090, Hybrid training converges at epoch 10 in
+24.8\,min (vs.\ Baseline 16.4\,min ep~18, CBAM 56.0\,min ep~14).
+Inference latency is 9.65\,ms/sample (Hybrid) vs.\ 5.61\,ms
+(Baseline), 5.60\,ms (CBAM), and 3.98\,ms (BMC-only); the Hybrid
+overhead of $+72\%$ over CBAM-only stems from the frozen BiomedCLIP
+forward pass. Throughput of 103.6 samples/s on the Hybrid is well
+above clinical real-time requirements.
+
+% =============================================================================
+\section{Discussion}
+\label{sec:disc}
+
+\textbf{Why the hybrid works: complementary roles + cross-dataset
+regularization.}
+The two branches are complementary in information content:
+CBAM-3D answers \emph{where} a lesion is by learning task-specific
+volumetric features under direct supervision, while frozen
+BiomedCLIP answers \emph{what} a lesion means by carrying a semantic
+prior from 15M biomedical caption pairs. We use ``complementary''
+in the empirical sense that each branch alone falls short of the
+Hybrid; we do not claim a formal synergy effect, which would
+require an interaction-term test (deferred). On in-domain RSNA,
+CBAM is the single largest source of Severe-class improvement
+($+0.155$ over Baseline). On out-of-domain SPIDER, however, CBAM
+Mean F1 ($0.619 \pm 0.010$) \emph{drops below} the plain ResNet-34
+Baseline ($0.646 \pm 0.002$) --- a $\Delta = -0.027$ regression
+exceeding the pooled noise ($\sigma_{\text{pooled}} = 0.007$,
+$|\Delta|/\sigma = 3.8$). The Hybrid ($0.653 \pm 0.014$) recovers
+above CBAM by $+0.034$ ($> 2\sigma$) and matches Baseline within
+seed variability. We frame Hybrid not as additive feature gain
+beating Baseline, but as a regularizer that \emph{restores}
+Baseline-level performance when CBAM is added: BiomedCLIP provides
+a robust fallback when CBAM's in-domain bias is misaligned with
+the target distribution. The same pattern explains why CBAM-only
+fails on SPIDER Spondylolisthesis (Recall $0.000$) while Hybrid
+recovers $0.300 \pm 0.098$, and why Disc Herniation recall goes
+from $0$ for Baseline/CBAM to $0.356 \pm 0.079$ for Hybrid. A
+trivial-ensemble alternative --- logit averaging of Baseline and
+BMC-only --- cannot be fully ruled out from current experiments
+and is deferred to future work.
+
+\textbf{Clinical positioning and foraminal weakness.}
+Severe Recall $46.4\%$ on RSNA, while a $4.0\times$ improvement
+over Baseline, is below typical clinical screening sensitivity
+thresholds (often $\geq 80\%$). At the current operating point the
+model is best positioned as a \emph{second-reader assistance tool}
+that flags candidate Severe cases for radiologist confirmation,
+not a standalone screening system. The per-condition breakdown
+reveals a structural limitation: canal stenosis Severe recall is
+$70.4\%$ but left/right foraminal stenosis remains $18$--$22\%$.
+Foraminal stenosis is most accurately assessed on \emph{axial}
+reformats; we elected sagittal-only input to retain SpineNetV2
+ResNet-34 weight compatibility and a consistent crop $(9, 112,
+224)$. Nigru~et~al.~\cite{nigru2024} report foraminal balanced
+accuracy $\approx 0.69$--$0.70$ on sagittal-only input as the
+corresponding ceiling, and multi-view fusion (e.g.\ M-SCAN-style
+sagittal--axial cross-attention) is the natural next step.
+
+\textbf{Limitations and future work.}
+(i) RSNA results are single-seed (42); SPIDER uses 3 seeds. A
+3-seed RSNA sweep and bootstrap 95\% CI ($n=1000$) on the RSNA
+Severe metrics are committed for the camera-ready version.
+(ii) BiomedCLIP is frozen and 2D, processing slices independently;
+native-3D MRI VLMs (Decipher-MR~\cite{yang2026deciphermr},
+Merlin~\cite{blankemeier2026merlin}) were unavailable during this
+work. (iii) The fusion strategy is restricted to concat-MLP; gated
+fusion and cross-attention remain unexplored.
+(iv) RSNA 2024 labels were produced via multi-annotator
+crowdsourcing~\cite{kaggle2024} without released per-class
+inter-rater statistics, so the achievable upper bound reflects
+label noise as well as model capacity. Future work: RadCLIP
+slice-pooling~\cite{lu2024radclip}, prompt-tuning via
+BiomedCoOp~\cite{koleilat2025biomedcoop}, multi-view axial-T2
+fusion, and external evaluation on the Mendeley Pfirrmann subset.
+
+% =============================================================================
+\section{Conclusion}
+\label{sec:concl}
+We presented a hybrid CBAM-3D + frozen BiomedCLIP architecture for
+lumbar IVD grading on RSNA 2024. The model improves Severe-class
+metrics (Recall $\times$4.0, F1 $\times$2.3, AUC 0.896) at a
+controlled accuracy trade-off, and uniquely enables zero-shot
+label-space extension to SPIDER's eight unseen labels via
+text-prompt cosine similarity.
+
+% =============================================================================
+\begin{thebibliography}{99}
+\footnotesize
+\setlength{\itemsep}{1pt}
+
+\bibitem{hallinan2021}
+J.~T. P.~D. Hallinan \textit{et al.},
+``Deep learning model for automated detection and classification of
+central canal, lateral recess, and neural foraminal stenosis at lumbar
+spine MRI,''
+\textit{Radiology}, vol.~300, no.~1, pp.~130--138, 2021.
+
+\bibitem{nigru2024}
+S.~M. Nigru \textit{et al.},
+``Automated grading of lumbar disc degeneration: external validation
+on a multi-cohort dataset,''
+\textit{North American Spine Society Journal}, 2024.
+
+\bibitem{jamaludin2017}
+A.~Jamaludin \textit{et al.},
+``SpineNet: automated classification and evidence visualization in
+spinal MRIs,''
+\textit{Medical Image Analysis}, vol.~41, pp.~63--73, 2017.
+
+\bibitem{windsor2022}
+R.~Windsor \textit{et al.},
+``SpineNetV2: automated detection, labelling and radiological grading
+of clinical MR scans,''
+\textit{arXiv:2205.01683}, 2022.
+
+\bibitem{woo2018cbam}
+S.~Woo, J.~Park, J.-Y. Lee, and I.~S. Kweon,
+``CBAM: convolutional block attention module,''
+in \textit{Proc. ECCV}, 2018, pp.~3--19.
+
+\bibitem{he2016resnet}
+K.~He, X.~Zhang, S.~Ren, and J.~Sun,
+``Deep residual learning for image recognition,''
+in \textit{Proc. CVPR}, 2016, pp.~770--778.
+
+\bibitem{zhang2023biomedclip}
+S.~Zhang \textit{et al.},
+``BiomedCLIP: a multimodal biomedical foundation model pretrained from
+fifteen million scientific image-text pairs,''
+\textit{NEJM AI}, 2024;\newline
+\textit{arXiv:2303.00915}, 2023.
+
+\bibitem{lin2017focal}
+T.-Y. Lin, P.~Goyal, R.~Girshick, K.~He, and P.~Doll\'ar,
+``Focal loss for dense object detection,''
+in \textit{Proc. ICCV}, 2017, pp.~2980--2988.
+
+\bibitem{lin2024cbam}
+Y.-H. Lin, X.-X. Zhang, and L.-Y. Shang,
+``Multi-attention enhanced CNN for lumbar disc severity classification
+on a balanced RSNA subset,''
+\textit{Bioengineering}, 2024.
+
+\bibitem{datascarcity2024}
+S.~Woerner and C.~F. Baumgartner,
+``Navigating data scarcity using foundation models: a benchmark of
+few-shot and zero-shot learning approaches in medical imaging,''
+in \textit{Proc. MICCAI 2024 Workshop on Foundation Models for
+General Medical AI}, 2024;\newline
+\textit{arXiv:2408.08058}.
+
+\bibitem{lu2024radclip}
+Z.~Lu \textit{et al.},
+``RadCLIP: enhancing radiologic image analysis through contrastive
+language-image pre-training,''
+\textit{arXiv:2403.09948}, 2024.
+
+\bibitem{yang2026deciphermr}
+H.~Yang \textit{et al.},
+``Decipher-MR: a 3D MRI vision-language foundation model,''
+\textit{npj Digital Medicine}, 2026;\newline
+\textit{arXiv:2509.21249}.
+
+\bibitem{blankemeier2026merlin}
+L.~Blankemeier \textit{et al.},
+``Merlin: a vision-language foundation model for 3D CT,''
+\textit{Nature}, 2026.
+
+\bibitem{koleilat2025biomedcoop}
+T.~Koleilat \textit{et al.},
+``BiomedCoOp: prompt tuning of biomedical vision-language models,''
+in \textit{Proc. CVPR}, 2025.
+
+\bibitem{vandergraaf2024spider}
+J.~W. van~der~Graaf \textit{et al.},
+``Lumbar spine segmentation in MR images: a dataset and a public
+benchmark,''
+\textit{Scientific Data}, vol.~11, no.~1, 2024.
+
+\bibitem{pfirrmann2001}
+C.~W.~A. Pfirrmann, A.~Metzdorf, M.~Zanetti, J.~Hodler, and
+N.~Boos,
+``Magnetic resonance classification of lumbar intervertebral disc
+degeneration,''
+\textit{Spine}, vol.~26, no.~17, pp.~1873--1878, 2001.
+
+\bibitem{modic1988}
+M.~T. Modic, P.~M. Steinberg, J.~S. Ross, T.~J. Masaryk, and
+J.~R. Carter,
+``Degenerative disk disease: assessment of changes in vertebral body
+marrow with MR imaging,''
+\textit{Radiology}, vol.~166, no.~1, pp.~193--199, 1988.
+
+\bibitem{aktan2025}
+Y.~Liu, J.~Rashid, S.~M. Boulaaras \textit{et al.},
+``A deep learning approach to lumbar spine degenerative classification
+on the RSNA 2024 dataset,''
+\textit{International Journal of Computational Intelligence Systems},
+vol.~18, 2025, doi: 10.1007/s44196-025-01098-7.
+
+\bibitem{hong2025mscan}
+J.~Hong \textit{et al.},
+``M-SCAN: multi-view scan attention network for lumbar spine
+degenerative classification,''
+\textit{arXiv:2503.01634}, 2025.
+
+\bibitem{phaphuangwittayakul2026}
+A.~Phaphuangwittayakul \textit{et al.},
+``Multi-task deep learning for lumbar spine degenerative
+classification with external validation,''
+\textit{Diseases}, 2026.
+
+\bibitem{nshen2024}
+N.~Shen,
+``RSNA 2024 lumbar spine degenerative classification baseline,''
+GitHub repository, 2024.
+
+\bibitem{kaggle2024}
+RSNA, ``RSNA 2024 Lumbar Spine Degenerative Classification
+competition leaderboard,''
+Kaggle, 2024.
+
+\end{thebibliography}
+
+\end{document}
