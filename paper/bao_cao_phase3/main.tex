@@ -73,6 +73,8 @@ thay đổi bởi chỉnh sửa của bệnh nhân trước.
 
 \section{Mốc Phase 2 đã trình bày hội đồng}
 
+\subsection{Bốn cấu hình nội bộ}
+
 Bảng~\ref{tab:phase2} là số đã báo cáo, giữ nguyên để đối chiếu.
 
 \begin{table}[htbp]
@@ -95,9 +97,79 @@ Severe AUPRC    & 0{,}276 & 0{,}319 & 0{,}218 & \textbf{0{,}321} \\
 \end{tabular}
 \end{table}
 
-So với hai mô hình ngoài cùng bộ chia dữ liệu (3 seed), Hybrid vẫn dẫn đầu rõ ở lớp Severe
-dù thua về Accuracy: Severe Recall \textbf{48{,}6\%} so với 26{,}0\% và 25{,}9\%;
-Severe F1 \textbf{0{,}356} so với 0{,}271 và 0{,}257.
+\subsection{So sánh với phương pháp ngoài}
+
+Hai phương pháp ngoài được huấn luyện lại trên \textbf{đúng cùng phép chia bệnh nhân}
+(seed 42/123/456, chia 80/20 theo mã ca) và đánh giá trên cùng ba nhãn, để so sánh công bằng.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Các cấu hình đem so sánh.}
+\label{tab:sota-what}
+\begin{tabular}{lll}
+\toprule
+\textbf{Cấu hình} & \textbf{Kiến trúc} & \textbf{Nguồn} \\
+\midrule
+SpineNetV2      & 3D-ResNet34 & nền so sánh của đề tài \\
+brendanartley   & CNN 2.5D + BiLSTM + gộp có chú ý & hạng nhì RSNA 2024, cài đặt lại \\
+transformer     & CNN 2.5D + bộ mã hoá Transformer & kiểu gộp Transformer 2024 \\
+\textbf{Hybrid} & CBAM-3D + BiomedCLIP, đầu ra theo mô tả văn bản & của đề tài \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering\small
+\caption{Kết quả trên RSNA 2024, trung bình $\pm$ độ lệch chuẩn qua 3 seed.}
+\label{tab:sota}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Chỉ số} & \textbf{SpineNetV2} & \textbf{brendanartley} & \textbf{transformer} & \textbf{Hybrid} \\
+\midrule
+Mean Accuracy (\%) & 81{,}0 $\pm$ 0{,}6 & \textbf{83{,}6 $\pm$ 0{,}5} & 83{,}4 $\pm$ 0{,}4 & \down{72{,}4 $\pm$ 0{,}3} \\
+Mean F1 (macro)    & 0{,}420 $\pm$ 0{,}010 & \textbf{0{,}532 $\pm$ 0{,}008} & 0{,}527 $\pm$ 0{,}028 & 0{,}527 $\pm$ 0{,}027 \\
+\midrule
+\multicolumn{5}{l}{\textit{Lớp Severe --- lớp có ý nghĩa lâm sàng}} \\
+Severe F1        & 0{,}152 $\pm$ 0{,}008 & 0{,}271 $\pm$ 0{,}026 & 0{,}257 $\pm$ 0{,}020 & \up{\textbf{0{,}356 $\pm$ 0{,}017}} \\
+Severe Recall (\%) & 12{,}3 $\pm$ 0{,}6 & 26{,}0 $\pm$ 1{,}6 & 25{,}9 $\pm$ 2{,}8 & \up{\textbf{48{,}6 $\pm$ 1{,}9}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Bảng~\ref{tab:sota} cho thấy một sự đánh đổi rõ ràng. Hybrid \textbf{thua khoảng 11 điểm
+Accuracy} và ngang bằng về Mean F1, nhưng ở lớp Severe thì dẫn đầu rõ rệt: Severe Recall
+\textbf{48{,}6\%} so với 26{,}0\% và 25{,}9\%, tức \textbf{gần gấp đôi} phương pháp ngoài tốt nhất;
+Severe F1 \textbf{0{,}356} so với 0{,}271.
+
+Đánh đổi này là có chủ ý. Hai phương pháp ngoài đạt Accuracy cao bằng cách thiên về lớp đa số
+(Normal/Mild chiếm phần lớn dữ liệu), trong khi ca bỏ sót ở lớp Severe mới là ca gây hậu quả lâm
+sàng. Với bài toán sàng lọc, bỏ sót ba trong bốn ca nặng để đổi lấy Accuracy đẹp hơn là đánh đổi
+sai hướng.
+
+Ngoài chỉ số, Hybrid còn có ba khả năng mà cả ba phương pháp kia đều không có, do chúng dùng đầu
+ra cố định:
+
+\begin{table}[htbp]
+\centering\small
+\caption{So sánh khả năng mở rộng tập nhãn.}
+\label{tab:sota-cap}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Khả năng} & \textbf{SpineNetV2} & \textbf{2 phương pháp ngoài} & \textbf{Hybrid} \\
+\midrule
+Nhận tập nhãn mới làm đầu vào      & không & không & \textbf{có} \\
+Chuyển sang bộ dữ liệu khác (SPIDER) & phải huấn luyện lại & phải huấn luyện lại & \textbf{có} \\
+Dự đoán nhãn chưa từng thấy         & không & không & \textbf{có} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Ghi chú về tính công bằng của phép so sánh.} Hai phương pháp ngoài là \textbf{cài đặt lại
+phần lõi kiến trúc chấm điểm}, đã điều chỉnh để nhận cùng dạng vùng ảnh $(9,112,224)$ của đề tài
+--- \textbf{không phải} pipeline đầu-cuối từ ảnh DICOM của tác giả gốc. Cả hai cũng huấn luyện từ
+đầu vì không có trọng số tiền huấn luyện tương thích, trong khi Hybrid dùng backbone đã tiền
+huấn luyện. Con số vì vậy phản ánh so sánh kiến trúc trên cùng biểu diễn dữ liệu, không phải so
+sánh hai hệ thống hoàn chỉnh.
 
 \section{Thực nghiệm Phase 3}
 
