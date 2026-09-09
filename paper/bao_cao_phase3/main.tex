@@ -1,0 +1,303 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T5]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[vietnamese]{babel}
+\usepackage{tgtermes}
+\usepackage[margin=2.3cm]{geometry}
+\usepackage{booktabs,graphicx,xcolor,array}
+\usepackage[hidelinks]{hyperref}
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf}
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries}{\thesection.}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection.}{0.6em}{}
+\setlength{\parskip}{0.35em}
+\setlength{\parindent}{0pt}
+\newcommand{\up}[1]{\textcolor{teal!70!black}{\textbf{#1}}}
+\newcommand{\down}[1]{\textcolor{red!65!black}{#1}}
+
+\title{\vspace{-1.2cm}\textbf{Báo cáo tiến độ Phase 3}\\[0.25em]
+\large Ứng dụng AI trong gán nhãn ảnh y tế cho bệnh đau thắt lưng}
+\author{Trung Kiên \quad\textbar\quad GVHD: Phan Trọng Nhân}
+\date{09/09/2026}
+
+\begin{document}
+\maketitle
+\vspace{-0.9cm}
+
+\section{Tóm tắt}
+
+Báo cáo tổng hợp kết quả Phase 3, đối chiếu với mốc đã trình bày trước hội đồng ở Phase 2.
+Ba nhóm việc đã hoàn thành: (i) hoàn thiện phần mềm gán nhãn có vòng phản hồi bác sĩ;
+(ii) bốn thực nghiệm GPU tìm hướng cải thiện lớp Severe; (iii) chẩn đoán nguyên nhân
+điểm yếu ở nhãn lỗ liên hợp và một khung đánh giá khả diễn giải có kiểm chứng.
+
+Kết quả đáng kể nhất là \textbf{chẩn đoán được nguyên nhân} khiến nhãn lỗ liên hợp
+(\textit{neural foraminal narrowing}) luôn kém: quy trình cắt ảnh cũ lấy vùng ảnh từ chuỗi
+Sagittal T2 trong khi bác sĩ chấm nhãn này trên Sagittal T1, và đo trong không gian bệnh nhân
+cho thấy \textbf{32{,}2\% (trái) và 47{,}2\% (phải)} vùng cần chấm nằm ngoài độ sâu ảnh
+mà mô hình được cho. Sau khi cắt riêng theo từng bên trên T1, AUPRC lỗ liên hợp
+tăng \up{+0{,}054} và \up{+0{,}039} so với Phase 2.
+
+Báo cáo cũng ghi lại bốn kết quả âm và hai lỗi phương pháp đã phát hiện, vì chúng ảnh hưởng
+tới cách diễn giải số liệu cũ.
+
+\section{Phần mềm gán nhãn}
+
+Ứng dụng web (FastAPI + React/Cornerstone3D) cho phép tải ảnh MRI, xem theo lát, chạy mô hình
+chấm 11 nhãn bất thường, và \textbf{ghi nhận chỉnh sửa của bác sĩ như phản hồi chuyên gia}.
+Quy mô hiện tại: 16.426 dòng Python, 2.452 dòng frontend, 24 tệp kiểm thử.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/app_worklist.png}
+\caption{Màn hình danh sách ca. Mỗi bệnh nhân có thể chứa nhiều lần chụp; trạng thái
+\textit{Ready} nghĩa là ảnh đã tải xong và sẵn sàng chấm.}
+\label{fig:worklist}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/app_viewer.png}
+\caption{Màn hình đọc ảnh, hiển thị chuỗi Sagittal T2 (512$\times$512$\times$17,
+0{,}586$\times$0{,}586$\times$3{,}3 mm). Bảng \textit{Abnormality grades} nằm dưới ảnh cho phép
+bác sĩ sửa từng nhãn; khối \textit{Doctor feedback} bên phải gom các chỉnh sửa thành hàng đợi
+huấn luyện.}
+\label{fig:viewer}
+\end{figure}
+
+Điểm thiết kế đáng lưu ý ở Hình~\ref{fig:viewer}: chỉnh sửa của bác sĩ \textbf{không tác động
+ngay} tới mô hình. Chúng được xếp hàng, việc huấn luyện lại chạy ngoại tuyến, và phiên bản mô hình
+mới phải được duyệt rồi mới kích hoạt. Điều này tránh tình huống kết quả của bệnh nhân sau bị
+thay đổi bởi chỉnh sửa của bệnh nhân trước.
+
+\section{Mốc Phase 2 đã trình bày hội đồng}
+
+Bảng~\ref{tab:phase2} là số đã báo cáo, giữ nguyên để đối chiếu.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Bốn cấu hình trên RSNA 2024 (seed 42), số đã trình bày ở Phase 2.}
+\label{tab:phase2}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Chỉ số} & \textbf{SpineNetV2} & \textbf{CBAM} & \textbf{BMC-only} & \textbf{Hybrid} \\
+\midrule
+Mean Accuracy   & \textbf{0{,}814} & 0{,}690 & 0{,}692 & 0{,}721 \\
+Mean F1 (macro) & 0{,}420 & 0{,}502 & 0{,}464 & \textbf{0{,}528} \\
+Mean AUC        & 0{,}826 & 0{,}822 & 0{,}812 & \textbf{0{,}837} \\
+\midrule
+\multicolumn{5}{l}{\textit{Lớp Severe}} \\
+Severe Recall   & 0{,}115 & 0{,}370 & 0{,}245 & \textbf{0{,}464} \\
+Severe F1       & 0{,}149 & 0{,}304 & 0{,}229 & \textbf{0{,}343} \\
+Severe AUPRC    & 0{,}276 & 0{,}319 & 0{,}218 & \textbf{0{,}321} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+So với hai mô hình ngoài cùng bộ chia dữ liệu (3 seed), Hybrid vẫn dẫn đầu rõ ở lớp Severe
+dù thua về Accuracy: Severe Recall \textbf{48{,}6\%} so với 26{,}0\% và 25{,}9\%;
+Severe F1 \textbf{0{,}356} so với 0{,}271 và 0{,}257.
+
+\section{Thực nghiệm Phase 3}
+
+\subsection{Sửa lỗi khởi tạo: nền so sánh sạch}
+
+Hai thực nghiệm trước đó dùng nhầm checkpoint khởi tạo (không có trọng số lớp). Chạy lại
+đúng công thức đã công bố trên checkpoint đúng cho kết quả ở Bảng~\ref{tab:runc}.
+Đây là \textbf{sửa lỗi, không phải đóng góp} --- giá trị của nó là mọi so sánh về sau không bị
+bác bằng câu ``nền so sánh của em hỏng''.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Cùng công thức, khác checkpoint khởi tạo (seed 42, cùng tập validation).}
+\label{tab:runc}
+\begin{tabular}{lccl}
+\toprule
+\textbf{Chỉ số} & \textbf{Phase 2} & \textbf{Khởi tạo đúng} & \textbf{Chênh} \\
+\midrule
+Severe AUPRC    & 0{,}3211 & 0{,}3696 & \up{+0{,}0485} \\
+Severe F1       & 0{,}3434 & 0{,}3696 & \up{+0{,}0262} \\
+Mean Accuracy   & 0{,}7208 & 0{,}7318 & \up{+0{,}0110} \\
+Mean F1 (macro) & 0{,}5277 & 0{,}5286 & \up{+0{,}0009} \\
+Macro AUPRC     & 0{,}5258 & 0{,}5364 & \up{+0{,}0106} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Chuyên gia T1 cho nhãn lỗ liên hợp: đóng góp chính}
+
+\textbf{Chẩn đoán.} Đối chiếu tệp toạ độ với mô tả chuỗi ảnh: nhãn lỗ liên hợp được chấm
+\textbf{100\% trên Sagittal T1}, nhãn ống sống \textbf{99{,}9\% trên Sagittal T2}, và hai loại
+chỉ dùng chung một chuỗi \textbf{1 lần trên 6291} ca. Quy trình cũ cắt một vùng ảnh duy nhất từ
+T2 lấy tâm theo toạ độ ống sống rồi gắn cả ba nhãn.
+
+Đo độ lệch trong \textbf{không gian bệnh nhân} của DICOM (dùng \texttt{ImagePositionPatient} và
+\texttt{ImageOrientationPatient}, không so toạ độ điểm ảnh vì hai chuỗi có lưới khác nhau):
+
+\begin{table}[htbp]
+\centering\small
+\caption{Vị trí nhãn lỗ liên hợp so với vùng ảnh cắt từ T2 (796 cặp, 80 ca).}
+\label{tab:geo}
+\begin{tabular}{lcc}
+\toprule
+ & \textbf{Lỗ trái} & \textbf{Lỗ phải} \\
+\midrule
+Lệch trong mặt phẳng (trung vị)      & 9{,}7 mm & 9{,}9 mm \\
+Nằm ngoài khung ảnh theo mặt phẳng   & 0{,}3\% & 0{,}3\% \\
+Lệch theo chiều sâu (trung vị)       & 4{,}0 lát & 4{,}0 lát \\
+\textbf{Nằm ngoài độ sâu 9 lát}      & \down{\textbf{32{,}2\%}} & \down{\textbf{47{,}2\%}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Khung ảnh theo mặt phẳng rất rộng (nửa cạnh 70$\times$35 mm) nên hầu như luôn phủ được. Chỗ hụt
+là \textbf{độ sâu}: vùng ảnh chỉ gồm 9 lát, trong khi gần một nửa số ca bên phải có vùng cần chấm
+nằm ngoài phạm vi đó. Nói cách khác, mô hình được yêu cầu chấm một cấu trúc \textbf{không có trong
+ảnh đầu vào}.
+
+\textbf{Kết quả sau khi sửa.} Cắt vùng ảnh riêng cho từng bên trên chuỗi T1, lấy tâm theo toạ độ
+của chính bên đó:
+
+\begin{table}[htbp]
+\centering\small
+\caption{AUPRC nhãn lỗ liên hợp. Cột ``đỉnh'' là epoch tốt nhất trong 20 epoch.}
+\label{tab:t1}
+\begin{tabular}{lcccc}
+\toprule
+ & \textbf{Phase 2} & \textbf{Chuyên gia T1} & \textbf{Chênh} & \textbf{Đỉnh} \\
+\midrule
+Lỗ trái  & 0{,}4670 & 0{,}5205 & \up{+0{,}054} & 0{,}5321 \\
+Lỗ phải  & 0{,}4820 & 0{,}5209 & \up{+0{,}039} & 0{,}5311 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Điều đáng tin hơn con số: \textbf{cả 20/20 epoch} của mô hình T1 đều vượt epoch tốt nhất trong
+20 epoch của mô hình cũ, ở cả hai bên, không ngoại lệ. Tính nhất quán này loại trừ khả năng
+vớ được một epoch may.
+
+\textbf{Kiểm chứng nguyên nhân.} Nếu vùng ảnh thật sự không thấy được lỗ liên hợp thì mô hình cũ
+phải kém hơn ở đúng những ca đó. Kiểm trong nội bộ một mô hình, chia theo một thuộc tính của dữ
+liệu mà mô hình không biết:
+
+\begin{table}[htbp]
+\centering\small
+\caption{AUC lớp Severe của mô hình T2, chia theo vị trí nhãn.}
+\label{tab:causal}
+\begin{tabular}{lcccc}
+\toprule
+ & \textbf{Trong 9 lát} & \textbf{Ngoài 9 lát} & \textbf{Chênh} & \textbf{p} \\
+\midrule
+Lỗ phải & 0{,}8983 & 0{,}8321 & \up{+0{,}066} & \textbf{0{,}044} \\
+Lỗ trái & 0{,}8685 & 0{,}8643 & +0{,}004 & 0{,}903 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Bên phải xác nhận, bên trái không. Hai bên khác nhau theo đúng hướng dự đoán: bên phải có
+47{,}2\% ca ngoài phạm vi so với 32{,}2\% của bên trái, tức nhiều ca bị ảnh hưởng hơn thì hiệu ứng
+lớn hơn. \textbf{Giới hạn cần nêu:} đây là hai phép kiểm, một cái đạt $p=0{,}044$; hiệu chỉnh cho
+việc so nhiều lần thì $p=0{,}088$, nên kết luận đúng là \textbf{có dấu hiệu ủng hộ}, chưa phải
+bằng chứng chắc chắn.
+
+\subsection{Bốn hướng đã thử và không hiệu quả}
+
+Các kết quả âm dưới đây đều đáng báo cáo vì chúng loại bỏ những hướng nghe hợp lý.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Các hướng cải thiện đã thử nghiệm và kết quả.}
+\label{tab:neg}
+\begin{tabular}{p{4.6cm}p{9.8cm}}
+\toprule
+\textbf{Hướng} & \textbf{Kết quả} \\
+\midrule
+Cơ chế trộn có cổng (gated fusion) &
+Chênh lệch đỉnh 0{,}0016, nhỏ hơn độ lệch chuẩn giữa các epoch (0{,}0048). \textbf{Không khác biệt.} \\
+Trung bình trọng số nhiều epoch &
+Kém hơn epoch đơn tốt nhất ở mọi chỉ số. \textbf{Không có tác dụng.} \\
+Mở băng tầng cuối của backbone &
+Quá khớp: Mean Accuracy \up{+0{,}029} nhưng Severe AUPRC \down{$-$0{,}037}. Quá khớp ăn vào lớp hiếm trước. \\
+Bản đồ nhiệt (Grad-CAM) để định vị &
+Thua phép đoán ``giữa ảnh'': 30{,}7 mm so với 21{,}6 mm. \textbf{Không định vị được.} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Kết quả mở băng backbone trở thành \textbf{lý lẽ bảo vệ} thiết kế đóng băng hiện tại, khi được hỏi
+``tại sao không tinh chỉnh toàn bộ mạng''.
+
+\section{Khả diễn giải: khảo sát và kiểm chứng}
+
+Theo yêu cầu khảo sát nhiều hướng tiếp cận, đã rà 16 phương pháp thuộc bốn họ: CAM dùng gradient,
+CAM không gradient, quy gán ở không gian đầu vào, và tín hiệu nội tại của mô hình. Chọn triển khai
+bốn phương pháp có \textbf{cơ chế khác nhau} thay vì nhiều biến thể cùng một cơ chế.
+
+Hai kết quả kiểm chứng đáng lưu:
+
+\textbf{Grad-CAM trên nhánh CBAM là phân rã chính xác, không phải suy đoán.} Đầu ra của mạng là
+gộp trung bình toàn cục rồi một tầng tuyến tính --- đúng kiến trúc mà Draelos \& Carin chứng minh
+CAM, HiResCAM và Grad-CAM cho cùng một kết quả. Kiểm bằng số trên mô hình của đề tài: tương quan
+Pearson \textbf{1{,}000000}, sai lệch tuyệt đối lớn nhất $2{,}4\times10^{-7}$.
+
+\textbf{Bản đồ nhiệt không định vị được lỗ liên hợp.} Đo khoảng cách từ đỉnh bản đồ nhiệt tới điểm
+bác sĩ chấm, kèm hai mốc đối chứng bắt buộc:
+
+\begin{table}[htbp]
+\centering\small
+\caption{Khoảng cách tới điểm bác sĩ chấm (trung vị, mm), các ca Severe.}
+\label{tab:loc}
+\begin{tabular}{lcc}
+\toprule
+ & \textbf{Lỗ trái (n=53)} & \textbf{Lỗ phải (n=20)} \\
+\midrule
+Grad-CAM              & 30{,}7 & 33{,}9 \\
+Layer-CAM             & 31{,}8 & 30{,}4 \\
+Đoán ngẫu nhiên       & 49{,}7 & 53{,}7 \\
+\textbf{Đoán giữa ảnh} & \textbf{21{,}6} & \textbf{19{,}6} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Cả hai phương pháp thắng phép đoán ngẫu nhiên nhưng \textbf{thua phép đoán ``giữa ảnh''}, nên chúng
+không mang thông tin định vị hữu ích. Kết quả này trùng với Arun và cộng sự (\textit{Radiology: AI},
+2021): cả 8 phương pháp họ thử trên ảnh y tế thật đều trượt ít nhất một tiêu chí tin cậy.
+
+Hệ quả cần ghi nhận: hình Grad-CAM dùng trong bài báo đã nộp \textbf{không chứng minh được} điều nó
+tuyên bố. Vùng ống sống nằm ngay giữa ảnh do cách cắt, nên ``mô hình tập trung vào ống sống'' không
+phân biệt được với ``mô hình tập trung vào giữa ảnh'' --- mốc đối chứng cho 0{,}4 mm trong khi
+Grad-CAM cho 14{,}0 mm.
+
+\section{Hai lỗi phương pháp đã phát hiện}
+
+\textbf{Sai hệ toạ độ.} Phép đo hình học ban đầu trừ toạ độ điểm ảnh của hai chuỗi T1 và T2 như thể
+chúng cùng một hệ. Ba trong bốn ca kiểm tra có lưới ảnh khác nhau (384$\times$384 ở 0{,}78 mm so với
+640$\times$640 ở 0{,}47 mm). Tính lại trong không gian bệnh nhân thì lập luận vẫn đứng nhưng
+\textbf{đổi trục}: không phải ``ngoài khung hình'' mà là ``ngoài độ sâu 9 lát''.
+
+\textbf{Sai phép chia tập bệnh nhân.} Hàm chia chạy trên danh sách bệnh nhân của từng tệp mô tả dữ
+liệu; hai tệp lệch nhau 3 ca nên sinh ra hai phép chia hoàn toàn khác nhau. Hai tập validation chỉ
+chung 214 trên 395 bệnh nhân, và 181 bệnh nhân nằm ở tập kiểm của mô hình này lại nằm ở tập huấn
+luyện của mô hình kia. Việc này \textbf{không làm sai} số của từng mô hình, nhưng làm phép
+\textbf{so sánh} giữa chúng lỏng hơn mức đã trình bày. Đã sửa bằng cách chia theo hàm băm mã bệnh
+nhân, cho 406 bệnh nhân trùng khớp 100\% giữa hai tập dữ liệu.
+
+\section{Kế hoạch tiếp theo}
+
+\begin{enumerate}
+\itemsep0.15em
+\item \textbf{Ghép hệ định tuyến đầu-cuối} --- lấy nhãn ống sống từ nhánh T2 và nhãn lỗ liên hợp từ
+nhánh T1 thành một hệ thống. Không cần huấn luyện lại, chỉ cần nối dự đoán theo khoá (ca, tầng).
+Cho ra Mean F1 macro ba điều kiện để đặt cạnh Phase 2 --- con số hiện còn thiếu.
+\item \textbf{Chạy 3 seed} cho cấu hình thắng, vì mọi số Phase 3 hiện là một seed trong khi Phase 2
+dùng 3 seed. Không được trộn hai bộ số trong cùng một bảng.
+\item \textbf{Quy công giữa hai nhánh} --- do mô hình chỉ có hai nhánh nên giá trị Shapley tính được
+chính xác tuyệt đối chỉ với hai lượt suy luận thêm. Trả lời được nhánh nào quyết định kết quả.
+\item \textbf{Sửa số liệu trong luận văn} --- câu ở phần tóm tắt hiện ghi ``Mean F1 macro từ 0{,}343
+lên 0{,}474''; 0{,}343 thực chất là Severe F1, còn 0{,}474 không khớp tệp số liệu nào. Số đúng theo
+3 seed là \textbf{0{,}4202 $\to$ 0{,}5265}, Severe Recall \textbf{12{,}3\% $\to$ 48{,}6\%}.
+\item \textbf{Hoàn thiện phần mềm} --- quay video minh hoạ, và xử lý phản hồi của thầy.
+\end{enumerate}
+
+\end{document}

@@ -210,3 +210,8 @@ checkpoints_canonical_backup_*.tar.gz
 docs/scholarship_assessment.md
 ANSWERS_THAY_20260428.md
 MEETING_NOTES_20260428.md
+
+# Bao cao Phase 3: san pham bien dich LaTeX
+paper/bao_cao_phase3/*.aux
+paper/bao_cao_phase3/*.log
+paper/bao_cao_phase3/*.out
