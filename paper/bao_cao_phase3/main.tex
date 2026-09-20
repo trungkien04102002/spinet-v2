@@ -28,9 +28,11 @@
 \section{Tóm tắt}
 
 Báo cáo tổng hợp kết quả Phase 3, đối chiếu với mốc đã trình bày trước hội đồng ở Phase 2.
-Ba nhóm việc đã hoàn thành: (i) hoàn thiện phần mềm gán nhãn có vòng phản hồi bác sĩ;
-(ii) bốn thực nghiệm GPU tìm hướng cải thiện lớp Severe; (iii) chẩn đoán nguyên nhân
-điểm yếu ở nhãn lỗ liên hợp và một khung đánh giá khả diễn giải có kiểm chứng.
+Ba nhóm việc đã hoàn thành: (i) phần mềm gán nhãn, trong đó \textbf{cơ chế} của vòng phản hồi
+bác sĩ đã được cài đặt và kiểm thử đầy đủ nhưng \textbf{chưa từng chạy trên chỉnh sửa thật},
+nên báo cáo này không đưa ra con số trước/sau nào cho nó (mục~3.7); (ii) bốn thực nghiệm GPU
+tìm hướng cải thiện lớp Severe; (iii) chẩn đoán nguyên nhân điểm yếu ở nhãn lỗ liên hợp và
+một khung đánh giá khả diễn giải có kiểm chứng.
 
 Kết quả đáng kể nhất là \textbf{chẩn đoán được nguyên nhân} khiến nhãn lỗ liên hợp
 (\textit{neural foraminal narrowing}) luôn kém: quy trình cắt ảnh cũ lấy vùng ảnh từ chuỗi
@@ -248,8 +250,13 @@ backward transfer để đo quên (Lopez-Paz và Ranzato, NeurIPS 2017) --- tứ
 một bản cập nhật tệ nhưng chưa đủ sức \textit{khẳng định} một bản tốt. Hai, hàm mất mát đang dùng
 entropy chéo trần, chưa có trọng số lớp, trong khi chính cấu hình này đã từng làm lớp \textit{Severe}
 sập về F1 bằng 0 ở một thực nghiệm trước; cổng macro-F1 sẽ chặn hậu quả, nhưng nếu chạy mà không
-cải thiện thì việc đầu tiên nên thử là thêm trọng số lớp. Ba, thao tác duyệt và hoàn tác hiện mới
-có ở phía máy chủ, chưa có nút trên giao diện.
+cải thiện thì việc đầu tiên nên thử là thêm trọng số lớp. Ba, và đây là giới hạn đáng kể nhất về
+phạm vi: \textbf{chỉ ba trong mười một nhãn có thể học được từ chỉnh sửa}. Bước dựng dữ liệu chỉ
+ánh xạ ba đầu phân loại của mô hình CBAM; một chỉnh sửa trên tám nhãn còn lại --- vốn do nhánh
+SpineNet gốc sinh ra --- vẫn được ghi nhật ký, vẫn vào lô, vẫn được đếm là ``đã gửi'', rồi bị bỏ
+qua khi dựng tập huấn luyện. Nói cách khác, giao diện cho bác sĩ sửa nhiều hơn những gì vòng lặp
+tiêu thụ được. Giao diện vận hành hiện đã đánh dấu các nhãn này, nhưng khoảng cách đó là có thật
+và chỉ đóng lại được khi tám nhãn kia cũng được huấn luyện trong cùng một khung.
 
 Quan trọng nhất: \textbf{vòng lặp chưa chạy trên chỉnh sửa thật của bác sĩ}, nên báo cáo này không
 đưa ra con số trước/sau nào. Và ngay cả khi chạy, với quy mô 20--50 mẫu thì \textbf{không thể chứng

@@ -19,7 +19,7 @@ Thầy cho 7 ý, làm đổi trọng tâm cải tiến model:
 
 ## 0. Bối cảnh
 - **Paper MIWAI: ĐÃ NỘP** (em first author, thầy corresponding). Kì cuối = luận văn.
-- **Scope chốt:** (1) software gán nhãn MRI, (2) so sánh SOTA cho grading, (3) improve kết quả (F1) nếu kịp, (4) feedback-loop → **FUTURE WORK**.
+- **Scope chốt:** (1) software gán nhãn MRI, (2) so sánh SOTA cho grading, (3) improve kết quả (F1) nếu kịp, (4) feedback-loop → ~~FUTURE WORK~~ **cơ chế đã cài đặt xong 2026-09-20**, nhưng chưa có số thực nghiệm; phát biểu nhắm tới là "cơ chế cập nhật an toàn, không gây quên, có cổng người duyệt", KHÔNG phải "feedback làm model tốt lên" (N=20–50 không chứng minh nổi).
 - **Timeline:** giao đề 15–17/07 · thực hiện 15 tuần **20/07 → 31/10/2026** · bảo vệ **02–06/11**.
 - **HW:** 1× RTX-4090 (24GB). **Đủ pass?** Có — paper đã nộp + method mới + software + SOTA.
 
@@ -30,7 +30,7 @@ Thầy cho 7 ý, làm đổi trọng tâm cải tiến model:
 | **Software** (spine-labeling-app) | 🟢 ~95% | P0–P3 XONG (FE+BE, các session trước): P2 viewer Cornerstone3D (CornerstoneViewport + Legend + GradeTable + lib/history undo/redo), seg∥grading /infer, sửa+export. Còn: polish UI + quay demo video. Repo public. |
 | **SOTA comparison** | 🟢 Code xong, HOÃN chạy | Thầy không nhắc SOTA trong meeting → hạ ưu tiên, làm SAU multi-view (để so với model tốt nhất). Ready: `bash experiments/sota_comparison/run_all.sh` (default seed 42; 1 lệnh, chạy lúc nào cũng được). |
 | **Improve F1** | 🟡 Plan xong, chưa làm | Move #1 (threshold/calibration) gần như free, chưa chạy. Xem §2–§3. |
-| **Feedback-loop** | ⚪ Future work | Capture đã xong+tested (thỏa thầy). Không build phần retrain. Optional: dataset-builder ~1 ngày. |
+| **Feedback-loop** | 🟢 Cơ chế XONG, chưa có số thật | **Dòng cũ đã lỗi thời** (ghi "không build phần retrain" — nhưng đã build). Có đủ: `build_dataset` + `retrain_head` (head-only + replay 200 + BatchNorm đóng băng), holdout đóng băng khoá SHA-256, cổng macro-F1, `model_registry` duyệt/hoàn tác, và trong app: `/models` (duyệt checkpoint) + `/admin` (sổ chạy + nút retrain thật, 2 chế độ: tích luỹ / theo lô). Đã chạy thật 2 lượt end-to-end (~14 phút/lượt trên CPU laptop, cả hai "no improvement" nên không ghi checkpoint — đúng thiết kế). **Chưa có**: McNemar / bootstrap CI / BWT, class-weight, và quan trọng nhất là chưa chạy trên chỉnh sửa THẬT của bác sĩ. Chỉ 3/11 nhãn học được từ correction. Xem `paper/bao_cao_phase3/main.tex` mục 3. |
 | **Report luận văn** | 🔴 Chưa bắt đầu | Viết sau khi có số SOTA + F1. |
 | **Slides + demo video** | 🔴 Chưa | Cuối kì. |
 | **Meeting chốt scope với thầy** | 🟡 Chuẩn bị xong | Talking points ở CAU_HOI_THAY.md. |
