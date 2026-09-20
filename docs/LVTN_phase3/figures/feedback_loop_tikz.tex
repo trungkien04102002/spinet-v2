@@ -59,7 +59,7 @@
 % ============ A. TRUC TUYEN -- app dang phuc vu ============
 \node[io]    (mri)   at ( 1.1, 3.4) {Ảnh MRI\\\scriptsize .mha / .nii.gz};
 \node[net]   (seg)   at ( 4.5, 3.4) {TotalSpineSeg\\+ SpineNet detect\\\scriptsize tách đĩa theo tầng};
-\node[model] (grade) at ( 8.3, 3.4) {\textbf{Mô hình hybrid}\\CBAM + BiomedCLIP\\\scriptsize nạp checkpoint \texttt{ACTIVE}};
+\node[model] (grade) at ( 8.3, 3.4) {\textbf{Mô hình chấm}\\ResNet34-3D + CBAM\\\scriptsize nạp checkpoint \texttt{ACTIVE}};
 \node[io]    (view)  at (11.9, 3.4) {Viewer:\\mask + độ nặng\\\scriptsize 3 điều kiện $\times$ 5 tầng};
 \node[human] (doc)   at (15.4, 3.4) {\textbf{Bác sĩ}\\kiểm tra, sửa mask\\và sửa nhãn bệnh};
 
@@ -84,7 +84,7 @@
 \node[data]  (build)   at ( 1.7,-2.1) {\texttt{build\_dataset.py}\\\scriptsize chỉ lấy lô ĐÃ GỬI};
 \node[train] (retrain) at ( 6.0,-2.1) {\texttt{retrain\_head.py}\\\scriptsize chỉ train head\\BatchNorm ĐÓNG BĂNG\\\textbf{+ replay 200 mẫu RSNA}};
 \node[gate]  (evalb)   at (10.6,-2.1) {Đánh giá trên held-out\\\textbf{ĐÓNG BĂNG}\\\scriptsize 200 dòng, sha256,\\chỉ bệnh nhân model chưa thấy};
-\node[gate]  (gatek)   at (15.0,-2.1) {\textbf{Cổng tự động}\\\scriptsize macro-F1 \& Severe-F1\\không tăng $\Rightarrow$ BỎ checkpoint};
+\node[gate]  (gatek)   at (15.0,-2.1) {\textbf{Cổng tự động}\\\scriptsize macro-F1 trên held-out\\không tăng $\Rightarrow$ BỎ checkpoint};
 
 % Duong that: lo da gui -> build_dataset (di vuong goc cho de doc).
 \draw[arr] (batch.south) -- (11.0,-0.55) -- (1.7,-0.55) -- (build.north);

@@ -71,6 +71,173 @@ ngay} tới mô hình. Chúng được xếp hàng, việc huấn luyện lại 
 mới phải được duyệt rồi mới kích hoạt. Điều này tránh tình huống kết quả của bệnh nhân sau bị
 thay đổi bởi chỉnh sửa của bệnh nhân trước.
 
+\section{Vòng phản hồi bác sĩ: phương pháp}
+
+Mục~2 mô tả vòng phản hồi ở mức thao tác. Mục này nói phần phương pháp: cơ chế cập nhật là gì,
+gọi tên thế nào trong tài liệu, đo bằng gì, và hiện đã làm tới đâu.
+
+\subsection{Gọi tên cho đúng}
+
+Hệ thống là \textbf{human-in-the-loop continual learning} dạng \textbf{batch/ngoại tuyến},
+kịch bản \textbf{new-instance (NI)} --- cùng bài toán chấm điểm, cùng không gian nhãn, chỉ thêm
+mẫu mới đã được bác sĩ hiệu chỉnh --- cập nhật bằng \textbf{rehearsal (replay)} và có
+\textbf{cổng phê duyệt của người}.
+
+Bóc từng vế: kịch bản NI theo bộ ba NI/NC/NIC của Lomonaco và Maltoni (CORe50, CoRL 2017), vì
+không thêm lớp mới và không thêm tác vụ mới; nhãn cố định \textit{Normal/Mild--Moderate--Severe}
+nên không phải class-incremental theo phân loại của van de Ven và Tolias (arXiv:1904.07734);
+vai trò kép của bác sĩ --- vừa sinh nhãn vừa gác cổng --- là định nghĩa human-in-the-loop trong
+khảo sát của Budd, Robinson và Kainz (\textit{Medical Image Analysis}, 2021).
+
+Ba cách gọi cần tránh, vì đều sai và đều làm yếu lập luận. Thứ nhất, \textbf{không} gọi là
+\textit{online learning}: online là cập nhật ngay theo từng ca, còn ở đây cố ý gom lô và chạy
+ngoài giờ --- chính cái ``cố ý không'' đó mới là đóng góp. Thứ hai, \textbf{không} gọi trần là
+\textit{fine-tuning}: fine-tune trần trên vài chục ca là \textit{iterative fine-tuning}, chưa phải
+continual learning, vì thiếu cơ chế chống quên; thứ nâng nó lên là ba chốt ở mục~3.2. Thứ ba,
+\textbf{không} nhận là \textit{active learning}: active learning là mô hình tự chọn ca nó không
+chắc để hỏi, còn ở đây bác sĩ tự chọn ca. Đây là phần duy nhất trong phân loại còn thiếu, và nó
+rẻ vì đầu ra đã có xác suất; xếp vào hướng phát triển.
+
+\subsection{Cơ chế cập nhật và ba chốt an toàn}
+
+Mô hình gồm hai phần: phần nền ResNet34-3D kèm CBAM (khoảng 63 triệu tham số, ``học cách nhìn'')
+và ba đầu phân loại (khoảng 50 nghìn tham số, ``học cách phán''). Với vài chục ca chỉnh sửa,
+huấn luyện 63 triệu tham số sẽ học thuộc đúng mấy ca đó và quên gần mười nghìn ca RSNA.
+
+Vì vậy cách cập nhật là \textbf{chỉ huấn luyện ba đầu, đóng băng phần nền}. Giả định nền là bác sĩ
+sửa nhãn phần lớn vì \textit{ngưỡng phán} lệch chứ không phải vì mô hình \textit{nhìn} sai; tỉ lệ
+50 nghìn tham số trên vài chục mẫu cũng là tỉ lệ chấp nhận được. Kèm theo là ba chốt, mỗi chốt
+chặn một kiểu hỏng không phát ra lỗi:
+
+\begin{enumerate}
+\itemsep0.15em
+\item \textbf{Đóng băng BatchNorm.} Đóng băng phần nền chỉ tắt gradient, trong khi BatchNorm cập
+nhật thống kê \textit{không} qua gradient. Một lô bốn mẫu sẽ đè thống kê tích luỹ từ toàn bộ tập
+huấn luyện. Đây là nguyên nhân đã được ghi nhận của việc quên thảm khốc khi thích nghi mô hình y tế
+trên tập nhỏ (arXiv:2011.08096).
+\item \textbf{Bộ đệm replay.} Trộn khoảng 200 đĩa đệm gốc vào mỗi lượt cập nhật. Không có nó, mô
+hình chỉ thấy những ca bị sửa và tưởng dữ liệu thật đều như vậy.
+\item \textbf{Cổng macro-F1.} Chỉ giữ trọng số mới nếu macro-F1 tăng trên tập đánh giá đã đóng băng.
+\end{enumerate}
+
+Hình~\ref{fig:feedback_loop} vẽ toàn bộ vòng lặp theo bốn dải: trực tuyến (ứng dụng phục vụ), thu
+thập (tách ``lưu'' khỏi ``gửi''), ngoại tuyến (huấn luyện lại theo lô và kiểm chứng), và triển khai
+(người duyệt, có thể hoàn tác). Nét liền là thành phần đã cài đặt và đã kiểm thử; nét đứt là dự
+kiến --- hiện chỉ có hai hộp nét đứt, là \textit{active learning} và \textit{kiểm tra chất lượng
+nhãn}.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/feedback_loop_tikz.pdf}
+\caption{Vòng lặp phản hồi bác sĩ theo cơ chế human-in-the-loop continual learning dạng batch.
+Nét liền: thành phần đã cài đặt và kiểm thử; nét đứt: dự kiến.}
+\label{fig:feedback_loop}
+\end{figure}
+
+Bảng~\ref{tab:vi_sao_khong} giải thích vì sao không chọn các hướng cập nhật khác. Lý do chung là ở
+vùng vài chục mẫu, replay có bằng chứng y tế mạnh nhất, còn các hướng còn lại hoặc cần nhiều mẫu
+hơn, hoặc cần thành phần mà ứng dụng hiện không chạy.
+
+\begin{table}[htbp]
+\centering
+\caption{Vì sao chọn head-only kèm replay thay cho các hướng cập nhật khác.}
+\label{tab:vi_sao_khong}
+\small
+\begin{tabular}{@{}lp{9.2cm}@{}}
+\toprule
+\textbf{Hướng} & \textbf{Lý do không chọn} \\
+\midrule
+Head-only + replay + BN đóng băng & Đang dùng. Rẻ, bằng chứng y tế mạnh nhất ở vùng dữ liệu ít \\
+EWC & Ma trận Fisher cần dữ liệu cũ; ở vài chục mẫu ước lượng không đáng tin. Thực nghiệm trên ảnh da liễu cho thấy replay thắng EWC ở mọi cấu hình \\
+LwF & Bằng chứng y tế mỏng, không mạnh hơn replay \\
+LoRA / adapter & Cần từ 50 mẫu trở lên; thêm phụ thuộc, thừa ở quy mô này \\
+Tip-Adapter / prototype & Không thể quên và hoàn tác tức thì, nhưng cần BiomedCLIP, trong khi ứng dụng đang chạy nhánh CBAM \\
+Huấn luyện lại toàn bộ & Quên thảm khốc khi số mẫu nhỏ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Chuẩn bị dữ liệu từ chỉnh sửa}
+
+Chỉnh sửa của bác sĩ không được dùng trực tiếp. Bước dựng dữ liệu làm bốn việc. Một, khử trùng lặp:
+mỗi cặp (ca, ô nhãn) chỉ lấy lần sửa \textit{mới nhất}, vì bác sĩ có thể sửa đi sửa lại một ô. Hai,
+chỉ lấy các lô đã gửi, và lấy được theo đúng một mã lô, để một lượt huấn luyện cũ tái lập được
+chính xác những gì nó từng thấy. Ba, \textbf{cắt lại vùng ảnh} từ ảnh gốc và mặt nạ phân vùng bằng
+đúng hàm mà lúc chấm đã dùng, cho ra khối $(9, 112, 224)$ --- không lưu ảnh tại thời điểm sửa, để
+tránh lệch giữa lúc huấn luyện và lúc phục vụ. Bốn, ô nào bác sĩ không đụng tới thì gán $-1$, khớp
+quy ước \textit{ignore\_index} mà nhánh huấn luyện chính đang dùng, nghĩa là không bịa nhãn cho
+những đầu ra bác sĩ không nhận xét.
+
+Ngoài dữ liệu chỉnh sửa, một lượt cập nhật còn cần hai tập nữa: tập replay khoảng 200 đĩa đệm gốc,
+và tập đánh giá đã đóng băng. Cả hai lấy từ bộ RSNA 2024 đã tiền xử lý.
+
+\subsection{Giao thức đánh giá và cổng chặn}
+
+Tập đánh giá được \textbf{chốt trước khi thu thập bất kỳ chỉnh sửa nào}: 200 dòng, đóng băng ngày
+26/07/2026, kèm tệp kê khai ghi SHA-256 của các dòng đã chọn cùng hạt giống và thời điểm, và có
+lệnh kiểm tra lại để chứng minh tập không đổi. Điều này bắt buộc chứ không phải cho chặt chẽ: nếu
+chọn tập đánh giá \textit{sau} khi đã biết bác sĩ sửa những đĩa nào, con số đo được phản ánh cách
+chọn chứ không phản ánh mô hình, và không có cách nào dựng lại bảo đảm đó về sau.
+
+Chỉ tiêu quyết định là \textbf{macro-F1}, không phải độ chính xác. Lớp \textit{Severe} hiếm, nên một
+mô hình sập về đoán \textit{Normal/Mild} cho mọi ô vẫn đạt độ chính xác trung bình cao trong khi mất
+hết giá trị lâm sàng --- đúng lớp mà đề tài sinh ra để cải thiện. Trọng số mới chỉ được ghi ra tệp
+khi macro-F1 sau lớn hơn trước; không đạt thì bỏ, và tệp trọng số giữ lại có nhúng sẵn số đo
+trước/sau để người duyệt nhìn số mà quyết.
+
+\subsection{Vì sao ``theo lô, ngoại tuyến, có người duyệt'' là thiết kế đúng}
+
+Hướng dẫn của FDA tháng 12/2024 về \textit{Predetermined Change Control Plan} (PCCP) cho phần mềm
+y tế dùng trí tuệ nhân tạo cho phép nhà sản xuất khai báo trước phạm vi thay đổi --- tần suất, giới
+hạn dữ liệu, quy trình kiểm chứng, cách hoàn tác --- và sau đó cập nhật trong phạm vi đó mà không
+phải xin duyệt lại từ đầu. Điểm mấu chốt là hướng dẫn này áp cho \textbf{cập nhật theo lô, ngoại
+tuyến}, không áp cho học trực tuyến liên tục. Đạo luật AI của Liên minh châu Âu, hiệu lực
+01/08/2024, cùng quy định về thiết bị y tế cũng đòi có giám sát của người và hậu kiểm.
+
+Nghĩa là thiết kế ``gom lô, chạy ngoài giờ, người bấm duyệt, hoàn tác được'' không phải làm cho
+đơn giản mà là làm cho đúng khung quản lý. Đây là lập luận nên nói thẳng khi bảo vệ, vì nó biến một
+điểm trông như hạn chế thành một lựa chọn có căn cứ.
+
+\subsection{Chỉnh sửa của bác sĩ không phải chân lý}
+
+Một nghiên cứu ba người đọc trên ảnh MRI thắt lưng thoái hoá cho thấy chỉ số đồng thuận Cohen's
+$\kappa$ với thang Pfirrmann chỉ đạt 0{,}68, tức hai bác sĩ bất đồng khoảng một phần ba số ca.
+Do đó việc một bác sĩ sửa nhãn của mô hình không đương nhiên có nghĩa mô hình sai, và nuốt toàn bộ
+chỉnh sửa vào tập huấn luyện có nguy cơ dạy mô hình thiên theo cách đọc của một người.
+
+Hướng xử lý theo \textit{confident learning} (Northcutt, Jiang và Chuang, JAIR 2021) là đánh dấu
+những chỉnh sửa mâu thuẫn với dự đoán mà mô hình đang rất tự tin để xem lại, thay vì đưa thẳng vào
+huấn luyện. Lý tưởng là mỗi ca có ít nhất hai bác sĩ đọc độc lập; nếu không có thì phải ghi vào
+phần hạn chế. Cơ chế truy vết cần thiết thì ứng dụng đã có sẵn: mỗi lần lưu tạo một phiên bản chú
+giải mới và mỗi ô thay đổi được ghi một dòng nhật ký riêng.
+
+\subsection{Đã làm tới đâu, và điều không được phép hứa}
+
+Phần cơ chế đã cài đặt và có kiểm thử: dựng dữ liệu từ lô, huấn luyện lại đầu phân loại kèm ba chốt,
+đóng băng tập đánh giá, cổng macro-F1, và sổ đăng ký mô hình cho phép kích hoạt lẫn hoàn tác. Các
+chốt được kiểm thử theo hướng chứng minh \textit{hỏng thật khi bỏ chốt}, chẳng hạn có một kiểm thử
+cho thấy thống kê BatchNorm trôi nếu không đóng băng.
+
+Ba phần còn thiếu, nêu ra để không bị hiểu nhầm là đã xong. Một, giao thức thống kê mới có phần đo
+trước/sau, \textbf{chưa có} kiểm định McNemar, khoảng tin cậy bootstrap cho $\Delta$F1, và chỉ số
+backward transfer để đo quên (Lopez-Paz và Ranzato, NeurIPS 2017) --- tức hiện đủ sức \textit{chặn}
+một bản cập nhật tệ nhưng chưa đủ sức \textit{khẳng định} một bản tốt. Hai, hàm mất mát đang dùng
+entropy chéo trần, chưa có trọng số lớp, trong khi chính cấu hình này đã từng làm lớp \textit{Severe}
+sập về F1 bằng 0 ở một thực nghiệm trước; cổng macro-F1 sẽ chặn hậu quả, nhưng nếu chạy mà không
+cải thiện thì việc đầu tiên nên thử là thêm trọng số lớp. Ba, thao tác duyệt và hoàn tác hiện mới
+có ở phía máy chủ, chưa có nút trên giao diện.
+
+Quan trọng nhất: \textbf{vòng lặp chưa chạy trên chỉnh sửa thật của bác sĩ}, nên báo cáo này không
+đưa ra con số trước/sau nào. Và ngay cả khi chạy, với quy mô 20--50 mẫu thì \textbf{không thể chứng
+minh mô hình tốt lên một cách có ý nghĩa thống kê} --- các công trình continual learning trong ảnh
+y tế dùng cỡ 100--1000 mẫu, còn vùng 20--50 chưa được kiểm chứng, và ngưỡng tối thiểu để một con số
+macro-F1 bảo vệ được là khoảng 50--100 mẫu \textit{cho riêng lớp thiểu số}.
+
+Vì vậy phát biểu mà phần này nhắm tới không phải ``phản hồi của bác sĩ làm mô hình tốt lên'' mà là
+``cơ chế cập nhật an toàn, không gây quên, có cổng kiểm duyệt của người và có thể hoàn tác''. Khi
+có số, câu kết luận đúng đắn sẽ có dạng: cơ chế không gây quên, có xu hướng cải thiện lớp đang yếu
+với khoảng tin cậy kèm theo, và cỡ mẫu chưa đủ để kết luận có ý nghĩa thống kê.
+
 \section{Mốc Phase 2 đã trình bày hội đồng}
 
 \subsection{Bốn cấu hình nội bộ}
