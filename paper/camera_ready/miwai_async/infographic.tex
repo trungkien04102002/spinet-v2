@@ -61,7 +61,7 @@
 
 %% ------------------------------------------------- panel 1: imbalance
 \node[anchor=west, font=\fontsize{14}{17}\selectfont, text=inkGrey]
-     at (18,126) {The class that matters is the rarest};
+     at (18,126) {Severity distribution, RSNA 2024};
 
 % bars, baseline at y = 48, full scale 70 mm = 100 %
 \fill[barGrey]      (25,48) rectangle ++(17,56.7);
@@ -78,7 +78,7 @@
 \node[font=\fontsize{11}{13}\selectfont\bfseries, text=oiVermillion] at (81.5,44.5) {Severe};
 
 \node[anchor=west, font=\fontsize{12}{15}\selectfont, text=inkGrey, align=left]
-     at (18,32) {Ordinary training almost never\\predicts Severe. Recall near zero.};
+     at (18,32) {Cross-entropy training leaves\\Severe recall near zero.};
 
 %% ------------------------------------------------- panel 2: architecture
 % The two boxes sit side by side, not stacked: stacking made the upper
@@ -113,12 +113,12 @@
 
 %% ------------------------------------------------- panel 3: results
 \node[anchor=west, font=\fontsize{14}{17}\selectfont, text=inkGrey]
-     at (223.33,126) {The rare class comes back};
+     at (223.33,126) {Severe class, RSNA 2024};
 
 \node[font=\fontsize{13}{15}\selectfont, text=inkGrey] at (262.67,116) {Severe Recall};
 \node[font=\fontsize{30}{32}\selectfont\bfseries, text=oiGreen] at (262.67,104)
      {12.3\% $\rightarrow$ 48.6\%};
-\node[font=\fontsize{13}{15}\selectfont, text=inkGrey] at (262.67,93) {about four times better};
+\node[font=\fontsize{13}{15}\selectfont, text=inkGrey] at (262.67,93) {about four times higher};
 
 \draw[barGrey, line width=0.25mm] (228,85) -- (297.33,85);
 
@@ -134,7 +134,7 @@
      {graded zero-shot on SPIDER,\\no retraining, mean F1 0.362};
 
 \node[anchor=west, font=\fontsize{12}{15}\selectfont, text=inkGrey, align=left]
-     at (223.33,32) {One trained model answers\\a label set it never saw.};
+     at (223.33,32) {The same model grades a schema\\it was not trained on.};
 
 %% ---------------------------------------------------------------- footer
 \fill[panelBg] (0,0) rectangle (320,18);
