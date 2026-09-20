@@ -22,12 +22,30 @@ be recorded from them.
 
 ## Where the numbers come from
 
-All of them come from the abstract of the accepted paper: Severe recall 12.3%
-to 48.6%, Severe F1 0.152 to 0.356, and eight unseen SPIDER labels at mean F1
-0.362. Nothing from the thesis experiments appears here.
+Every figure is traced to the accepted paper.
 
-The 4% Severe share in the first panel is the mean of 4.8%, 4.1% and 3.9%,
-which are the three sagittal conditions.
+| On the page | In the paper |
+| --- | --- |
+| Severe recall 12.3% to 48.6% | Abstract, and Table 1, mean over seeds 42, 123, 456 |
+| Severe F1 0.152 to 0.356 | Abstract, same table |
+| about four times higher | Section 1, "about 4x" |
+| fusion head, 1.18M params | Table 2, "Trainable / total params 1.18 M / 260 M" |
+| disc morphology F1 0.587 against 0.433 | Table 4, row "Mean (disc-morphology)" |
+| 81% / 15% / 4% | Mean of the per-condition values behind Figure 2, which are 4.8, 4.1 and 3.9 for Severe |
+
+Nothing from the thesis experiments appears here.
+
+**One choice you should check.** My first draft headlined the zero-shot result
+as mean F1 0.362 over all eight labels. That is the wrong number to show. The
+paper's own Table 4 gives off-the-shelf BiomedCLIP 0.394 on the same all-eight
+mean, so it beats us there, and Section 4.4 says so in plain words. Putting
+0.362 on the page as an achievement would have contradicted our own paper.
+
+The page now shows the disc morphology mean instead, 0.587 against 0.433,
+which is the comparison the paper does claim, and it names the three labels it
+covers. If you would rather the infographic carry the all-eight number with
+the loss stated honestly, or carry no zero-shot number at all, say so and I
+will change it.
 
 ## Three things I would like your opinion on
 

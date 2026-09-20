@@ -99,7 +99,7 @@
 
 \node[draw=inkGrey, line width=0.5mm, fill=white, rounded corners=1mm,
       minimum width=50mm, minimum height=11mm, align=center,
-      font=\fontsize{12}{14}\selectfont] (fus) at (160,74) {fusion head, 1.2M params};
+      font=\fontsize{12}{14}\selectfont] (fus) at (160,74) {fusion head, 1.18M params};
 
 \draw[-{Stealth[length=2.6mm]}, oiBlue,   line width=0.5mm] (bxA) -- (fus);
 \draw[-{Stealth[length=2.6mm]}, oiOrange, line width=0.5mm] (bxB) -- (fus);
@@ -128,10 +128,10 @@
 
 \draw[barGrey, line width=0.25mm] (228,61) -- (297.33,61);
 
-\node[font=\fontsize{19}{21}\selectfont\bfseries, text=oiBlue] at (262.67,53)
+\node[font=\fontsize{19}{21}\selectfont\bfseries, text=oiBlue] at (262.67,55.5)
      {8 unseen labels};
-\node[font=\fontsize{12}{14}\selectfont, text=inkGrey, align=center] at (262.67,44)
-     {graded zero-shot on SPIDER,\\no retraining, mean F1 0.362};
+\node[font=\fontsize{10}{12}\selectfont, text=inkGrey, align=center] at (262.67,44)
+     {graded zero-shot, no retraining.\\Disc morphology F1 0.587,\\against 0.433 off the shelf.};
 
 \node[anchor=west, font=\fontsize{12}{15}\selectfont, text=inkGrey, align=left]
      at (223.33,32) {The same model grades a schema\\it was not trained on.};
@@ -139,9 +139,7 @@
 %% ---------------------------------------------------------------- footer
 \fill[panelBg] (0,0) rectangle (320,18);
 \node[anchor=west, font=\fontsize{10}{12}\selectfont, text=inkGrey] at (11,9)
-     {RSNA 2024 and SPIDER. Severe share is the mean over three sagittal conditions. Recall and F1 are three-seed means.};
-\node[anchor=east, font=\fontsize{10}{12}\selectfont, text=inkGrey] at (309,9)
-     {Springer LNAI, MIWAI 2026};
+     {RSNA figures are means over three seeds. Severe share is the mean of the three sagittal conditions. Zero-shot is one frozen model scored on the full SPIDER cohort, 1{,}439 IVDs.};
 
 \end{tikzpicture}
 \end{document}
