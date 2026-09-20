@@ -171,6 +171,30 @@ những đầu ra bác sĩ không nhận xét.
 Ngoài dữ liệu chỉnh sửa, một lượt cập nhật còn cần hai tập nữa: tập replay khoảng 200 đĩa đệm gốc,
 và tập đánh giá đã đóng băng. Cả hai lấy từ bộ RSNA 2024 đã tiền xử lý.
 
+\textbf{Lượt cập nhật thứ hai trở đi lấy dữ liệu từ đâu.} Đây là một quyết định dễ bị bỏ qua nhưng
+quyết định luôn việc cơ chế có trôi hay không. Kiến thức cũ tích luỹ ở \textit{trọng số}: mỗi lượt
+nạp checkpoint đang phục vụ rồi tinh chỉnh tiếp, nên lượt thứ hai xuất phát từ kết quả của lượt
+thứ nhất. Nhưng \textit{dữ liệu} thì không tự tích luỹ. Nếu mỗi lượt chỉ huấn luyện trên lô mới,
+các chỉnh sửa của lô trước không còn xuất hiện trong tập huấn luyện, chúng chỉ còn tồn tại gián
+tiếp trong trọng số --- đúng dạng trôi kinh điển của continual learning: chạy theo cái sửa mới
+nhất và để những cái đã sửa trước đó phai dần. Tập replay không bù được, vì 200 đĩa đệm đó là dữ
+liệu RSNA gốc, tức neo mô hình về \textit{phân phối ban đầu} chứ không neo về những gì bác sĩ đã
+phán.
+
+Do đó mặc định là \textbf{huấn luyện tích luỹ}: mỗi lượt dùng toàn bộ chỉnh sửa đã gửi từ trước
+tới nay, để bản cập nhật nào cũng phải thoả mãn mọi điều bác sĩ từng sửa. Mã lô vẫn được giữ, nhưng
+cho mục đích khác --- ghi sổ và tái lập chính xác một lượt chạy cũ --- và vẫn có thể chạy theo
+đúng một lô khi cần đối chứng. Việc một ô bị sửa nhiều lần ở các lô khác nhau không gây trùng lặp,
+vì bước dựng dữ liệu chỉ giữ bản sửa mới nhất của mỗi cặp (ca, ô nhãn).
+
+Cách này có hai cái giá phải nói rõ. Thứ nhất, tập huấn luyện \textbf{phình dần} theo từng lượt;
+tới một quy mô nào đó thì lập luận ``vài chục mẫu nên chỉ chỉnh ba đầu phân loại'' ở mục~3.2 không
+còn đứng vững, và phải xét lại phương pháp cập nhật. Thứ hai, nó \textbf{buộc mọi chỉnh sửa cũ
+phải được thoả mãn vô thời hạn}; nếu một bác sĩ đọc lệch thì cái lệch đó bị đóng đinh, và như
+mục~3.6 đã nêu, chỉnh sửa của bác sĩ không phải chân lý --- mức đồng thuận giữa hai người đọc trên
+thang Pfirrmann chỉ vào khoảng $\kappa = 0{,}68$. Hai giới hạn này thuộc phần cần theo dõi khi
+vòng lặp thực sự chạy nhiều lượt.
+
 \subsection{Giao thức đánh giá và cổng chặn}
 
 Tập đánh giá được \textbf{chốt trước khi thu thập bất kỳ chỉnh sửa nào}: 200 dòng, đóng băng ngày
