@@ -1,6 +1,8 @@
 # Speaking script, MIWAI 2026 paper 122
 
-Online, live, 15 minutes. Target: **12 to 13 minutes of talking**, then questions.
+Online, live, 15 minutes. Deck is 23 pages: 15 to talk over, 3 of references, 5 backup.
+
+Reading every section below takes about **13 to 14 minutes**. If the chair is strict, drop slide 13 and keep slide 5 to ninety seconds; that lands near **12 minutes**.
 
 Rules for delivery: short sentences, slow, pause at every `/`. Say numbers slowly. If you lose your place, look at the slide title and continue. Nobody minds a pause.
 
@@ -25,6 +27,8 @@ Rules for delivery: short sentences, slow, pause at every `/`. Say numbers slowl
 ## Slide 3. Two open problems (1 minute)
 
 > We work on lumbar spine MRI. / Doctors grade each disc by hand. / This is slow, / and different doctors often disagree.
+>
+> On the right you see four discs. / Left column is Normal or Mild. / Right column is Severe. / Top row is the spinal canal. / Bottom row is the neural foramen.
 >
 > There are two open problems.
 >
@@ -66,13 +70,15 @@ Rules for delivery: short sentences, slow, pause at every `/`. Say numbers slowl
 
 ## Slide 6. Class imbalance (1 minute)
 
-> For the imbalance problem / we use three things together.
+> For the imbalance problem / we use four things together.
 >
 > First, focal loss. / It puts more weight on hard examples.
 >
 > Second, square-root class weights. / Without this, / the gradient ratio is about fifteen times. / With it, about four times. / Training is more stable.
 >
 > Third, oversampling. / We show Severe cases more often.
+>
+> Fourth, augmentation. / Flips, small rotations, / intensity changes and noise.
 >
 > Why does this work? / The frozen branch gives a stable prior / for the rare class. / The attention branch finds the small lesion.
 
@@ -94,21 +100,37 @@ Rules for delivery: short sentences, slow, pause at every `/`. Say numbers slowl
 
 ---
 
-## Slide 8. Setup (45 seconds)
+## Slide 8. Experimental setup, data (30 seconds)
 
 > We use two datasets.
 >
-> RSNA 2024 is for training / and for in-domain testing. / About nineteen hundred discs for validation.
+> RSNA 2024 is for training / and for in-domain testing. / Sagittal T2 and STIR. / Three conditions, / three severity levels. / About nineteen hundred discs for validation.
 >
-> SPIDER is a different dataset, / from Dutch hospitals. / We never train on it. / We only use it to test transfer.
+> SPIDER is a different dataset, / from Dutch hospitals. / Eight disease labels. / We never train on it. / We only use it to test transfer.
 >
-> We compare four models. / The SpineNetV2 backbone. / CBAM only. / Multimodal only. / And our full Hybrid.
+> On the right / you can see the SPIDER labels are skewed too.
 >
-> All results use three seeds, / on one RTX 4090.
+> We cut one small volume per disc, / from L1-L2 down to L5-S1.
 
 ---
 
-## Slide 9. In-domain results (2 minutes), do not read every cell
+## Slide 9. Experimental setup, training (30 seconds)
+
+> This table has the training details.
+>
+> The input is nine slices, / one hundred twelve by two hundred twenty-four.
+>
+> Both backbones are frozen. / We train one point two million parameters / out of two hundred sixty million.
+>
+> AdamW, / batch thirty-two, / at most twenty epochs / with early stopping.
+>
+> We compare four models. / The SpineNetV2 backbone. / CBAM only. / Multimodal only. / And our full Hybrid.
+>
+> All numbers are the mean over three seeds, / on one RTX 4090.
+
+---
+
+## Slide 10. In-domain results (2 minutes), do not read every cell
 
 > This is the main result table.
 >
@@ -124,7 +146,7 @@ Rules for delivery: short sentences, slow, pause at every `/`. Say numbers slowl
 
 ---
 
-## Slide 10. Not guessing (1 minute)
+## Slide 11. Not guessing (1 minute)
 
 > One reviewer asked a fair question. / The F1 numbers look low. / Is the model just guessing?
 >
@@ -138,7 +160,7 @@ Rules for delivery: short sentences, slow, pause at every `/`. Say numbers slowl
 
 ---
 
-## Slide 11. Zero-shot transfer to SPIDER (1 minute 15)
+## Slide 12. Zero-shot transfer to SPIDER (1 minute 15)
 
 > Now the zero-shot test.
 >
@@ -149,10 +171,26 @@ Rules for delivery: short sentences, slow, pause at every `/`. Say numbers slowl
 > But I should be honest here. / For labels far from the RSNA schema, / the off-the-shelf model is better. / Over all eight labels, / we get zero point three six, / and it gets zero point three nine.
 >
 > So the transfer works / when the new label is close / to what we trained on. / Not for everything.
+>
+> The lower panel shows this directly. / Green bars are where we win. / Red bars are where we lose.
 
 ---
 
-## Slide 12. Take-aways (1 minute)
+## Slide 13. Supervised transfer on SPIDER (45 seconds)
+
+*(Optional. Skip this slide if you are behind schedule; the take-aways slide repeats the point.)*
+
+> Here we do train on SPIDER, / so this is transfer learning, / not zero-shot.
+>
+> Look at the Mean F1 row. / Our Hybrid gets zero point six five three. / SpineNetV2 gets zero point six four six. / That is parity.
+>
+> But CBAM alone drops / to zero point six one nine. / It falls below the plain baseline.
+>
+> So attention alone overfits RSNA. / The frozen branch brings it back. / That is why we call it a regularizer.
+
+---
+
+## Slide 14. Take-aways (1 minute)
 
 > Three take-aways.
 >
@@ -176,11 +214,11 @@ Rules for delivery: short sentences, slow, pause at every `/`. Say numbers slowl
 
 **Q. Why should cosine similarity work for a new prompt?**
 
-> During training / we already score by cosine / against the RSNA text prompts. / So the image vector is pulled / toward the text space. / For a new label / it works if the label is close / to something we trained on. / Table four shows both sides. / We win on disc-shape labels / and we lose on distant labels. / We do not claim it works for everything.
+> During training / we already score by cosine / against the RSNA text prompts. / So the image vector is pulled / toward the text space. / For a new label / it works if the label is close / to something we trained on. / The backup per-label slide shows both sides. / We win on disc-shape labels / and we lose on distant labels. / We do not claim it works for everything.
 
 **Q. What is the exact training loss?**
 
-*(Go to backup slide 15.)*
+*(Go to backup slide 22.)*
 
 > Focal loss on the cosine logits. / Plus a supervised contrastive term, / weight zero point one. / And the tasks are combined / by learned uncertainty weighting.
 
@@ -213,5 +251,5 @@ Rules for delivery: short sentences, slow, pause at every `/`. Say numbers slowl
 1. Join ten minutes early. Test microphone and screen share.
 2. Share the PDF window only, not the whole screen.
 3. Open `main.pdf` in another window, for number questions.
-4. Backup slides are pages 15 to 18. Type the page number and press Enter.
+4. References are pages 16 to 18; backup slides are pages 19 to 23. Type the page number and press Enter.
 5. There is no laser pointer. Say the position out loud: "the Severe Recall row, last column, zero point four nine".

@@ -20,6 +20,17 @@
 \usepackage{tikz}
 \usetikzlibrary{positioning,arrows.meta,fit,backgrounds,calc}
 
+\usepackage[sorting=none,backend=biber]{biblatex}
+\addbibresource{references.bib}
+\addbibresource{slides_extra.bib}
+% Bibliography entries stay small so the references slide fits.
+\setbeamerfont{bibliography item}{size=\scriptsize}
+\setbeamerfont{bibliography entry author}{size=\scriptsize}
+\setbeamerfont{bibliography entry title}{size=\scriptsize}
+\setbeamerfont{bibliography entry location}{size=\scriptsize}
+\setbeamerfont{bibliography entry note}{size=\scriptsize}
+\setbeamertemplate{bibliography item}[text]
+
 \graphicspath{{figures/}}
 
 % Best-cell highlight (matches the paper)
@@ -80,16 +91,18 @@ Ho Chi Minh City University of Technology (HCMUT), VNU-HCM \\
 \begin{frame}
 \frametitle{Two open problems in lumbar MRI grading}
 \begin{columns}[c]
-\column{.55\textwidth}
+\column{.42\textwidth}
 \begin{itemize}
     \item[\textbf{P1}] \textbf{Class imbalance} \\ {\small Severe $<5\%$ $\Rightarrow$ recall near zero}
     \item[]
     \item[\textbf{P2}] \textbf{Fixed label space} \\ {\small new schema $\Rightarrow$ retrain a new head}
 \end{itemize}
-\column{.45\textwidth}
+\vspace{4pt}
+{\scriptsize Grading is manual today, and readers disagree~\cite{nigru2024}.}
+\column{.58\textwidth}
 \centering
-\includegraphics[width=\linewidth]{rsna_class_distribution_en.png}\\[2pt]
-{\scriptsize RSNA 2024: Severe under 5\%.}
+\includegraphics[width=\linewidth]{abnormality_examples_en.png}\\[2pt]
+{\scriptsize Sagittal T2/STIR crops, RSNA 2024~\cite{kaggle2024}: the Severe cases we keep missing.}
 \end{columns}
 \end{frame}
 
@@ -114,23 +127,31 @@ Ho Chi Minh City University of Technology (HCMUT), VNU-HCM \\
 \end{figure}
 \vspace{2pt}
 \begin{itemize}\small
-    \item[--] \textbf{Attention:} CBAM 3D ResNet-34: localizes the lesion.
-    \item[--] \textbf{Multimodal:} frozen BiomedCLIP: text-aligned prior.
+    \item[--] \textbf{Attention:} CBAM~\cite{woo2018cbam} 3D ResNet-34~\cite{windsor2022}: localizes the lesion.
+    \item[--] \textbf{Multimodal:} frozen BiomedCLIP~\cite{zhang2023biomedclip}: text-aligned prior.
     \item[--] Fusion MLP $\to$ cosine vs.\ prompts. \textbf{Only 1.18\,M / 260\,M trained.}
 \end{itemize}
 \end{frame}
 
 \begin{frame}
 \frametitle{Handling class imbalance}
-\begin{itemize}
-    \item[\textbf{1.}] \textbf{Focal loss} ($\gamma{=}2$): focus on hard cases.
+\begin{columns}[c]
+\column{.52\textwidth}
+\begin{itemize}\small
+    \item[\textbf{1.}] \textbf{Focal loss}~\cite{lin2017focal} ($\gamma{=}2$): focus on hard cases.
     \item[\textbf{2.}] \textbf{$\sqrt{}$ class weights}: gradient ratio $15\times \to 4\times$.
-    \item[\textbf{3.}] \textbf{Oversampling} (3 to 5$\times$): see Severe more often.
+    \item[\textbf{3.}] \textbf{Minority oversampling}~\cite{buda2018imbalance} (3 to 5$\times$): see Severe more often.
+    \item[\textbf{4.}] \textbf{Augmentation}~\cite{shorten2019augmentation}: flips, $\pm10^{\circ}$, intensity, noise.
 \end{itemize}
-\vspace{6pt}
-\begin{block}{Why it works}
-Frozen prior anchors the scarce Severe class; attention zooms into the small lesion.
+\vspace{4pt}
+\begin{block}{\small Why it works}
+{\small Frozen prior anchors the scarce Severe class; attention zooms into the small lesion.}
 \end{block}
+\column{.48\textwidth}
+\centering
+\includegraphics[width=\linewidth]{rsna_class_distribution_en.png}\\[2pt]
+{\scriptsize RSNA 2024: Severe stays under 5\% in all three conditions.}
+\end{columns}
 \end{frame}
 
 \begin{frame}
@@ -150,24 +171,60 @@ Same encoder $\Phi$, only the head changes ($h = c \circ \Phi$):
 \section{Experiments}
 %----------------------------------------------------------------------------------------
 \begin{frame}
-\frametitle{Setup}
+\frametitle{Experimental setup: data}
+\begin{columns}[c]
+\column{.5\textwidth}
+{\footnotesize
+\begin{tabular}{@{}ll@{}}
+\toprule
+\multicolumn{2}{@{}l}{\textbf{RSNA 2024}~\cite{kaggle2024}} \\
+\midrule
+Validation & 1{,}942 IVDs / 395 pts \\
+Sequence   & sagittal T2 / STIR \\
+Labels     & 3 conditions $\times$ 3 severities \\
+Role       & train + in-domain test \\
+\midrule
+\multicolumn{2}{@{}l}{\textbf{SPIDER}~\cite{vandergraaf2024spider}} \\
+\midrule
+Validation & 1{,}439 IVDs / 208 pts \\
+Labels     & 8 disease labels \\
+Role       & held-out transfer only \\
+\bottomrule
+\end{tabular}}
+\vspace{5pt}
+
+{\scriptsize One volumetric crop per disc, L1--L2 to L5--S1; intensities clipped to the 1st--99th percentile and rescaled to $[0,1]$.}
+\column{.5\textwidth}
+\centering
+\includegraphics[width=\linewidth]{spider_class_distribution_en.png}\\[2pt]
+{\scriptsize SPIDER: several labels are heavily skewed too.}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{Experimental setup: training and protocol}
 \begin{table}
 \centering
 \footnotesize
-\renewcommand{\arraystretch}{1.2}
-\begin{tabular}{@{}lll@{}}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}l p{6.1cm}@{}}
 \toprule
-\textbf{Dataset} & \textbf{Validation} & \textbf{Role} \\
+\textbf{Setting} & \textbf{Value} \\
 \midrule
-RSNA 2024 & 1{,}942 IVDs / 395 pts & train + in-domain \\
-SPIDER & 1{,}439 IVDs / 208 pts & held-out transfer \\
+Per-IVD input & $1\times9\times112\times224$; embedding dim $d=512$ \\
+Trainable / total & 1.18\,M / 260\,M (both backbones frozen) \\
+Optimizer & AdamW, lr $10^{-4}$, weight decay $10^{-4}$ \\
+Batch / epochs & 32 / $\leq$20, early stopping (patience 5) \\
+Augmentation & h-flip + L/R swap, rotate $\pm10^{\circ}$, bright./contrast $\pm20\%$, noise $\sigma{=}0.05$ ($p{=}0.3$) \\
+Hardware & 1$\times$ RTX 4090 ($\approx$16\,GB peak) \\
 \bottomrule
 \end{tabular}
 \end{table}
-\vspace{4pt}
+\vspace{2pt}
 \begin{itemize}\small
-    \item[--] 4 configs: SpineNetV2 / CBAM / Multimodal / \textbf{Hybrid}.
-    \item[--] Macro R/P/F1/AUC/AUPRC + Severe. 3 seeds, 1$\times$ RTX 4090.
+    \item[--] 4 configs: SpineNetV2~\cite{windsor2022} / CBAM / Multimodal / \textbf{Hybrid}.
+    \item[--] Macro Recall, Precision, F1, AUC (OvR), AUPRC, plus per-class Severe.
+    \item[--] 3 seeds $\{42, 123, 456\}$; we report mean $\pm$ std.
 \end{itemize}
 \end{frame}
 
@@ -207,7 +264,7 @@ Mean AUPRC           & 0.530 & 0.498 & 0.513 & \bst{0.533} \\
 \begin{itemize}
     \item[--] Severe prevalence $\approx$\textbf{0.05}.
     \item[--] Severe \textbf{AUC 0.899}, \textbf{AUPRC 0.333} = \textbf{6.7$\times$} chance.
-    \item[--] Grad-CAM: $p(\text{Severe})$ $0.26 \to 0.53$.
+    \item[--] Grad-CAM~\cite{selvaraju2017gradcam}: $p(\text{Severe})$ $0.26 \to 0.53$.
 \end{itemize}
 \column{.5\textwidth}
 \centering
@@ -218,35 +275,12 @@ Mean AUPRC           & 0.530 & 0.498 & 0.513 & \bst{0.533} \\
 
 \begin{frame}
 \frametitle{Cross-dataset zero-shot transfer to SPIDER}
-\begin{columns}[c]
-\column{.42\textwidth}
-\begin{itemize}\small
-    \item[--] 8 \textbf{unseen} labels, no SPIDER training.
-    \item[--] Wins on disc-morphology \\ (\bst{0.587} vs.\ 0.433).
-    \item[--] Distant labels: off-the-shelf wins (honest limit).
-\end{itemize}
-\column{.58\textwidth}
-\begin{table}
 \centering
-\scriptsize
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{lcc}
-\toprule
-\textbf{SPIDER label} & \textbf{Off-shelf} & \textbf{Hybrid} \\
-\midrule
-Disc bulging       & 0.363 & \bst{0.613} \\
-Disc herniation    & 0.532 & \bst{0.563} \\
-Disc narrowing     & 0.403 & \bst{0.586} \\
-\midrule
-Upper/Lower endplate & \bst{0.56} & 0.47 \\
-Spondylolisthesis  & \bst{0.500} & 0.028 \\
-\midrule
-Mean (disc-morph.) & 0.433 & \bst{0.587} \\
-Mean (all 8)       & \bst{0.394} & 0.362 \\
-\bottomrule
-\end{tabular}
-\end{table}
-\end{columns}
+\includegraphics[width=.88\textwidth]{ablation_hybrid_vs_naked.png}
+\vspace{1pt}
+\begin{itemize}\scriptsize
+    \item[--] 8 \textbf{unseen} labels, no SPIDER training: only new prompts. Wins on disc morphology (\bst{0.587} vs.\ 0.433), loses on distant labels (all-8: 0.394 vs.\ 0.362).
+\end{itemize}
 \end{frame}
 
 \begin{frame}
@@ -301,6 +335,12 @@ Explicit alignment loss $\cdot$ native-3D medical VLM $\cdot$ axial-T2 fusion.
 \end{frame}
 
 %------------------------------------------------
+\begin{frame}[allowframebreaks]
+\frametitle{References}
+\printbibliography[heading=none]
+\end{frame}
+
+%------------------------------------------------
 % BACKUP SLIDES
 %------------------------------------------------
 \appendix
@@ -323,6 +363,32 @@ Inference (ms/IVD) & 65.5 & 66.7 & 65.2 & 66.4 \\
 \end{frame}
 
 \begin{frame}
+\frametitle{Backup: per-label zero-shot on SPIDER}
+\begin{table}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcc}
+\toprule
+\textbf{SPIDER label} & \textbf{Off-shelf BiomedCLIP} & \textbf{Hybrid} \\
+\midrule
+Disc bulging         & 0.363 & \bst{0.613} \\
+Disc herniation      & 0.532 & \bst{0.563} \\
+Disc narrowing       & 0.403 & \bst{0.586} \\
+\midrule
+Upper/Lower endplate & \bst{0.56} & 0.47 \\
+Spondylolisthesis    & \bst{0.500} & 0.028 \\
+Modic                & \bst{0.071} & 0.018 \\
+\midrule
+Mean (disc morphology) & 0.433 & \bst{0.587} \\
+Mean (all 8)           & \bst{0.394} & 0.362 \\
+\bottomrule
+\end{tabular}
+\end{table}
+{\scriptsize Modic needs the paired T1 sequence SPIDER does not provide: a task-input limit, not a model one.}
+\end{frame}
+
+\begin{frame}
 \frametitle{Backup: core equations}
 \textbf{CBAM (3D):}\;
 $F' = M_c(F)\otimes F,\quad F'' = M_s(F')\otimes F'$,\;
@@ -340,8 +406,8 @@ f_{\text{bmc}} = \sum_i \alpha_i z_i .$
     \item[--] No linear head. Logits = \textbf{cosine} vs.\ frozen text anchors:
       $\;s\cdot\hat f^\top t_k$, with $s$ a \textbf{learned} logit scale (clamp 100).
     \item[--] Focal loss ($\gamma{=}2$) applied \textbf{to those cosine logits}.
-    \item[--] $+$ per-task \textbf{supervised contrastive} term ($\lambda{=}0.1$, $\tau{=}0.07$).
-    \item[--] Tasks combined by learned \textbf{homoscedastic uncertainty} weighting, not a plain sum.
+    \item[--] $+$ per-task \textbf{supervised contrastive} term~\cite{khosla2020supcon} ($\lambda{=}0.1$, $\tau{=}0.07$).
+    \item[--] Tasks combined by learned \textbf{homoscedastic uncertainty} weighting~\cite{kendall2018multitask}, not a plain sum.
     \item[--] Missing labels ($-1$) excluded from both terms.
     \item[--] SpineNetV2 baseline uses plain \textbf{cross-entropy}; the other three use focal.
 \end{itemize}
