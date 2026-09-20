@@ -1,0 +1,147 @@
+% MIWAI 2026, paper 122. One-page infographic for the asynchronous session.
+%
+% Canvas is 320 x 180 mm, which is 16:9, so the exported PNG lands on
+% 1920 x 1080 and matches the aspect ratio of the slide deck and the video.
+%
+% Every number on this page comes from the abstract of ../main.tex. Nothing
+% here reports Phase 3 thesis work, which is a different set of experiments
+% and is not part of this paper.
+%
+% Palette is Okabe-Ito, which stays readable under the common forms of colour
+% vision deficiency. Three accent colours only; meaning is never carried by
+% colour alone, every coloured element is also labelled in text.
+%
+% Build:
+%   pdflatex -interaction=nonstopmode infographic.tex
+%   pdftoppm -png -r 300 -scale-to-x 1920 -scale-to-y 1080 infographic.pdf infographic
+\documentclass[12pt]{article}
+\usepackage[paperwidth=320mm,paperheight=180mm,margin=0mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+
+% Okabe-Ito
+\definecolor{oiBlue}{HTML}{0072B2}
+\definecolor{oiOrange}{HTML}{E69F00}
+\definecolor{oiGreen}{HTML}{009E73}
+\definecolor{oiVermillion}{HTML}{D55E00}
+\definecolor{panelBg}{HTML}{F4F4F2}
+\definecolor{barGrey}{HTML}{9A9A96}
+\definecolor{inkGrey}{HTML}{55554F}
+
+\newcommand{\panelhead}[3]{%
+  \fill[#3] (#1,134) rectangle ++(94.67,12);
+  \node[anchor=west, text=white, font=\fontsize{13}{15}\selectfont\bfseries]
+       at (#1+4,140) {#2};}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm,y=1mm]
+
+%% ---------------------------------------------------------------- header
+\fill[oiBlue] (0,152) rectangle (320,180);
+\node[anchor=west, text=white, font=\fontsize{27}{30}\selectfont\bfseries]
+     at (11,169.5) {A Two-Branch Hybrid Model for Lumbar Disc Grading};
+\node[anchor=west, text=white, font=\fontsize{13}{15}\selectfont]
+     at (11,158.5) {Ha Trung Kien \quad Phan Trong Nhan \quad Ho Chi Minh City University of Technology, Vietnam};
+\node[anchor=east, text=white, font=\fontsize{13}{15}\selectfont\bfseries]
+     at (309,158.5) {MIWAI 2026 \quad Paper 122};
+
+%% ---------------------------------------------------------------- panels
+\foreach \x in {10, 112.67, 215.33}
+  \fill[panelBg, rounded corners=1.5mm] (\x,24) rectangle ++(94.67,122);
+
+\panelhead{10}{1 \quad THE PROBLEM}{inkGrey}
+\panelhead{112.67}{2 \quad THE MODEL}{oiBlue}
+\panelhead{215.33}{3 \quad THE RESULT}{oiGreen}
+
+%% ------------------------------------------------- panel 1: imbalance
+\node[anchor=west, font=\fontsize{14}{17}\selectfont, text=inkGrey]
+     at (18,126) {The class that matters is the rarest};
+
+% bars, baseline at y = 48, full scale 70 mm = 100 %
+\fill[barGrey]      (25,48) rectangle ++(17,56.7);
+\fill[barGrey]      (49,48) rectangle ++(17,10.3);
+\fill[oiVermillion] (73,48) rectangle ++(17,3.0);
+\draw[inkGrey, line width=0.4mm] (22,48) -- (93,48);
+
+\node[font=\fontsize{13}{15}\selectfont\bfseries, text=inkGrey] at (33.5,108) {81\%};
+\node[font=\fontsize{13}{15}\selectfont\bfseries, text=inkGrey] at (57.5,62)  {15\%};
+\node[font=\fontsize{13}{15}\selectfont\bfseries, text=oiVermillion] at (81.5,55) {4\%};
+
+\node[font=\fontsize{11}{13}\selectfont, text=inkGrey, align=center] at (33.5,43) {Normal /\\Mild};
+\node[font=\fontsize{11}{13}\selectfont, text=inkGrey] at (57.5,44.5) {Moderate};
+\node[font=\fontsize{11}{13}\selectfont\bfseries, text=oiVermillion] at (81.5,44.5) {Severe};
+
+\node[anchor=west, font=\fontsize{12}{15}\selectfont, text=inkGrey, align=left]
+     at (18,32) {Ordinary training almost never\\predicts Severe. Recall near zero.};
+
+%% ------------------------------------------------- panel 2: architecture
+% The two boxes sit side by side, not stacked: stacking made the upper
+% branch's arrow cross straight through the lower box, which read as a
+% sequence rather than as two parallel branches.
+\node[anchor=west, font=\fontsize{14}{17}\selectfont, text=inkGrey]
+     at (120.67,126) {Two branches, one of them frozen};
+
+\node[draw=oiBlue, line width=0.5mm, fill=white, rounded corners=1mm,
+      minimum width=40mm, minimum height=23mm, align=center,
+      font=\fontsize{10.5}{13}\selectfont] (bxA) at (138,105)
+     {\textbf{3D ResNet-34}\\[1pt] \textbf{with CBAM}\\[3pt] attention on\\ the lesion, trained};
+
+\node[draw=oiOrange, line width=0.5mm, fill=white, rounded corners=1mm,
+      minimum width=40mm, minimum height=23mm, align=center,
+      font=\fontsize{10.5}{13}\selectfont] (bxB) at (182,105)
+     {\textbf{BiomedCLIP}\\[1pt] \textbf{frozen}\\[3pt] semantic prior from\\ biomedical pretraining};
+
+\node[draw=inkGrey, line width=0.5mm, fill=white, rounded corners=1mm,
+      minimum width=50mm, minimum height=11mm, align=center,
+      font=\fontsize{12}{14}\selectfont] (fus) at (160,74) {fusion head, 1.2M params};
+
+\draw[-{Stealth[length=2.6mm]}, oiBlue,   line width=0.5mm] (bxA) -- (fus);
+\draw[-{Stealth[length=2.6mm]}, oiOrange, line width=0.5mm] (bxB) -- (fus);
+\draw[-{Stealth[length=2.6mm]}, inkGrey,  line width=0.5mm] (160,68.5) -- (160,60);
+
+\node[font=\fontsize{12}{14}\selectfont, text=inkGrey] at (160,56)
+     {match to text prompts $\rightarrow$ grade};
+
+\node[anchor=west, font=\fontsize{12}{15}\selectfont, text=inkGrey, align=left]
+     at (120.67,32) {The label set is an input,\\not a fixed classifier head.};
+
+%% ------------------------------------------------- panel 3: results
+\node[anchor=west, font=\fontsize{14}{17}\selectfont, text=inkGrey]
+     at (223.33,126) {The rare class comes back};
+
+\node[font=\fontsize{13}{15}\selectfont, text=inkGrey] at (262.67,116) {Severe Recall};
+\node[font=\fontsize{30}{32}\selectfont\bfseries, text=oiGreen] at (262.67,104)
+     {12.3\% $\rightarrow$ 48.6\%};
+\node[font=\fontsize{13}{15}\selectfont, text=inkGrey] at (262.67,93) {about four times better};
+
+\draw[barGrey, line width=0.25mm] (228,85) -- (297.33,85);
+
+\node[font=\fontsize{13}{15}\selectfont, text=inkGrey] at (262.67,78) {Severe F1};
+\node[font=\fontsize{19}{21}\selectfont\bfseries, text=oiGreen] at (262.67,69)
+     {0.152 $\rightarrow$ 0.356};
+
+\draw[barGrey, line width=0.25mm] (228,61) -- (297.33,61);
+
+\node[font=\fontsize{19}{21}\selectfont\bfseries, text=oiBlue] at (262.67,53)
+     {8 unseen labels};
+\node[font=\fontsize{12}{14}\selectfont, text=inkGrey, align=center] at (262.67,44)
+     {graded zero-shot on SPIDER,\\no retraining, mean F1 0.362};
+
+\node[anchor=west, font=\fontsize{12}{15}\selectfont, text=inkGrey, align=left]
+     at (223.33,32) {One trained model answers\\a label set it never saw.};
+
+%% ---------------------------------------------------------------- footer
+\fill[panelBg] (0,0) rectangle (320,18);
+\node[anchor=west, font=\fontsize{10}{12}\selectfont, text=inkGrey] at (11,9)
+     {RSNA 2024 and SPIDER. Severe share is the mean over three sagittal conditions. Recall and F1 are three-seed means.};
+\node[anchor=east, font=\fontsize{10}{12}\selectfont, text=inkGrey] at (309,9)
+     {Springer LNAI, MIWAI 2026};
+
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,14 @@
+MIWAI 2026, Paper 122
+A Two-Branch Hybrid Model for Imbalanced Lumbar Disc Grading and
+Zero-Shot Label Extension
+
+Ha Trung Kien, Phan Trong Nhan
+Ho Chi Minh City University of Technology (HCMUT), VNU-HCM, Vietnam
+
+ABSTRACT
+
+Automated grading of lumbar intervertebral disc (IVD) pathology on MRI is clinically useful but hard: severity classes are heavily imbalanced, large labelled volumetric datasets are scarce, and a model trained on one labelling schema cannot answer a query posed in another schema without retraining a new classifier head. We address these problems by design rather than by a single component. We propose a two-branch model in which a volumetric attention branch captures cross-slice anatomical context and a frozen multimodal (vision-language) branch supplies a semantic prior learned from large-scale biomedical pretraining; then a small trainable head fuses the two streams into a text-aligned embedding. Because predictions are made by matching this embedding to text prompts, the label set becomes an input to inference, so the same trained model can grade a new label set with no extra head and no retraining. We implement the two branches with a CBAM-equipped 3D ResNet-34 and a frozen BiomedCLIP encoder, and we validate the design on the RSNA 2024 and SPIDER datasets. With focal loss, square-root class weighting, minority oversampling, and standard augmentation, the model raises Severe-class recall from 12.3% to 48.6% and Severe F1 from 0.152 to 0.356 on RSNA 2024. Without any fine-tuning it extends to eight unseen SPIDER labels through text prompts (mean F1 = 0.362), and under supervised transfer it matches SpineNetV2 on aggregate SPIDER F1 (0.653 vs. 0.646) while exceeding the attention-only variant by +0.034 (paired t-test, p=0.011), which suggests the frozen branch helps regularize cross-dataset transfer.
+
+KEYWORDS
+
+spine MRI , intervertebral disc grading , attention , vision-language models , BiomedCLIP , zero-shot classification , class imbalance , low back pain
