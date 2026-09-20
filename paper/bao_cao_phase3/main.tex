@@ -193,9 +193,41 @@ Severe F1       & 0{,}3434 & 0{,}3696 & \up{+0{,}0262} \\
 Mean Accuracy   & 0{,}7208 & 0{,}7318 & \up{+0{,}0110} \\
 Mean F1 (macro) & 0{,}5277 & 0{,}5286 & \up{+0{,}0009} \\
 Macro AUPRC     & 0{,}5258 & 0{,}5364 & \up{+0{,}0106} \\
+Macro AUC       & 0{,}8371 & 0{,}8368 & $-$0{,}0003 \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+Bảng~\ref{tab:percond} tách theo từng nhãn, và đây mới là chỗ giải thích vì sao phải làm
+bước tiếp theo.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Kết quả từng nhãn, Phase 2 so với khởi tạo đúng (seed 42, cùng tập validation).}
+\label{tab:percond}
+\begin{tabular}{lccc}
+\toprule
+ & \textbf{Phase 2} & \textbf{Khởi tạo đúng} & \textbf{Chênh} \\
+\midrule
+\multicolumn{4}{l}{\textit{Ống sống}} \\
+\quad Severe F1      & 0{,}5000 & 0{,}5714 & \up{+0{,}0714} \\
+\quad Severe Recall  & 0{,}7037 & 0{,}8395 & \up{+0{,}1358} \\
+\quad AUPRC          & 0{,}6284 & 0{,}6506 & \up{+0{,}0222} \\
+\midrule
+\multicolumn{4}{l}{\textit{Lỗ liên hợp trái}} \\
+\quad AUPRC          & 0{,}4670 & 0{,}4709 & +0{,}0039 \\
+\quad Severe F1      & 0{,}2778 & 0{,}2887 & +0{,}0109 \\
+\midrule
+\multicolumn{4}{l}{\textit{Lỗ liên hợp phải}} \\
+\quad AUPRC          & 0{,}4820 & 0{,}4878 & +0{,}0058 \\
+\quad Severe F1      & 0{,}2524 & 0{,}2486 & \down{$-$0{,}0038} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Ống sống cải thiện rõ (Severe Recall \up{+0{,}136}), nhưng \textbf{hai nhãn lỗ liên hợp gần như
+đứng yên} --- AUPRC chỉ nhích 0{,}004 và 0{,}006. Sửa khởi tạo không chạm được tới điểm yếu này,
+nghĩa là nguyên nhân nằm ở chỗ khác. Đó là điều dẫn tới phần tiếp theo.
 
 \subsection{Chuyên gia T1 cho nhãn lỗ liên hợp: đóng góp chính}
 
@@ -237,13 +269,30 @@ của chính bên đó:
 \label{tab:t1}
 \begin{tabular}{lcccc}
 \toprule
- & \textbf{Phase 2} & \textbf{Chuyên gia T1} & \textbf{Chênh} & \textbf{Đỉnh} \\
+ & \textbf{Phase 2} & \textbf{Chuyên gia T1} & \textbf{Chênh} & \textbf{Đỉnh ep16} \\
 \midrule
-Lỗ trái  & 0{,}4670 & 0{,}5205 & \up{+0{,}054} & 0{,}5321 \\
-Lỗ phải  & 0{,}4820 & 0{,}5209 & \up{+0{,}039} & 0{,}5311 \\
+\multicolumn{5}{l}{\textit{AUPRC --- chỉ số xếp hạng, không phụ thuộc ngưỡng}} \\
+\quad Lỗ trái  & 0{,}4670 & 0{,}5205 & \up{+0{,}054} & 0{,}5321 \\
+\quad Lỗ phải  & 0{,}4820 & 0{,}5209 & \up{+0{,}039} & 0{,}5311 \\
+\midrule
+\multicolumn{5}{l}{\textit{AUC}} \\
+\quad Lỗ trái  & 0{,}7880 & 0{,}8165 & \up{+0{,}029} & 0{,}8281 \\
+\quad Lỗ phải  & 0{,}7964 & 0{,}8147 & \up{+0{,}018} & 0{,}8268 \\
+\midrule
+\multicolumn{5}{l}{\textit{Severe F1 --- phụ thuộc ngưỡng argmax}} \\
+\quad Lỗ trái  & 0{,}2778 & 0{,}2247 & \down{$-$0{,}053} & --- \\
+\quad Lỗ phải  & 0{,}2524 & 0{,}2902 & \up{+0{,}038} & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\textbf{Severe F1 lỗ trái lại giảm, và điều này cần giải thích chứ không nên bỏ qua.} AUPRC tăng
+trong khi F1 giảm nghĩa là mô hình \textbf{xếp hạng ca nặng tốt hơn nhưng điểm cắt argmax chưa
+khai thác được lợi thế đó}. Đây đúng là việc mà tinh chỉnh ngưỡng giải quyết: đo bằng kiểm chéo
+theo nửa bệnh nhân, chỉnh trọng số quyết định từng lớp nâng macro F1 từ 0{,}468 lên
+\textbf{0{,}509} (\up{+0{,}041}) trên phần dữ liệu giữ lại. Trên mô hình Phase 2 cùng phương pháp
+cho \up{+0{,}019}. Hai cải thiện này cộng dồn được vì chúng tác động vào hai khâu khác nhau ---
+một cái cải thiện biểu diễn, một cái cải thiện quy tắc quyết định.
 
 Điều đáng tin hơn con số: \textbf{cả 20/20 epoch} của mô hình T1 đều vượt epoch tốt nhất trong
 20 epoch của mô hình cũ, ở cả hai bên, không ngoại lệ. Tính nhất quán này loại trừ khả năng
@@ -272,6 +321,55 @@ Bên phải xác nhận, bên trái không. Hai bên khác nhau theo đúng hư�
 lớn hơn. \textbf{Giới hạn cần nêu:} đây là hai phép kiểm, một cái đạt $p=0{,}044$; hiệu chỉnh cho
 việc so nhiều lần thì $p=0{,}088$, nên kết luận đúng là \textbf{có dấu hiệu ủng hộ}, chưa phải
 bằng chứng chắc chắn.
+
+\subsection{Một bằng chứng độc lập: mức đồng thuận so với bác sĩ}
+
+Chẩn đoán ở trên dựa vào hình học và vào kết quả của mô hình. Có một cách kiểm tra thứ ba,
+không dùng cả hai: so \textbf{mức đồng thuận} của mô hình với mức đồng thuận \textbf{giữa các bác
+sĩ với nhau}, đo bằng cùng một chỉ số là Cohen's kappa có trọng số bậc hai (QWK).
+
+\begin{table}[htbp]
+\centering\small
+\caption{QWK của mô hình Phase 2 so với đồng thuận giữa bác sĩ (Lurie và cộng sự, \textit{Spine}, 2008).}
+\label{tab:qwk}
+\begin{tabular}{lcc}
+\toprule
+ & \textbf{Mô hình} & \textbf{Giữa các bác sĩ} \\
+\midrule
+Ống sống        & 0{,}641 & 0{,}73 \\
+Lỗ liên hợp trái & \down{0{,}351} & 0{,}58 \\
+Lỗ liên hợp phải & \down{0{,}409} & 0{,}58 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Mô hình \textbf{gần chạm mức bác sĩ ở ống sống} (0{,}641 so với 0{,}73) nhưng \textbf{kém xa ở lỗ
+liên hợp} (0{,}351 so với 0{,}58). Đáng chú ý là kết luận này đến từ một hướng hoàn toàn khác ---
+không dùng toạ độ, không dùng hình học, không dùng bản đồ nhiệt --- mà vẫn chỉ đúng một chỗ yếu.
+Ba phép đo độc lập cùng chỉ vào nhãn lỗ liên hợp thì khó quy cho ngẫu nhiên.
+
+Toàn bộ chỉ số của Phase 2 kèm khoảng tin cậy bootstrap phân cụm theo bệnh nhân (2000 lần rút):
+
+\begin{table}[htbp]
+\centering\small
+\caption{Mô hình Phase 2, khoảng tin cậy 95\% phân cụm theo bệnh nhân.}
+\label{tab:ci}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Chỉ số} & \textbf{Giá trị} & \textbf{KTC 95\%} \\
+\midrule
+Severe F1        & 0{,}3434 & [0{,}292 --- 0{,}392] \\
+Severe AUPRC     & 0{,}3211 & [0{,}280 --- 0{,}371] \\
+Severe Recall    & 0{,}4640 & [0{,}399 --- 0{,}532] \\
+QWK              & 0{,}4670 & [0{,}432 --- 0{,}499] \\
+Weighted log loss & 0{,}7549 & [0{,}736 --- 0{,}773] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Khoảng tin cậy của Severe F1 rộng \textbf{0{,}100} --- đây là lý do báo cáo dùng AUPRC làm chỉ số
+chính khi so hai mô hình: với chỉ 80 ca nặng mỗi nhãn, Severe F1 không đủ độ phân giải để phân
+định, còn AUPRC ổn định hơn khoảng sáu lần giữa các epoch.
 
 \subsection{Bốn hướng đã thử và không hiệu quả}
 
