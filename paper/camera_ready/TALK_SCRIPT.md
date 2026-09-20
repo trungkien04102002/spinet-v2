@@ -2,7 +2,9 @@
 
 Online, live, 15 minutes. Deck is 23 pages: 15 to talk over, 3 of references, 5 backup.
 
-Reading every section below takes about **13 to 14 minutes**. If the chair is strict, drop slide 13 and keep slide 5 to ninety seconds; that lands near **12 minutes**.
+The spoken lines come to about 1,455 words. At a normal delivery with the pauses marked by `/` that is roughly **11 to 13 minutes**; at your faster pace it is closer to **9 to 10 minutes**.
+
+So the real risk is **finishing early, not overrunning**. Do not rush. Take the pauses. Landing at ten minutes is fine: it leaves five minutes of questions, and the five backup slides exist for exactly that.
 
 Rules for delivery: short sentences, slow, pause at every `/`. Say numbers slowly. If you lose your place, look at the slide title and continue. Nobody minds a pause.
 
@@ -90,9 +92,13 @@ Rules for delivery: short sentences, slow, pause at every `/`. Say numbers slowl
 >
 > The encoder stays the same. / Only the head changes.
 >
-> We write a prompt for each label. / For example, / "a magnetic resonance image of lumbar disc herniation".
+> Let me read the formula. / Phi is the encoder. / It turns one disc volume / into a single vector. / That part never changes.
 >
-> The text encoder turns the prompt into a vector. / We compute cosine similarity / between the image vector / and each label vector. / We take the highest one.
+> Now look at t-k. / We write a prompt for each label k. / For example, / "a magnetic resonance image of lumbar disc herniation". / Psi is the frozen text encoder. / It turns that sentence into a vector. / We divide by its length, / so every label vector sits on the unit sphere.
+>
+> Then we take the dot product / between the image vector and each label vector. / Because both are unit length, / that dot product is a cosine similarity. / s is a learned scale. / We predict the label with the highest score.
+>
+> So the classifier is not a matrix of weights. / It is a list of sentences.
 >
 > So a new label / is just a new prompt. / No new head. / No retraining.
 >
@@ -146,17 +152,23 @@ Rules for delivery: short sentences, slow, pause at every `/`. Say numbers slowl
 
 ---
 
-## Slide 11. Not guessing (1 minute)
+## Slide 11. Putting the Severe metrics in context (1 minute 30)
 
 > One reviewer asked a fair question. / The F1 numbers look low. / Is the model just guessing?
 >
 > We do not think so.
 >
-> Severe is only five percent of the data. / A random model would get / AUPRC around zero point zero five. / We get zero point three three. / That is about six point seven times better than chance. / And the AUC is zero point nine.
+> Here is why. / AUPRC has a floor. / That floor is the share of positives. / Severe is about five percent of the data, / so a model that ranks at random / scores about zero point zero five. / We get zero point three three. / That is about six point seven times chance.
+>
+> AUC does not have that problem. / It does not move with prevalence. / Ours is zero point nine. / A coin flip is zero point five.
+>
+> So the model ranks Severe cases well. / What is hard is the threshold, / not the ranking.
 >
 > The numbers look low / because we keep the hard setting. / Three classes. / The real five percent distribution. / And macro averaging, not accuracy.
 >
-> On the right / you can see Grad-CAM. / Without CBAM the model looks everywhere. / With CBAM it focuses on the canal.
+> On the right is a Grad-CAM map / for one Severe canal case. / Without CBAM the map is spread out. / With CBAM it concentrates near the canal.
+>
+> I should be careful here. / This is one illustrative example. / It is not a localisation study. / We did not measure / how often the peak lands on the lesion.
 
 ---
 
@@ -178,7 +190,7 @@ Rules for delivery: short sentences, slow, pause at every `/`. Say numbers slowl
 
 ## Slide 13. Supervised transfer on SPIDER (45 seconds)
 
-*(Optional. Skip this slide if you are behind schedule; the take-aways slide repeats the point.)*
+*(Do not cut this slide. It is the only place in the talk where the CBAM-drops-below-baseline evidence is actually shown, and contribution 1 on slide 4 rests on it. If you must save time, take it from the outline or the contributions slide.)*
 
 > Here we do train on SPIDER, / so this is transfer learning, / not zero-shot.
 >
@@ -226,9 +238,35 @@ Rules for delivery: short sentences, slow, pause at every `/`. Say numbers slowl
 
 > Training is cheap. / We only train one point two million parameters. / But inference is not light. / Both frozen backbones still run. / About sixty-six milliseconds per disc.
 
+**Q. Does the Grad-CAM figure prove the model looks at the right place?**
+
+> No. / It is an illustration, not a measurement. / To claim localisation / we would have to compare the peak / against the annotated point, / and against a baseline that always guesses the centre of the crop. / We have not done that in this paper.
+
 **Q. Why BiomedCLIP and not another model?**
 
 > It is public, / and it gives a shared image and text space. / That is what we need for prompts. / Comparing other medical vision-language models / is future work.
+
+**Q. Your all-eight zero-shot mean is 0.362, but off-the-shelf BiomedCLIP gets 0.394 with no training at all. Doesn't your training hurt transfer on average?**
+
+> On the all-eight average, yes, the off-the-shelf model is ahead. / We report that in the paper. / But that average is not the claim.
+>
+> The claim is that the label set can be an input at all. / A fixed-head model scores nothing on these eight labels, / because it has no head for them.
+>
+> And where the new labels are close to what we trained on, / the disc morphology group, / we are clearly ahead: / zero point five nine against zero point four three. / Where they are far away, / spondylolisthesis for example, / we are worse. / RSNA supervision helps transfer that is semantically near, / and does not help transfer that is far.
+
+**Q. Do the in-domain gains survive a significance test?**
+
+> We did not run one on that table. / Our only p-values are on the SPIDER transfer results. / With three seeds / I would not claim statistical significance in-domain. / What I can say / is that the Severe Recall gap / is much larger than the seed spread.
+
+**Q. Does this work for the foraminal conditions too, or only the canal?**
+
+> Not equally. / Severe recall for the two foraminal conditions / sits between eighteen and twenty-two percent. / That is well below the canal.
+>
+> External validation of SpineNetV2 / reports the same ceiling / for sagittal-only foraminal reading. / So we read it as a limit of the input, / not of the attention block. / Those conditions need richer input. / That is future work.
+
+**Q. Is a frozen vision-language model worth it, against something cheap like threshold tuning?**
+
+> That is a fair challenge, / and we do not have that exact ablation. / We do ablate the two branches separately, / and each one alone is worse than the pair. / A threshold study on the plain baseline / would be a good addition.
 
 **Q. Can this be used in a hospital today?**
 
