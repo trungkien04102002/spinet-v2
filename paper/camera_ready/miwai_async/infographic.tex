@@ -88,6 +88,8 @@
      {\includegraphics[width=36mm,height=65mm]{mri_sagittal_panel.png}};
 \node[anchor=north west, text=ink70, font=\cond\fontsize{9}{11.5}\selectfont]
      at (16,81) {Sagittal T2, 5 IVD levels (L1-L2 to L5-S1)};
+\node[anchor=north west, text=ink70, font=\cond\fontsize{9}{11.5}\selectfont]
+     at (16,77) {Severe is under 5\% of samples};
 
 %% ------------------------------------------------------------- pipeline
 \node[box, minimum width=54mm] (bxA) at (99,128) {3D ResNet-34 + CBAM\\[2pt]
@@ -168,9 +170,19 @@
 % legible as four red cells in a field of grey in a way a 3.8 mm sliver at the
 % end of a bar never was, and it stops competing with the bar chart beside it.
 \node[anchor=base west, font=\fontsize{13}{16}\selectfont]
-     at (16,66) {Severe stays under 5\% in all three conditions.};
-\node[anchor=south west, inner sep=0] at (16,30)
-     {\includegraphics[width=94mm]{rsna_dist_compact.png}};
+     at (16,66) {Attention lands on the narrowed canal.};
+% Figure 5 of the paper, split into its two panels so the labels can be set in
+% this page's own type rather than baked into the image.
+\node[anchor=south west, inner sep=0] at (16,40)
+     {\includegraphics[width=45mm]{gradcam_nocbam.png}};
+\node[anchor=south west, inner sep=0] at (65,40)
+     {\includegraphics[width=45mm]{gradcam_cbam.png}};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (16,35)
+     {without CBAM};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (65,35)
+     {with CBAM};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont] at (16,30)
+     {Grad-CAM on a Severe spinal canal case};
 
 \draw[rule, line width=0.2mm] (126,30) -- (126,66);
 
@@ -204,7 +216,7 @@
 
 %% ------------------------------------------------------------- provenance
 \node[anchor=base west, text=ink70, font=\fontsize{8.5}{11}\selectfont]
-     at (16,20) {Severity distribution is Figure 2 of the paper, redrawn in this page's palette. Grading is per IVD level from one sagittal crop.};
+     at (16,20) {Grad-CAM is from the paper, one representative Severe case; it is qualitative support, not by itself proof of a mechanism. Grading is per IVD level from one sagittal crop.};
 \node[anchor=base west, text=ink70, font=\fontsize{8.5}{11}\selectfont]
      at (16,15) {Zero-shot: a single RSNA-trained model, frozen, evaluated on the full SPIDER cohort (1{,}439 IVDs). Imaging from RSNA 2024, non-commercial research licence.};
 

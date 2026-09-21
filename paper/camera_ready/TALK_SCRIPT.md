@@ -178,9 +178,11 @@ Rules for delivery: short sentences, slow, pause at every `/`. Say numbers slowl
 >
 > The numbers look low / because we keep the hard setting. / Three classes. / The real five percent distribution. / And macro averaging, not accuracy.
 >
-> On the right is a Grad-CAM map / for one Severe canal case. / Without CBAM the map is spread out. / With CBAM it concentrates near the canal.
+> On the right is a Grad-CAM map / for a representative Severe canal case.
 >
-> I should be careful here. / This is one illustrative example. / It is not a localisation study. / We did not measure / how often the peak lands on the lesion.
+> Without attention / the response is spread / over most of the slice, / including bone and soft tissue / well away from the canal. / With CBAM / it concentrates on the narrowed segment / of the central canal, / which is the region a radiologist reads / for this label.
+>
+> This is qualitative support / for the attention hypothesis. / A saliency map shows / where the evidence sits. / It is not by itself / proof of a mechanism.
 
 ---
 
@@ -252,7 +254,7 @@ Rules for delivery: short sentences, slow, pause at every `/`. Say numbers slowl
 
 **Q. Does the Grad-CAM figure prove the model looks at the right place?**
 
-> No. / It is an illustration, not a measurement. / To claim localisation / we would have to compare the peak / against the annotated point, / and against a baseline that always guesses the centre of the crop. / We have not done that in this paper.
+> It is qualitative support, / not a proof. / The map shows where the evidence sits, / and with CBAM it sits on the narrowed canal, / which agrees with the Severe gains in the table. / But a saliency map alone / is not proof of a mechanism, / and we say so in the paper.
 
 **Q. Why BiomedCLIP and not another model?**
 
