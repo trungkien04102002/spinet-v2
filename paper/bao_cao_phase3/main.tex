@@ -376,8 +376,8 @@ Hai phương pháp ngoài được huấn luyện lại trên \textbf{đúng cù
 \textbf{Cấu hình} & \textbf{Cách xử lý chiều lát cắt} & \textbf{Nguồn} \\
 \midrule
 SpineNetV2      & tích chập 3D & nền so sánh của đề tài \\
-Giải nhì RSNA 2024 & 2.5D: mã hoá từng lát, gộp bằng BiLSTM & \texttt{brendanartley}, cài đặt lại \\
-Gộp bằng Transformer & 2.5D: mã hoá từng lát, gộp bằng tự chú ý & kiểu ViT, dựng làm đối chứng thứ hai \\
+CNN-BiLSTM & 2.5D: mã hoá từng lát, gộp bằng BiLSTM & theo giải nhì RSNA 2024 (\texttt{brendanartley}) \\
+CNN-Transformer & 2.5D: mã hoá từng lát, gộp bằng tự chú ý & kiểu ViT, dựng làm đối chứng thứ hai \\
 \textbf{Hybrid} & tích chập 3D + tiên nghiệm văn bản & của đề tài \\
 \bottomrule
 \end{tabular}
@@ -387,13 +387,13 @@ Gộp bằng Transformer & 2.5D: mã hoá từng lát, gộp bằng tự chú ý
 qua chiều lát cắt, chúng mã hoá \emph{từng lát một} bằng một mạng 2D rồi mới gộp chín vectơ thu
 được. Khác nhau ở cách gộp.
 
-\textit{Giải nhì RSNA 2024.} Mỗi lát trong chín lát sagittal đi qua một bộ mã hoá ResNet18 riêng,
+\textit{CNN-BiLSTM}, theo giải nhì RSNA 2024. Mỗi lát trong chín lát sagittal đi qua một bộ mã hoá ResNet18 riêng,
 cho ra một chuỗi chín vectơ. Chuỗi này được đưa qua \textbf{BiLSTM} --- mạng hồi tiếp hai chiều,
 đọc xuôi và đọc ngược để mỗi lát biết ngữ cảnh cả hai phía --- rồi \textbf{gộp có chú ý} thu chuỗi
 về một vectơ duy nhất, với trọng số do chính mô hình học. Cuối cùng là ba đầu tuyến tính độc lập,
 mỗi đầu ba lớp.
 
-\textit{Gộp bằng Transformer.} Cùng bộ mã hoá ResNet18 theo từng lát, nhưng chín vectơ được coi là
+\textit{CNN-Transformer.} Cùng bộ mã hoá ResNet18 theo từng lát, nhưng chín vectơ được coi là
 chín \emph{token}. Thêm một token \texttt{[CLS]} học được và nhúng vị trí, rồi cho cả mười token
 qua một bộ mã hoá Transformer nhỏ; đầu ra tại vị trí \texttt{[CLS]} là biểu diễn của cả khối. Đây
 là lối ViT quen thuộc, áp lên một chuỗi lát cắt ngắn thay vì các mảnh ảnh, và là lựa chọn
@@ -411,7 +411,7 @@ tập nhãn mới --- đó là nguồn gốc của Bảng~\ref{tab:sota-cap} bê
 \label{tab:sota}
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Chỉ số} & \textbf{SpineNetV2} & \textbf{Giải nhì RSNA} & \textbf{Transformer} & \textbf{Hybrid} \\
+\textbf{Chỉ số} & \textbf{SpineNetV2} & \textbf{CNN-BiLSTM} & \textbf{CNN-Transformer} & \textbf{Hybrid} \\
 \midrule
 Mean Accuracy (\%) & 81{,}0 $\pm$ 0{,}6 & \textbf{83{,}6 $\pm$ 0{,}5} & 83{,}4 $\pm$ 0{,}4 & \down{72{,}4 $\pm$ 0{,}3} \\
 Mean F1 (macro)    & 0{,}420 $\pm$ 0{,}010 & \textbf{0{,}532 $\pm$ 0{,}008} & 0{,}527 $\pm$ 0{,}028 & 0{,}527 $\pm$ 0{,}027 \\
