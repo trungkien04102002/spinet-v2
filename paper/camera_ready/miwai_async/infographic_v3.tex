@@ -148,14 +148,16 @@
 \node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont]
      at (16,72) {Severity distribution, RSNA 2024};
 
-% Three stacked bars, one per condition, each the full 100%. Nine grouped bars
+% Three stacked bars, one per condition, each the full 100% over 78mm.
+% They were 84mm until the type grew, at which point the percentage labels
+% ran past x=105 and crossed the divider between this block and the next. Nine grouped bars
 % with nine value labels said the same thing with three times the marks.
 % NB the loop variable must not be called \cond: that is the condensed font
 % family declared in the preamble, and the collision silently wrecks the block.
 \foreach \yy/\condname/\nm/\mo/\sv/\pct in {%
-    62/{spinal canal stenosis}/73.7/6.3/4.0/{4.8},
-    52/{left foraminal narrowing}/65.2/15.5/3.4/{4.1},
-    42/{right foraminal narrowing}/65.5/15.2/3.3/{3.9}}{
+    62/{spinal canal stenosis}/68.4/5.85/3.74/{4.8},
+    52/{left foraminal narrowing}/60.5/14.35/3.20/{4.1},
+    42/{right foraminal narrowing}/60.8/14.10/3.04/{3.9}}{
   \fill[waffle]  (16,\yy) rectangle ++(\nm,6);
   \fill[track2]  (16+\nm,\yy) rectangle ++(\mo,6);
   \fill[signal]  (16+\nm+\mo,\yy) rectangle ++(\sv,6);
