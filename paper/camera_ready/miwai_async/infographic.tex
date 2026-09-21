@@ -1,145 +1,167 @@
 % MIWAI 2026, paper 122. One-page infographic for the asynchronous session.
 %
-% Canvas is 320 x 180 mm, which is 16:9, so the exported PNG lands on
-% 1920 x 1080 and matches the aspect ratio of the slide deck and the video.
+% Canvas 320 x 180 mm (16:9), exported to 1920 x 1080, so one aspect ratio
+% serves the slides, this page and the video.
 %
-% Every number on this page comes from the abstract of ../main.tex. Nothing
-% here reports Phase 3 thesis work, which is a different set of experiments
-% and is not part of this paper.
+% Every number comes from the abstract and tables of ../main.tex. Nothing here
+% reports the later thesis experiments.
 %
-% Palette is Okabe-Ito, which stays readable under the common forms of colour
-% vision deficiency. Three accent colours only; meaning is never carried by
-% colour alone, every coloured element is also labelled in text.
+% Grid: margin 12, gutter 7, panel widths 82 / 93 / 107 at x = 12 / 101 / 201.
+% Columns are deliberately unequal: the result is why anyone stops, the problem
+% is one sentence of setup. Inset is 8 mm on every side of every panel, and
+% panel heads sit on that same 8 mm so they align with the text they govern.
+%
+% Type scale 46 / 26 / 20 / 15 / 11 / 9. Steps are 1.2x or wider; anything
+% closer stops reading as hierarchy and starts reading as a mistake.
+%
+% Colour: one dark ink for all three panel heads, with a 3 mm accent tab, so
+% the accents stay reserved. Vermillion is the Severe class and nothing else,
+% blue and orange are the two branches and nothing else, green is improvement
+% and nothing else. Palette is Okabe-Ito, readable with colour vision
+% deficiency, and no meaning is carried by colour alone.
 %
 % Build:
 %   pdflatex -interaction=nonstopmode infographic.tex
-%   pdftoppm -png -r 300 -scale-to-x 1920 -scale-to-y 1080 infographic.pdf infographic
+%   pdftoppm -png -scale-to-x 1920 -scale-to-y 1080 infographic.pdf infographic
 \documentclass[12pt]{article}
 \usepackage[paperwidth=320mm,paperheight=180mm,margin=0mm]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{helvet}
 \renewcommand{\familydefault}{\sfdefault}
+\usepackage{microtype}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,calc}
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
 
-% Okabe-Ito
+\definecolor{pageBg}{HTML}{EFEFEC}
+\definecolor{cardLine}{HTML}{E2E2DC}
+\definecolor{inkDark}{HTML}{3A3A35}
+\definecolor{inkBody}{HTML}{55554F}
+\definecolor{trackGrey}{HTML}{E8E8E3}
+\definecolor{barGrey}{HTML}{C8C8C2}
 \definecolor{oiBlue}{HTML}{0072B2}
 \definecolor{oiOrange}{HTML}{E69F00}
 \definecolor{oiGreen}{HTML}{009E73}
 \definecolor{oiVermillion}{HTML}{D55E00}
-\definecolor{panelBg}{HTML}{F4F4F2}
-\definecolor{barGrey}{HTML}{9A9A96}
-\definecolor{inkGrey}{HTML}{55554F}
 
-\newcommand{\panelhead}[3]{%
-  \fill[#3] (#1,134) rectangle ++(94.67,12);
-  \node[anchor=west, text=white, font=\fontsize{13}{15}\selectfont\bfseries]
-       at (#1+4,140) {#2};}
+% A weight-matched arrow. \rightarrow renders Computer Modern, which puts a
+% hairline maths glyph between bold Helvetica digits.
+\newcommand{\arr}{\raisebox{0.18ex}{\tikz[baseline=-0.55ex]
+  \draw[-{Stealth[length=1.9mm,width=1.6mm]},line width=0.5mm](0,0)--(4.4mm,0);}}
+
+\newcommand{\lbl}[1]{\textls[80]{\MakeUppercase{#1}}}
+
+% One card: white ground, hairline, head bar clipped inside the rounding so all
+% four corners share a radius.
+\newcommand{\card}[4]{%
+  \begin{scope}
+    \clip[rounded corners=2mm] (#1,26) rectangle ++(#2,122);
+    \fill[white] (#1,26) rectangle ++(#2,122);
+    \fill[inkDark] (#1,136) rectangle ++(#2,12);
+    \fill[#4] (#1,136) rectangle ++(3,12);
+  \end{scope}
+  \draw[cardLine, line width=0.25mm, rounded corners=2mm] (#1,26) rectangle ++(#2,122);
+  \node[anchor=west, text=white, font=\fontsize{15}{17}\selectfont\bfseries]
+       at (#1+8,141.6) {\lbl{#3}};}
 
 \begin{document}
 \begin{tikzpicture}[x=1mm,y=1mm]
+\fill[pageBg] (0,0) rectangle (320,180);
 
 %% ---------------------------------------------------------------- header
-\fill[oiBlue] (0,152) rectangle (320,180);
-\node[anchor=west, text=white, font=\fontsize{27}{30}\selectfont\bfseries]
-     at (11,169.5) {A Two-Branch Hybrid Model for Lumbar Disc Grading};
-\node[anchor=west, text=white, font=\fontsize{13}{15}\selectfont]
-     at (11,158.5) {Ha Trung Kien \quad Phan Trong Nhan \quad Ho Chi Minh City University of Technology, Vietnam};
-\node[anchor=east, text=white, font=\fontsize{13}{15}\selectfont\bfseries]
-     at (309,158.5) {MIWAI 2026 \quad Paper 122};
+\fill[inkDark] (0,153) rectangle (320,180);
+\node[anchor=west, text=white, font=\fontsize{26}{28}\selectfont\bfseries]
+     at (12,169.5) {A Two-Branch Hybrid Model for Lumbar Disc Grading};
+\node[anchor=west, text=white, opacity=.82, font=\fontsize{10.5}{13}\selectfont]
+     at (12,159.5) {Ha Trung Kien \,$\cdot$\, Phan Trong Nhan \,$\cdot$\, HCMUT, Vietnam};
+\node[anchor=east, text=white, font=\fontsize{10.5}{13}\selectfont\bfseries]
+     at (308,159.5) {MIWAI 2026 \,$\cdot$\, Paper 122};
 
-%% ---------------------------------------------------------------- panels
-\foreach \x in {10, 112.67, 215.33}
-  \fill[panelBg, rounded corners=1.5mm] (\x,24) rectangle ++(94.67,122);
+\card{12}{82}{The problem}{oiVermillion}
+\card{101}{93}{The model}{oiBlue}
+\card{201}{107}{The result}{oiGreen}
 
-\panelhead{10}{1 \quad THE PROBLEM}{inkGrey}
-\panelhead{112.67}{2 \quad THE MODEL}{oiBlue}
-\panelhead{215.33}{3 \quad THE RESULT}{oiGreen}
+%% ------------------------------------------------- 1. imbalance
+\node[anchor=west, font=\fontsize{11}{14}\selectfont, text=inkBody]
+     at (20,128) {Severity distribution, RSNA 2024};
 
-%% ------------------------------------------------- panel 1: imbalance
-\node[anchor=west, font=\fontsize{14}{17}\selectfont, text=inkGrey]
-     at (18,126) {Severity distribution, RSNA 2024};
+% Tracks first: three equal slots filled to different levels reads as a chart.
+% Loose rectangles on a stray baseline rule read as unfinished.
+\foreach \bx in {20,44,68} \fill[trackGrey] (\bx,52) rectangle ++(18,62);
+\fill[barGrey]      (20,52) rectangle ++(18,50.2);
+\fill[barGrey]      (44,52) rectangle ++(18,9.3);
+\fill[oiVermillion] (68,52) rectangle ++(18,2.5);
 
-% bars, baseline at y = 48, full scale 70 mm = 100 %
-\fill[barGrey]      (25,48) rectangle ++(17,56.7);
-\fill[barGrey]      (49,48) rectangle ++(17,10.3);
-\fill[oiVermillion] (73,48) rectangle ++(17,3.0);
-\draw[inkGrey, line width=0.4mm] (22,48) -- (93,48);
+% Value labels at one constant offset above each bar, not three.
+\node[font=\fontsize{11}{13}\selectfont\bfseries, text=inkBody]       at (29,106.2) {81\%};
+\node[font=\fontsize{11}{13}\selectfont\bfseries, text=inkBody]       at (53,65.3)  {15\%};
+\node[font=\fontsize{11}{13}\selectfont\bfseries, text=oiVermillion]  at (77,58.5)  {4\%};
+% One baseline for all three category labels.
+\node[font=\fontsize{11}{13}\selectfont, text=inkBody]              at (29,47) {Normal/Mild};
+\node[font=\fontsize{11}{13}\selectfont, text=inkBody]              at (53,47) {Moderate};
+\node[font=\fontsize{11}{13}\selectfont\bfseries, text=oiVermillion] at (77,47) {Severe};
 
-\node[font=\fontsize{13}{15}\selectfont\bfseries, text=inkGrey] at (33.5,108) {81\%};
-\node[font=\fontsize{13}{15}\selectfont\bfseries, text=inkGrey] at (57.5,62)  {15\%};
-\node[font=\fontsize{13}{15}\selectfont\bfseries, text=oiVermillion] at (81.5,55) {4\%};
+\node[anchor=west, font=\fontsize{11}{14}\selectfont, text=inkBody, align=left]
+     at (20,37.5) {Cross-entropy training leaves\\Severe recall near zero.};
 
-\node[font=\fontsize{11}{13}\selectfont, text=inkGrey, align=center] at (33.5,43) {Normal /\\Mild};
-\node[font=\fontsize{11}{13}\selectfont, text=inkGrey] at (57.5,44.5) {Moderate};
-\node[font=\fontsize{11}{13}\selectfont\bfseries, text=oiVermillion] at (81.5,44.5) {Severe};
+%% ------------------------------------------------- 2. architecture
+\node[anchor=west, font=\fontsize{11}{14}\selectfont, text=inkBody]
+     at (109,128) {Two branches, one of them frozen};
 
-\node[anchor=west, font=\fontsize{12}{15}\selectfont, text=inkGrey, align=left]
-     at (18,32) {Cross-entropy training leaves\\Severe recall near zero.};
+\node[draw=oiBlue, line width=0.5mm, fill=white, rounded corners=2mm,
+      minimum width=36mm, minimum height=26mm, align=center,
+      font=\fontsize{11}{13.5}\selectfont] (bxA) at (127,107)
+     {\textbf{3D ResNet-34}\\\textbf{with CBAM}\\[3pt] trained};
+\node[draw=oiOrange, line width=0.5mm, fill=white, rounded corners=2mm,
+      minimum width=36mm, minimum height=26mm, align=center,
+      font=\fontsize{11}{13.5}\selectfont] (bxB) at (168,107)
+     {\textbf{BiomedCLIP}\\\textbf{frozen}\\[3pt] semantic prior};
+\node[draw=cardLine, line width=0.5mm, fill=white, rounded corners=2mm,
+      minimum width=60mm, minimum height=12mm, align=center,
+      font=\fontsize{11}{13}\selectfont] (fus) at (147.5,77) {fusion head, 1.18M};
+% The chain ends in a box like the rest of it, not in floating text.
+\node[draw=cardLine, line width=0.5mm, fill=white, rounded corners=2mm,
+      minimum width=60mm, minimum height=12mm, align=center,
+      font=\fontsize{11}{13}\selectfont] (out) at (147.5,54) {match to text prompt};
 
-%% ------------------------------------------------- panel 2: architecture
-% The two boxes sit side by side, not stacked: stacking made the upper
-% branch's arrow cross straight through the lower box, which read as a
-% sequence rather than as two parallel branches.
-\node[anchor=west, font=\fontsize{14}{17}\selectfont, text=inkGrey]
-     at (120.67,126) {Two branches, one of them frozen};
+\draw[-{Stealth[length=2mm,width=1.6mm]}, oiBlue,   line width=0.35mm,
+      shorten >=1.2mm, shorten <=1.2mm] (bxA) -- (fus);
+\draw[-{Stealth[length=2mm,width=1.6mm]}, oiOrange, line width=0.35mm,
+      shorten >=1.2mm, shorten <=1.2mm] (bxB) -- (fus);
+\draw[-{Stealth[length=2mm,width=1.6mm]}, inkBody,  line width=0.35mm,
+      shorten >=1.2mm, shorten <=1.2mm] (fus) -- (out);
 
-\node[draw=oiBlue, line width=0.5mm, fill=white, rounded corners=1mm,
-      minimum width=40mm, minimum height=23mm, align=center,
-      font=\fontsize{10.5}{13}\selectfont] (bxA) at (138,105)
-     {\textbf{3D ResNet-34}\\[1pt] \textbf{with CBAM}\\[3pt] attention on\\ the lesion, trained};
+\node[anchor=west, font=\fontsize{11}{14}\selectfont, text=inkBody, align=left]
+     at (109,37.5) {The label set is an input,\\not a fixed classifier head.};
 
-\node[draw=oiOrange, line width=0.5mm, fill=white, rounded corners=1mm,
-      minimum width=40mm, minimum height=23mm, align=center,
-      font=\fontsize{10.5}{13}\selectfont] (bxB) at (182,105)
-     {\textbf{BiomedCLIP}\\[1pt] \textbf{frozen}\\[3pt] semantic prior from\\ biomedical pretraining};
+%% ------------------------------------------------- 3. results
+\node[anchor=west, font=\fontsize{11}{14}\selectfont, text=inkBody]
+     at (209,128) {Severe class, RSNA 2024};
 
-\node[draw=inkGrey, line width=0.5mm, fill=white, rounded corners=1mm,
-      minimum width=50mm, minimum height=11mm, align=center,
-      font=\fontsize{12}{14}\selectfont] (fus) at (160,74) {fusion head, 1.18M params};
+\node[font=\fontsize{11}{13}\selectfont\bfseries, text=inkBody] at (254.5,120) {\lbl{Severe recall}};
+\node[font=\fontsize{46}{48}\selectfont\bfseries, text=oiGreen] at (254.5,105) {48.6\%};
+\node[font=\fontsize{11}{14}\selectfont, text=inkBody] at (254.5,91)
+     {up from 12.3\%, about four times higher};
 
-\draw[-{Stealth[length=2.6mm]}, oiBlue,   line width=0.5mm] (bxA) -- (fus);
-\draw[-{Stealth[length=2.6mm]}, oiOrange, line width=0.5mm] (bxB) -- (fus);
-\draw[-{Stealth[length=2.6mm]}, inkGrey,  line width=0.5mm] (160,68.5) -- (160,60);
+\draw[cardLine, line width=0.25mm] (209,84) -- (300,84);
 
-\node[font=\fontsize{12}{14}\selectfont, text=inkGrey] at (160,56)
-     {match to text prompts $\rightarrow$ grade};
+\node[font=\fontsize{11}{13}\selectfont\bfseries, text=inkBody] at (254.5,77) {\lbl{Severe F1}};
+\node[font=\fontsize{20}{22}\selectfont\bfseries, text=oiGreen] at (254.5,68) {0.152\,\arr\,0.356};
 
-\node[anchor=west, font=\fontsize{12}{15}\selectfont, text=inkGrey, align=left]
-     at (120.67,32) {The label set is an input,\\not a fixed classifier head.};
+\draw[cardLine, line width=0.25mm] (209,60) -- (300,60);
 
-%% ------------------------------------------------- panel 3: results
-\node[anchor=west, font=\fontsize{14}{17}\selectfont, text=inkGrey]
-     at (223.33,126) {Severe class, RSNA 2024};
-
-\node[font=\fontsize{13}{15}\selectfont, text=inkGrey] at (262.67,116) {Severe Recall};
-\node[font=\fontsize{30}{32}\selectfont\bfseries, text=oiGreen] at (262.67,104)
-     {12.3\% $\rightarrow$ 48.6\%};
-\node[font=\fontsize{13}{15}\selectfont, text=inkGrey] at (262.67,93) {about four times higher};
-
-\draw[barGrey, line width=0.25mm] (228,85) -- (297.33,85);
-
-\node[font=\fontsize{13}{15}\selectfont, text=inkGrey] at (262.67,78) {Severe F1};
-\node[font=\fontsize{19}{21}\selectfont\bfseries, text=oiGreen] at (262.67,69)
-     {0.152 $\rightarrow$ 0.356};
-
-\draw[barGrey, line width=0.25mm] (228,61) -- (297.33,61);
-
-\node[font=\fontsize{19}{21}\selectfont\bfseries, text=oiBlue] at (262.67,55.5)
-     {8 unseen labels};
-\node[font=\fontsize{10}{12}\selectfont, text=inkGrey, align=center] at (262.67,44)
-     {graded zero-shot, no retraining.\\Disc morphology F1 0.587,\\against 0.433 off the shelf.};
-
-\node[anchor=west, font=\fontsize{12}{15}\selectfont, text=inkGrey, align=left]
-     at (223.33,32) {The same model grades a schema\\it was not trained on.};
+\node[font=\fontsize{11}{13}\selectfont\bfseries, text=inkBody] at (254.5,53) {\lbl{Zero-shot on SPIDER}};
+\node[font=\fontsize{20}{22}\selectfont\bfseries, text=inkDark] at (254.5,44) {8 unseen labels};
+\node[font=\fontsize{9}{11}\selectfont, text=inkBody] at (254.5,36)
+     {disc morphology F1 0.587, against 0.433 off the shelf};
 
 %% ---------------------------------------------------------------- footer
-\fill[panelBg] (0,0) rectangle (320,18);
-\node[anchor=west, font=\fontsize{10}{12}\selectfont, text=inkGrey] at (11,9)
-     {RSNA figures are means over three seeds. Severe share is the mean of the three sagittal conditions. Zero-shot is one frozen model scored on the full SPIDER cohort, 1{,}439 IVDs.};
+\node[anchor=west, font=\fontsize{9}{11}\selectfont, text=inkBody] at (12,14)
+     {RSNA figures are means over three seeds. The Severe share is the mean of the three sagittal conditions.};
+\node[anchor=west, font=\fontsize{9}{11}\selectfont, text=inkBody] at (12,9)
+     {Zero-shot is one frozen model scored on the full SPIDER cohort, 1{,}439 IVDs.};
 
 \end{tikzpicture}
 \end{document}
