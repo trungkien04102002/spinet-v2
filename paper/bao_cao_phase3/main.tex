@@ -148,6 +148,18 @@ Nét liền: thành phần đã cài đặt và kiểm thử; nét đứt: dự 
 \label{fig:feedback_loop}
 \end{figure}
 
+Hình~\ref{fig:feedback_loop_en} là cùng vòng lặp đó, tiếng Anh và gọn hơn, \textbf{bỏ hẳn hai hộp
+dự kiến}. Một sơ đồ dùng để trình bày cái đang có thì không nên dành một phần ba bề ngang cho cái
+chưa có; bản đầy đủ ở Hình~\ref{fig:feedback_loop} vẫn giữ để đối chiếu.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/feedback_loop_en.pdf}
+\caption{Bản rút gọn tiếng Anh. Mọi hộp trong hình đều đã cài đặt và có kiểm thử; màu cam là điểm
+có người tham gia.}
+\label{fig:feedback_loop_en}
+\end{figure}
+
 Bảng~\ref{tab:vi_sao_khong} giải thích vì sao không chọn các hướng cập nhật khác. Lý do chung là ở
 vùng vài chục mẫu, replay có bằng chứng y tế mạnh nhất, còn các hướng còn lại hoặc cần nhiều mẫu
 hơn, hoặc cần thành phần mà ứng dụng hiện không chạy.
@@ -170,6 +182,31 @@ Huấn luyện lại toàn bộ & Quên thảm khốc khi số mẫu nhỏ \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+Bảng~\ref{tab:vi_sao_khong} bàn về \emph{cập nhật thế nào}. Còn một trục thứ hai đã khảo sát là
+\emph{chọn ca nào cho bác sĩ xem trước}, tức active learning. Trục này hiện \textbf{chưa cài đặt},
+nhưng các hướng đều đã có quyết định rõ ràng nên ghi lại ở Bảng~\ref{tab:active}.
+
+\begin{table}[htbp]
+\centering
+\caption{Trục chọn mẫu (active learning): đã khảo sát, chưa cài đặt.}
+\label{tab:active}
+\small
+\begin{tabular}{@{}lp{9.2cm}@{}}
+\toprule
+\textbf{Hướng} & \textbf{Kết luận} \\
+\midrule
+Lấy mẫu theo độ bất định & Rẻ nhất và được hậu thuẫn tốt nhất cho phân loại ảnh y tế (Gal, Islam và Ghahramani, ICML 2017). \textbf{Là hướng sẽ chọn} nếu cài trục này \\
+Query-by-committee, coreset & Đẹp về học thuật nhưng quá tốn cho một GPU đơn ở quy mô mẫu nhỏ (Sener và Savarese, ICLR 2018). Loại \\
+Rủi ro khởi đầu lạnh & Nhóm mẫu ban đầu nhỏ hoặc thiên lệch có thể làm active learning \textbf{tệ hơn chọn ngẫu nhiên} (COLosSAL, MICCAI 2023). Phải nêu như một hạn chế nếu cài \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Công cụ gần nhất đã có sẵn ngoài kia là MONAI Label} (Diaz-Pinto và cộng sự,
+\textit{Medical Image Analysis}, 2024): cùng hạng mục với ứng dụng của đề tài, cũng tính độ bất
+định để xếp thứ tự ca cho người đọc. Khác biệt của ứng dụng này nằm ở phần sau vòng lặp --- tập
+đánh giá đóng băng, cổng macro-F1 và sổ đăng ký cho phép hoàn tác --- chứ không nằm ở phần chọn mẫu.
 
 \subsection{Chuẩn bị dữ liệu từ chỉnh sửa}
 
