@@ -32,7 +32,7 @@
 \newfontfamily\cond{Avenir Next Condensed}
 \usepackage{graphicx}
 \usepackage{tikz}
-\usetikzlibrary{arrows.meta,positioning,calc}
+\usetikzlibrary{arrows.meta,positioning,calc,decorations.pathreplacing}
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
 
@@ -127,28 +127,34 @@
 % "Classes enter as text prompts" read as though the prompt were fed in per
 % image, which is wrong, so the heading says what is absent instead.
 \node[anchor=base west, font=\fontsize{13}{16}\selectfont]
-     at (204,129) {No classifier head, just text prompts.};
+     at (204,133) {No classifier head, just text prompts.};
 
-% The real RSNA prompts, from RSNA_PROMPTS in train_rsna_hybrid.py: three per
-% condition, one per grade. An earlier draft showed the SPIDER presence-label
-% template instead, which made the output look like a yes-or-no finding when
-% the model grades severity.
-\node[anchor=base west, text=ink70, font=\fontsize{10}{13}\selectfont] at (208,120)
-     {``normal or mild spinal canal stenosis''};
-\node[anchor=base west, text=ink70, font=\fontsize{10}{13}\selectfont] at (208,114)
-     {``moderate spinal canal stenosis''};
-\node[anchor=base west, text=signal, font=\fontsize{10}{13}\selectfont] at (208,108)
-     {``severe spinal canal stenosis''};
+% The real RSNA prompts, from RSNA_PROMPTS in train_rsna_hybrid.py. Spelled out
+% in full they repeated "spinal canal stenosis" three times over, which is a lot
+% of ink for one varying word. The brace factors the condition out, so what the
+% reader sees is what the prompt set actually is: one sentence with the grade as
+% the only slot.
+\node[anchor=base west, text=ink70, font=\fontsize{10}{13}\selectfont] at (208,123)
+     {normal or mild};
+\node[anchor=base west, text=ink70, font=\fontsize{10}{13}\selectfont] at (208,117)
+     {moderate};
+\node[anchor=base west, text=signal, font=\fontsize{10}{13}\selectfont] at (208,111)
+     {severe};
+\draw[ink70, line width=0.25mm, decorate,
+      decoration={brace, amplitude=1.6mm, mirror}] (237,109.5) -- (237,125);
+\node[anchor=base west, text=ink70, font=\fontsize{10}{13}\selectfont] at (241,116.5)
+     {spinal canal stenosis};
 
-\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (208,100)
-     {the image is the only per-case input; the prompts define the classes};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (208,102)
+     {three grades per condition; the image is the only per-case input};
+
 \node[anchor=base west, text=trained, font=\cond\fontsize{9}{11}\selectfont]
-     at (204,92) {edit the phrases, get a new label space, no gradient updates};
+     at (204,93) {edit the phrases, get a new label space, no gradient updates};
 
 \node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont]
-     at (204,84) {Zero-shot macro F1, SPIDER labels unseen in training};
-\node[anchor=base west, font=\fontsize{9.5}{12}\selectfont] at (210,77) {disc bulging \ 0.613};
-\node[anchor=base east, text=ink70, font=\fontsize{9.5}{12}\selectfont] at (304,77) {spondylolisthesis \ 0.028};
+     at (204,85) {Zero-shot macro F1, SPIDER labels unseen in training};
+\node[anchor=base west, font=\fontsize{9.5}{12}\selectfont] at (210,78) {disc bulging \ 0.613};
+\node[anchor=base east, text=ink70, font=\fontsize{9.5}{12}\selectfont] at (304,78) {spondylolisthesis \ 0.028};
 
 \draw[rule, line width=0.2mm] (16,72) -- (304,72);
 
