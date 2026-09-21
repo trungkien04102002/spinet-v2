@@ -6,7 +6,7 @@
 % Every number comes from the abstract and tables of ../main.tex. Nothing here
 % reports the later thesis experiments.
 %
-% Grid: margin 12, gutter 7, panel widths 82 / 93 / 107 at x = 12 / 101 / 201.
+% Grid: margin 12, gutter 7, panel widths 96 / 88 / 98 at x = 12 / 115 / 210.
 % Columns are deliberately unequal: the result is why anyone stops, the problem
 % is one sentence of setup. Inset is 8 mm on every side of every panel, and
 % panel heads sit on that same 8 mm so they align with the text they govern.
@@ -30,6 +30,7 @@
 \usepackage{helvet}
 \renewcommand{\familydefault}{\sfdefault}
 \usepackage{microtype}
+\usepackage{graphicx}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,calc}
 \pagestyle{empty}
@@ -79,52 +80,57 @@
 \node[anchor=east, text=white, font=\fontsize{10.5}{13}\selectfont\bfseries]
      at (308,159.5) {MIWAI 2026 \,$\cdot$\, Paper 122};
 
-\card{12}{82}{The problem}{oiVermillion}
-\card{101}{93}{The model}{oiBlue}
-\card{201}{107}{The result}{oiGreen}
+\card{12}{96}{The problem}{oiVermillion}
+\card{115}{88}{The model}{oiBlue}
+\card{210}{98}{The result}{oiGreen}
 
 %% ------------------------------------------------- 1. imbalance
 \node[anchor=west, font=\fontsize{11}{14}\selectfont, text=inkBody]
-     at (20,128) {Severity distribution, RSNA 2024};
+     at (20,128) {Sagittal T2 in, severity out};
 
-% Tracks first: three equal slots filled to different levels reads as a chart.
-% Loose rectangles on a stray baseline rule read as unfinished.
-\foreach \bx in {20,44,68} \fill[trackGrey] (\bx,52) rectangle ++(18,62);
-\fill[barGrey]      (20,52) rectangle ++(18,50.2);
-\fill[barGrey]      (44,52) rectangle ++(18,9.3);
-\fill[oiVermillion] (68,52) rectangle ++(18,2.5);
+% One mid-sagittal slice, no overlay and no saliency claim on it.
+\node[anchor=south west, inner sep=0] at (20,52)
+     {\includegraphics[width=32mm,height=58mm]{mri_sagittal_panel.png}};
+\draw[cardLine, line width=0.25mm] (20,52) rectangle ++(32,58);
 
-% Value labels at one constant offset above each bar, not three.
-\node[font=\fontsize{11}{13}\selectfont\bfseries, text=inkBody]       at (29,106.2) {81\%};
-\node[font=\fontsize{11}{13}\selectfont\bfseries, text=inkBody]       at (53,65.3)  {15\%};
-\node[font=\fontsize{11}{13}\selectfont\bfseries, text=oiVermillion]  at (77,58.5)  {4\%};
-% One baseline for all three category labels.
-\node[font=\fontsize{11}{13}\selectfont, text=inkBody]              at (29,47) {Normal/Mild};
-\node[font=\fontsize{11}{13}\selectfont, text=inkBody]              at (53,47) {Moderate};
-\node[font=\fontsize{11}{13}\selectfont\bfseries, text=oiVermillion] at (77,47) {Severe};
+% Horizontal bars, because this column is narrow: vertical bars 15 mm apart
+% cannot carry a category label as long as "Moderate" without collision.
+% Each bar sits in a full-length track, so the three read as one scale.
+\foreach \by in {94,76,58} \fill[trackGrey] (58,\by) rectangle ++(42,7);
+\fill[barGrey]      (58,94) rectangle ++(34.0,7);
+\fill[barGrey]      (58,76) rectangle ++(6.3,7);
+\fill[oiVermillion] (58,58) rectangle ++(1.7,7);
+
+\node[anchor=west, font=\fontsize{10}{12}\selectfont, text=inkBody]      at (58,105) {Normal/Mild};
+\node[anchor=west, font=\fontsize{10}{12}\selectfont, text=inkBody]      at (58,87)  {Moderate};
+\node[anchor=west, font=\fontsize{10}{12}\selectfont\bfseries, text=oiVermillion] at (58,69) {Severe};
+
+\node[anchor=west, font=\fontsize{10}{12}\selectfont\bfseries, text=inkBody]      at (94.5,97.5) {81\%};
+\node[anchor=west, font=\fontsize{10}{12}\selectfont\bfseries, text=inkBody]      at (66.8,79.5) {15\%};
+\node[anchor=west, font=\fontsize{10}{12}\selectfont\bfseries, text=oiVermillion] at (62.2,61.5) {4\%};
 
 \node[anchor=west, font=\fontsize{11}{14}\selectfont, text=inkBody, align=left]
      at (20,37.5) {Cross-entropy training leaves\\Severe recall near zero.};
 
 %% ------------------------------------------------- 2. architecture
 \node[anchor=west, font=\fontsize{11}{14}\selectfont, text=inkBody]
-     at (109,128) {Two branches, one of them frozen};
+     at (123,128) {Two branches, one of them frozen};
 
 \node[draw=oiBlue, line width=0.5mm, fill=white, rounded corners=2mm,
-      minimum width=36mm, minimum height=26mm, align=center,
-      font=\fontsize{11}{13.5}\selectfont] (bxA) at (127,107)
+      minimum width=33.5mm, minimum height=26mm, align=center,
+      font=\fontsize{11}{13.5}\selectfont] (bxA) at (139.75,107)
      {\textbf{3D ResNet-34}\\\textbf{with CBAM}\\[3pt] trained};
 \node[draw=oiOrange, line width=0.5mm, fill=white, rounded corners=2mm,
-      minimum width=36mm, minimum height=26mm, align=center,
-      font=\fontsize{11}{13.5}\selectfont] (bxB) at (168,107)
+      minimum width=33.5mm, minimum height=26mm, align=center,
+      font=\fontsize{11}{13.5}\selectfont] (bxB) at (178.25,107)
      {\textbf{BiomedCLIP}\\\textbf{frozen}\\[3pt] semantic prior};
 \node[draw=cardLine, line width=0.5mm, fill=white, rounded corners=2mm,
-      minimum width=60mm, minimum height=12mm, align=center,
-      font=\fontsize{11}{13}\selectfont] (fus) at (147.5,77) {fusion head, 1.18M};
+      minimum width=55mm, minimum height=12mm, align=center,
+      font=\fontsize{11}{13}\selectfont] (fus) at (159,77) {fusion head, 1.18M};
 % The chain ends in a box like the rest of it, not in floating text.
 \node[draw=cardLine, line width=0.5mm, fill=white, rounded corners=2mm,
-      minimum width=60mm, minimum height=12mm, align=center,
-      font=\fontsize{11}{13}\selectfont] (out) at (147.5,54) {match to text prompt};
+      minimum width=55mm, minimum height=12mm, align=center,
+      font=\fontsize{11}{13}\selectfont] (out) at (159,54) {match to text prompt};
 
 \draw[-{Stealth[length=2mm,width=1.6mm]}, oiBlue,   line width=0.35mm,
       shorten >=1.2mm, shorten <=1.2mm] (bxA) -- (fus);
@@ -134,34 +140,34 @@
       shorten >=1.2mm, shorten <=1.2mm] (fus) -- (out);
 
 \node[anchor=west, font=\fontsize{11}{14}\selectfont, text=inkBody, align=left]
-     at (109,37.5) {The label set is an input,\\not a fixed classifier head.};
+     at (123,37.5) {The label set is an input,\\not a fixed classifier head.};
 
 %% ------------------------------------------------- 3. results
 \node[anchor=west, font=\fontsize{11}{14}\selectfont, text=inkBody]
-     at (209,128) {Severe class, RSNA 2024};
+     at (218,128) {Severe class, RSNA 2024};
 
-\node[font=\fontsize{11}{13}\selectfont\bfseries, text=inkBody] at (254.5,120) {\lbl{Severe recall}};
-\node[font=\fontsize{46}{48}\selectfont\bfseries, text=oiGreen] at (254.5,105) {48.6\%};
-\node[font=\fontsize{11}{14}\selectfont, text=inkBody] at (254.5,91)
+\node[font=\fontsize{11}{13}\selectfont\bfseries, text=inkBody] at (259,120) {\lbl{Severe recall}};
+\node[font=\fontsize{46}{48}\selectfont\bfseries, text=oiGreen] at (259,105) {48.6\%};
+\node[font=\fontsize{11}{14}\selectfont, text=inkBody] at (259,91)
      {up from 12.3\%, about four times higher};
 
-\draw[cardLine, line width=0.25mm] (209,84) -- (300,84);
+\draw[cardLine, line width=0.25mm] (218,84) -- (300,84);
 
-\node[font=\fontsize{11}{13}\selectfont\bfseries, text=inkBody] at (254.5,77) {\lbl{Severe F1}};
-\node[font=\fontsize{20}{22}\selectfont\bfseries, text=oiGreen] at (254.5,68) {0.152\,\arr\,0.356};
+\node[font=\fontsize{11}{13}\selectfont\bfseries, text=inkBody] at (259,77) {\lbl{Severe F1}};
+\node[font=\fontsize{20}{22}\selectfont\bfseries, text=oiGreen] at (259,68) {0.152\,\arr\,0.356};
 
-\draw[cardLine, line width=0.25mm] (209,60) -- (300,60);
+\draw[cardLine, line width=0.25mm] (218,60) -- (300,60);
 
-\node[font=\fontsize{11}{13}\selectfont\bfseries, text=inkBody] at (254.5,53) {\lbl{Zero-shot on SPIDER}};
-\node[font=\fontsize{20}{22}\selectfont\bfseries, text=inkDark] at (254.5,44) {8 unseen labels};
-\node[font=\fontsize{9}{11}\selectfont, text=inkBody] at (254.5,36)
+\node[font=\fontsize{11}{13}\selectfont\bfseries, text=inkBody] at (259,53) {\lbl{Zero-shot on SPIDER}};
+\node[font=\fontsize{20}{22}\selectfont\bfseries, text=inkDark] at (259,44) {8 unseen labels};
+\node[font=\fontsize{9}{11}\selectfont, text=inkBody] at (259,36)
      {disc morphology F1 0.587, against 0.433 off the shelf};
 
 %% ---------------------------------------------------------------- footer
 \node[anchor=west, font=\fontsize{9}{11}\selectfont, text=inkBody] at (12,14)
      {RSNA figures are means over three seeds. The Severe share is the mean of the three sagittal conditions.};
 \node[anchor=west, font=\fontsize{9}{11}\selectfont, text=inkBody] at (12,9)
-     {Zero-shot is one frozen model scored on the full SPIDER cohort, 1{,}439 IVDs.};
+     {Normal and Mild are pooled. Zero-shot is one frozen model scored on the full SPIDER cohort, 1{,}439 IVDs.};
 
 \end{tikzpicture}
 \end{document}
