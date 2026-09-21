@@ -5,7 +5,10 @@
 \usepackage{tgtermes}
 \usepackage[margin=2.3cm]{geometry}
 \usepackage{booktabs,graphicx,xcolor,array}
-\usepackage[hidelinks]{hyperref}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue!45!black, urlcolor=blue!45!black,
+            bookmarksnumbered=true, bookmarksopen=true,
+            pdftitle={Bao cao tien do Phase 3}, pdfauthor={Trung Kien}}
 \usepackage{caption}
 \captionsetup{font=small,labelfont=bf}
 \usepackage{titlesec}
@@ -19,11 +22,20 @@
 \title{\vspace{-1.2cm}\textbf{Báo cáo tiến độ Phase 3}\\[0.25em]
 \large Ứng dụng AI trong gán nhãn ảnh y tế cho bệnh đau thắt lưng}
 \author{Trung Kiên \quad\textbar\quad GVHD: Phan Trọng Nhân}
-\date{09/09/2026}
+\date{21/09/2026}
 
 \begin{document}
 \maketitle
 \vspace{-0.9cm}
+
+
+\vspace{0.3em}
+\hrule
+\vspace{0.6em}
+{\small\tableofcontents}
+\vspace{0.4em}
+\hrule
+\vspace{0.8em}
 
 \section{Tóm tắt}
 
@@ -269,108 +281,7 @@ Vì vậy phát biểu mà phần này nhắm tới không phải ``phản hồi
 có số, câu kết luận đúng đắn sẽ có dạng: cơ chế không gây quên, có xu hướng cải thiện lớp đang yếu
 với khoảng tin cậy kèm theo, và cỡ mẫu chưa đủ để kết luận có ý nghĩa thống kê.
 
-\section{Mốc Phase 2 đã trình bày hội đồng}
-
-\subsection{Bốn cấu hình nội bộ}
-
-Bảng~\ref{tab:phase2} là số đã báo cáo, giữ nguyên để đối chiếu.
-
-\begin{table}[htbp]
-\centering\small
-\caption{Bốn cấu hình trên RSNA 2024 (seed 42), số đã trình bày ở Phase 2.}
-\label{tab:phase2}
-\begin{tabular}{lcccc}
-\toprule
-\textbf{Chỉ số} & \textbf{SpineNetV2} & \textbf{CBAM} & \textbf{BMC-only} & \textbf{Hybrid} \\
-\midrule
-Mean Accuracy   & \textbf{0{,}814} & 0{,}690 & 0{,}692 & 0{,}721 \\
-Mean F1 (macro) & 0{,}420 & 0{,}502 & 0{,}464 & \textbf{0{,}528} \\
-Mean AUC        & 0{,}826 & 0{,}822 & 0{,}812 & \textbf{0{,}837} \\
-\midrule
-\multicolumn{5}{l}{\textit{Lớp Severe}} \\
-Severe Recall   & 0{,}115 & 0{,}370 & 0{,}245 & \textbf{0{,}464} \\
-Severe F1       & 0{,}149 & 0{,}304 & 0{,}229 & \textbf{0{,}343} \\
-Severe AUPRC    & 0{,}276 & 0{,}319 & 0{,}218 & \textbf{0{,}321} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Chi tiết theo từng bệnh và từng mức độ}
-
-Bảng~\ref{tab:phase2detail} tách số theo từng điều kiện và từng mức độ, lấy từ chương 5 luận văn
-(seed 42). Đây là mức chi tiết để trả lời khi được hỏi ``trước đó mô hình làm được tới đâu''.
-
-\begin{table}[htbp]
-\centering\small
-\caption{Recall / Precision / F1 theo điều kiện $\times$ mức độ (nền $\to$ Hybrid), seed 42.}
-\label{tab:phase2detail}
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{llccc}
-\toprule
-\textbf{Điều kiện} & \textbf{Mức độ} & \textbf{Recall} & \textbf{Precision} & \textbf{F1} \\
-\midrule
-Ống sống & Normal/Mild & 98{,}6 $\to$ 92{,}8 & 91{,}1 $\to$ 96{,}4 & 0{,}947 $\to$ 0{,}946 \\
-Ống sống & Moderate    & 7{,}9 $\to$ \up{42{,}4}  & 33{,}3 $\to$ 32{,}4 & 0{,}128 $\to$ \up{0{,}368} \\
-Ống sống & \textbf{Severe} & 35{,}8 $\to$ \up{70{,}4} & 63{,}0 $\to$ 55{,}9 & 0{,}457 $\to$ \up{0{,}623} \\
-\midrule
-Lỗ trái & Normal/Mild & 96{,}2 $\to$ 54{,}5 & 80{,}4 $\to$ 93{,}4 & 0{,}876 $\to$ 0{,}688 \\
-Lỗ trái & Moderate    & 18{,}6 $\to$ \up{76{,}4} & 46{,}2 $\to$ 28{,}2 & 0{,}265 $\to$ \up{0{,}412} \\
-Lỗ trái & \textbf{Severe} & \textbf{0{,}0} $\to$ \up{18{,}8} & \textbf{0{,}0} $\to$ \up{17{,}2} & \textbf{0{,}000} $\to$ \up{0{,}180} \\
-\midrule
-Lỗ phải & Normal/Mild & 96{,}2 $\to$ 58{,}6 & 79{,}5 $\to$ 94{,}1 & 0{,}871 $\to$ 0{,}723 \\
-Lỗ phải & Moderate    & 16{,}7 $\to$ \up{75{,}8} & 43{,}4 $\to$ 30{,}9 & 0{,}241 $\to$ \up{0{,}439} \\
-Lỗ phải & \textbf{Severe} & \textbf{0{,}0} $\to$ \up{21{,}7} & \textbf{0{,}0} $\to$ \up{18{,}0} & \textbf{0{,}000} $\to$ \up{0{,}197} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\textbf{Dòng đáng chú ý nhất là Severe của hai lỗ liên hợp: mô hình nền đạt recall đúng bằng 0.}
-Nó chưa một lần dự đoán Severe cho lỗ liên hợp. Nên cải thiện ở đó không phải là tăng thêm bao
-nhiêu phần trăm, mà là khoảng cách giữa \textbf{không làm được} và làm được một phần.
-
-Cũng cần nói thẳng chỗ yếu: Severe F1 của lỗ liên hợp chỉ đạt 0{,}180 và 0{,}197, trong khi ống
-sống đạt 0{,}623. Chính khoảng cách này là lý do toàn bộ Phase 3 tồn tại.
-
-Bảng~\ref{tab:phase2auc} là cùng cách chia đó nhưng theo hai chỉ số \textbf{không phụ thuộc
-ngưỡng}. Nó trả lời một câu khác với Bảng~\ref{tab:phase2detail}: cải thiện đến từ biểu diễn đặc
-trưng tốt lên, hay chỉ từ việc điểm cắt quyết định dịch đi.
-
-\begin{table}[htbp]
-\centering\small
-\caption{AUC và AUPRC theo điều kiện $\times$ lớp (nền $\to$ Hybrid), seed 42.}
-\label{tab:phase2auc}
-\setlength{\tabcolsep}{5pt}
-\begin{tabular}{llcc}
-\toprule
-\textbf{Điều kiện} & \textbf{Lớp} & \textbf{AUC} & \textbf{AUPRC} \\
-\midrule
-Ống sống & Normal/Mild & 0{,}892 $\to$ \up{0{,}947} & 0{,}984 $\to$ \up{0{,}993} \\
-Ống sống & Moderate    & 0{,}851 $\to$ \up{0{,}884} & 0{,}272 $\to$ \up{0{,}319} \\
-Ống sống & \textbf{Severe} & 0{,}922 $\to$ \up{0{,}963} & 0{,}513 $\to$ \up{0{,}602} \\
-\midrule
-Lỗ trái & Normal/Mild & 0{,}794 $\to$ 0{,}789 & 0{,}932 $\to$ 0{,}924 \\
-Lỗ trái & Moderate    & 0{,}758 $\to$ \down{0{,}655} & 0{,}387 $\to$ \down{0{,}262} \\
-Lỗ trái & \textbf{Severe} & 0{,}815 $\to$ \up{0{,}858} & 0{,}147 $\to$ \up{0{,}174} \\
-\midrule
-Lỗ phải & Normal/Mild & 0{,}802 $\to$ 0{,}807 & 0{,}929 $\to$ 0{,}931 \\
-Lỗ phải & Moderate    & 0{,}760 $\to$ \down{0{,}657} & 0{,}375 $\to$ \down{0{,}283} \\
-Lỗ phải & \textbf{Severe} & 0{,}842 $\to$ 0{,}837 & 0{,}167 $\to$ \up{0{,}181} \\
-\midrule
-\multicolumn{2}{l}{\textbf{Trung bình lớp Severe}} & 0{,}860 $\to$ \up{0{,}886} & 0{,}276 $\to$ \up{0{,}319} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Severe tăng đồng thời cả AUC lẫn AUPRC trên cả ba điều kiện. Vì hai chỉ số này đánh giá thứ tự xếp
-hạng chứ không phụ thuộc ngưỡng, kết quả loại trừ khả năng cải thiện chỉ là hệ quả của việc dịch
-điểm cắt: \textbf{biểu diễn đặc trưng thật sự tốt lên}.
-
-Ngược lại, AUC của mức Moderate ở hai lỗ liên hợp \emph{giảm} 0{,}103. Nguyên nhân đã xác định và
-ghi trong luận văn: phép tăng cường lật ngang ban đầu không hoán đổi nhãn trái/phải, nên nhãn
-Moderate của hai bên bị lẫn. Đã sửa trong bản mã nguồn công bố. Lớp Severe ít bị ảnh hưởng hơn vì
-các ca nặng nằm gần trục giữa, ít nhạy với đúng loại nhiễu nhãn đó.
-
-\subsection{So sánh với phương pháp ngoài}
+\section{So sánh với phương pháp ngoài}
 
 Hai phương pháp ngoài được huấn luyện lại trên \textbf{đúng cùng phép chia bệnh nhân}
 (seed 42/123/456, chia 80/20 theo mã ca) và đánh giá trên cùng ba nhãn, để so sánh công bằng.
@@ -503,6 +414,7 @@ bước tiếp theo.
 nghĩa là nguyên nhân nằm ở chỗ khác. Đó là điều dẫn tới phần tiếp theo.
 
 \subsection{Chuyên gia T1 cho nhãn lỗ liên hợp: hướng chính, chưa kết luận}
+\label{sec:t1}
 
 \textbf{Chẩn đoán.} Đối chiếu tệp toạ độ với mô tả chuỗi ảnh: nhãn lỗ liên hợp được chấm
 \textbf{100\% trên Sagittal T1}, nhãn ống sống \textbf{99{,}9\% trên Sagittal T2}, và hai loại
@@ -629,11 +541,213 @@ lớn hơn. \textbf{Giới hạn cần nêu:} đây là hai phép kiểm, một 
 việc so nhiều lần thì $p=0{,}088$, nên kết luận đúng là \textbf{có dấu hiệu ủng hộ}, chưa phải
 bằng chứng chắc chắn.
 
+\subsection{Bốn hướng đã thử và không hiệu quả}
+
+Các kết quả âm dưới đây đều đáng báo cáo vì chúng loại bỏ những hướng nghe hợp lý.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Các hướng cải thiện đã thử nghiệm và kết quả.}
+\label{tab:neg}
+\begin{tabular}{p{4.6cm}p{9.8cm}}
+\toprule
+\textbf{Hướng} & \textbf{Kết quả} \\
+\midrule
+Cơ chế trộn có cổng (gated fusion) &
+Chênh lệch đỉnh 0{,}0016, nhỏ hơn độ lệch chuẩn giữa các epoch (0{,}0048). \textbf{Không khác biệt.} \\
+Trung bình trọng số nhiều epoch &
+Kém hơn epoch đơn tốt nhất ở mọi chỉ số. \textbf{Không có tác dụng.} \\
+Mở băng tầng cuối của backbone &
+Quá khớp: Mean Accuracy \up{+0{,}029} nhưng Severe AUPRC \down{$-$0{,}037}. Quá khớp ăn vào lớp hiếm trước. \\
+Bản đồ nhiệt (Grad-CAM) để định vị &
+Thua phép đoán ``giữa ảnh'': 30{,}7 mm so với 21{,}6 mm. \textbf{Không định vị được.} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Kết quả mở băng backbone trở thành \textbf{lý lẽ bảo vệ} thiết kế đóng băng hiện tại, khi được hỏi
+``tại sao không tinh chỉnh toàn bộ mạng''.
+
+\section{Khả diễn giải: khảo sát và kiểm chứng}
+
+Theo yêu cầu khảo sát nhiều hướng tiếp cận, đã rà 16 phương pháp thuộc bốn họ: CAM dùng gradient,
+CAM không gradient, quy gán ở không gian đầu vào, và tín hiệu nội tại của mô hình. Chọn triển khai
+bốn phương pháp có \textbf{cơ chế khác nhau} thay vì nhiều biến thể cùng một cơ chế.
+
+Hai kết quả kiểm chứng đáng lưu:
+
+\textbf{Grad-CAM trên nhánh CBAM là phân rã chính xác, không phải suy đoán.} Đầu ra của mạng là
+gộp trung bình toàn cục rồi một tầng tuyến tính --- đúng kiến trúc mà Draelos \& Carin chứng minh
+CAM, HiResCAM và Grad-CAM cho cùng một kết quả. Kiểm bằng số trên mô hình của đề tài: tương quan
+Pearson \textbf{1{,}000000}, sai lệch tuyệt đối lớn nhất $2{,}4\times10^{-7}$.
+
+\textbf{Bản đồ nhiệt không định vị được lỗ liên hợp.} Đo khoảng cách từ đỉnh bản đồ nhiệt tới điểm
+bác sĩ chấm, kèm hai mốc đối chứng bắt buộc:
+
+\begin{table}[htbp]
+\centering\small
+\caption{Khoảng cách tới điểm bác sĩ chấm (trung vị, mm), các ca Severe.}
+\label{tab:loc}
+\begin{tabular}{lcc}
+\toprule
+ & \textbf{Lỗ trái (n=53)} & \textbf{Lỗ phải (n=20)} \\
+\midrule
+Grad-CAM              & 30{,}7 & 33{,}9 \\
+Layer-CAM             & 31{,}8 & 30{,}4 \\
+Đoán ngẫu nhiên       & 49{,}7 & 53{,}7 \\
+\textbf{Đoán giữa ảnh} & \textbf{21{,}6} & \textbf{19{,}6} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Cả hai phương pháp thắng phép đoán ngẫu nhiên nhưng \textbf{thua phép đoán ``giữa ảnh''}, nên chúng
+không mang thông tin định vị hữu ích. Kết quả này trùng với Arun và cộng sự (\textit{Radiology: AI},
+2021): cả 8 phương pháp họ thử trên ảnh y tế thật đều trượt ít nhất một tiêu chí tin cậy.
+
+Hệ quả cần ghi nhận: hình Grad-CAM dùng trong bài báo đã nộp \textbf{không chứng minh được} điều nó
+tuyên bố. Vùng ống sống nằm ngay giữa ảnh do cách cắt, nên ``mô hình tập trung vào ống sống'' không
+phân biệt được với ``mô hình tập trung vào giữa ảnh'' --- mốc đối chứng cho 0{,}4 mm trong khi
+Grad-CAM cho 14{,}0 mm.
+
+\section{Hội nghị MIWAI 2026: tài liệu đã chuẩn bị}
+
+Bài báo \textit{A Two-Branch Hybrid Model for Imbalanced Lumbar Disc Grading and Zero-Shot Label
+Extension} (paper 122) đã được chấp nhận báo cáo miệng. Ban tổ chức yêu cầu \textbf{mọi bài} tham
+gia phiên bất đồng bộ, gồm ba món: phần tóm tắt, một trang infographic, và một video.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Tài liệu hội nghị, trạng thái tại thời điểm báo cáo.}
+\label{tab:miwai}
+\begin{tabular}{@{}lp{9.4cm}@{}}
+\toprule
+\textbf{Tài liệu} & \textbf{Trạng thái} \\
+\midrule
+Tóm tắt & Xong, 247 từ, lấy nguyên văn từ bài đã chấp nhận \\
+Infographic & Xong, một trang 1920$\times$1080. Mọi số trên trang truy được về bảng trong bài báo \\
+Video & \down{Chưa quay.} Slide và kịch bản nói là nguyên liệu \\
+Slide báo cáo & Xong, 23 trang: 14 trang trình bày, 3 trang tài liệu tham khảo, 5 trang dự phòng \\
+Kịch bản nói & Xong, bấm giờ từng slide, chạy 11--13 phút trong khung 15 phút \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Slide và kịch bản \textbf{không phải món nộp} --- chúng là nguyên liệu để quay video và để trình
+bày trực tuyến. Kịch bản kèm phần hỏi đáp đã soạn sẵn 11 câu, trong đó có hai câu khó nhất: vì sao
+độ chính xác tổng giảm, và vì sao trung bình tám nhãn zero-shot lại thua mô hình chưa huấn luyện.
+
+Toàn bộ nằm ở \texttt{paper/camera\_ready/miwai\_async/}, đóng gói sẵn một tệp nén để gửi.
+
+\section{Số liệu chi tiết các phase trước}
+
+Mục này là phần tra cứu, không nằm trong mạch trình bày. Gom lại để khi cần một con số cụ thể thì
+mở đúng một chỗ, thay vì lật ba tệp.
+
+\subsection{Bốn cấu hình nội bộ}
+
+Bảng~\ref{tab:phase2} là số đã báo cáo, giữ nguyên để đối chiếu.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Bốn cấu hình trên RSNA 2024 (seed 42), số đã trình bày ở Phase 2.}
+\label{tab:phase2}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Chỉ số} & \textbf{SpineNetV2} & \textbf{CBAM} & \textbf{BMC-only} & \textbf{Hybrid} \\
+\midrule
+Mean Accuracy   & \textbf{0{,}814} & 0{,}690 & 0{,}692 & 0{,}721 \\
+Mean F1 (macro) & 0{,}420 & 0{,}502 & 0{,}464 & \textbf{0{,}528} \\
+Mean AUC        & 0{,}826 & 0{,}822 & 0{,}812 & \textbf{0{,}837} \\
+\midrule
+\multicolumn{5}{l}{\textit{Lớp Severe}} \\
+Severe Recall   & 0{,}115 & 0{,}370 & 0{,}245 & \textbf{0{,}464} \\
+Severe F1       & 0{,}149 & 0{,}304 & 0{,}229 & \textbf{0{,}343} \\
+Severe AUPRC    & 0{,}276 & 0{,}319 & 0{,}218 & \textbf{0{,}321} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Chi tiết theo từng bệnh và từng mức độ}
+
+Bảng~\ref{tab:phase2detail} tách số theo từng điều kiện và từng mức độ, lấy từ chương 5 luận văn
+(seed 42). Đây là mức chi tiết để trả lời khi được hỏi ``trước đó mô hình làm được tới đâu''.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Recall / Precision / F1 theo điều kiện $\times$ mức độ (nền $\to$ Hybrid), seed 42.}
+\label{tab:phase2detail}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llccc}
+\toprule
+\textbf{Điều kiện} & \textbf{Mức độ} & \textbf{Recall} & \textbf{Precision} & \textbf{F1} \\
+\midrule
+Ống sống & Normal/Mild & 98{,}6 $\to$ 92{,}8 & 91{,}1 $\to$ 96{,}4 & 0{,}947 $\to$ 0{,}946 \\
+Ống sống & Moderate    & 7{,}9 $\to$ \up{42{,}4}  & 33{,}3 $\to$ 32{,}4 & 0{,}128 $\to$ \up{0{,}368} \\
+Ống sống & \textbf{Severe} & 35{,}8 $\to$ \up{70{,}4} & 63{,}0 $\to$ 55{,}9 & 0{,}457 $\to$ \up{0{,}623} \\
+\midrule
+Lỗ trái & Normal/Mild & 96{,}2 $\to$ 54{,}5 & 80{,}4 $\to$ 93{,}4 & 0{,}876 $\to$ 0{,}688 \\
+Lỗ trái & Moderate    & 18{,}6 $\to$ \up{76{,}4} & 46{,}2 $\to$ 28{,}2 & 0{,}265 $\to$ \up{0{,}412} \\
+Lỗ trái & \textbf{Severe} & \textbf{0{,}0} $\to$ \up{18{,}8} & \textbf{0{,}0} $\to$ \up{17{,}2} & \textbf{0{,}000} $\to$ \up{0{,}180} \\
+\midrule
+Lỗ phải & Normal/Mild & 96{,}2 $\to$ 58{,}6 & 79{,}5 $\to$ 94{,}1 & 0{,}871 $\to$ 0{,}723 \\
+Lỗ phải & Moderate    & 16{,}7 $\to$ \up{75{,}8} & 43{,}4 $\to$ 30{,}9 & 0{,}241 $\to$ \up{0{,}439} \\
+Lỗ phải & \textbf{Severe} & \textbf{0{,}0} $\to$ \up{21{,}7} & \textbf{0{,}0} $\to$ \up{18{,}0} & \textbf{0{,}000} $\to$ \up{0{,}197} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Dòng đáng chú ý nhất là Severe của hai lỗ liên hợp: mô hình nền đạt recall đúng bằng 0.}
+Nó chưa một lần dự đoán Severe cho lỗ liên hợp. Nên cải thiện ở đó không phải là tăng thêm bao
+nhiêu phần trăm, mà là khoảng cách giữa \textbf{không làm được} và làm được một phần.
+
+Cũng cần nói thẳng chỗ yếu: Severe F1 của lỗ liên hợp chỉ đạt 0{,}180 và 0{,}197, trong khi ống
+sống đạt 0{,}623. Chính khoảng cách này là lý do toàn bộ Phase 3 tồn tại.
+
+Bảng~\ref{tab:phase2auc} là cùng cách chia đó nhưng theo hai chỉ số \textbf{không phụ thuộc
+ngưỡng}. Nó trả lời một câu khác với Bảng~\ref{tab:phase2detail}: cải thiện đến từ biểu diễn đặc
+trưng tốt lên, hay chỉ từ việc điểm cắt quyết định dịch đi.
+
+\begin{table}[htbp]
+\centering\small
+\caption{AUC và AUPRC theo điều kiện $\times$ lớp (nền $\to$ Hybrid), seed 42.}
+\label{tab:phase2auc}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{llcc}
+\toprule
+\textbf{Điều kiện} & \textbf{Lớp} & \textbf{AUC} & \textbf{AUPRC} \\
+\midrule
+Ống sống & Normal/Mild & 0{,}892 $\to$ \up{0{,}947} & 0{,}984 $\to$ \up{0{,}993} \\
+Ống sống & Moderate    & 0{,}851 $\to$ \up{0{,}884} & 0{,}272 $\to$ \up{0{,}319} \\
+Ống sống & \textbf{Severe} & 0{,}922 $\to$ \up{0{,}963} & 0{,}513 $\to$ \up{0{,}602} \\
+\midrule
+Lỗ trái & Normal/Mild & 0{,}794 $\to$ 0{,}789 & 0{,}932 $\to$ 0{,}924 \\
+Lỗ trái & Moderate    & 0{,}758 $\to$ \down{0{,}655} & 0{,}387 $\to$ \down{0{,}262} \\
+Lỗ trái & \textbf{Severe} & 0{,}815 $\to$ \up{0{,}858} & 0{,}147 $\to$ \up{0{,}174} \\
+\midrule
+Lỗ phải & Normal/Mild & 0{,}802 $\to$ 0{,}807 & 0{,}929 $\to$ 0{,}931 \\
+Lỗ phải & Moderate    & 0{,}760 $\to$ \down{0{,}657} & 0{,}375 $\to$ \down{0{,}283} \\
+Lỗ phải & \textbf{Severe} & 0{,}842 $\to$ 0{,}837 & 0{,}167 $\to$ \up{0{,}181} \\
+\midrule
+\multicolumn{2}{l}{\textbf{Trung bình lớp Severe}} & 0{,}860 $\to$ \up{0{,}886} & 0{,}276 $\to$ \up{0{,}319} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Severe tăng đồng thời cả AUC lẫn AUPRC trên cả ba điều kiện. Vì hai chỉ số này đánh giá thứ tự xếp
+hạng chứ không phụ thuộc ngưỡng, kết quả loại trừ khả năng cải thiện chỉ là hệ quả của việc dịch
+điểm cắt: \textbf{biểu diễn đặc trưng thật sự tốt lên}.
+
+Ngược lại, AUC của mức Moderate ở hai lỗ liên hợp \emph{giảm} 0{,}103. Nguyên nhân đã xác định và
+ghi trong luận văn: phép tăng cường lật ngang ban đầu không hoán đổi nhãn trái/phải, nên nhãn
+Moderate của hai bên bị lẫn. Đã sửa trong bản mã nguồn công bố. Lớp Severe ít bị ảnh hưởng hơn vì
+các ca nặng nằm gần trục giữa, ít nhạy với đúng loại nhiễu nhãn đó.
+
 \subsection{Một bằng chứng độc lập: mức đồng thuận so với bác sĩ}
 
-Chẩn đoán ở trên dựa vào hình học và vào kết quả của mô hình. Có một cách kiểm tra thứ ba,
-không dùng cả hai: so \textbf{mức đồng thuận} của mô hình với mức đồng thuận \textbf{giữa các bác
-sĩ với nhau}, đo bằng cùng một chỉ số là Cohen's kappa có trọng số bậc hai (QWK).
+Chẩn đoán về nhãn lỗ liên hợp ở mục~\ref{sec:t1} dựa vào hình học và vào kết quả của mô hình.
+Có một cách kiểm tra thứ ba, không dùng cả hai: so \textbf{mức đồng thuận} của mô hình với mức đồng
+thuận \textbf{giữa các bác sĩ với nhau}, đo bằng cùng một chỉ số là Cohen's kappa có trọng số bậc
+hai (QWK).
 
 \textbf{QWK đo cái gì.} Ba mức Normal/Mild, Moderate, Severe \textbf{có thứ tự}, trong khi độ chính
 xác coi mọi cái sai như nhau. QWK phạt theo \textbf{bình phương khoảng cách} giữa hai mức: chấm
@@ -721,74 +835,6 @@ Weighted log loss & 0{,}7549 & [0{,}736 --- 0{,}773] \\
 Khoảng tin cậy của Severe F1 rộng \textbf{0{,}100} --- đây là lý do báo cáo dùng AUPRC làm chỉ số
 chính khi so hai mô hình: với chỉ 80 ca nặng mỗi nhãn, Severe F1 không đủ độ phân giải để phân
 định, còn AUPRC ổn định hơn khoảng sáu lần giữa các epoch.
-
-\subsection{Bốn hướng đã thử và không hiệu quả}
-
-Các kết quả âm dưới đây đều đáng báo cáo vì chúng loại bỏ những hướng nghe hợp lý.
-
-\begin{table}[htbp]
-\centering\small
-\caption{Các hướng cải thiện đã thử nghiệm và kết quả.}
-\label{tab:neg}
-\begin{tabular}{p{4.6cm}p{9.8cm}}
-\toprule
-\textbf{Hướng} & \textbf{Kết quả} \\
-\midrule
-Cơ chế trộn có cổng (gated fusion) &
-Chênh lệch đỉnh 0{,}0016, nhỏ hơn độ lệch chuẩn giữa các epoch (0{,}0048). \textbf{Không khác biệt.} \\
-Trung bình trọng số nhiều epoch &
-Kém hơn epoch đơn tốt nhất ở mọi chỉ số. \textbf{Không có tác dụng.} \\
-Mở băng tầng cuối của backbone &
-Quá khớp: Mean Accuracy \up{+0{,}029} nhưng Severe AUPRC \down{$-$0{,}037}. Quá khớp ăn vào lớp hiếm trước. \\
-Bản đồ nhiệt (Grad-CAM) để định vị &
-Thua phép đoán ``giữa ảnh'': 30{,}7 mm so với 21{,}6 mm. \textbf{Không định vị được.} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Kết quả mở băng backbone trở thành \textbf{lý lẽ bảo vệ} thiết kế đóng băng hiện tại, khi được hỏi
-``tại sao không tinh chỉnh toàn bộ mạng''.
-
-\section{Khả diễn giải: khảo sát và kiểm chứng}
-
-Theo yêu cầu khảo sát nhiều hướng tiếp cận, đã rà 16 phương pháp thuộc bốn họ: CAM dùng gradient,
-CAM không gradient, quy gán ở không gian đầu vào, và tín hiệu nội tại của mô hình. Chọn triển khai
-bốn phương pháp có \textbf{cơ chế khác nhau} thay vì nhiều biến thể cùng một cơ chế.
-
-Hai kết quả kiểm chứng đáng lưu:
-
-\textbf{Grad-CAM trên nhánh CBAM là phân rã chính xác, không phải suy đoán.} Đầu ra của mạng là
-gộp trung bình toàn cục rồi một tầng tuyến tính --- đúng kiến trúc mà Draelos \& Carin chứng minh
-CAM, HiResCAM và Grad-CAM cho cùng một kết quả. Kiểm bằng số trên mô hình của đề tài: tương quan
-Pearson \textbf{1{,}000000}, sai lệch tuyệt đối lớn nhất $2{,}4\times10^{-7}$.
-
-\textbf{Bản đồ nhiệt không định vị được lỗ liên hợp.} Đo khoảng cách từ đỉnh bản đồ nhiệt tới điểm
-bác sĩ chấm, kèm hai mốc đối chứng bắt buộc:
-
-\begin{table}[htbp]
-\centering\small
-\caption{Khoảng cách tới điểm bác sĩ chấm (trung vị, mm), các ca Severe.}
-\label{tab:loc}
-\begin{tabular}{lcc}
-\toprule
- & \textbf{Lỗ trái (n=53)} & \textbf{Lỗ phải (n=20)} \\
-\midrule
-Grad-CAM              & 30{,}7 & 33{,}9 \\
-Layer-CAM             & 31{,}8 & 30{,}4 \\
-Đoán ngẫu nhiên       & 49{,}7 & 53{,}7 \\
-\textbf{Đoán giữa ảnh} & \textbf{21{,}6} & \textbf{19{,}6} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Cả hai phương pháp thắng phép đoán ngẫu nhiên nhưng \textbf{thua phép đoán ``giữa ảnh''}, nên chúng
-không mang thông tin định vị hữu ích. Kết quả này trùng với Arun và cộng sự (\textit{Radiology: AI},
-2021): cả 8 phương pháp họ thử trên ảnh y tế thật đều trượt ít nhất một tiêu chí tin cậy.
-
-Hệ quả cần ghi nhận: hình Grad-CAM dùng trong bài báo đã nộp \textbf{không chứng minh được} điều nó
-tuyên bố. Vùng ống sống nằm ngay giữa ảnh do cách cắt, nên ``mô hình tập trung vào ống sống'' không
-phân biệt được với ``mô hình tập trung vào giữa ảnh'' --- mốc đối chứng cho 0{,}4 mm trong khi
-Grad-CAM cho 14{,}0 mm.
 
 \section{Ba lỗi phương pháp đã phát hiện}
 
