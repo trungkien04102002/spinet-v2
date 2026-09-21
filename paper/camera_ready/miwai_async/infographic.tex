@@ -81,14 +81,14 @@
 \node[anchor=south west, inner sep=0] at (16,83)
      {\includegraphics[width=36mm,height=65mm]{mri_sagittal_panel.png}};
 \node[anchor=north west, text=ink70, font=\cond\fontsize{9}{11.5}\selectfont]
-     at (16,81) {sagittal T2, five levels (L1-L2 to L5-S1)};
+     at (16,81) {Sagittal T2, 5 IVD levels (L1-L2 to L5-S1)};
 
 %% ------------------------------------------------------------- pipeline
-\node[box, minimum width=54mm] (bxA) at (99,128) {3D ResNet-34 with CBAM\\[2pt]
-     {\cond\fontsize{9}{11}\selectfont trained}};
-\node[frz, minimum width=54mm] (bxB) at (99,100) {BiomedCLIP\\[2pt]
+\node[box, minimum width=54mm] (bxA) at (99,128) {3D ResNet-34 + CBAM\\[2pt]
+     {\cond\fontsize{9}{11}\selectfont trainable}};
+\node[frz, minimum width=54mm] (bxB) at (99,100) {BiomedCLIP encoder\\[2pt]
      {\cond\fontsize{9}{11}\selectfont frozen}};
-\node[box, minimum width=44mm, minimum height=13mm] (fus) at (165,114) {fusion head};
+\node[box, minimum width=44mm, minimum height=13mm] (fus) at (165,114) {concat MLP};
 
 \draw[ink, line width=0.35mm] (54,114) -- (64,114);
 \draw[ink, line width=0.35mm] (64,128) -- (64,100);
@@ -102,7 +102,7 @@
 \draw[tflow] (134,114) -- (fus.west);
 \draw[tflow] (fus.east) -- (200,114);
 \node[anchor=south, text=ink70, font=\cond\fontsize{9}{11}\selectfont]
-     at (196,116) {cosine match};
+     at (196,116) {cosine sim.};
 
 %% ---------------------------------------------- what the classifier actually is
 % The paper's most distinctive idea is that the classifier is not a weight
@@ -111,35 +111,37 @@
 % being swapped nor what the number was. Now a caret ties the highlighted
 % phrase to the instruction, and the numbers carry their own heading.
 \node[anchor=base west, font=\fontsize{13}{16}\selectfont]
-     at (204,136) {Each class is a sentence.};
-\node[anchor=base west, font=\fontsize{10.5}{13}\selectfont] at (204,125)
-     {``a magnetic resonance image of \colorbox{slot}{\strut lumbar disc bulging}''};
-\draw[trained, line width=0.35mm] (274,122.5) -- (274,120.5);
+     at (204,136) {Classes enter as text prompts.};
+\node[anchor=base west, font=\fontsize{11}{14}\selectfont] at (204,126)
+     {\(\hat{y} = \mathrm{argmax}_k\, \cos(f_{\mathrm{img}},\, t_k)\)};
+\node[anchor=base west, font=\fontsize{10}{13}\selectfont] at (204,116)
+     {\(t_k\): ``a magnetic resonance image of \colorbox{slot}{\strut lumbar disc bulging}''};
+\draw[trained, line width=0.35mm] (280,113.5) -- (280,111.5);
 \node[anchor=base east, text=trained, font=\cond\fontsize{9}{11}\selectfont]
-     at (304,117.5) {change this phrase, and nothing is retrained};
+     at (304,108) {edit the phrase, get a new label space, no gradient updates};
 
 \node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont]
-     at (204,107) {F1 on two labels the model was never trained on};
-\node[anchor=base west, font=\fontsize{9.5}{12}\selectfont] at (210,99) {lumbar disc bulging};
-\node[anchor=base east, font=\fontsize{9.5}{12}\selectfont] at (304,99) {0.613};
-\node[anchor=base west, text=ink70, font=\fontsize{9.5}{12}\selectfont] at (210,92) {spondylolisthesis};
-\node[anchor=base east, text=ink70, font=\fontsize{9.5}{12}\selectfont] at (304,92) {0.028};
+     at (204,99) {Zero-shot macro F1, SPIDER labels unseen in training};
+\node[anchor=base west, font=\fontsize{9.5}{12}\selectfont] at (210,91) {disc bulging};
+\node[anchor=base east, font=\fontsize{9.5}{12}\selectfont] at (304,91) {0.613};
+\node[anchor=base west, text=ink70, font=\fontsize{9.5}{12}\selectfont] at (210,84) {spondylolisthesis};
+\node[anchor=base east, text=ink70, font=\fontsize{9.5}{12}\selectfont] at (304,84) {0.028};
 
 \draw[rule, line width=0.2mm] (16,72) -- (304,72);
 
 %% ------------------------------------------------------------- the result
 \node[anchor=base west, font=\fontsize{13}{16}\selectfont]
-     at (16,64) {Severe is 4\% of the data.};
+     at (16,64) {Severe prevalence: 4\% of graded IVDs.};
 % Shown, not only stated: the whole training set as one bar, Severe at the end.
 \fill[track] (16,52) rectangle ++(94,5);
 \fill[track2] (16,52) rectangle ++(90.2,5);
 \fill[signal] (106.2,52) rectangle ++(3.8,5);
 \node[anchor=base west, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont]
-     at (16,47) {Normal, Mild and Moderate};
+     at (16,47) {Normal / Mild / Moderate};
 \node[anchor=base east, text=signal, font=\cond\fontsize{8.5}{10}\selectfont]
-     at (110,47) {Severe, 4\%};
+     at (110,47) {Severe 4\%};
 \node[anchor=base west, text=ink70, font=\fontsize{10}{13}\selectfont, align=left]
-     at (16,33) {Cross-entropy training finds\\almost none of it.};
+     at (16,33) {Cross-entropy training collapses\\on the minority class.};
 
 % A divider, because the left bar is a share of the data and the right bars are
 % a detection rate. Two unlike quantities in the same visual idiom read as one
@@ -147,14 +149,14 @@
 \draw[rule, line width=0.2mm] (128,32) -- (128,66);
 
 \node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont]
-     at (152,64) {Severe recall, RSNA 2024, mean of three seeds};
+     at (152,64) {Severe-class recall, RSNA 2024 validation, 3 seeds};
 
-\node[anchor=base east, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (148,54.5) {cross-entropy};
+\node[anchor=base east, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (148,54.5) {CE baseline};
 \fill[track] (152,52) rectangle ++(148,5);
 \fill[track2] (152,52) rectangle ++(18.2,5);
 \node[anchor=base west, text=ink70, font=\fontsize{10}{12}\selectfont] at (173,54) {12.3\%};
 
-\node[anchor=base east, text=signal, font=\cond\fontsize{9}{11}\selectfont] at (148,42.5) {ours};
+\node[anchor=base east, text=signal, font=\cond\fontsize{9}{11}\selectfont] at (148,42.5) {hybrid (ours)};
 \fill[track] (152,40) rectangle ++(148,5);
 \fill[signal] (152,40) rectangle ++(71.9,5);
 \node[anchor=base west, text=signal, font=\fontsize{15}{17}\selectfont] at (227,41.5) {48.6\%};
@@ -164,9 +166,9 @@
 
 %% ------------------------------------------------------------- provenance
 \node[anchor=base west, text=ink70, font=\fontsize{8.5}{11}\selectfont]
-     at (16,20) {RSNA 2024 and SPIDER. Normal and Mild are pooled; the Severe share is the mean of the three sagittal conditions.};
+     at (16,20) {Prevalence averaged over the three sagittal conditions, with Normal and Mild pooled. Grading is per IVD level from one sagittal crop.};
 \node[anchor=base west, text=ink70, font=\fontsize{8.5}{11}\selectfont]
-     at (16,15) {Zero-shot is one frozen model scored on the full SPIDER cohort, 1{,}439 intervertebral discs. Imaging from RSNA 2024, used under its non-commercial research licence.};
+     at (16,15) {Zero-shot: a single RSNA-trained model, frozen, evaluated on the full SPIDER cohort (1{,}439 IVDs). Imaging from RSNA 2024, non-commercial research licence.};
 
 \end{tikzpicture}
 \end{document}
