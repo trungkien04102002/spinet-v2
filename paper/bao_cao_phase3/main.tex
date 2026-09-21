@@ -331,10 +331,44 @@ nhiêu phần trăm, mà là khoảng cách giữa \textbf{không làm được}
 Cũng cần nói thẳng chỗ yếu: Severe F1 của lỗ liên hợp chỉ đạt 0{,}180 và 0{,}197, trong khi ống
 sống đạt 0{,}623. Chính khoảng cách này là lý do toàn bộ Phase 3 tồn tại.
 
-Theo chỉ số không phụ thuộc ngưỡng, Severe AUC trung bình ba điều kiện tăng 0{,}860 $\to$ 0{,}886
-và Severe AUPRC 0{,}276 $\to$ 0{,}319. Riêng AUC của mức Moderate ở hai lỗ liên hợp \emph{giảm}
-0{,}103; nguyên nhân đã xác định và ghi trong luận văn là phép tăng cường lật ngang ban đầu không
-hoán đổi nhãn trái/phải, đã sửa trong bản mã nguồn công bố.
+Bảng~\ref{tab:phase2auc} là cùng cách chia đó nhưng theo hai chỉ số \textbf{không phụ thuộc
+ngưỡng}. Nó trả lời một câu khác với Bảng~\ref{tab:phase2detail}: cải thiện đến từ biểu diễn đặc
+trưng tốt lên, hay chỉ từ việc điểm cắt quyết định dịch đi.
+
+\begin{table}[htbp]
+\centering\small
+\caption{AUC và AUPRC theo điều kiện $\times$ lớp (nền $\to$ Hybrid), seed 42.}
+\label{tab:phase2auc}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{llcc}
+\toprule
+\textbf{Điều kiện} & \textbf{Lớp} & \textbf{AUC} & \textbf{AUPRC} \\
+\midrule
+Ống sống & Normal/Mild & 0{,}892 $\to$ \up{0{,}947} & 0{,}984 $\to$ \up{0{,}993} \\
+Ống sống & Moderate    & 0{,}851 $\to$ \up{0{,}884} & 0{,}272 $\to$ \up{0{,}319} \\
+Ống sống & \textbf{Severe} & 0{,}922 $\to$ \up{0{,}963} & 0{,}513 $\to$ \up{0{,}602} \\
+\midrule
+Lỗ trái & Normal/Mild & 0{,}794 $\to$ 0{,}789 & 0{,}932 $\to$ 0{,}924 \\
+Lỗ trái & Moderate    & 0{,}758 $\to$ \down{0{,}655} & 0{,}387 $\to$ \down{0{,}262} \\
+Lỗ trái & \textbf{Severe} & 0{,}815 $\to$ \up{0{,}858} & 0{,}147 $\to$ \up{0{,}174} \\
+\midrule
+Lỗ phải & Normal/Mild & 0{,}802 $\to$ 0{,}807 & 0{,}929 $\to$ 0{,}931 \\
+Lỗ phải & Moderate    & 0{,}760 $\to$ \down{0{,}657} & 0{,}375 $\to$ \down{0{,}283} \\
+Lỗ phải & \textbf{Severe} & 0{,}842 $\to$ 0{,}837 & 0{,}167 $\to$ \up{0{,}181} \\
+\midrule
+\multicolumn{2}{l}{\textbf{Trung bình lớp Severe}} & 0{,}860 $\to$ \up{0{,}886} & 0{,}276 $\to$ \up{0{,}319} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Severe tăng đồng thời cả AUC lẫn AUPRC trên cả ba điều kiện. Vì hai chỉ số này đánh giá thứ tự xếp
+hạng chứ không phụ thuộc ngưỡng, kết quả loại trừ khả năng cải thiện chỉ là hệ quả của việc dịch
+điểm cắt: \textbf{biểu diễn đặc trưng thật sự tốt lên}.
+
+Ngược lại, AUC của mức Moderate ở hai lỗ liên hợp \emph{giảm} 0{,}103. Nguyên nhân đã xác định và
+ghi trong luận văn: phép tăng cường lật ngang ban đầu không hoán đổi nhãn trái/phải, nên nhãn
+Moderate của hai bên bị lẫn. Đã sửa trong bản mã nguồn công bố. Lớp Severe ít bị ảnh hưởng hơn vì
+các ca nặng nằm gần trục giữa, ít nhạy với đúng loại nhiễu nhãn đó.
 
 \subsection{So sánh với phương pháp ngoài}
 
