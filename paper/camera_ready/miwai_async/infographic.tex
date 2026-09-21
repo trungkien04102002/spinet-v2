@@ -144,18 +144,9 @@
 % legible as four red cells in a field of grey in a way a 3.8 mm sliver at the
 % end of a bar never was, and it stops competing with the bar chart beside it.
 \node[anchor=base west, font=\fontsize{13}{16}\selectfont]
-     at (16,66) {Severe: 4 in every 100 graded IVDs.};
-
-\foreach \j in {0,...,4}{
-  \foreach \i in {0,...,19}{
-    \pgfmathsetmacro{\isSevere}{(\j==4 && \i>=16) ? 1 : 0}
-    \ifnum\isSevere=1
-      \fill[signal] (16+4*\i,38+4*\j) rectangle ++(3,3);
-    \else
-      \fill[waffle] (16+4*\i,38+4*\j) rectangle ++(3,3);
-    \fi}}
-\node[anchor=base west, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont]
-     at (16,32) {one square = one percent of graded IVDs};
+     at (16,66) {Severe stays under 5\% in all three conditions.};
+\node[anchor=south west, inner sep=0] at (16,30)
+     {\includegraphics[width=94mm]{rsna_dist_compact.png}};
 
 \draw[rule, line width=0.2mm] (126,30) -- (126,66);
 
@@ -170,7 +161,7 @@
 \fill[bar2]   (152,48) rectangle ++(18.2,7);
 \fill[signal] (152,37) rectangle ++(71.9,7);
 
-\node[anchor=base east, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (148,50.5) {CE baseline};
+\node[anchor=base east, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (148,50.5) {cross-entropy};
 \node[anchor=base east, text=signal, font=\cond\fontsize{9}{11}\selectfont] at (148,39.5) {hybrid (ours)};
 \node[anchor=base west, text=ink70, font=\fontsize{10}{12}\selectfont] at (173,50.5) {12.3\%};
 \node[anchor=base west, text=signal, font=\fontsize{15}{17}\selectfont] at (227,39) {48.6\%};
@@ -181,7 +172,7 @@
 
 %% ------------------------------------------------------------- provenance
 \node[anchor=base west, text=ink70, font=\fontsize{8.5}{11}\selectfont]
-     at (16,20) {Prevalence averaged over the three sagittal conditions, with Normal and Mild pooled. Grading is per IVD level from one sagittal crop.};
+     at (16,20) {Severity distribution is Figure 2 of the paper, redrawn in this page's palette. Grading is per IVD level from one sagittal crop.};
 \node[anchor=base west, text=ink70, font=\fontsize{8.5}{11}\selectfont]
      at (16,15) {Zero-shot: a single RSNA-trained model, frozen, evaluated on the full SPIDER cohort (1{,}439 IVDs). Imaging from RSNA 2024, non-commercial research licence.};
 
