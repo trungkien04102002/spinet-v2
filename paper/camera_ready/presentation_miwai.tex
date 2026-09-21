@@ -277,6 +277,7 @@ Mean AUPRC           & 0.530 & 0.498 & 0.513 & \bst{0.533} \\
 \vspace{1pt}
 \begin{itemize}\scriptsize
     \item[--] 8 \textbf{unseen} labels, no SPIDER training: only new prompts. Wins on disc morphology (\bst{0.587} vs.\ 0.433), loses on distant labels (all-8: \bst{0.394} off the shelf vs.\ 0.362 ours).
+    \item[--] The weak labels are weak \textbf{for reasons}: spondylolisthesis and endplate are about bone, not disc shape; Pfirrmann is 5-class; Modic needs the paired \textbf{T1} that SPIDER's T2-FS does not have.
 \end{itemize}
 \end{frame}
 

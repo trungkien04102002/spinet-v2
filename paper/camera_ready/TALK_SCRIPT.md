@@ -198,6 +198,10 @@ Rules for delivery: short sentences, slow, pause at every `/`. Say numbers slowl
 >
 > So the transfer works / when the new label is close / to what we trained on. / Not for everything.
 >
+> And the weak labels are weak / for reasons we can name. / Spondylolisthesis is about / how the vertebrae are aligned, / not about disc shape. / The endplate labels are about bone. / Pfirrmann is a five-class grade, / where we trained on three.
+>
+> And the weakest one, Modic, / is not a model failure at all. / Modic grading needs / a paired T1 sequence. / SPIDER only gives us T2. / The information is simply not there.
+>
 > The chart shows all eight labels. / Blue is ours, / grey is BiomedCLIP off the shelf. / The shaded group on the left / is the disc-morphology group, / where we are clearly ahead.
 
 ---
@@ -267,6 +271,16 @@ Rules for delivery: short sentences, slow, pause at every `/`. Say numbers slowl
 > The claim is that the label set can be an input at all. / A fixed-head model scores nothing on these eight labels, / because it has no head for them.
 >
 > And where the new labels are close to what we trained on, / the disc morphology group, / we are clearly ahead: / zero point five nine against zero point four three. / Where they are far away, / spondylolisthesis for example, / we are worse. / RSNA supervision helps transfer that is semantically near, / and does not help transfer that is far.
+
+**Q. Why are the first few labels high and the rest low?**
+
+> Because they are not the same kind of label.
+>
+> The three we do well on / are disc morphology: / bulging, herniation, narrowing. / That is what RSNA taught us. / Canal stenosis and foraminal narrowing / are both about a disc / narrowing a space. / So those prompts land / near what the model already knows.
+>
+> The weak ones are different problems. / Spondylolisthesis is vertebral alignment. / The endplate labels are bone. / Pfirrmann asks for five grades / where we trained on three. / And Modic needs a T1 sequence / that this dataset does not contain.
+>
+> I would say that is the useful part. / The model fails where you would predict / it should fail. / If it scored the same on every label, / I would not trust the result.
 
 **Q. Do the in-domain gains survive a significance test?**
 
