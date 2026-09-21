@@ -59,6 +59,9 @@
 \definecolor{waffle}{HTML}{C3C9CF}
 \definecolor{grid}{HTML}{DDE2E6}
 
+\newcommand{\arr}{\raisebox{0.18ex}{\tikz[baseline=-0.55ex]
+  \draw[-{Stealth[length=1.9mm,width=1.6mm]},line width=0.5mm](0,0)--(4.4mm,0);}}
+
 \begin{document}
 \begin{tikzpicture}[x=1mm,y=1mm,
   box/.style={draw=trained, line width=0.45mm, fill=trainedbg, minimum height=20mm,
@@ -154,7 +157,7 @@
 \node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont]
      at (204,85) {Zero-shot macro F1, SPIDER labels unseen in training};
 \node[anchor=base west, font=\fontsize{9.5}{12}\selectfont] at (210,78) {disc bulging \ 0.613};
-\node[anchor=base east, text=ink70, font=\fontsize{9.5}{12}\selectfont] at (304,78) {spondylolisthesis \ 0.028};
+\node[anchor=base west, text=ink70, font=\fontsize{9.5}{12}\selectfont] at (258,78) {spondylolisthesis \ 0.028};
 
 \draw[rule, line width=0.2mm] (16,72) -- (304,72);
 
@@ -172,24 +175,32 @@
 \draw[rule, line width=0.2mm] (126,30) -- (126,66);
 
 % A real axis instead of a track: gridlines carry the scale, so the bars can
-% be solid and dark enough to read.
+% be solid and dark enough to read. The axis is 110mm rather than 148mm, which
+% was a lot of page for a single metric; the width it gives back holds the two
+% other Severe numbers from Table 1 of the paper.
 \node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont]
-     at (152,66) {Severe-class recall, RSNA 2024 validation, 3 seeds};
+     at (152,66) {Severe class, RSNA 2024 validation, 3 seeds};
 
-\foreach \x in {189,226,263,300} \draw[grid, line width=0.2mm] (\x,34) -- (\x,59);
+\foreach \x in {179.5,207,234.5,262} \draw[grid, line width=0.2mm] (\x,34) -- (\x,59);
 \draw[rule, line width=0.3mm] (152,34) -- (152,59);
 
-\fill[bar2]   (152,48) rectangle ++(18.2,7);
-\fill[signal] (152,37) rectangle ++(71.9,7);
+\fill[bar2]   (152,48) rectangle ++(13.5,7);
+\fill[signal] (152,37) rectangle ++(53.5,7);
 
 \node[anchor=base east, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (148,50.5) {cross-entropy};
 \node[anchor=base east, text=signal, font=\cond\fontsize{9}{11}\selectfont] at (148,39.5) {hybrid (ours)};
-\node[anchor=base west, text=ink70, font=\fontsize{10}{12}\selectfont] at (173,50.5) {12.3\%};
-\node[anchor=base west, text=signal, font=\fontsize{15}{17}\selectfont] at (227,39) {48.6\%};
+\node[anchor=base west, text=ink70, font=\fontsize{10}{12}\selectfont] at (168,50.5) {12.3\%};
+\node[anchor=base west, text=signal, font=\fontsize{15}{17}\selectfont] at (209,39) {48.6\%};
 
-\foreach \x/\lab in {152/0,189/25,226/50,263/75,300/100} {
+\foreach \x/\lab in {152/0,179.5/25,207/50,234.5/75,262/100} {
   \node[anchor=base, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont] at (\x,30) {\lab};}
-\node[anchor=base west, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont] at (303,30) {\%};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont] at (265,30) {\%};
+
+% Recall is the headline; these two say what the rest of the Severe column did.
+\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (276,57) {Severe F1};
+\node[anchor=base west, font=\fontsize{10}{12}\selectfont] at (276,50) {0.152\,\arr\,0.356};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (276,41) {Severe AUC};
+\node[anchor=base west, font=\fontsize{10}{12}\selectfont] at (276,34) {0.872\,\arr\,0.899};
 
 %% ------------------------------------------------------------- provenance
 \node[anchor=base west, text=ink70, font=\fontsize{8.5}{11}\selectfont]
