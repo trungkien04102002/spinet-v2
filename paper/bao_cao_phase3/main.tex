@@ -635,6 +635,17 @@ Chẩn đoán ở trên dựa vào hình học và vào kết quả của mô h�
 không dùng cả hai: so \textbf{mức đồng thuận} của mô hình với mức đồng thuận \textbf{giữa các bác
 sĩ với nhau}, đo bằng cùng một chỉ số là Cohen's kappa có trọng số bậc hai (QWK).
 
+\textbf{QWK đo cái gì.} Ba mức Normal/Mild, Moderate, Severe \textbf{có thứ tự}, trong khi độ chính
+xác coi mọi cái sai như nhau. QWK phạt theo \textbf{bình phương khoảng cách} giữa hai mức: chấm
+lệch hai bậc bị phạt \textbf{gấp bốn lần} lệch một bậc. Điều đó khớp với lâm sàng, vì gọi một ca
+\textit{Severe} thành \textit{Moderate} khác hẳn gọi nó thành \textit{Normal}. Chỉ số này còn
+\textbf{trừ phần trùng khớp do may rủi}: nếu hai người chấm chỉ tình cờ giống nhau vì cùng đoán theo
+tỷ lệ nền, QWK bằng 0. Thang đo chạy từ 1 (trùng khớp hoàn toàn) qua 0 (không hơn may rủi) tới số âm.
+
+Điều làm QWK trở thành \emph{bằng chứng} chứ không chỉ là thêm một chỉ số: \textbf{con người cũng
+được đo bằng đúng chỉ số này}, nên đặt được mô hình lên chính cái thang mà giới chuyên môn dùng để
+đánh giá lẫn nhau.
+
 \begin{table}[htbp]
 \centering\small
 \caption{QWK của mô hình Phase 2 so với đồng thuận giữa bác sĩ (Lurie và cộng sự, \textit{Spine}, 2008).}
@@ -654,6 +665,39 @@ Mô hình \textbf{gần chạm mức bác sĩ ở ống sống} (0{,}641 so vớ
 liên hợp} (0{,}351 so với 0{,}58). Đáng chú ý là kết luận này đến từ một hướng hoàn toàn khác ---
 không dùng toạ độ, không dùng hình học, không dùng bản đồ nhiệt --- mà vẫn chỉ đúng một chỗ yếu.
 Ba phép đo độc lập cùng chỉ vào nhãn lỗ liên hợp thì khó quy cho ngẫu nhiên.
+
+\textbf{Ma trận nhầm lẫn của nhãn ống sống} cho thấy cả cách tính lẫn ý nghĩa lâm sàng:
+
+\begin{table}[htbp]
+\centering\small
+\caption{Nhãn ống sống, tập kiểm 1942 đĩa đệm. Hàng: bác sĩ chấm. Cột: mô hình đoán.}
+\label{tab:cm}
+\begin{tabular}{lccc}
+\toprule
+ & \textbf{Normal/Mild} & \textbf{Moderate} & \textbf{Severe} \\
+\midrule
+Normal/Mild & 1606 & 72 & 44 \\
+Moderate    & 38 & 55 & 46 \\
+Severe      & \textbf{8} & 16 & \textbf{57} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Ô đáng chú ý nhất là số \textbf{8}: chỉ 8 trên 81 ca bác sĩ chấm \textit{Severe} bị mô hình gọi
+thành \textit{Normal/Mild}. Đó vừa là kiểu sai nguy hiểm nhất trên lâm sàng, vừa là ô bị QWK phạt
+nặng nhất. Ở chiều ngược lại có 44 ca báo động giả --- cũng bị phạt bằng đúng trọng số đó, nhưng
+hậu quả lâm sàng nhẹ hơn nhiều.
+
+\textbf{Và đây là con số giải thích vì sao không được dùng độ chính xác làm chỉ tiêu.} Mô hình đạt
+độ chính xác \textbf{0{,}885} trên nhãn này. Nhưng 1722 trong 1942 dòng vốn là \textit{Normal/Mild},
+nên một mô hình \textbf{chỉ đoán Normal/Mild cho mọi ca} đạt \textbf{0{,}887} --- \emph{cao hơn}.
+Trong khi QWK của mô hình là 0{,}641 còn QWK của phép đoán một nhãn duy nhất đó là \textbf{đúng
+bằng 0}.
+
+Nói cách khác, theo độ chính xác thì mô hình thua một chiến lược vô dụng; theo QWK thì khoảng cách
+là 0{,}641 so với 0. Đây cũng là câu trả lời cho việc độ chính xác tổng giảm khoảng 9 điểm so với
+mô hình nền ở Bảng~\ref{tab:phase2}: phần độ chính xác bị mất là phần \textbf{không mang giá trị
+lâm sàng}.
 
 Toàn bộ chỉ số của Phase 2 kèm khoảng tin cậy bootstrap phân cụm theo bệnh nhân (2000 lần rút):
 
