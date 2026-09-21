@@ -113,22 +113,27 @@
 % bare number column and the word "slot", which explained neither what was
 % being swapped nor what the number was. Now a caret ties the highlighted
 % phrase to the instruction, and the numbers carry their own heading.
+% The displayed argmax-over-cosine equation was removed. The page states the
+% same mechanism three other ways already: the arrow is labelled cosine sim.,
+% the heading says classes are prompts, and the prompt itself is printed with
+% the swappable phrase marked. CLIP's own Figure 1, which introduced this
+% mechanism, likewise carries the prompt template and no formula. Keeping it
+% would also have meant glossing f_img and y-hat, which is more text in the
+% place that can least afford it.
 \node[anchor=base west, font=\fontsize{13}{16}\selectfont]
-     at (204,136) {Classes enter as text prompts.};
-\node[anchor=base west, font=\fontsize{11}{14}\selectfont] at (204,126)
-     {\(\hat{y} = \mathrm{argmax}_k\, \cos(f_{\mathrm{img}},\, t_k)\)};
-\node[anchor=base west, font=\fontsize{10}{13}\selectfont] at (204,116)
-     {\(t_k\): ``a magnetic resonance image of \colorbox{slot}{\strut lumbar disc bulging}''};
-\draw[trained, line width=0.35mm] (280,113.5) -- (280,111.5);
+     at (204,134) {Classes enter as text prompts.};
+\node[anchor=base west, font=\fontsize{10.5}{13}\selectfont] at (204,123)
+     {``a magnetic resonance image of \colorbox{slot}{\strut lumbar disc bulging}''};
+\draw[trained, line width=0.35mm] (271,120.5) -- (271,118.5);
 \node[anchor=base east, text=trained, font=\cond\fontsize{9}{11}\selectfont]
-     at (304,108) {edit the phrase, get a new label space, no gradient updates};
+     at (304,115) {edit the phrase, get a new label space, no gradient updates};
 
 \node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont]
-     at (204,99) {Zero-shot macro F1, SPIDER labels unseen in training};
-\node[anchor=base west, font=\fontsize{9.5}{12}\selectfont] at (210,91) {disc bulging};
-\node[anchor=base east, font=\fontsize{9.5}{12}\selectfont] at (304,91) {0.613};
-\node[anchor=base west, text=ink70, font=\fontsize{9.5}{12}\selectfont] at (210,84) {spondylolisthesis};
-\node[anchor=base east, text=ink70, font=\fontsize{9.5}{12}\selectfont] at (304,84) {0.028};
+     at (204,104) {Zero-shot macro F1, SPIDER labels unseen in training};
+\node[anchor=base west, font=\fontsize{9.5}{12}\selectfont] at (210,96) {disc bulging};
+\node[anchor=base east, font=\fontsize{9.5}{12}\selectfont] at (304,96) {0.613};
+\node[anchor=base west, text=ink70, font=\fontsize{9.5}{12}\selectfont] at (210,89) {spondylolisthesis};
+\node[anchor=base east, text=ink70, font=\fontsize{9.5}{12}\selectfont] at (304,89) {0.028};
 
 \draw[rule, line width=0.2mm] (16,72) -- (304,72);
 
