@@ -55,6 +55,9 @@
 % about parameter efficiency, drawn instead of stated.
 \definecolor{trained}{HTML}{1971C2}
 \definecolor{trainedbg}{HTML}{EDF4FC}
+\definecolor{bar2}{HTML}{6E7781}
+\definecolor{waffle}{HTML}{C3C9CF}
+\definecolor{grid}{HTML}{DDE2E6}
 
 \begin{document}
 \begin{tikzpicture}[x=1mm,y=1mm,
@@ -130,39 +133,46 @@
 \draw[rule, line width=0.2mm] (16,72) -- (304,72);
 
 %% ------------------------------------------------------------- the result
+% Both halves were a pale bar on a pale track, which is why the band looked
+% washed out, and both used the same idiom for two unlike quantities. The left
+% is now a unit chart: one hundred squares, four of them Severe. Rarity is
+% legible as four red cells in a field of grey in a way a 3.8 mm sliver at the
+% end of a bar never was, and it stops competing with the bar chart beside it.
 \node[anchor=base west, font=\fontsize{13}{16}\selectfont]
-     at (16,64) {Severe prevalence: 4\% of graded IVDs.};
-% Shown, not only stated: the whole training set as one bar, Severe at the end.
-\fill[track] (16,52) rectangle ++(94,5);
-\fill[track2] (16,52) rectangle ++(90.2,5);
-\fill[signal] (106.2,52) rectangle ++(3.8,5);
+     at (16,66) {Severe: 4 in every 100 graded IVDs.};
+
+\foreach \j in {0,...,4}{
+  \foreach \i in {0,...,19}{
+    \pgfmathsetmacro{\isSevere}{(\j==4 && \i>=16) ? 1 : 0}
+    \ifnum\isSevere=1
+      \fill[signal] (16+4*\i,38+4*\j) rectangle ++(3,3);
+    \else
+      \fill[waffle] (16+4*\i,38+4*\j) rectangle ++(3,3);
+    \fi}}
 \node[anchor=base west, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont]
-     at (16,47) {Normal / Mild / Moderate};
-\node[anchor=base east, text=signal, font=\cond\fontsize{8.5}{10}\selectfont]
-     at (110,47) {Severe 4\%};
-\node[anchor=base west, text=ink70, font=\fontsize{10}{13}\selectfont, align=left]
-     at (16,33) {Cross-entropy training collapses\\on the minority class.};
+     at (16,32) {one square = one percent of graded IVDs};
 
-% A divider, because the left bar is a share of the data and the right bars are
-% a detection rate. Two unlike quantities in the same visual idiom read as one
-% chart unless something says they are not.
-\draw[rule, line width=0.2mm] (128,32) -- (128,66);
+\draw[rule, line width=0.2mm] (126,30) -- (126,66);
 
+% A real axis instead of a track: gridlines carry the scale, so the bars can
+% be solid and dark enough to read.
 \node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont]
-     at (152,64) {Severe-class recall, RSNA 2024 validation, 3 seeds};
+     at (152,66) {Severe-class recall, RSNA 2024 validation, 3 seeds};
 
-\node[anchor=base east, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (148,54.5) {CE baseline};
-\fill[track] (152,52) rectangle ++(148,5);
-\fill[track2] (152,52) rectangle ++(18.2,5);
-\node[anchor=base west, text=ink70, font=\fontsize{10}{12}\selectfont] at (173,54) {12.3\%};
+\foreach \x in {189,226,263,300} \draw[grid, line width=0.2mm] (\x,34) -- (\x,59);
+\draw[rule, line width=0.3mm] (152,34) -- (152,59);
 
-\node[anchor=base east, text=signal, font=\cond\fontsize{9}{11}\selectfont] at (148,42.5) {hybrid (ours)};
-\fill[track] (152,40) rectangle ++(148,5);
-\fill[signal] (152,40) rectangle ++(71.9,5);
-\node[anchor=base west, text=signal, font=\fontsize{15}{17}\selectfont] at (227,41.5) {48.6\%};
+\fill[bar2]   (152,48) rectangle ++(18.2,7);
+\fill[signal] (152,37) rectangle ++(71.9,7);
 
-\node[anchor=base east, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont] at (300,35) {100\%};
-\node[anchor=base west, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont] at (152,35) {0};
+\node[anchor=base east, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (148,50.5) {CE baseline};
+\node[anchor=base east, text=signal, font=\cond\fontsize{9}{11}\selectfont] at (148,39.5) {hybrid (ours)};
+\node[anchor=base west, text=ink70, font=\fontsize{10}{12}\selectfont] at (173,50.5) {12.3\%};
+\node[anchor=base west, text=signal, font=\fontsize{15}{17}\selectfont] at (227,39) {48.6\%};
+
+\foreach \x/\lab in {152/0,189/25,226/50,263/75,300/100} {
+  \node[anchor=base, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont] at (\x,30) {\lab};}
+\node[anchor=base west, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont] at (303,30) {\%};
 
 %% ------------------------------------------------------------- provenance
 \node[anchor=base west, text=ink70, font=\fontsize{8.5}{11}\selectfont]
