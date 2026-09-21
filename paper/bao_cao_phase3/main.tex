@@ -183,6 +183,50 @@ Huấn luyện lại toàn bộ & Quên thảm khốc khi số mẫu nhỏ \\
 \end{tabular}
 \end{table}
 
+\textbf{Cách đang dùng có tên gọi hay tự nghĩ ra?} Không có phần nào tự nghĩ ra. Đây là tổ hợp ba
+thành phần đều đã chuẩn hoá trong y văn: \textbf{tinh chỉnh chỉ phần đầu} trên xương sống đóng băng
+(linear probing), \textbf{bộ đệm replay} (rehearsal) trộn mẫu cũ vào mỗi lượt, và mô hình triển khai
+\textbf{theo lô, ngoại tuyến, có người duyệt} đúng khung mà giới y tế dùng cho mô hình học liên tục.
+Đóng góp nếu có không nằm ở thuật toán mà ở chỗ ráp ba thứ đó vào một ứng dụng chạy được, kèm tập
+đánh giá đóng băng và cơ chế hoàn tác. Điều này là \emph{có chủ ý}: ở vùng vài chục mẫu, hướng đơn
+giản nhất lại là hướng có bằng chứng y tế mạnh nhất, nên chọn nó thay vì phát minh là lựa chọn
+phòng thủ được.
+
+\textbf{Cơ chế từng hướng bị loại, và vì sao không hợp.}
+
+\textit{EWC} (Kirkpatrick và cộng sự, PNAS 2017) sau khi học xong nhiệm vụ cũ sẽ ước lượng ma trận
+thông tin Fisher --- đo mức nhạy của hàm mất mát theo từng trọng số --- rồi thêm một phạt bậc hai
+kéo các trọng số \emph{quan trọng với nhiệm vụ cũ} ở lại gần giá trị cũ. Không hợp ở đây vì hai lẽ.
+Ước lượng Fisher cần dữ liệu cũ và một siêu tham số cường độ phạt, trong khi đề tài không có ngân
+sách dữ liệu để dò siêu tham số đó. Và quan trọng hơn: phạt chỉ bảo vệ những trọng số \emph{đang
+được huấn luyện}, mà ở đây chỉ có 50 nghìn tham số đầu phân loại --- phần replay đã bảo vệ rồi.
+Thực nghiệm trên ảnh da liễu cho thấy replay thắng EWC ở mọi cấu hình.
+
+\textit{LwF} (Li và Hoiem, TPAMI 2018) giữ một bản sao mô hình cũ, rồi khi huấn luyện trên dữ liệu
+mới thì buộc đầu ra của mô hình mới \emph{trên chính dữ liệu mới đó} bám theo đầu ra của mô hình cũ.
+Ưu điểm là không cần giữ dữ liệu cũ. Nhưng đó cũng chính là lý do nó không hợp: \textbf{đề tài có
+giữ dữ liệu cũ} (một cơ sở, tập huấn luyện nằm trong tay), nên lý do tồn tại của LwF không áp dụng.
+Tệ hơn, dữ liệu mới ở đây \emph{là những ca mô hình cũ chấm sai} --- chưng cất theo đầu ra cũ trên
+đúng những ca đó là dạy lại chính cái sai cần sửa.
+
+\textit{LoRA và adapter} đóng băng xương sống rồi chèn các ma trận hạng thấp vào trong, huấn luyện
+riêng phần chèn đó. Mục đích là \emph{thêm sức chứa} khi một đầu tuyến tính không đủ. Ở vài chục
+mẫu thì vấn đề không phải thiếu sức chứa mà là thiếu dữ liệu: thêm sức chứa chỉ làm khớp thừa nhanh
+hơn. Các báo cáo dùng được thường bắt đầu từ khoảng 50 mẫu trở lên, và nó kéo theo siêu tham số mới
+(hạng, hệ số, chèn ở tầng nào) mà không có tập nào để dò.
+
+\textit{Tip-Adapter và các hướng nguyên mẫu} dựng một bộ nhớ đệm gồm các cặp (đặc trưng, nhãn) từ
+số mẫu ít ỏi, rồi lúc suy luận thì trộn điểm số zero-shot với một phiếu bầu có trọng số theo độ
+tương đồng với bộ nhớ đó. Hướng này \textbf{rất hấp dẫn cho đúng bài toán này}: không cần huấn
+luyện, và xoá một mục khỏi bộ nhớ là hiệu ứng biến mất tức thì --- tức quên và hoàn tác gần như
+miễn phí. Lý do không dùng thuần tuý kỹ thuật: nó cần không gian nhúng ảnh--văn bản kiểu CLIP, tức
+cần BiomedCLIP, trong khi đường suy luận của ứng dụng đang chạy nhánh CBAM. Dùng được thì phải phục
+vụ một mô hình khác.
+
+\textit{Huấn luyện lại toàn bộ} 63 triệu tham số trên vài chục mẫu trộn vào gần mười nghìn mẫu cũ
+rơi vào một trong hai kết cục: hoặc gần như không đổi gì, hoặc nếu tăng trọng số cho mẫu mới thì
+quên thảm khốc. Kèm theo là chi phí tính toán và gánh nặng kiểm chứng lại toàn bộ.
+
 Bảng~\ref{tab:vi_sao_khong} bàn về \emph{cập nhật thế nào}. Còn một trục thứ hai đã khảo sát là
 \emph{chọn ca nào cho bác sĩ xem trước}, tức active learning. Trục này hiện \textbf{chưa cài đặt},
 nhưng các hướng đều đã có quyết định rõ ràng nên ghi lại ở Bảng~\ref{tab:active}.
