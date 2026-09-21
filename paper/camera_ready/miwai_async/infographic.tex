@@ -1,173 +1,140 @@
-% MIWAI 2026, paper 122. One-page infographic for the asynchronous session.
+% MIWAI 2026, paper 122. One-page graphical abstract.
 %
-% Canvas 320 x 180 mm (16:9), exported to 1920 x 1080, so one aspect ratio
-% serves the slides, this page and the video.
+% This is a rebuild, not a revision. The previous version was three equal
+% rounded cards labelled THE PROBLEM / THE MODEL / THE RESULT. That skeleton is
+% the clinical "visual abstract" invented at Annals of Surgery in 2016 for
+% tweeting trial results: population, intervention, outcome. It belongs to
+% clinical-trial journals talking to a lay audience. This is an AI methods
+% paper at an LNAI venue, where the real convention is the CVPR-style teaser
+% and the Elsevier single-canvas graphical abstract: one continuous surface,
+% no card frames, no chrome, the mechanism drawn rather than asserted.
 %
-% Every number comes from the abstract and tables of ../main.tex. Nothing here
-% reports the later thesis experiments.
+% So: one canvas. The scan anchors it, the pipeline is drawn as a pipeline, and
+% the headline sits on an axis next to the baseline it beats, because a number
+% on an axis demonstrates and a number in a coloured box only asserts.
 %
-% Grid: margin 12, gutter 7, panel widths 96 / 88 / 98 at x = 12 / 115 / 210.
-% Columns are deliberately unequal: the result is why anyone stops, the problem
-% is one sentence of setup. Inset is 8 mm on every side of every panel, and
-% panel heads sit on that same 8 mm so they align with the text they govern.
+% Colour is the one deliberate constraint. Radiology is greyscale, so the page
+% is greyscale, and the single accent is reserved entirely for the Severe class
+% and its recall. Nothing else on the page is coloured. The two branches are
+% told apart by solid against dashed, which encodes the actual difference
+% (trained against frozen) instead of decorating it.
 %
-% Type scale 46 / 26 / 20 / 15 / 11 / 9. Steps are 1.2x or wider; anything
-% closer stops reading as hierarchy and starts reading as a mistake.
+% Type is Charter, a printed-text serif, with Avenir Next Condensed only for
+% annotation on and around the image, the way a viewer overlays a scan.
 %
-% Colour: one dark ink for all three panel heads, with a 3 mm accent tab, so
-% the accents stay reserved. Vermillion is the Severe class and nothing else,
-% blue and orange are the two branches and nothing else, green is improvement
-% and nothing else. Palette is Okabe-Ito, readable with colour vision
-% deficiency, and no meaning is carried by colour alone.
-%
-% Build:
-%   pdflatex -interaction=nonstopmode infographic.tex
+% Build (needs lualatex for system fonts):
+%   lualatex -interaction=nonstopmode infographic.tex
 %   pdftoppm -png -scale-to-x 1920 -scale-to-y 1080 infographic.pdf infographic
 \documentclass[12pt]{article}
 \usepackage[paperwidth=320mm,paperheight=180mm,margin=0mm]{geometry}
-\usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
-\usepackage{helvet}
-\renewcommand{\familydefault}{\sfdefault}
-\usepackage{microtype}
+\usepackage{fontspec}
+\setmainfont{Charter}
+\newfontfamily\cond{Avenir Next Condensed}
 \usepackage{graphicx}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,calc}
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
 
-\definecolor{pageBg}{HTML}{EFEFEC}
-\definecolor{cardLine}{HTML}{E2E2DC}
-\definecolor{inkDark}{HTML}{3A3A35}
-\definecolor{inkBody}{HTML}{55554F}
-\definecolor{trackGrey}{HTML}{E8E8E3}
-\definecolor{barGrey}{HTML}{C8C8C2}
-\definecolor{oiBlue}{HTML}{0072B2}
-\definecolor{oiOrange}{HTML}{E69F00}
-\definecolor{oiGreen}{HTML}{009E73}
-\definecolor{oiVermillion}{HTML}{D55E00}
-
-% A weight-matched arrow. \rightarrow renders Computer Modern, which puts a
-% hairline maths glyph between bold Helvetica digits.
-\newcommand{\arr}{\raisebox{0.18ex}{\tikz[baseline=-0.55ex]
-  \draw[-{Stealth[length=1.9mm,width=1.6mm]},line width=0.5mm](0,0)--(4.4mm,0);}}
-
-\newcommand{\lbl}[1]{\textls[80]{\MakeUppercase{#1}}}
-
-% One card: white ground, hairline, head bar clipped inside the rounding so all
-% four corners share a radius.
-\newcommand{\card}[4]{%
-  \begin{scope}
-    \clip[rounded corners=2mm] (#1,26) rectangle ++(#2,122);
-    \fill[white] (#1,26) rectangle ++(#2,122);
-    \fill[inkDark] (#1,136) rectangle ++(#2,12);
-    \fill[#4] (#1,136) rectangle ++(3,12);
-  \end{scope}
-  \draw[cardLine, line width=0.25mm, rounded corners=2mm] (#1,26) rectangle ++(#2,122);
-  \node[anchor=west, text=white, font=\fontsize{15}{17}\selectfont\bfseries]
-       at (#1+8,141.6) {\lbl{#3}};}
+\definecolor{paper}{HTML}{F7F7F5}
+\definecolor{ink}{HTML}{000000}
+\definecolor{ink70}{HTML}{4D4D4D}
+\definecolor{rule}{HTML}{B8B8B2}
+\definecolor{track}{HTML}{DFDFDA}
+\definecolor{track2}{HTML}{BFBFB9}
+\definecolor{signal}{HTML}{C1440E}   % the Severe class, and nothing else
 
 \begin{document}
-\begin{tikzpicture}[x=1mm,y=1mm]
-\fill[pageBg] (0,0) rectangle (320,180);
+\begin{tikzpicture}[x=1mm,y=1mm,
+  box/.style={draw=ink, line width=0.4mm, fill=white, minimum height=20mm,
+              align=center, inner sep=2mm, font=\fontsize{11}{13}\selectfont},
+  frz/.style={draw=ink70, line width=0.4mm, dash pattern=on 1.4mm off 1.1mm,
+              fill=white, minimum height=20mm, align=center, inner sep=2mm,
+              font=\fontsize{11}{13}\selectfont},
+  flow/.style={-{Stealth[length=2.2mm,width=1.8mm]}, line width=0.35mm, ink}]
 
-%% ---------------------------------------------------------------- header
-\fill[inkDark] (0,153) rectangle (320,180);
-\node[anchor=west, text=white, font=\fontsize{26}{28}\selectfont\bfseries]
-     at (12,169.5) {A Two-Branch Hybrid Model for Lumbar Disc Grading};
-\node[anchor=west, text=white, opacity=.82, font=\fontsize{10.5}{13}\selectfont]
-     at (12,159.5) {Ha Trung Kien \,$\cdot$\, Phan Trong Nhan \,$\cdot$\, HCMUT, Vietnam};
-\node[anchor=east, text=white, font=\fontsize{10.5}{13}\selectfont\bfseries]
-     at (308,159.5) {MIWAI 2026 \,$\cdot$\, Paper 122};
+\fill[paper] (0,0) rectangle (320,180);
 
-\card{12}{96}{The problem}{oiVermillion}
-\card{115}{88}{The model}{oiBlue}
-\card{210}{98}{The result}{oiGreen}
+%% ------------------------------------------------------------- title
+\node[anchor=base west, font=\fontsize{24}{27}\selectfont]
+     at (16,164) {A Two-Branch Hybrid Model for Lumbar Disc Grading};
+\node[anchor=base west, text=ink70, font=\fontsize{10}{12}\selectfont]
+     at (16,155) {Ha Trung Kien and Phan Trong Nhan, Ho Chi Minh City University of Technology, Vietnam};
+\node[anchor=base east, text=ink70, font=\fontsize{10}{12}\selectfont]
+     at (304,155) {MIWAI 2026, paper 122};
+\draw[rule, line width=0.2mm] (16,150) -- (304,150);
 
-%% ------------------------------------------------- 1. imbalance
-\node[anchor=west, font=\fontsize{11}{14}\selectfont, text=inkBody]
-     at (20,128) {Sagittal T2 in, severity out};
+%% ------------------------------------------------------------- the scan
+\node[anchor=south west, inner sep=0] at (16,66)
+     {\includegraphics[width=40mm,height=72mm]{mri_sagittal_panel.png}};
+\node[anchor=north west, text=ink70, font=\cond\fontsize{9}{11.5}\selectfont]
+     at (16,63) {sagittal T2, five levels graded (L1-L2 to L5-S1)};
 
-% One mid-sagittal slice, no overlay and no saliency claim on it.
-\node[anchor=south west, inner sep=0] at (20,52)
-     {\includegraphics[width=32mm,height=58mm]{mri_sagittal_panel.png}};
-\draw[cardLine, line width=0.25mm] (20,52) rectangle ++(32,58);
+%% ------------------------------------------------------------- pipeline
+% Both branch boxes are set to one width. Letting the label decide made the
+% trained branch twice the size of the frozen one, which reads as a hierarchy
+% that does not exist: they are parallel.
+\node[box, minimum width=46mm] (bxA) at (118,120) {3D ResNet-34 with CBAM\\[2pt]
+     {\cond\fontsize{9}{11}\selectfont trained}};
+\node[frz, minimum width=46mm] (bxB) at (118,84) {BiomedCLIP\\[2pt]
+     {\cond\fontsize{9}{11}\selectfont frozen}};
+\node[box, minimum width=46mm, minimum height=14mm] (fus) at (190,102) {fusion head\\[2pt]
+     {\cond\fontsize{9}{11}\selectfont 1.18M trained parameters}};
 
-% Horizontal bars, because this column is narrow: vertical bars 15 mm apart
-% cannot carry a category label as long as "Moderate" without collision.
-% Each bar sits in a full-length track, so the three read as one scale.
-\foreach \by in {94,76,58} \fill[trackGrey] (58,\by) rectangle ++(42,7);
-\fill[barGrey]      (58,94) rectangle ++(34.0,7);
-\fill[barGrey]      (58,76) rectangle ++(6.3,7);
-\fill[oiVermillion] (58,58) rectangle ++(1.7,7);
+% One volume feeding both branches, drawn as a split.
+\draw[ink, line width=0.35mm] (58,102) -- (80,102);
+\draw[ink, line width=0.35mm] (80,120) -- (80,84);
+\draw[flow] (80,120) -- (bxA.west);
+\draw[flow] (80,84) -- (bxB.west);
 
-\node[anchor=west, font=\fontsize{10}{12}\selectfont, text=inkBody]      at (58,105) {Normal/Mild};
-\node[anchor=west, font=\fontsize{10}{12}\selectfont, text=inkBody]      at (58,87)  {Moderate};
-\node[anchor=west, font=\fontsize{10}{12}\selectfont\bfseries, text=oiVermillion] at (58,69) {Severe};
+\draw[ink, line width=0.35mm] (bxA.east) -- (160,120);
+\draw[ink, line width=0.35mm] (bxB.east) -- (160,84);
+\draw[ink, line width=0.35mm] (160,120) -- (160,84);
+\draw[flow] (160,102) -- (fus.west);
 
-\node[anchor=west, font=\fontsize{10}{12}\selectfont\bfseries, text=inkBody]      at (94.5,97.5) {81\%};
-\node[anchor=west, font=\fontsize{10}{12}\selectfont\bfseries, text=inkBody]      at (66.8,79.5) {15\%};
-\node[anchor=west, font=\fontsize{10}{12}\selectfont\bfseries, text=oiVermillion] at (62.2,61.5) {4\%};
+\draw[flow] (fus.east) -- (228,102);
+\node[anchor=south, text=ink70, font=\cond\fontsize{9}{11}\selectfont]
+     at (220.5,103.5) {cosine match};
 
-\node[anchor=west, font=\fontsize{11}{14}\selectfont, text=inkBody, align=left]
-     at (20,37.5) {Cross-entropy training leaves\\Severe recall near zero.};
+%% ------------------------------------------------------------- what comes out
+\node[anchor=north west, font=\fontsize{13}{16}\selectfont, align=left]
+     at (232,114) {The label set is\\an input, not a\\fixed head.};
+\node[anchor=north west, text=ink70, font=\fontsize{10}{13}\selectfont, align=left]
+     at (232,92) {Each class is a sentence, so\\a new schema is a new set\\
+                  of prompts. On eight unseen\\SPIDER labels disc-morphology\\
+                  F1 is 0.587, against 0.433\\off the shelf.};
 
-%% ------------------------------------------------- 2. architecture
-\node[anchor=west, font=\fontsize{11}{14}\selectfont, text=inkBody]
-     at (123,128) {Two branches, one of them frozen};
+\draw[rule, line width=0.2mm] (16,56) -- (304,56);
 
-\node[draw=oiBlue, line width=0.5mm, fill=white, rounded corners=2mm,
-      minimum width=33.5mm, minimum height=26mm, align=center,
-      font=\fontsize{11}{13.5}\selectfont] (bxA) at (139.75,107)
-     {\textbf{3D ResNet-34}\\\textbf{with CBAM}\\[3pt] trained};
-\node[draw=oiOrange, line width=0.5mm, fill=white, rounded corners=2mm,
-      minimum width=33.5mm, minimum height=26mm, align=center,
-      font=\fontsize{11}{13.5}\selectfont] (bxB) at (178.25,107)
-     {\textbf{BiomedCLIP}\\\textbf{frozen}\\[3pt] semantic prior};
-\node[draw=cardLine, line width=0.5mm, fill=white, rounded corners=2mm,
-      minimum width=55mm, minimum height=12mm, align=center,
-      font=\fontsize{11}{13}\selectfont] (fus) at (159,77) {fusion head, 1.18M};
-% The chain ends in a box like the rest of it, not in floating text.
-\node[draw=cardLine, line width=0.5mm, fill=white, rounded corners=2mm,
-      minimum width=55mm, minimum height=12mm, align=center,
-      font=\fontsize{11}{13}\selectfont] (out) at (159,54) {match to text prompt};
+%% ------------------------------------------------------------- the result
+\node[anchor=north west, font=\fontsize{13}{16}\selectfont, align=left]
+     at (16,50) {Severe is 4\% of the data.};
+\node[anchor=north west, text=ink70, font=\fontsize{10}{13}\selectfont, align=left]
+     at (16,41) {Cross-entropy training\\finds almost none of it.};
 
-\draw[-{Stealth[length=2mm,width=1.6mm]}, oiBlue,   line width=0.35mm,
-      shorten >=1.2mm, shorten <=1.2mm] (bxA) -- (fus);
-\draw[-{Stealth[length=2mm,width=1.6mm]}, oiOrange, line width=0.35mm,
-      shorten >=1.2mm, shorten <=1.2mm] (bxB) -- (fus);
-\draw[-{Stealth[length=2mm,width=1.6mm]}, inkBody,  line width=0.35mm,
-      shorten >=1.2mm, shorten <=1.2mm] (fus) -- (out);
+% Two bars from a common zero, not one floating range bar: a bar that starts at
+% 12.3\% and ends at 48.6\% invites the left edge to be read as zero.
+% Full 0 to 100 axis, because a truncated one would flatter the result.
+\node[anchor=west, text=ink70, font=\cond\fontsize{9}{11}\selectfont]
+     at (152,48) {Severe recall, RSNA 2024, mean of three seeds};
 
-\node[anchor=west, font=\fontsize{11}{14}\selectfont, text=inkBody, align=left]
-     at (123,37.5) {The label set is an input,\\not a fixed classifier head.};
+\node[anchor=east, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (148,38.5) {cross-entropy};
+\fill[track] (152,36) rectangle ++(148,5);
+\fill[track2] (152,36) rectangle ++(18.2,5);
+\node[anchor=west, text=ink70, font=\fontsize{10}{12}\selectfont] at (173,38.5) {12.3\%};
 
-%% ------------------------------------------------- 3. results
-\node[anchor=west, font=\fontsize{11}{14}\selectfont, text=inkBody]
-     at (218,128) {Severe class, RSNA 2024};
+\node[anchor=east, text=signal, font=\cond\fontsize{9}{11}\selectfont] at (148,29.5) {ours};
+\fill[track] (152,27) rectangle ++(148,5);
+\fill[signal] (152,27) rectangle ++(71.9,5);
+\node[anchor=west, text=signal, font=\fontsize{15}{17}\selectfont] at (227,29.5) {48.6\%};
 
-\node[font=\fontsize{11}{13}\selectfont\bfseries, text=inkBody] at (259,120) {\lbl{Severe recall}};
-\node[font=\fontsize{46}{48}\selectfont\bfseries, text=oiGreen] at (259,105) {48.6\%};
-\node[font=\fontsize{11}{14}\selectfont, text=inkBody] at (259,91)
-     {up from 12.3\%, about four times higher};
+\node[anchor=north east, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont] at (300,25) {100\%};
 
-\draw[cardLine, line width=0.25mm] (218,84) -- (300,84);
-
-\node[font=\fontsize{11}{13}\selectfont\bfseries, text=inkBody] at (259,77) {\lbl{Severe F1}};
-\node[font=\fontsize{20}{22}\selectfont\bfseries, text=oiGreen] at (259,68) {0.152\,\arr\,0.356};
-
-\draw[cardLine, line width=0.25mm] (218,60) -- (300,60);
-
-\node[font=\fontsize{11}{13}\selectfont\bfseries, text=inkBody] at (259,53) {\lbl{Zero-shot on SPIDER}};
-\node[font=\fontsize{20}{22}\selectfont\bfseries, text=inkDark] at (259,44) {8 unseen labels};
-\node[font=\fontsize{9}{11}\selectfont, text=inkBody] at (259,36)
-     {disc morphology F1 0.587, against 0.433 off the shelf};
-
-%% ---------------------------------------------------------------- footer
-\node[anchor=west, font=\fontsize{9}{11}\selectfont, text=inkBody] at (12,14)
-     {RSNA figures are means over three seeds. The Severe share is the mean of the three sagittal conditions.};
-\node[anchor=west, font=\fontsize{9}{11}\selectfont, text=inkBody] at (12,9)
-     {Normal and Mild are pooled. Zero-shot is one frozen model scored on the full SPIDER cohort, 1{,}439 IVDs.};
+%% ------------------------------------------------------------- provenance
+\node[anchor=base west, text=ink70, font=\fontsize{8.5}{11}\selectfont]
+     at (16,14) {RSNA 2024 and SPIDER. Normal and Mild are pooled; the Severe share is the mean of the three sagittal conditions.};
+\node[anchor=base west, text=ink70, font=\fontsize{8.5}{11}\selectfont]
+     at (16,9) {Zero-shot is one frozen model scored on the full SPIDER cohort, 1{,}439 intervertebral discs. Imaging from RSNA 2024, used under its non-commercial research licence.};
 
 \end{tikzpicture}
 \end{document}
