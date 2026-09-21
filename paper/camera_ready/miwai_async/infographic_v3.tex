@@ -59,7 +59,7 @@
 % is what reads as clinical, and the accent now has real chroma.
 \definecolor{paper}{HTML}{F8F9FA}
 \definecolor{ink}{HTML}{000000}
-\definecolor{ink70}{HTML}{44484D}
+\definecolor{ink70}{HTML}{34383C}
 \definecolor{rule}{HTML}{C9CDD2}
 \definecolor{track}{HTML}{E3E7EB}
 \definecolor{track2}{HTML}{9AA3AC}
@@ -104,14 +104,14 @@
 % Three blocks: scan 30, pipeline 136, prompts 100, gutters 10.
 \node[anchor=south west, inner sep=0] at (16,90)
      {\includegraphics[width=30mm,height=54mm]{mri_sagittal_panel.png}};
-\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont]
+\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont]
      at (16,86) {Sagittal T2, 5 IVD levels};
 
 \node[box, minimum width=50mm] (bxA) at (97,128) {3D ResNet-34 + CBAM\\[2pt]
-     {\cond\fontsize{9}{11}\selectfont trainable}};
+     {\cond\fontsize{10}{12}\selectfont trainable}};
 \node[frz, minimum width=50mm] (bxB) at (97,100) {BiomedCLIP encoder\\[2pt]
-     {\cond\fontsize{9}{11}\selectfont frozen}};
-\node[box, minimum width=48mm, minimum height=13mm] (fus) at (167,114) {concat MLP};
+     {\cond\fontsize{10}{12}\selectfont frozen}};
+\node[box, minimum width=38mm, minimum height=13mm] (fus) at (167,114) {concat MLP};
 
 \draw[ink, line width=0.35mm] (48,114) -- (58,114);
 \draw[ink, line width=0.35mm] (58,128) -- (58,100);
@@ -123,8 +123,8 @@
 \draw[ink70, line width=0.35mm] (132,114) -- (132,100);
 \draw[tflow] (132,114) -- (fus.west);
 \draw[tflow] (fus.east) -- (200,114);
-\node[anchor=south, text=ink70, font=\cond\fontsize{9}{11}\selectfont]
-     at (196,115.5) {cosine sim.};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont]
+     at (188,116) {cosine sim.};
 
 %% prompts, centred on the pipeline
 \node[anchor=base west, font=\fontsize{13}{16}\selectfont]
@@ -136,16 +136,16 @@
       decoration={brace, amplitude=1.6mm, mirror}] (237,116.5) -- (237,132);
 \node[anchor=base west, text=ink70, font=\fontsize{10}{13}\selectfont] at (241,123.5)
      {spinal canal stenosis};
-\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (204,107)
+\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont] at (204,107)
      {the image is the only per-case input};
-\node[anchor=base west, text=trained, font=\cond\fontsize{9}{11}\selectfont]
+\node[anchor=base west, text=trained, font=\cond\fontsize{10}{12}\selectfont]
      at (204,98) {edit the phrases, get a new label space, no gradient updates};
 
 \draw[rule, line width=0.2mm] (16,80) -- (304,80);
 
 %% ============================================ EVIDENCE BAND, y 30 to 76
 % Three blocks: distribution 84, Grad-CAM 76, results 108, gutters 10.
-\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont]
+\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont]
      at (16,72) {Severity distribution, RSNA 2024};
 
 % Three stacked bars, one per condition, each the full 100%. Nine grouped bars
@@ -162,47 +162,47 @@
   % Name inside the bar, drawn after the fills or they cover it. A row of
   % labels above the bars cost a line of height and the first one ran into
   % the block heading.
-  \node[anchor=base west, text=ink, font=\cond\fontsize{8.5}{10}\selectfont]
+  \node[anchor=base west, text=ink, font=\cond\fontsize{10}{12}\selectfont]
        at (18,\yy+1.8) {\condname};
-  \node[anchor=base west, text=signal, font=\cond\fontsize{8.5}{10}\selectfont]
+  \node[anchor=base west, text=signal, font=\cond\fontsize{10}{12}\selectfont]
        at (16+\nm+\mo+\sv+2,\yy+1.6) {\pct\%};}
 
 \fill[waffle] (16,32) rectangle ++(3,3);
-\node[anchor=base west, text=ink70, font=\cond\fontsize{8}{10}\selectfont] at (20.5,32.4) {Normal/Mild};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont] at (20.5,32.4) {Normal/Mild};
 \fill[track2] (46,32) rectangle ++(3,3);
-\node[anchor=base west, text=ink70, font=\cond\fontsize{8}{10}\selectfont] at (50.5,32.4) {Moderate};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont] at (50.5,32.4) {Moderate};
 \fill[signal] (72,32) rectangle ++(3,3);
-\node[anchor=base west, text=signal, font=\cond\fontsize{8}{10}\selectfont] at (76.5,32.4) {Severe};
+\node[anchor=base west, text=signal, font=\cond\fontsize{10}{12}\selectfont] at (76.5,32.4) {Severe};
 
 \draw[rule, line width=0.2mm] (105,32) -- (105,72);
 
-\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont]
+\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont]
      at (110,72) {Grad-CAM, a Severe spinal canal case};
 \node[anchor=south west, inner sep=0] at (110,46)
      {\includegraphics[width=36mm]{gradcam_nocbam.png}};
 \node[anchor=south west, inner sep=0] at (150,46)
      {\includegraphics[width=36mm]{gradcam_cbam.png}};
-\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (110,41) {without CBAM};
-\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (150,41) {with CBAM};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont] at (110,41) {without CBAM};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont] at (150,41) {with CBAM};
 
 \draw[rule, line width=0.2mm] (191,32) -- (191,72);
 
-\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont]
+\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont]
      at (196,72) {Severe-class recall, RSNA 2024 validation, 3 seeds};
 \foreach \x in {243.5,261,278.5,296} \draw[grid, line width=0.2mm] (\x,46) -- (\x,69);
 \draw[rule, line width=0.3mm] (226,46) -- (226,69);
 \fill[bar2]   (226,60) rectangle ++(8.6,6);
 \fill[signal] (226,50) rectangle ++(34.0,6);
-\node[anchor=base east, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (222,62) {SpineNetV2};
-\node[anchor=base east, text=signal, font=\cond\fontsize{9}{11}\selectfont] at (222,52) {hybrid (ours)};
+\node[anchor=base east, text=ink70, font=\cond\fontsize{10}{12}\selectfont] at (222,62) {SpineNetV2};
+\node[anchor=base east, text=signal, font=\cond\fontsize{10}{12}\selectfont] at (222,52) {hybrid (ours)};
 \node[anchor=base west, text=ink70, font=\fontsize{10}{12}\selectfont] at (238,62) {12.3\%};
 \node[anchor=base west, text=signal, font=\fontsize{14}{16}\selectfont] at (264,51.5) {48.6\%};
 \foreach \x/\lab in {226/0,243.5/25,261/50,278.5/75,296/100} {
-  \node[anchor=base, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont] at (\x,42) {\lab};}
-\node[anchor=base west, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont] at (298.5,42) {\%};
-\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (196,35)
+  \node[anchor=base, text=ink70, font=\cond\fontsize{10}{12}\selectfont] at (\x,42) {\lab};}
+\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont] at (298.5,42) {\%};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont] at (196,35)
      {Severe F1 0.152 to 0.356\quad Severe AUC 0.872 to 0.899};
-\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (196,29)
+\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont] at (196,29)
      {Zero-shot on unseen SPIDER labels: disc bulging 0.613, spondylolisthesis 0.028};
 
 %% ------------------------------------------------------------- provenance
