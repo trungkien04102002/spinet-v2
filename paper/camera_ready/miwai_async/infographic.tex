@@ -49,15 +49,22 @@
 % Matches the Severe red of the paper's own class-distribution figure, so the
 % two artefacts agree. Used for the Severe class and its recall, nothing else.
 \definecolor{signal}{HTML}{E23B3B}
+\definecolor{slot}{HTML}{E3E7EB}
+% A second accent, earning its place: it marks everything that is actually
+% trained. Blue path against grey dashed frozen blocks is the paper's headline
+% about parameter efficiency, drawn instead of stated.
+\definecolor{trained}{HTML}{1971C2}
+\definecolor{trainedbg}{HTML}{EDF4FC}
 
 \begin{document}
 \begin{tikzpicture}[x=1mm,y=1mm,
-  box/.style={draw=ink, line width=0.4mm, fill=white, minimum height=20mm,
+  box/.style={draw=trained, line width=0.45mm, fill=trainedbg, minimum height=20mm,
               align=center, inner sep=2mm, font=\fontsize{11}{13}\selectfont},
   frz/.style={draw=ink70, line width=0.4mm, dash pattern=on 1.4mm off 1.1mm,
               fill=white, minimum height=20mm, align=center, inner sep=2mm,
               font=\fontsize{11}{13}\selectfont},
-  flow/.style={-{Stealth[length=2.2mm,width=1.8mm]}, line width=0.35mm, ink}]
+  flow/.style={-{Stealth[length=2.2mm,width=1.8mm]}, line width=0.35mm, ink},
+  tflow/.style={-{Stealth[length=2.2mm,width=1.8mm]}, line width=0.45mm, trained}]
 
 \fill[paper] (0,0) rectangle (320,180);
 
@@ -71,76 +78,91 @@
 \draw[rule, line width=0.2mm] (16,150) -- (304,150);
 
 %% ------------------------------------------------------------- the scan
-\node[anchor=south west, inner sep=0] at (16,66)
-     {\includegraphics[width=40mm,height=72mm]{mri_sagittal_panel.png}};
+\node[anchor=south west, inner sep=0] at (16,83)
+     {\includegraphics[width=36mm,height=65mm]{mri_sagittal_panel.png}};
 \node[anchor=north west, text=ink70, font=\cond\fontsize{9}{11.5}\selectfont]
-     at (16,63) {sagittal T2, five levels graded (L1-L2 to L5-S1)};
+     at (16,81) {sagittal T2, five levels (L1-L2 to L5-S1)};
 
 %% ------------------------------------------------------------- pipeline
-% Both branch boxes are set to one width. Letting the label decide made the
-% trained branch twice the size of the frozen one, which reads as a hierarchy
-% that does not exist: they are parallel.
-\node[box, minimum width=46mm] (bxA) at (118,120) {3D ResNet-34 with CBAM\\[2pt]
+\node[box, minimum width=54mm] (bxA) at (99,128) {3D ResNet-34 with CBAM\\[2pt]
      {\cond\fontsize{9}{11}\selectfont trained}};
-\node[frz, minimum width=46mm] (bxB) at (118,84) {BiomedCLIP\\[2pt]
+\node[frz, minimum width=54mm] (bxB) at (99,100) {BiomedCLIP\\[2pt]
      {\cond\fontsize{9}{11}\selectfont frozen}};
-\node[box, minimum width=46mm, minimum height=14mm] (fus) at (190,102) {fusion head\\[2pt]
-     {\cond\fontsize{9}{11}\selectfont 1.18M trained parameters}};
+\node[box, minimum width=44mm, minimum height=13mm] (fus) at (165,114) {fusion head\\[2pt]
+     {\cond\fontsize{9}{11}\selectfont\color{trained} 1.18M trained parameters}};
 
-% One volume feeding both branches, drawn as a split.
-\draw[ink, line width=0.35mm] (58,102) -- (80,102);
-\draw[ink, line width=0.35mm] (80,120) -- (80,84);
-\draw[flow] (80,120) -- (bxA.west);
-\draw[flow] (80,84) -- (bxB.west);
+\draw[ink, line width=0.35mm] (54,114) -- (64,114);
+\draw[ink, line width=0.35mm] (64,128) -- (64,100);
+\draw[tflow] (64,128) -- (bxA.west);
+\draw[flow] (64,100) -- (bxB.west);
 
-\draw[ink, line width=0.35mm] (bxA.east) -- (160,120);
-\draw[ink, line width=0.35mm] (bxB.east) -- (160,84);
-\draw[ink, line width=0.35mm] (160,120) -- (160,84);
-\draw[flow] (160,102) -- (fus.west);
-
-\draw[flow] (fus.east) -- (228,102);
+\draw[trained, line width=0.45mm] (bxA.east) -- (134,128);
+\draw[ink, line width=0.35mm] (bxB.east) -- (134,100);
+\draw[trained, line width=0.45mm] (134,128) -- (134,114);
+\draw[ink70, line width=0.35mm] (134,114) -- (134,100);
+\draw[tflow] (134,114) -- (fus.west);
+\draw[tflow] (fus.east) -- (200,114);
 \node[anchor=south, text=ink70, font=\cond\fontsize{9}{11}\selectfont]
-     at (220.5,103.5) {cosine match};
+     at (196,116) {cosine match};
 
-%% ------------------------------------------------------------- what comes out
-\node[anchor=north west, font=\fontsize{13}{16}\selectfont, align=left]
-     at (232,114) {The label set is\\an input, not a\\fixed head.};
-\node[anchor=north west, text=ink70, font=\fontsize{10}{13}\selectfont, align=left]
-     at (232,92) {Each class is a sentence, so\\a new schema is a new set\\
-                  of prompts. On eight unseen\\SPIDER labels disc-morphology\\
-                  F1 is 0.587, against 0.433\\off the shelf.};
+%% ---------------------------------------------- what the classifier actually is
+% The paper's most distinctive idea is that the classifier is not a weight
+% matrix but a list of sentences. Printing a real prompt, with the swappable
+% slot marked, is the one thing on this page no template would produce.
+\node[anchor=base west, font=\fontsize{13}{16}\selectfont]
+     at (204,136) {Each class is a sentence.};
+\node[anchor=base west, font=\fontsize{10.5}{13}\selectfont] at (204,125)
+     {``a magnetic resonance image of \colorbox{slot}{\strut lumbar disc bulging}''};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont]
+     at (204,116) {swap the slot and the label set changes, with no retraining};
 
-\draw[rule, line width=0.2mm] (16,56) -- (304,56);
+\node[anchor=base west, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont] at (204,105) {trained on};
+\node[anchor=base west, font=\fontsize{9.5}{12}\selectfont] at (230,105) {spinal canal stenosis};
+
+\node[anchor=base west, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont] at (204,98) {never seen};
+\node[anchor=base west, font=\fontsize{9.5}{12}\selectfont] at (230,98) {lumbar disc bulging};
+\node[anchor=base east, font=\fontsize{9.5}{12}\selectfont] at (304,98) {F1 0.613};
+
+\node[anchor=base west, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont] at (204,91) {never seen};
+\node[anchor=base west, text=ink70, font=\fontsize{9.5}{12}\selectfont] at (230,91) {spondylolisthesis};
+\node[anchor=base east, text=ink70, font=\fontsize{9.5}{12}\selectfont] at (304,91) {F1 0.028};
+
+\draw[rule, line width=0.2mm] (16,72) -- (304,72);
 
 %% ------------------------------------------------------------- the result
-\node[anchor=north west, font=\fontsize{13}{16}\selectfont, align=left]
-     at (16,50) {Severe is 4\% of the data.};
-\node[anchor=north west, text=ink70, font=\fontsize{10}{13}\selectfont, align=left]
-     at (16,41) {Cross-entropy training\\finds almost none of it.};
+\node[anchor=base west, font=\fontsize{13}{16}\selectfont]
+     at (16,64) {Severe is 4\% of the data.};
+% Shown, not only stated: the whole training set as one bar, Severe at the end.
+\fill[track] (16,52) rectangle ++(94,5);
+\fill[track2] (16,52) rectangle ++(90.2,5);
+\fill[signal] (106.2,52) rectangle ++(3.8,5);
+\node[anchor=base west, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont]
+     at (16,47) {Normal, Mild and Moderate};
+\node[anchor=base east, text=signal, font=\cond\fontsize{8.5}{10}\selectfont]
+     at (110,47) {Severe};
+\node[anchor=base west, text=ink70, font=\fontsize{10}{13}\selectfont, align=left]
+     at (16,38) {Cross-entropy training finds\\almost none of it.};
 
-% Two bars from a common zero, not one floating range bar: a bar that starts at
-% 12.3\% and ends at 48.6\% invites the left edge to be read as zero.
-% Full 0 to 100 axis, because a truncated one would flatter the result.
-\node[anchor=west, text=ink70, font=\cond\fontsize{9}{11}\selectfont]
-     at (152,48) {Severe recall, RSNA 2024, mean of three seeds};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont]
+     at (152,64) {Severe recall, RSNA 2024, mean of three seeds};
 
-\node[anchor=east, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (148,38.5) {cross-entropy};
-\fill[track] (152,36) rectangle ++(148,5);
-\fill[track2] (152,36) rectangle ++(18.2,5);
-\node[anchor=west, text=ink70, font=\fontsize{10}{12}\selectfont] at (173,38.5) {12.3\%};
+\node[anchor=base east, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (148,54.5) {cross-entropy};
+\fill[track] (152,52) rectangle ++(148,5);
+\fill[track2] (152,52) rectangle ++(18.2,5);
+\node[anchor=base west, text=ink70, font=\fontsize{10}{12}\selectfont] at (173,54) {12.3\%};
 
-\node[anchor=east, text=signal, font=\cond\fontsize{9}{11}\selectfont] at (148,29.5) {ours};
-\fill[track] (152,27) rectangle ++(148,5);
-\fill[signal] (152,27) rectangle ++(71.9,5);
-\node[anchor=west, text=signal, font=\fontsize{15}{17}\selectfont] at (227,29.5) {48.6\%};
+\node[anchor=base east, text=signal, font=\cond\fontsize{9}{11}\selectfont] at (148,42.5) {ours};
+\fill[track] (152,40) rectangle ++(148,5);
+\fill[signal] (152,40) rectangle ++(71.9,5);
+\node[anchor=base west, text=signal, font=\fontsize{15}{17}\selectfont] at (227,41.5) {48.6\%};
 
-\node[anchor=north east, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont] at (300,25) {100\%};
+\node[anchor=base east, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont] at (300,35) {100\%};
 
 %% ------------------------------------------------------------- provenance
 \node[anchor=base west, text=ink70, font=\fontsize{8.5}{11}\selectfont]
-     at (16,14) {RSNA 2024 and SPIDER. Normal and Mild are pooled; the Severe share is the mean of the three sagittal conditions.};
+     at (16,20) {RSNA 2024 and SPIDER. Normal and Mild are pooled; the Severe share is the mean of the three sagittal conditions.};
 \node[anchor=base west, text=ink70, font=\fontsize{8.5}{11}\selectfont]
-     at (16,9) {Zero-shot is one frozen model scored on the full SPIDER cohort, 1{,}439 intervertebral discs. Imaging from RSNA 2024, used under its non-commercial research licence.};
+     at (16,15) {Zero-shot is one frozen model scored on the full SPIDER cohort, 1{,}439 intervertebral discs. Imaging from RSNA 2024, used under its non-commercial research licence.};
 
 \end{tikzpicture}
 \end{document}
