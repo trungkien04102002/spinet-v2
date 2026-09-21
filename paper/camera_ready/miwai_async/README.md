@@ -29,7 +29,6 @@ Every figure is traced to the accepted paper.
 | Severe recall 12.3% to 48.6% | Abstract, and Table 1, mean over seeds 42, 123, 456 |
 | Severe F1 0.152 to 0.356 | Abstract, same table |
 | about four times higher | Section 1, "about 4x" |
-| fusion head, 1.18M params | Table 2, "Trainable / total params 1.18 M / 260 M" |
 | disc morphology F1 0.587 against 0.433 | Table 4, row "Mean (disc-morphology)" |
 | 81% / 15% / 4% | Mean of the per-condition values behind Figure 2, which are 4.8, 4.1 and 3.9 for Severe |
 
