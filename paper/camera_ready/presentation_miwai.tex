@@ -111,7 +111,7 @@ Ho Chi Minh City University of Technology (HCMUT), VNU-HCM \\
 \begin{enumerate}
     \item Attention helps Severe \textbf{in-domain} but hurts \textbf{transfer}; frozen prior recovers it to parity.
     \item Complementary \textbf{two-branch} design (attention + biomedical VLM).
-    \item \textbf{Zero-shot} label extension: labels become a prompt input, no retraining.
+    \item \textbf{Zero-shot} label extension: swap the prompts, no new head, no retraining.
     \item Imbalance recipe lifts Severe recall \textbf{12.3\% $\to$ 48.6\%} ($\sim$4$\times$).
 \end{enumerate}
 \end{frame}
@@ -161,8 +161,12 @@ Same encoder $\Phi$, only the head changes ($h = c \circ \Phi$):
 \hat{y} = \arg\max_{k}\; s\cdot \hat{f}_{\text{img}}^{\top}\, t_k ,
 \qquad t_k = \psi(q_k)/\|\psi(q_k)\|_2 .
 \end{equation*}
-\begin{itemize}
-    \item[--] Prompt: \textit{``a magnetic resonance image of [label]''}.
+\begin{itemize}\small
+    \item[--] \textbf{Source (RSNA)}, three prompts per condition, one per grade:
+          \textit{``normal or mild / moderate / severe spinal canal stenosis''}.
+    \item[--] \textbf{Target (SPIDER)}: \textit{``a magnetic resonance image of [label]''}.
+    \item[--] Anchors $t_k$ are encoded \textbf{once} and reused; the volume is the
+          only per-case input, and $\{t_k\}$ sits where a weight matrix would.
     \item[$\Rightarrow$] New label = new prompt. \textbf{No new head, no retraining.}
 \end{itemize}
 \end{frame}

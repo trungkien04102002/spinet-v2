@@ -94,11 +94,17 @@ Rules for delivery: short sentences, slow, pause at every `/`. Say numbers slowl
 >
 > Let me read the formula. / Phi is the encoder. / It turns one disc volume / into a single vector. / That part never changes.
 >
-> Now look at t-k. / We write a prompt for each label k. / For example, / "a magnetic resonance image of lumbar disc herniation". / Psi is the frozen text encoder. / It turns that sentence into a vector. / We divide by its length, / so every label vector sits on the unit sphere.
+> Now look at t-k. / We write a prompt for each class.
+>
+> On RSNA / the classes are the grades. / So for the spinal canal / we write three sentences: / "normal or mild spinal canal stenosis", / "moderate spinal canal stenosis", / and "severe spinal canal stenosis". / Three prompts per condition, / one per grade.
+>
+> Psi is the frozen text encoder. / It turns each sentence into a vector. / We divide by its length, / so every class vector sits on the unit sphere.
+>
+> We do this once, / before training. / At test time / the volume is the only thing that goes in. / The prompts are not fed in beside it. / They are the class definitions.
 >
 > Then we take the dot product / between the image vector and each label vector. / Because both are unit length, / that dot product is a cosine similarity. / s is a learned scale. / We predict the label with the highest score.
 >
-> So the classifier is not a matrix of weights. / It is a list of sentences.
+> So the classifier is not a matrix of weights. / It is a list of sentences. / And for SPIDER / we simply write eight different sentences, / in the form / "a magnetic resonance image of", / then the label.
 >
 > So a new label / is just a new prompt. / No new head. / No retraining.
 >
