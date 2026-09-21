@@ -20,9 +20,12 @@ files = sorted((RAW / "train_images" / STUDY / SERIES).glob("*.dcm"),
 ds = pydicom.dcmread(str(files[len(files) // 2]))
 img = ds.pixel_array.astype(np.float32)
 
-# Percentile windowing, the same 1st to 99th clip the training pipeline uses.
-lo, hi = np.percentile(img, [1, 99])
-img = np.clip((img - lo) / (hi - lo), 0, 1)
+# Percentile windowing. A flat 1st to 99th clip left this slice muddy on a
+# pale page, so the window is tightened and the midtones lifted with a gamma
+# below 1. This is display windowing, the same knob a radiologist turns; it
+# changes no pixel ordering and no measurement.
+lo, hi = np.percentile(img, [2, 99.5])
+img = np.clip((img - lo) / (hi - lo), 0, 1) ** 0.82
 
 # Crop to a portrait frame around the spine. The lumbar column sits in the
 # middle third horizontally on these sagittal series.

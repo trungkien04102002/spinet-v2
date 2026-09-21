@@ -36,13 +36,19 @@
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
 
-\definecolor{paper}{HTML}{F7F7F5}
+% The first palette used warm, olive-tinted neutrals (F7F7F5, DFDFDA, B8B8B2)
+% with a brick accent. Tinted neutrals read as dirty rather than as restrained,
+% and the whole page came out dusty. These are clean, faintly cool greys, which
+% is what reads as clinical, and the accent now has real chroma.
+\definecolor{paper}{HTML}{F8F9FA}
 \definecolor{ink}{HTML}{000000}
-\definecolor{ink70}{HTML}{4D4D4D}
-\definecolor{rule}{HTML}{B8B8B2}
-\definecolor{track}{HTML}{DFDFDA}
-\definecolor{track2}{HTML}{BFBFB9}
-\definecolor{signal}{HTML}{C1440E}   % the Severe class, and nothing else
+\definecolor{ink70}{HTML}{55595E}
+\definecolor{rule}{HTML}{C9CDD2}
+\definecolor{track}{HTML}{E3E7EB}
+\definecolor{track2}{HTML}{9AA3AC}
+% Matches the Severe red of the paper's own class-distribution figure, so the
+% two artefacts agree. Used for the Severe class and its recall, nothing else.
+\definecolor{signal}{HTML}{E23B3B}
 
 \begin{document}
 \begin{tikzpicture}[x=1mm,y=1mm,
