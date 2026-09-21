@@ -62,7 +62,7 @@
 %----------------------------------------------------------------------------------------
 %	TITLE PAGE
 %----------------------------------------------------------------------------------------
-\title[Two-Branch Hybrid Lumbar Disc Grading]{A Two-Branch Hybrid Model for Imbalanced Lumbar Disc Grading and Zero-Shot Label Extension}
+\title[Two-Branch Hybrid Grading]{A Two-Branch Hybrid Model for Imbalanced Lumbar Disc Grading and Zero-Shot Label Extension}
 
 \author[T.\,K.~Ha, T.\,N.~Phan]{Trung Kien Ha \and Trong Nhan Phan}
 \institute[HCMUT, VNU-HCM]
@@ -70,7 +70,7 @@
 Faculty of Computer Science and Engineering \\
 Ho Chi Minh City University of Technology (HCMUT), VNU-HCM \\
 \medskip
-\textit{MIWAI 2026 Oral Presentation (Paper 122)}
+\textit{MIWAI 2026, Paper 122}
 }
 \date{October 2026}
 
@@ -98,7 +98,7 @@ Ho Chi Minh City University of Technology (HCMUT), VNU-HCM \\
     \item[\textbf{P2}] \textbf{Fixed label space} \\ {\small new schema $\Rightarrow$ retrain a new head}
 \end{itemize}
 \vspace{4pt}
-{\scriptsize Grading is manual today, and readers disagree~\cite{nigru2024}.}
+{\scriptsize Today a radiologist grades each disc by hand, and different readers often disagree on the grade~\cite{nigru2024}.}
 \column{.58\textwidth}
 \centering
 \includegraphics[width=\linewidth]{abnormality_examples_en.png}\\[2pt]
@@ -129,7 +129,7 @@ Ho Chi Minh City University of Technology (HCMUT), VNU-HCM \\
 \begin{itemize}\small
     \item[--] \textbf{Attention:} CBAM~\cite{woo2018cbam} 3D ResNet-34~\cite{windsor2022}: localizes the lesion.
     \item[--] \textbf{Multimodal:} frozen BiomedCLIP~\cite{zhang2023biomedclip}: text-aligned prior.
-    \item[--] Fusion MLP $\to$ cosine vs.\ prompts. \textbf{Only 1.18\,M / 260\,M trained.}
+    \item[--] Fusion MLP $\to$ cosine similarity against the prompts.
 \end{itemize}
 \end{frame}
 
@@ -143,10 +143,6 @@ Ho Chi Minh City University of Technology (HCMUT), VNU-HCM \\
     \item[\textbf{3.}] \textbf{Minority oversampling}~\cite{buda2018imbalance}: show Severe volumes more often in each epoch.
     \item[\textbf{4.}] \textbf{Augmentation}~\cite{shorten2019augmentation}: get more variation out of the few Severe volumes there are.
 \end{itemize}
-\vspace{4pt}
-\begin{block}{\small Why it works}
-{\small Frozen prior anchors the scarce Severe class; attention zooms into the lesion.}
-\end{block}
 \column{.48\textwidth}
 \centering
 \includegraphics[width=\linewidth]{rsna_class_distribution_en.png}\\[2pt]
@@ -162,11 +158,11 @@ Same encoder $\Phi$, only the head changes ($h = c \circ \Phi$):
 \qquad t_k = \psi(q_k)/\|\psi(q_k)\|_2 .
 \end{equation*}
 \begin{itemize}\small
-    \item[--] \textbf{Source (RSNA)}, three prompts per condition, one per grade:
-          \textit{``normal or mild / moderate / severe spinal canal stenosis''}.
-    \item[--] \textbf{Target (SPIDER)}: \textit{``a magnetic resonance image of [label]''}.
-    \item[--] Anchors $t_k$ are encoded \textbf{once} and reused; the volume is the
-          only per-case input, and $\{t_k\}$ sits where a weight matrix would.
+    \item[--] Every class is written as a phrase $q_k$; the frozen text encoder $\psi$
+          turns it into an anchor $t_k$ (e.g.\ \textit{``severe spinal canal stenosis''}).
+    \item[--] Anchors are encoded \textbf{once} and reused. The volume is the only
+          per-case input, and $\{t_k\}$ sits where a weight matrix would.
+    \item[--] A different label schema is a different set of phrases.
     \item[$\Rightarrow$] New label = new prompt. \textbf{No new head, no retraining.}
 \end{itemize}
 \end{frame}
@@ -241,7 +237,7 @@ Hardware & 1$\times$ RTX 4090 ($\approx$16\,GB peak) \\
 \renewcommand{\arraystretch}{1.05}
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Metric} & \textbf{SpineNetV2} & \textbf{CBAM} & \textbf{Multimodal} & \textbf{Hybrid} \\
+\textbf{Metric} & \textbf{SpineNetV2} & \textbf{CBAM-only} & \textbf{Multimodal-only} & \textbf{Hybrid (Ours)} \\
 \midrule
 Mean Accuracy        & \bst{81.0} & 69.5 & 71.2 & 72.4 \\
 Mean F1 (macro)      & 0.420 & 0.477 & 0.482 & \bst{0.527} \\
@@ -256,9 +252,6 @@ Mean AUPRC           & 0.530 & 0.498 & 0.513 & \bst{0.533} \\
 \end{tabular}
 \caption{RSNA 2024 validation, mean over 3 seeds. \bst{Bold} = best. ``SpineNetV2'' is its grading backbone retrained here, not the published pipeline.}
 \end{table}
-\begin{itemize}\small
-    \item[$\rightarrow$] Trades $\sim$9 pts accuracy for \textbf{Severe Recall $\times 4$}, F1 $\times 2.3$.
-\end{itemize}
 \end{frame}
 
 \begin{frame}
@@ -295,7 +288,7 @@ Mean AUPRC           & 0.530 & 0.498 & 0.513 & \bst{0.533} \\
 \renewcommand{\arraystretch}{1.15}
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Metric} & \textbf{SpineNetV2} & \textbf{CBAM} & \textbf{Multimodal} & \textbf{Hybrid} \\
+\textbf{Metric} & \textbf{SpineNetV2} & \textbf{CBAM-only} & \textbf{Multimodal-only} & \textbf{Hybrid (Ours)} \\
 \midrule
 Mean Accuracy (\%) & \bst{80.2} & 79.3 & 76.1 & 78.3 \\
 Mean F1 (macro)    & 0.646 & 0.619 & 0.613 & \bst{0.653} \\
@@ -305,9 +298,11 @@ Mean AUPRC         & \bst{0.633} & 0.580 & 0.544 & 0.611 \\
 \end{tabular}
 \end{table}
 \begin{itemize}\small
-    \item[--] Hybrid $\approx$ SpineNetV2 (\textbf{parity}, $p{=}0.57$); SpineNetV2 leads on AUPRC.
-    \item[$\rightarrow$] CBAM \textbf{drops} below SpineNetV2 on transfer; Hybrid \textbf{recovers} ($+0.034$) $\Rightarrow$ frozen branch = \textbf{regularizer}.
-    \item[--] {\footnotesize Exploratory: 3 seeds, $p{=}0.011$. Not a powered test.}
+    \item[--] Hybrid and SpineNetV2 are at \textbf{parity}. We do not claim to surpass it.
+    \item[--] CBAM alone \textbf{falls below} plain SpineNetV2 on transfer: 0.619 against 0.646.
+    \item[--] The hybrid \textbf{recovers} to 0.653, above CBAM by $+0.034$.
+    \item[$\Rightarrow$] The frozen branch acts as a \textbf{regularizer} on transfer.
+    \item[--] {\footnotesize Three seeds, so the $p$-values are exploratory, not a powered test.}
 \end{itemize}
 \end{frame}
 
@@ -323,7 +318,11 @@ Mean AUPRC         & \bst{0.633} & 0.580 & 0.544 & 0.611 \\
 \end{itemize}
 \vspace{6pt}
 \begin{block}{Future work}
-Explicit alignment loss $\cdot$ native-3D medical VLM $\cdot$ axial-T2 fusion.
+\begin{itemize}\small
+    \item[--] An explicit image-text alignment loss.
+    \item[--] A native 3D medical vision-language backbone.
+    \item[--] Axial T2 alongside sagittal, for the foraminal conditions.
+\end{itemize}
 \end{block}
 \vspace{4pt}
 {\footnotesize Clinical use: second-reader assistant (Severe recall still below screening bar).}
@@ -358,7 +357,7 @@ Explicit alignment loss $\cdot$ native-3D medical VLM $\cdot$ axial-T2 fusion.
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Metric} & \textbf{SpineNetV2} & \textbf{CBAM} & \textbf{Multimodal} & \textbf{Hybrid} \\
+\textbf{Metric} & \textbf{SpineNetV2} & \textbf{CBAM-only} & \textbf{Multimodal-only} & \textbf{Hybrid (Ours)} \\
 \midrule
 Mean Precision  & 0.493 & 0.499 & 0.508 & \bst{0.526} \\
 Severe AUPRC    & 0.284 & 0.278 & 0.275 & \bst{0.333} \\
