@@ -110,9 +110,15 @@ Rules for delivery: short sentences, slow, pause at every `/`. Say numbers slowl
 
 > We use two datasets.
 >
-> RSNA 2024 is for training / and for in-domain testing. / Sagittal T2 and STIR. / Three conditions, / three severity levels. / About nineteen hundred discs for validation.
+> RSNA 2024 is for training / and for in-domain testing. / Sagittal T2 and STIR.
 >
-> SPIDER is a different dataset, / from Dutch hospitals. / Eight disease labels. / We never train on it. / We only use it to test transfer.
+> RSNA has five conditions. / We use the three / that can be read on sagittal images: / spinal canal stenosis, / and left and right foraminal narrowing. / Each one is graded / into three severity levels. / The other two need axial images, / so we leave them out.
+>
+> About nineteen hundred discs for validation.
+>
+> SPIDER is a different dataset, / from Dutch hospitals. / Eight disease labels, / a different label set from RSNA.
+>
+> We use SPIDER in two ways. / First zero-shot: / no SPIDER image and no SPIDER label / is seen during RSNA training, / and nothing is retrained. / Then supervised transfer, / where we do train on SPIDER, / to compare the four models on a new dataset.
 >
 > On the right / you can see the SPIDER labels are skewed too.
 >
@@ -184,7 +190,7 @@ Rules for delivery: short sentences, slow, pause at every `/`. Say numbers slowl
 >
 > So the transfer works / when the new label is close / to what we trained on. / Not for everything.
 >
-> The lower panel shows this directly. / Green bars are where we win. / Red bars are where we lose.
+> The chart shows all eight labels. / Blue is ours, / grey is BiomedCLIP off the shelf. / The shaded group on the left / is the disc-morphology group, / where we are clearly ahead.
 
 ---
 
