@@ -88,8 +88,17 @@
      {\includegraphics[width=36mm,height=65mm]{mri_sagittal_panel.png}};
 \node[anchor=north west, text=ink70, font=\cond\fontsize{9}{11.5}\selectfont]
      at (16,81) {Sagittal T2, 5 IVD levels (L1-L2 to L5-S1)};
-\node[anchor=north west, text=ink70, font=\cond\fontsize{9}{11.5}\selectfont]
-     at (16,77) {Severe is under 5\% of samples};
+
+%% ------------------------------------------------------------- attention map
+% Figure 5 of the paper, split into its two panels so the labels can be set in
+% this page's own type rather than baked into the image. It sits under the
+% attention branch because that is what produces it.
+\node[anchor=south west, inner sep=0] at (72,75)
+     {\includegraphics[width=28mm]{gradcam_nocbam.png}};
+\node[anchor=south west, inner sep=0] at (103,75)
+     {\includegraphics[width=28mm]{gradcam_cbam.png}};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11.5}\selectfont, align=left]
+     at (136,83) {Grad-CAM on a Severe canal case:\\without CBAM (left), with CBAM (right)};
 
 %% ------------------------------------------------------------- pipeline
 \node[box, minimum width=54mm] (bxA) at (99,128) {3D ResNet-34 + CBAM\\[2pt]
@@ -164,25 +173,12 @@
 \draw[rule, line width=0.2mm] (16,72) -- (304,72);
 
 %% ------------------------------------------------------------- the result
-% Both halves were a pale bar on a pale track, which is why the band looked
-% washed out, and both used the same idiom for two unlike quantities. The left
-% is now a unit chart: one hundred squares, four of them Severe. Rarity is
-% legible as four red cells in a field of grey in a way a 3.8 mm sliver at the
-% end of a bar never was, and it stops competing with the bar chart beside it.
+% The severity distribution is Figure 2 of the paper. It states the problem, so
+% it belongs at the start of the reading path, not at the end.
 \node[anchor=base west, font=\fontsize{13}{16}\selectfont]
-     at (16,66) {Attention lands on the narrowed canal.};
-% Figure 5 of the paper, split into its two panels so the labels can be set in
-% this page's own type rather than baked into the image.
-\node[anchor=south west, inner sep=0] at (16,40)
-     {\includegraphics[width=45mm]{gradcam_nocbam.png}};
-\node[anchor=south west, inner sep=0] at (65,40)
-     {\includegraphics[width=45mm]{gradcam_cbam.png}};
-\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (16,35)
-     {without CBAM};
-\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (65,35)
-     {with CBAM};
-\node[anchor=base west, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont] at (16,30)
-     {Grad-CAM on a Severe spinal canal case};
+     at (16,66) {Severe stays under 5\% in all three conditions.};
+\node[anchor=south west, inner sep=0] at (16,30)
+     {\includegraphics[width=94mm]{rsna_dist_compact.png}};
 
 \draw[rule, line width=0.2mm] (126,30) -- (126,66);
 
@@ -193,32 +189,32 @@
 \node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont]
      at (152,66) {Severe class, RSNA 2024 validation, 3 seeds};
 
-\foreach \x in {179.5,207,234.5,262} \draw[grid, line width=0.2mm] (\x,34) -- (\x,59);
+\foreach \x in {172,192,212,232} \draw[grid, line width=0.2mm] (\x,34) -- (\x,59);
 \draw[rule, line width=0.3mm] (152,34) -- (152,59);
 
-\fill[bar2]   (152,48) rectangle ++(13.5,7);
-\fill[signal] (152,37) rectangle ++(53.5,7);
+\fill[bar2]   (152,48) rectangle ++(9.8,7);
+\fill[signal] (152,37) rectangle ++(38.9,7);
 
-\node[anchor=base east, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (148,50.5) {cross-entropy};
+\node[anchor=base east, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (148,50.5) {SpineNetV2};
 \node[anchor=base east, text=signal, font=\cond\fontsize{9}{11}\selectfont] at (148,39.5) {hybrid (ours)};
-\node[anchor=base west, text=ink70, font=\fontsize{10}{12}\selectfont] at (168,50.5) {12.3\%};
-\node[anchor=base west, text=signal, font=\fontsize{15}{17}\selectfont] at (209,39) {48.6\%};
+\node[anchor=base west, text=ink70, font=\fontsize{10}{12}\selectfont] at (165,50.5) {12.3\%};
+\node[anchor=base west, text=signal, font=\fontsize{15}{17}\selectfont] at (195,39) {48.6\%};
 
-\foreach \x/\lab in {152/0,179.5/25,207/50,234.5/75,262/100} {
+\foreach \x/\lab in {152/0,172/25,192/50,212/75,232/100} {
   \node[anchor=base, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont] at (\x,30) {\lab};}
-\node[anchor=base west, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont] at (265,30) {\%};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont] at (235,30) {\%};
 
 % Recall is the headline; these two say what the rest of the Severe column did.
-\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (276,57) {Severe F1};
-\node[anchor=base west, font=\fontsize{10}{12}\selectfont] at (276,50) {0.152\,\arr\,0.356};
-\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (276,41) {Severe AUC};
-\node[anchor=base west, font=\fontsize{10}{12}\selectfont] at (276,34) {0.872\,\arr\,0.899};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (248,57) {Severe F1};
+\node[anchor=base west, font=\fontsize{10}{12}\selectfont] at (248,50) {0.152\,\arr\,0.356};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (248,41) {Severe AUC};
+\node[anchor=base west, font=\fontsize{10}{12}\selectfont] at (248,34) {0.872\,\arr\,0.899};
 
 %% ------------------------------------------------------------- provenance
 \node[anchor=base west, text=ink70, font=\fontsize{8.5}{11}\selectfont]
-     at (16,20) {Grad-CAM is from the paper, one representative Severe case; it is qualitative support, not by itself proof of a mechanism. Grading is per IVD level from one sagittal crop.};
+     at (16,20) {Severity distribution and Grad-CAM are both from the paper; the saliency map is qualitative support, not by itself proof of a mechanism.};
 \node[anchor=base west, text=ink70, font=\fontsize{8.5}{11}\selectfont]
-     at (16,15) {Zero-shot: a single RSNA-trained model, frozen, evaluated on the full SPIDER cohort (1{,}439 IVDs). Imaging from RSNA 2024, non-commercial research licence.};
+     at (16,15) {SpineNetV2 is its grading backbone retrained here, not the published pipeline. Zero-shot: one RSNA-trained model, frozen, on the full SPIDER cohort (1{,}439 IVDs). Imaging from RSNA 2024, non-commercial research licence.};
 
 \end{tikzpicture}
 \end{document}
