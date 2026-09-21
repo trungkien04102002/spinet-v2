@@ -136,14 +136,10 @@
       decoration={brace, amplitude=1.6mm, mirror}] (237,116.5) -- (237,132);
 \node[anchor=base west, text=ink70, font=\fontsize{10}{13}\selectfont] at (241,123.5)
      {spinal canal stenosis};
-\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (208,109)
+\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (204,107)
      {the image is the only per-case input};
 \node[anchor=base west, text=trained, font=\cond\fontsize{9}{11}\selectfont]
-     at (204,100) {edit the phrases, get a new label space, no gradient updates};
-\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont]
-     at (204,92) {Zero-shot macro F1, SPIDER labels unseen in training};
-\node[anchor=base west, font=\fontsize{9.5}{12}\selectfont] at (208,86) {disc bulging \ 0.613};
-\node[anchor=base west, text=ink70, font=\fontsize{9.5}{12}\selectfont] at (254,86) {spondylolisthesis \ 0.028};
+     at (204,98) {edit the phrases, get a new label space, no gradient updates};
 
 \draw[rule, line width=0.2mm] (16,80) -- (304,80);
 
@@ -193,19 +189,21 @@
 
 \node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont]
      at (196,72) {Severe-class recall, RSNA 2024 validation, 3 seeds};
-\foreach \x in {243.5,261,278.5,296} \draw[grid, line width=0.2mm] (\x,44) -- (\x,67);
-\draw[rule, line width=0.3mm] (226,44) -- (226,67);
-\fill[bar2]   (226,58) rectangle ++(8.6,6);
-\fill[signal] (226,48) rectangle ++(34.0,6);
-\node[anchor=base east, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (222,60) {SpineNetV2};
-\node[anchor=base east, text=signal, font=\cond\fontsize{9}{11}\selectfont] at (222,50) {hybrid (ours)};
-\node[anchor=base west, text=ink70, font=\fontsize{10}{12}\selectfont] at (238,60) {12.3\%};
-\node[anchor=base west, text=signal, font=\fontsize{14}{16}\selectfont] at (264,49.5) {48.6\%};
+\foreach \x in {243.5,261,278.5,296} \draw[grid, line width=0.2mm] (\x,46) -- (\x,69);
+\draw[rule, line width=0.3mm] (226,46) -- (226,69);
+\fill[bar2]   (226,60) rectangle ++(8.6,6);
+\fill[signal] (226,50) rectangle ++(34.0,6);
+\node[anchor=base east, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (222,62) {SpineNetV2};
+\node[anchor=base east, text=signal, font=\cond\fontsize{9}{11}\selectfont] at (222,52) {hybrid (ours)};
+\node[anchor=base west, text=ink70, font=\fontsize{10}{12}\selectfont] at (238,62) {12.3\%};
+\node[anchor=base west, text=signal, font=\fontsize{14}{16}\selectfont] at (264,51.5) {48.6\%};
 \foreach \x/\lab in {226/0,243.5/25,261/50,278.5/75,296/100} {
-  \node[anchor=base, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont] at (\x,40) {\lab};}
-\node[anchor=base west, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont] at (298.5,40) {\%};
-\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (196,33)
+  \node[anchor=base, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont] at (\x,42) {\lab};}
+\node[anchor=base west, text=ink70, font=\cond\fontsize{8.5}{10}\selectfont] at (298.5,42) {\%};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (196,35)
      {Severe F1 0.152 to 0.356\quad Severe AUC 0.872 to 0.899};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{9}{11}\selectfont] at (196,29)
+     {Zero-shot on unseen SPIDER labels: disc bulging 0.613, spondylolisthesis 0.028};
 
 %% ------------------------------------------------------------- provenance
 \node[anchor=base west, text=ink70, font=\fontsize{8.5}{11}\selectfont]
