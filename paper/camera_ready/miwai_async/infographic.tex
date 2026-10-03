@@ -42,6 +42,24 @@
 % Build (needs lualatex for system fonts):
 %   lualatex -interaction=nonstopmode infographic.tex
 %   pdftoppm -png -scale-to-x 1920 -scale-to-y 1080 infographic.pdf infographic
+% ---------------------------------------------------------------------------
+% Fifth pass, 2026-10-03: the advisor's eight points.
+%   1 each block now carries a heading set in the page's own type, and the two
+%     halves are named "1 Method" and "2 Results" instead of being implied
+%   2+7 the comparison is no longer one bar pair: the full four-configuration
+%     table from the paper (RSNA Table 3 and SPIDER Table 5) now occupies the
+%     right third of the lower half, which is where the two removed footnotes
+%     and the old recall chart used to sit
+%   3 the two halves are separated by a full-width rule and each is labelled;
+%     the right-hand table carries its heading above it, not beside it
+%   4 the two provenance lines are gone
+%   5+6 the Grad-CAM pair is 48mm instead of 36mm and the scan is 34mm; the
+%     page now carries more picture and less prose
+%   8 the conference wordmark sits top right above a 13pt paper line, where
+%     a 10pt line used to run on alone
+% The headline (12.3 to 48.6) moved into the Results heading, so removing the
+% bar chart does not cost the one number the page exists to show.
+% ---------------------------------------------------------------------------
 \documentclass[12pt]{article}
 \usepackage[paperwidth=320mm,paperheight=180mm,margin=0mm]{geometry}
 \usepackage{fontspec}
@@ -87,149 +105,169 @@
               fill=white, minimum height=18mm, align=center, inner sep=2mm,
               font=\fontsize{11}{13}\selectfont},
   flow/.style={-{Stealth[length=2.2mm,width=1.8mm]}, line width=0.35mm, ink},
-  tflow/.style={-{Stealth[length=2.2mm,width=1.8mm]}, line width=0.45mm, trained}]
+  tflow/.style={-{Stealth[length=2.2mm,width=1.8mm]}, line width=0.45mm, trained},
+  % Block heading: the advisor's first point. Set in the serif at 13pt so it
+  % outranks the 10pt condensed captions without becoming a second title.
+  blk/.style={anchor=base west, text=ink, font=\fontsize{13}{15}\selectfont},
+  cpt/.style={anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont}]
 
 \fill[paper] (0,0) rectangle (320,180);
 
 %% ------------------------------------------------------------- title
-\node[anchor=base west, font=\fontsize{24}{27}\selectfont]
-     at (16,164) {A Two-Branch Hybrid Model for Lumbar Disc Grading};
-\node[anchor=base west, text=ink70, font=\fontsize{10}{12}\selectfont]
-     at (16,155) {Ha Trung Kien and Phan Trong Nhan, Ho Chi Minh City University of Technology, Vietnam};
-\node[anchor=base east, text=ink70, font=\fontsize{10}{12}\selectfont]
-     at (304,155) {MIWAI 2026, paper 122};
-\draw[rule, line width=0.2mm] (16,150) -- (304,150);
+\node[anchor=base west, font=\fontsize{25}{28}\selectfont]
+     at (16,167) {A Two-Branch Hybrid Model for Lumbar Disc Grading};
+\node[anchor=base west, text=ink70, font=\fontsize{11}{13}\selectfont]
+     at (16,158) {Ha Trung Kien and Phan Trong Nhan, Ho Chi Minh City University of Technology, Vietnam};
+% Point 8: the wordmark, and the paper line at 13pt instead of 10pt.
+\node[anchor=north east, inner sep=0] at (304,176)
+     {\includegraphics[width=34mm]{miwai_logo.png}};
+\node[anchor=base east, text=ink, font=\fontsize{13}{15}\selectfont]
+     at (304,158) {MIWAI 2026\quad Paper 122};
+\draw[ink, line width=0.4mm] (16,152) -- (304,152);
 
-%% ============================================ METHOD BAND, y 86 to 146
-% Three blocks: scan 30, pipeline 136, prompts 100, gutters 10.
-\node[anchor=south west, inner sep=0] at (16,90)
-     {\includegraphics[width=30mm,height=54mm]{mri_sagittal_panel.png}};
-\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont]
-     at (16,86) {Sagittal T2, 5 IVD levels};
+%% ===================================================== 1. METHOD, y 80 to 148
+\node[blk] at (16,144) {\textbf{1\quad Method}\, \textcolor{ink70}{\fontsize{13}{15}\selectfont
+      two branches, one fused embedding, and no classifier head}};
 
-\node[box, minimum width=50mm] (bxA) at (97,128) {3D ResNet-34 + CBAM\\[2pt]
-     {\cond\fontsize{10}{12}\selectfont trainable}};
-\node[frz, minimum width=50mm] (bxB) at (97,100) {BiomedCLIP encoder\\[2pt]
-     {\cond\fontsize{10}{12}\selectfont frozen}};
-\node[box, minimum width=38mm, minimum height=13mm] (fus) at (167,114) {concat MLP};
+% The pipeline used to be redrawn here in the page's own idiom. The advisor
+% asked for the real architecture figure from the paper instead, so this is
+% figures/hybrid_arch_generic.pdf verbatim -- the same vector art as Fig. 1 and
+% as slide 6, at 148mm against the paper's 118mm column, so every label in it
+% reads larger here than in print.
+% top-aligned with the architecture figure beside it
+\node[anchor=north west, inner sep=0] at (16,136)
+     {\includegraphics[width=24mm]{mri_sagittal_panel.png}};
+\node[cpt] at (16,88) {Sagittal T2, 5 IVD levels};
 
-\draw[ink, line width=0.35mm] (48,114) -- (58,114);
-\draw[ink, line width=0.35mm] (58,128) -- (58,100);
-\draw[tflow] (58,128) -- (bxA.west);
-\draw[flow]  (58,100) -- (bxB.west);
-\draw[trained, line width=0.45mm] (bxA.east) -- (132,128);
-\draw[ink70, line width=0.35mm] (bxB.east) -- (132,100);
-\draw[trained, line width=0.45mm] (132,128) -- (132,114);
-\draw[ink70, line width=0.35mm] (132,114) -- (132,100);
-\draw[tflow] (132,114) -- (fus.west);
-\draw[tflow] (fus.east) -- (200,114);
-\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont]
-     at (188,116) {cosine sim.};
+% pdfcrop'd to its ink, so the 158mm goes to the drawing and not to the
+% figure's own margins: every label reads about a third larger than in print.
+\node[anchor=north west, inner sep=0] at (46,136)
+     {\includegraphics[width=158mm]{hybrid_arch_crop.pdf}};
 
-%% prompts, centred on the pipeline
+%% prompts and the per-study output
 \node[anchor=base west, font=\fontsize{13}{16}\selectfont]
-     at (204,140) {No classifier head, just text prompts.};
-% The brace listing three grades and a table whose cells are those grades said
-% the same thing twice, so the list goes and the table stays: it shows what the
-% model actually emits, which nothing else on the page did.
-\node[anchor=base west, font=\fontsize{10}{13}\selectfont] at (208,134)
+     at (208,138) {No classifier head, just text prompts.};
+\node[anchor=base west, font=\fontsize{10}{13}\selectfont] at (212,131)
      {``\colorbox{slot}{\strut severe} spinal canal stenosis''};
 \node[anchor=base west, text=trained, font=\cond\fontsize{10}{12}\selectfont]
-     at (204,126) {edit the phrase, get a new label space, no gradient updates};
+     at (208,123) {edit the phrase, get a new label space, no gradient updates};
 
-% Real predictions from the paper's hybrid on one validation study, not a
-% mock-up: study 3885334932, argmax of the model's own probabilities.
-\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont]
-     at (204,118) {What comes out, for one study};
-\foreach \x/\h in {204/level, 228/canal, 254/{left foram.}, 280/{right foram.}}
-  \node[anchor=base west, text=ink70, font=\cond\fontsize{9.5}{11}\selectfont] at (\x,111) {\h};
-\draw[rule, line width=0.2mm] (204,108.5) -- (304,108.5);
+\node[cpt] at (208,115) {What comes out, for one validation study};
+\foreach \x/\h in {208/level, 231/canal, 256/{left foram.}, 281/{right foram.}}
+  \node[anchor=base west, text=ink70, font=\cond\fontsize{9.5}{11}\selectfont] at (\x,108) {\h};
+\draw[rule, line width=0.2mm] (208,105.5) -- (304,105.5);
 
 \foreach \yy/\lv/\ca/\lf/\rf in {%
-    103/{L1-L2}/{Normal/Mild}/{Normal/Mild}/{Normal/Mild},
-    98/{L2-L3}/{Normal/Mild}/{Normal/Mild}/{Normal/Mild},
-    93/{L3-L4}/{Normal/Mild}/{Normal/Mild}/{Normal/Mild},
-    88/{L4-L5}/{Severe}/{Severe}/{Severe},
-    83/{L5-S1}/{Normal/Mild}/{Moderate}/{Moderate}}{
-  \node[anchor=base west, text=ink, font=\fontsize{9.5}{11}\selectfont] at (204,\yy) {\lv};
-  \node[anchor=base west, font=\fontsize{9.5}{11}\selectfont] at (228,\yy) {\ca};
-  \node[anchor=base west, font=\fontsize{9.5}{11}\selectfont] at (254,\yy) {\lf};
-  \node[anchor=base west, font=\fontsize{9.5}{11}\selectfont] at (280,\yy) {\rf};}
-% the Severe row in the page's one accent, as everywhere else
-\foreach \x in {228,254,280}
-  \node[anchor=base west, text=signal, font=\fontsize{9.5}{11}\selectfont] at (\x,88) {Severe};
+    100/{L1-L2}/{Normal/Mild}/{Normal/Mild}/{Normal/Mild},
+    95/{L2-L3}/{Normal/Mild}/{Normal/Mild}/{Normal/Mild},
+    90/{L3-L4}/{Normal/Mild}/{Normal/Mild}/{Normal/Mild},
+    85/{L4-L5}/{Severe}/{Severe}/{Severe},
+    80/{L5-S1}/{Normal/Mild}/{Moderate}/{Moderate}}{
+  \node[anchor=base west, text=ink, font=\fontsize{9.5}{11}\selectfont] at (208,\yy) {\lv};
+  \node[anchor=base west, font=\fontsize{9.5}{11}\selectfont] at (231,\yy) {\ca};
+  \node[anchor=base west, font=\fontsize{9.5}{11}\selectfont] at (256,\yy) {\lf};
+  \node[anchor=base west, font=\fontsize{9.5}{11}\selectfont] at (281,\yy) {\rf};}
+\foreach \x in {231,256,281}
+  \node[anchor=base west, text=signal, font=\fontsize{9.5}{11}\selectfont] at (\x,85) {Severe};
 
-\draw[rule, line width=0.2mm] (16,77) -- (304,77);
+%% ---- the rule that splits the page into its two halves
+\draw[ink, line width=0.4mm] (16,74) -- (304,74);
 
-%% ============================================ EVIDENCE BAND, y 30 to 76
-% Three blocks: distribution 84, Grad-CAM 76, results 108, gutters 10.
-\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont]
-     at (16,72) {Severity distribution, RSNA 2024};
+%% ===================================================== 2. RESULTS, y 7 to 70
+\node[blk] at (16,67) {\textbf{2\quad Results}\, \textcolor{ink70}{\fontsize{13}{15}\selectfont
+      Severe recall}\, \textcolor{ink70}{\fontsize{13}{15}\selectfont 12.3\%}\,\arr\,%
+      \textcolor{signal}{\fontsize{13}{15}\selectfont\textbf{48.6\%}}%
+      \textcolor{ink70}{\fontsize{13}{15}\selectfont , Severe F1 0.152}\,\arr\,%
+      \textcolor{ink70}{\fontsize{13}{15}\selectfont\textbf{0.356}}};
 
-% Three stacked bars, one per condition, each the full 100% over 78mm.
-% They were 84mm until the type grew, at which point the percentage labels
-% ran past x=105 and crossed the divider between this block and the next. Nine grouped bars
-% with nine value labels said the same thing with three times the marks.
-% NB the loop variable must not be called \cond: that is the condensed font
-% family declared in the preamble, and the collision silently wrecks the block.
+%% ---- left: severity distribution
+\node[cpt] at (16,60) {Severity distribution, RSNA 2024};
 \foreach \yy/\condname/\nm/\mo/\sv/\pct in {%
-    62/{spinal canal stenosis}/68.4/5.85/3.74/{4.8},
-    52/{left foraminal narrowing}/60.5/14.35/3.20/{4.1},
-    42/{right foraminal narrowing}/60.8/14.10/3.04/{3.9}}{
+    47/{spinal canal stenosis}/59.0/5.05/3.23/{4.8},
+    37/{left foraminal narrowing}/52.2/12.38/2.76/{4.1},
+    27/{right foraminal narrowing}/52.5/12.17/2.62/{3.9}}{
   \fill[waffle]  (16,\yy) rectangle ++(\nm,6);
   \fill[track2]  (16+\nm,\yy) rectangle ++(\mo,6);
   \fill[signal]  (16+\nm+\mo,\yy) rectangle ++(\sv,6);
-  % Name inside the bar, drawn after the fills or they cover it. A row of
-  % labels above the bars cost a line of height and the first one ran into
-  % the block heading.
   \node[anchor=base west, text=ink, font=\cond\fontsize{10}{12}\selectfont]
        at (18,\yy+1.8) {\condname};
   \node[anchor=base west, text=signal, font=\cond\fontsize{10}{12}\selectfont]
        at (16+\nm+\mo+\sv+2,\yy+1.6) {\pct\%};}
 
-\fill[waffle] (16,32) rectangle ++(3,3);
-\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont] at (20.5,32.4) {Normal/Mild};
-\fill[track2] (46,32) rectangle ++(3,3);
-\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont] at (50.5,32.4) {Moderate};
-\fill[signal] (72,32) rectangle ++(3,3);
-\node[anchor=base west, text=signal, font=\cond\fontsize{10}{12}\selectfont] at (76.5,32.4) {Severe};
+\fill[waffle] (16,19) rectangle ++(3,3);
+\node[cpt] at (20.5,19.4) {Normal/Mild};
+\fill[track2] (44,19) rectangle ++(3,3);
+\node[cpt] at (48.5,19.4) {Moderate};
+\fill[signal] (68,19) rectangle ++(3,3);
+\node[anchor=base west, text=signal, font=\cond\fontsize{10}{12}\selectfont] at (72.5,19.4) {Severe};
 
-\draw[rule, line width=0.2mm] (105,32) -- (105,72);
+% The space under the legend was the one gap left on the page, so it carries
+% the experimental setup rather than nothing.
+\draw[rule, line width=0.2mm] (16,15) -- (88,15);
+\node[anchor=base west, text=ink70, font=\cond\fontsize{9.5}{11}\selectfont] at (16,10.5)
+     {Validation 1,942 IVDs from 395 patients, 3 seeds.};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{9.5}{11}\selectfont] at (16,6)
+     {Both backbones frozen; 66 ms per disc on one RTX 4090.};
 
-\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont]
-     at (110,72) {Grad-CAM, a Severe spinal canal case};
-\node[anchor=south west, inner sep=0] at (110,46)
-     {\includegraphics[width=36mm]{gradcam_nocbam.png}};
-\node[anchor=south west, inner sep=0] at (150,46)
-     {\includegraphics[width=36mm]{gradcam_cbam.png}};
-\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont] at (110,41) {without CBAM};
-\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont] at (150,41) {with CBAM};
+\draw[rule, line width=0.2mm] (94,9) -- (94,63);
 
-\draw[rule, line width=0.2mm] (191,32) -- (191,72);
+%% ---- middle: Grad-CAM. Stacked, 44mm, so the pair reads as one comparison
+%% on one case rather than two unrelated pictures side by side.
+\node[cpt] at (99,60) {Grad-CAM, a Severe spinal canal case};
+\node[anchor=south west, inner sep=0] at (99,33)
+     {\includegraphics[width=44mm]{gradcam_nocbam.png}};
+\node[anchor=south west, inner sep=0] at (99,9)
+     {\includegraphics[width=44mm]{gradcam_cbam.png}};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont] at (146,48) {without CBAM};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{9.5}{11}\selectfont] at (146,43)
+     {heat sits on the};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{9.5}{11}\selectfont] at (146,39)
+     {vertebral body};
+\node[anchor=base west, text=signal, font=\cond\fontsize{10}{12}\selectfont] at (146,24) {with CBAM};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{9.5}{11}\selectfont] at (146,19)
+     {heat moves onto the};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{9.5}{11}\selectfont] at (146,15)
+     {narrowed canal};
 
-\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont]
-     at (196,72) {Severe-class recall, RSNA 2024 validation, 3 seeds};
-\foreach \x in {243.5,261,278.5,296} \draw[grid, line width=0.2mm] (\x,46) -- (\x,69);
-\draw[rule, line width=0.3mm] (226,46) -- (226,69);
-\fill[bar2]   (226,60) rectangle ++(8.6,6);
-\fill[signal] (226,50) rectangle ++(34.0,6);
-\node[anchor=base east, text=ink70, font=\cond\fontsize{10}{12}\selectfont] at (222,62) {SpineNetV2};
-\node[anchor=base east, text=signal, font=\cond\fontsize{10}{12}\selectfont] at (222,52) {hybrid (ours)};
-\node[anchor=base west, text=ink70, font=\fontsize{10}{12}\selectfont] at (238,62) {12.3\%};
-\node[anchor=base west, text=signal, font=\fontsize{14}{16}\selectfont] at (264,51.5) {48.6\%};
-\foreach \x/\lab in {226/0,243.5/25,261/50,278.5/75,296/100} {
-  \node[anchor=base, text=ink70, font=\cond\fontsize{10}{12}\selectfont] at (\x,42) {\lab};}
-\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont] at (298.5,42) {\%};
-\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont] at (196,35)
-     {Severe F1 0.152 to 0.356\quad Severe AUC 0.872 to 0.899};
-\node[anchor=base west, text=ink70, font=\cond\fontsize{10}{12}\selectfont] at (196,29)
-     {Zero-shot on unseen SPIDER labels: disc bulging 0.613, spondylolisthesis 0.028};
+\draw[rule, line width=0.2mm] (186,9) -- (186,63);
 
-%% ------------------------------------------------------------- provenance
-\node[anchor=base west, text=ink70, font=\fontsize{8.5}{11}\selectfont]
-     at (16,21) {Severity distribution and Grad-CAM are both from the paper; the saliency map is qualitative support, not by itself proof of a mechanism.};
-\node[anchor=base west, text=ink70, font=\fontsize{8.5}{11}\selectfont]
-     at (16,15) {SpineNetV2 is its grading backbone retrained here, not the published pipeline. The output table is the model's own prediction on one validation study.};
+%% ---- right: the full comparison, its heading above the table
+\node[cpt] at (191,60) {Every configuration, mean over 3 seeds. Best in each row in bold.};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{9.5}{11}\selectfont] at (191,52) {RSNA 2024};
+\foreach \x/\h in {243/{SpineNetV2}, 263/{CBAM}, 281/{Multim.}, 299/{Hybrid}}
+  \node[anchor=base east, text=ink70, font=\cond\fontsize{9.5}{11}\selectfont] at (\x,52) {\h};
+\draw[rule, line width=0.2mm] (191,49.5) -- (304,49.5);
+
+% Bold marks the best cell in the row; the accent still belongs to the Severe
+% class alone, so only the two Severe rows carry it. Mean Accuracy is the row
+% the hybrid loses, and it is printed exactly like the rows it wins.
+\foreach \yy/\m/\a/\b/\c/\d in {%
+    44.5/{Mean Accuracy \%}/{\textbf{81.0}}/{69.5}/{71.2}/{72.4},
+    39.9/{Mean F1 macro}/{0.420}/{0.477}/{0.482}/{\textbf{0.527}},
+    35.3/{Mean Recall macro}/{0.412}/{0.531}/{0.532}/{\textbf{0.592}}}{
+  \node[anchor=base west, text=ink, font=\fontsize{9.5}{11}\selectfont] at (191,\yy) {\m};
+  \node[anchor=base east, font=\fontsize{9.5}{11}\selectfont] at (243,\yy) {\a};
+  \node[anchor=base east, font=\fontsize{9.5}{11}\selectfont] at (263,\yy) {\b};
+  \node[anchor=base east, font=\fontsize{9.5}{11}\selectfont] at (281,\yy) {\c};
+  \node[anchor=base east, font=\fontsize{9.5}{11}\selectfont] at (299,\yy) {\d};}
+
+\foreach \yy/\m/\a/\b/\c/\d in {%
+    30.7/{Severe Recall}/{0.123}/{0.288}/{0.316}/{\textbf{0.486}},
+    26.1/{Severe F1}/{0.152}/{0.262}/{0.268}/{\textbf{0.356}}}{
+  \node[anchor=base west, text=signal, font=\fontsize{9.5}{11}\selectfont] at (191,\yy) {\m};
+  \node[anchor=base east, font=\fontsize{9.5}{11}\selectfont] at (243,\yy) {\a};
+  \node[anchor=base east, font=\fontsize{9.5}{11}\selectfont] at (263,\yy) {\b};
+  \node[anchor=base east, font=\fontsize{9.5}{11}\selectfont] at (281,\yy) {\c};
+  \node[anchor=base east, text=signal, font=\fontsize{9.5}{11}\selectfont] at (299,\yy) {\d};}
+
+\draw[rule, line width=0.2mm] (191,22.5) -- (304,22.5);
+\node[anchor=base west, text=ink70, font=\cond\fontsize{9.5}{11}\selectfont] at (191,18)
+     {SPIDER, supervised transfer, 8 unseen labels};
+\node[anchor=base west, text=ink, font=\fontsize{9.5}{11}\selectfont] at (191,12.5) {Mean F1 macro};
+\foreach \x/\v in {243/{0.646}, 263/{0.619}, 281/{0.613}, 299/{\textbf{0.653}}}
+  \node[anchor=base east, font=\fontsize{9.5}{11}\selectfont] at (\x,12.5) {\v};
+\node[anchor=base west, text=ink70, font=\cond\fontsize{9.5}{11}\selectfont] at (191,6)
+     {Zero-shot, no SPIDER training: disc bulging F1 0.613, spondylolisthesis 0.028};
 
 \end{tikzpicture}
 \end{document}

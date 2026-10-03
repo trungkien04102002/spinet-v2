@@ -4,7 +4,7 @@
 % Template: Madrid + HCMUT institute (follows thesis-defense deck style)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\documentclass{beamer}
+\documentclass[12pt]{beamer}
 
 \mode<presentation> {
 \usetheme{Madrid}
@@ -14,6 +14,7 @@
 \usepackage[T1]{fontenc}
 \usepackage{graphicx}
 \usepackage{booktabs}
+\usepackage{array}   % ragged-right p-columns, so narrow cells stop stretching words
 \usepackage{multirow}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -59,6 +60,12 @@
 }
 \setbeamertemplate{caption}[numbered]
 
+% Frame titles carry their section number. Only used inside numbered
+% sections -- the title page, Outline and the appendix keep plain titles,
+% where \thesection would print 0 or the last section's number.
+\newcolumntype{R}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcommand{\sframetitle}[1]{\frametitle{\thesection.\ #1}}
+
 %----------------------------------------------------------------------------------------
 %	TITLE PAGE
 %----------------------------------------------------------------------------------------
@@ -89,9 +96,9 @@ Ho Chi Minh City University of Technology (HCMUT), VNU-HCM \\
 \section{Motivation}
 %----------------------------------------------------------------------------------------
 \begin{frame}
-\frametitle{Two open problems in lumbar MRI grading}
+\sframetitle{Two open problems in lumbar MRI grading}
 \begin{columns}[c]
-\column{.42\textwidth}
+\column{.38\textwidth}
 \begin{itemize}
     \item[\textbf{P1}] \textbf{Class imbalance} \\ {\small Severe $<5\%$ $\Rightarrow$ recall near zero}
     \item[]
@@ -99,7 +106,7 @@ Ho Chi Minh City University of Technology (HCMUT), VNU-HCM \\
 \end{itemize}
 \vspace{4pt}
 {\scriptsize Today a radiologist grades each disc by hand, and different readers often disagree on the grade~\cite{nigru2024}.}
-\column{.58\textwidth}
+\column{.62\textwidth}
 \centering
 \includegraphics[width=\linewidth]{abnormality_examples_en.png}\\[2pt]
 {\scriptsize Sagittal T2/STIR crops, RSNA 2024~\cite{kaggle2024}: the Severe cases we keep missing.}
@@ -107,7 +114,7 @@ Ho Chi Minh City University of Technology (HCMUT), VNU-HCM \\
 \end{frame}
 
 \begin{frame}
-\frametitle{Contributions}
+\sframetitle{Contributions}
 \begin{enumerate}
     \item Attention helps Severe \textbf{in-domain} but hurts \textbf{transfer}; frozen prior recovers it to parity.
     \item Complementary \textbf{two-branch} design (attention + biomedical VLM).
@@ -117,16 +124,52 @@ Ho Chi Minh City University of Technology (HCMUT), VNU-HCM \\
 \end{frame}
 
 %----------------------------------------------------------------------------------------
+\section{Related Work}
+%----------------------------------------------------------------------------------------
+\begin{frame}
+\sframetitle{Related work}
+\begin{table}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}R{1.9cm} R{2.5cm} R{2.9cm} R{2.6cm}@{}}
+\toprule
+\textbf{Line of work} & \textbf{Representative} & \textbf{What we reuse} & \textbf{What is missing} \\
+\midrule
+Disc grading CNNs
+  & SpineNet~\cite{jamaludin2017}, SpineNetV2~\cite{windsor2022}
+  & the 3D ResNet-34 backbone, weights unchanged
+  & sagittal-only foraminal ceiling~\cite{mcsweeney2023} \\
+Attention for imbalance
+  & CBAM~\cite{woo2018cbam}, lumbar stenosis~\cite{lin2024cbam}
+  & channel-spatial reweighting, in full 3D
+  & helps in-domain, \textbf{hurts transfer} \\
+Biomedical VLM
+  & BiomedCLIP~\cite{zhang2023biomedclip}, RadCLIP~\cite{lu2024radclip}
+  & the frozen embedding, read by cosine
+  & not volumetric; fine-tuned \\
+\bottomrule
+\end{tabular}
+\end{table}
+\vspace{4pt}
+\begin{itemize}
+    \item[$\Rightarrow$] All three train a \textbf{fixed head on one schema} and
+          \textbf{cannot take a new label set as input}. That is the gap.
+\end{itemize}
+\end{frame}
+
+%----------------------------------------------------------------------------------------
 \section{Proposed Method}
 %----------------------------------------------------------------------------------------
 \begin{frame}
-\frametitle{Two-branch hybrid architecture}
+\sframetitle{Two-branch hybrid architecture}
 \begin{figure}
     \centering
     \includegraphics[width=\textwidth]{hybrid_arch_generic.pdf}
 \end{figure}
 \vspace{2pt}
-\begin{itemize}\small
+\begin{itemize}
     \item[--] \textbf{Attention:} CBAM~\cite{woo2018cbam} 3D ResNet-34~\cite{windsor2022}: localizes the lesion.
     \item[--] \textbf{Multimodal:} frozen BiomedCLIP~\cite{zhang2023biomedclip}: text-aligned prior.
     \item[--] Fusion MLP $\to$ cosine similarity against the prompts.
@@ -134,16 +177,16 @@ Ho Chi Minh City University of Technology (HCMUT), VNU-HCM \\
 \end{frame}
 
 \begin{frame}
-\frametitle{Handling class imbalance}
+\sframetitle{Handling class imbalance}
 \begin{columns}[c]
-\column{.52\textwidth}
-\begin{itemize}\small
-    \item[\textbf{1.}] \textbf{Focal loss}~\cite{lin2017focal}: let the hard cases drive the loss, not the many easy Normal ones.
-    \item[\textbf{2.}] \textbf{Square-root class weights}: raise the rare class's gradient, without the instability of full inverse weighting.
-    \item[\textbf{3.}] \textbf{Minority oversampling}~\cite{buda2018imbalance}: show Severe volumes more often in each epoch.
-    \item[\textbf{4.}] \textbf{Augmentation}~\cite{shorten2019augmentation}: get more variation out of the few Severe volumes there are.
+\column{.46\textwidth}
+\begin{itemize}
+    \item[\textbf{1.}] \textbf{Focal loss}~\cite{lin2017focal}: hard cases drive the loss, not the easy Normal ones.
+    \item[\textbf{2.}] \textbf{Square-root class weights}: lift the rare class's gradient without the instability of full inverse weighting.
+    \item[\textbf{3.}] \textbf{Minority oversampling}~\cite{buda2018imbalance}: show Severe volumes more often.
+    \item[\textbf{4.}] \textbf{Augmentation}~\cite{shorten2019augmentation}: more variation from the few Severe volumes.
 \end{itemize}
-\column{.48\textwidth}
+\column{.54\textwidth}
 \centering
 \includegraphics[width=\linewidth]{rsna_class_distribution_en.png}\\[2pt]
 {\scriptsize RSNA 2024: Severe is the smallest class in all three conditions.}
@@ -151,13 +194,13 @@ Ho Chi Minh City University of Technology (HCMUT), VNU-HCM \\
 \end{frame}
 
 \begin{frame}
-\frametitle{Zero-shot label extension by prompts}
+\sframetitle{Zero-shot label extension by prompts}
 Same encoder $\Phi$, only the head changes ($h = c \circ \Phi$):
 \begin{equation*}
 \hat{y} = \arg\max_{k}\; s\cdot \hat{f}_{\text{img}}^{\top}\, t_k ,
 \qquad t_k = \psi(q_k)/\|\psi(q_k)\|_2 .
 \end{equation*}
-\begin{itemize}\small
+\begin{itemize}
     \item[--] Every class is written as a phrase $q_k$; the frozen text encoder $\psi$
           turns it into an anchor $t_k$ (e.g.\ \textit{``severe spinal canal stenosis''}).
     \item[--] Anchors are encoded \textbf{once} and reused. The volume is the only
@@ -171,9 +214,9 @@ Same encoder $\Phi$, only the head changes ($h = c \circ \Phi$):
 \section{Experiments}
 %----------------------------------------------------------------------------------------
 \begin{frame}
-\frametitle{Experimental setup: data}
+\sframetitle{Experimental setup: data}
 \begin{columns}[c]
-\column{.5\textwidth}
+\column{.48\textwidth}
 {\footnotesize
 \begin{tabular}{@{}ll@{}}
 \toprule
@@ -193,8 +236,8 @@ Role       & held-out transfer only \\
 \end{tabular}}
 \vspace{5pt}
 
-{\scriptsize One volumetric crop per disc, L1--L2 to L5--S1; intensities clipped to the 1st--99th percentile and rescaled to $[0,1]$.}
-\column{.5\textwidth}
+{\scriptsize One volumetric crop per disc, L1--L2 to L5--S1; intensities clipped to the 1st--99th percentile, rescaled to $[0,1]$.}
+\column{.52\textwidth}
 \centering
 \includegraphics[width=\linewidth]{spider_class_distribution_en.png}\\[2pt]
 {\scriptsize SPIDER: several labels are heavily skewed too.}
@@ -202,7 +245,7 @@ Role       & held-out transfer only \\
 \end{frame}
 
 \begin{frame}
-\frametitle{Experimental setup: training and protocol}
+\sframetitle{Experimental setup: training and protocol}
 \begin{table}
 \centering
 \footnotesize
@@ -221,7 +264,7 @@ Hardware & 1$\times$ RTX 4090 ($\approx$16\,GB peak) \\
 \end{tabular}
 \end{table}
 \vspace{2pt}
-\begin{itemize}\small
+\begin{itemize}
     \item[--] 4 configs: SpineNetV2~\cite{windsor2022} / CBAM / Multimodal / \textbf{Hybrid}.
     \item[--] Macro Recall, Precision, F1, AUC (OvR), AUPRC, plus per-class Severe.
     \item[--] 3 seeds $\{42, 123, 456\}$; we report mean $\pm$ std.
@@ -229,7 +272,7 @@ Hardware & 1$\times$ RTX 4090 ($\approx$16\,GB peak) \\
 \end{frame}
 
 \begin{frame}
-\frametitle{In-domain results \& ablation on RSNA 2024}
+\sframetitle{In-domain results \& ablation on RSNA 2024}
 \begin{table}
 \centering
 \scriptsize
@@ -255,25 +298,25 @@ Mean AUPRC           & 0.530 & 0.498 & 0.513 & \bst{0.533} \\
 \end{frame}
 
 \begin{frame}
-\frametitle{Putting the Severe metrics in context}
+\sframetitle{Putting the Severe metrics in context}
 \begin{columns}[c]
-\column{.5\textwidth}
+\column{.40\textwidth}
 \begin{itemize}
     \item[--] Severe prevalence $\approx$\textbf{0.05}.
     \item[--] Severe \textbf{AUC 0.899}, \textbf{AUPRC 0.333} = \textbf{6.7$\times$} chance.
-    \item[--] Grad-CAM~\cite{selvaraju2017gradcam}: diffuse without attention; with CBAM it concentrates on the narrowed canal.
+    \item[--] Grad-CAM~\cite{selvaraju2017gradcam}: with CBAM the response moves onto the narrowed canal.
 \end{itemize}
-\column{.5\textwidth}
+\column{.60\textwidth}
 \centering
 \includegraphics[width=\linewidth]{grad_cam_nocbam_vs_cbam.png}\\[2pt]
-{\scriptsize Severe canal case: without vs.\ with CBAM.}
+{\scriptsize Grad-CAM \textbf{(qualitative)}, one Severe canal case: without vs.\ with CBAM.}
 \end{columns}
 \end{frame}
 
 \begin{frame}
-\frametitle{Cross-dataset zero-shot transfer to SPIDER}
+\sframetitle{Cross-dataset zero-shot transfer to SPIDER}
 \centering
-\includegraphics[width=.95\textwidth]{spider_zeroshot_en.png}
+\includegraphics[width=\textwidth]{spider_zeroshot_en.png}
 \vspace{1pt}
 \begin{itemize}\scriptsize
     \item[--] 8 \textbf{unseen} labels, no SPIDER training: only new prompts. Wins on disc morphology (\bst{0.587} vs.\ 0.433), loses on distant labels (all-8: \bst{0.394} off the shelf vs.\ 0.362 ours).
@@ -282,10 +325,11 @@ Mean AUPRC           & 0.530 & 0.498 & 0.513 & \bst{0.533} \\
 \end{frame}
 
 \begin{frame}
-\frametitle{Supervised transfer on SPIDER (8 labels)}
+\sframetitle{Supervised transfer on SPIDER (8 labels)}
 \begin{table}
 \centering
-\footnotesize
+\scriptsize
+\setlength{\tabcolsep}{3pt}
 \renewcommand{\arraystretch}{1.15}
 \begin{tabular}{lcccc}
 \toprule
@@ -298,7 +342,7 @@ Mean AUPRC         & \bst{0.633} & 0.580 & 0.544 & 0.611 \\
 \bottomrule
 \end{tabular}
 \end{table}
-\begin{itemize}\small
+\begin{itemize}
     \item[--] Hybrid and SpineNetV2 are at \textbf{parity}. We do not claim to surpass it.
     \item[--] CBAM alone \textbf{falls below} plain SpineNetV2 on transfer: 0.619 against 0.646.
     \item[--] The hybrid \textbf{recovers} to 0.653, above CBAM by $+0.034$.
@@ -311,7 +355,7 @@ Mean AUPRC         & \bst{0.633} & 0.580 & 0.544 & 0.611 \\
 \section{Conclusion}
 %----------------------------------------------------------------------------------------
 \begin{frame}
-\frametitle{Take-aways}
+\sframetitle{Take-aways}
 \begin{itemize}
     \item[\textbf{1.}] Recovers Severe class: Recall $\times 4$, F1 $\times 2.3$, AUC 0.899.
     \item[\textbf{2.}] \textbf{Zero-shot} to 8 unseen labels, no retraining.
@@ -330,6 +374,12 @@ Mean AUPRC         & \bst{0.633} & 0.580 & 0.544 & 0.611 \\
 \end{frame}
 
 %------------------------------------------------
+\begin{frame}[allowframebreaks]
+\frametitle{References}
+\printbibliography[heading=none]
+\end{frame}
+
+%------------------------------------------------
 \begin{frame}
 \centering
 \vfill
@@ -338,12 +388,6 @@ Mean AUPRC         & \bst{0.633} & 0.580 & 0.544 & 0.611 \\
 \vfill
 {\footnotesize Trung Kien Ha \, $\cdot$ \, Trong Nhan Phan \quad$\cdot$\quad HCMUT, VNU-HCM}
 \vfill
-\end{frame}
-
-%------------------------------------------------
-\begin{frame}[allowframebreaks]
-\frametitle{References}
-\printbibliography[heading=none]
 \end{frame}
 
 %------------------------------------------------

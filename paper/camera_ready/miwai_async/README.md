@@ -1,69 +1,69 @@
-# MIWAI 2026, paper 122: files for the asynchronous session
+# MIWAI 2026, paper 122 — asynchronous session bundle
 
-The conference is in Halifax, Nova Scotia, 10 to 12 October 2026.
+Ha Trung Kien and Phan Trong Nhan, HCMUT, VNU-HCM.
+Paper: *A Two-Branch Hybrid Model for Imbalanced Lumbar Disc Grading and Zero-Shot Label Extension.*
 
-The organizers wrote that every paper has to join the asynchronous session,
-and that it carries "an abstract, infographic and video for each paper".
+## What to upload
 
-| Required | File | Status |
-| --- | --- | --- |
-| Abstract | `abstract.txt` | Done. 247 words, copied from the accepted paper. |
-| Infographic | `infographic.png` | Draft. 1920 x 1080. |
-| Video | | Not recorded yet. |
+Portal <https://miwai26.cs-smu.ca/prepost/>, site password `2026MIWAIsaintmarys`.
+The form asks for the paper title (pick it from the list), Paper ID `122`, and **the exact
+address the invitation arrived at** — check the "to" line of the message, it is validated
+against the organisers' records.
 
-The slides and the script are not submitted on their own, but the video will
-be recorded from them.
+Deadline **7 October 23:59 AST**, which is about **08:00 on 8 October Vietnam time**. Upload
+early: the organisers warn that files over 50 MB are slow.
 
-| File | What it is |
-| --- | --- |
-| `presentation_miwai.pdf` | The deck, 23 pages. 14 to present, 3 of references, 5 kept back for questions. |
-| `TALK_SCRIPT.md` | What to say on each slide, with timings. Runs 13 to 14 minutes in a 15 minute slot. Likely questions are at the end. |
-| `infographic.tex` | Source of the infographic. Build commands are in its header. |
+| Upload slot | File | Limit | Status |
+|---|---|---|---|
+| Abstract | `MIWAI2026_Paper122_HaTrungKien_Abstract.txt` | txt UTF-8, 2,500 chars | 2,015 chars |
+| Infographic | `MIWAI2026_Paper122_HaTrungKien_Infographic.pdf` | PDF or PNG, 30 MB | 0.53 MB, 1 page |
+| Slides | `MIWAI2026_Paper122_HaTrungKien_Slides.pdf` | PDF, 30 MB | 1.89 MB, 25 pages |
+| Video | `MIWAI2026_Paper122_HaTrungKien_Video.mp4` | MP4, 300 MB, 20 min | **not recorded yet** |
 
-## Where the numbers come from
+`..._Infographic.png` (1920x1080) is a fallback if the portal refuses PDF. Upload the PDF first.
 
-Every figure is traced to the accepted paper.
+## Recording the video
 
-| On the page | In the paper |
-| --- | --- |
-| Severe recall 12.3% to 48.6% | Abstract, and Table 1, mean over seeds 42, 123, 456 |
-| Severe F1 0.152 to 0.356 | Abstract, same table |
-| about four times higher | Section 1, "about 4x" |
-| disc morphology F1 0.587 against 0.433 | Table 4, row "Mean (disc-morphology)" |
-| 81% / 15% / 4% | Mean of the per-condition values behind Figure 2, which are 4.8, 4.1 and 3.9 for Severe |
+`TALK_SCRIPT.md` is the script: 15 sections, one per spoken slide, each with its own time
+budget, summing to about 13 minutes. The organisers accept a plain voice-over on the slides,
+and do not require the author's own voice or any webcam footage.
 
-Nothing from the thesis experiments appears here.
+Talk over pages 1 to 15 only. Pages 16 to 19 are references, 20 is the thank-you slide, and
+21 to 25 are backup slides held for the live question period on 10 October. The `# Questions`
+section of the script is for that live session, not for the video.
 
-**One choice you should check.** My first draft headlined the zero-shot result
-as mean F1 0.362 over all eight labels. That is the wrong number to show. The
-paper's own Table 4 gives off-the-shelf BiomedCLIP 0.394 on the same all-eight
-mean, so it beats us there, and Section 4.4 says so in plain words. Putting
-0.362 on the page as an achievement would have contradicted our own paper.
+If the recording comes out over 300 MB:
 
-The page now shows the disc morphology mean instead, 0.587 against 0.433,
-which is the comparison the paper does claim, and it names the three labels it
-covers. If you would rather the infographic carry the all-eight number with
-the loss stated honestly, or carry no zero-shot number at all, say so and I
-will change it.
+    ffmpeg -i raw.mov -c:v libx264 -preset slow -crf 23 -vf scale=1920:-2 \
+           -c:a aac -b:a 128k -movflags +faststart \
+           MIWAI2026_Paper122_HaTrungKien_Video.mp4
 
-## Three things I would like your opinion on
+## Rebuilding
 
-1. The page has about 100 words. Publishers who state a limit for graphical
-   abstracts say 50. That limit is written for a thumbnail in a printed
-   contents page, and this one is read at full size in a browser, so I went
-   over it. It is the first thing to cut if the page looks crowded.
+The infographic is built here; the slides are built one directory up and copied in.
 
-2. I did not reuse Figure 1 from the paper. The guidance I found says a
-   methods figure makes a poor infographic, because it is drawn to be read
-   slowly next to the text. So the architecture here is two boxes and a
-   fusion step.
+    lualatex -interaction=nonstopmode infographic.tex
+    pdftoppm -png -scale-to-x 1920 -scale-to-y 1080 infographic.pdf ig
 
-3. The colours are the Okabe-Ito set, which stays readable with red-green
-   colour blindness. Nothing on the page depends on colour alone.
+Both commands write `infographic.pdf` / `ig-1.png`, so **rename the output** back to
+`MIWAI2026_Paper122_HaTrungKien_Infographic.{pdf,png}` afterwards, or the renamed copy in this
+folder goes stale while the build output sits beside it unnoticed.
 
-## Still unknown
+Build inputs, not uploaded: `infographic.tex`, `mri_sagittal_panel.png`, `gradcam_nocbam.png`,
+`gradcam_cbam.png`, `rsna_dist_compact.png`, `miwai_logo.png`.
 
-The organizers have not published a size, format or word limit for the
-infographic, and have not given a deadline. I picked 1920 x 1080 so the
-slides, the infographic and the video share one aspect ratio. If they publish
-a specification later, re-exporting from the .tex file is quick.
+The architecture drawing is the paper's own Fig. 1, used verbatim so the infographic, the slides
+and the paper all show the same figure. PDFs are gitignored, so the two copies here are derived
+and have to be remade after a fresh clone:
+
+    cp ../figures/hybrid_arch_generic.pdf .
+    pdfcrop --margins 2 hybrid_arch_generic.pdf hybrid_arch_crop.pdf
+
+`pdfcrop` trims the figure's own margins, which is what lets it sit at 158mm here against the
+118mm it gets in the paper.
+
+## Live presentation
+
+Saturday 10 October, 10:00 Halifax (UTC-3) — **20:00 Vietnam time**. Online, Track 1
+Session 1, about 20 minutes per paper. The organisers send a connection-test link roughly a
+week beforehand and the session chair confirms the running order.
