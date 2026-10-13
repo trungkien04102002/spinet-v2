@@ -1,35 +1,126 @@
 \chapter{PHẦN MỀM HỖ TRỢ BÁC SĨ GÁN NHÃN}
 \label{chap:software}
 
-% KHUNG CHƯƠNG -- nội dung sẽ được điền ở bước kế tiếp từ tài liệu của ứng dụng
-% (~/spine-labeling-app: README.md, HUONG_DAN.md, docs/UI_SESSION_CONTEXT.md).
+Chương~\ref{chap:software} trình bày phần mềm được xây dựng để đưa mô hình ở Chương 4 vào một quy trình bác sĩ dùng được. Mô hình chỉ trả về con số; muốn hữu ích thì bác sĩ phải xem được kết quả nằm ở đâu trên ảnh, sửa được chỗ máy chấm sai, và những chỗ sửa đó phải được lưu lại để quay ngược vào mô hình. Phần mềm là nơi ba việc đó gặp nhau.
 
 \section{Mục tiêu và yêu cầu}
 \label{sec:sw_requirements}
+
+Phần mềm được xây dựng nhằm hỗ trợ bác sĩ trong quá trình đọc phim MRI cột sống thắt lưng, với mục tiêu rút ngắn thời gian đọc phim chứ không thay thế vai trò chẩn đoán của bác sĩ. Từ mục tiêu đó, ba yêu cầu sau được đặt ra:
+
+\begin{itemize}
+    \item \textbf{Trực quan hóa kết quả trên ảnh.} Kết quả phân vùng phải được tô màu trực tiếp trên ảnh MRI, kèm chú giải từng cấu trúc giải phẫu, để bác sĩ đối chiếu được bằng mắt thay vì chỉ đọc một bảng điểm tách rời khỏi ảnh.
+    \item \textbf{Cho phép chỉnh sửa toàn bộ nhãn.} Mọi nhãn do mô hình sinh ra đều phải chỉnh sửa được, vì bác sĩ là người đưa ra kết luận cuối cùng.
+    \item \textbf{Lưu lại các chỉnh sửa của bác sĩ.} Mỗi lần bác sĩ sửa một nhãn, hệ thống phải ghi lại cả giá trị mô hình dự đoán lẫn giá trị bác sĩ chỉnh, kèm thông tin ca chụp và tầng đĩa đệm, để dữ liệu này dùng được cho các nghiên cứu tiếp theo.
+\end{itemize}
 
 \section{Kiến trúc hệ thống}
 \label{sec:sw_architecture}
 
 \subsection{Tổng quan các thành phần}
 
+Hệ thống chia làm hai phần chạy độc lập. Phần máy chủ viết bằng FastAPI, giữ cơ sở dữ liệu và gọi hai mô hình: TotalSpineSeg để phân vùng và mô-đun grading Hybrid để chấm nhãn. Ảnh MRI và mặt nạ phân vùng lưu trên ổ đĩa, còn thông tin ca chụp và nhãn lưu trong cơ sở dữ liệu. Phần giao diện viết bằng React kết hợp thư viện Cornerstone3D, vốn là thư viện chuyên dùng để hiển thị ảnh y tế trên trình duyệt.
+
+TotalSpineSeg được cài trong một môi trường Python riêng và gọi qua dòng lệnh, không nhập trực tiếp vào mã nguồn máy chủ. Lý do là hai mô hình đòi hỏi những phiên bản thư viện khác nhau; tách môi trường thì nâng cấp mô hình này không làm hỏng mô hình kia. Hình~\ref{fig:sw_architecture} mô tả các thành phần và quan hệ giữa chúng.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        comp/.style={rectangle, draw=blue, fill=blue!8, rounded corners, minimum width=3.3cm,
+                     minimum height=1.0cm, align=center, thick, font=\small},
+        store/.style={rectangle, draw=green!50!black, fill=green!10, rounded corners,
+                      minimum width=3.3cm, minimum height=1.0cm, align=center, thick, font=\small},
+        model/.style={rectangle, draw=orange!80!black, fill=orange!10, rounded corners,
+                      minimum width=3.3cm, minimum height=1.0cm, align=center, thick, font=\small},
+        ar/.style={->, thick, blue!70!black}
+    ]
+        \node[comp]  (fe)   at (0,3.3)     {\textbf{Giao diện}\\\scriptsize React + Cornerstone3D};
+        \node[comp]  (be)   at (0,1.2)     {\textbf{Máy chủ}\\\scriptsize FastAPI};
+        \node[model] (seg)  at (-4.3,-1.1) {\textbf{Phân vùng}\\\scriptsize TotalSpineSeg};
+        \node[model] (grd)  at (0,-1.1)    {\textbf{Chấm nhãn}\\\scriptsize Hybrid};
+        \node[store] (db)   at (4.8,1.2)   {\textbf{Cơ sở dữ liệu}\\\scriptsize ca chụp, nhãn,\\\scriptsize nhật ký hiệu chỉnh};
+        \node[store] (fs)   at (4.8,-1.1)  {\textbf{Ổ đĩa}\\\scriptsize ảnh MRI, mặt nạ};
+
+        \draw[ar] (fe) -- node[right,font=\scriptsize]{HTTP} (be);
+        \draw[ar] (be) -- (seg);
+        \draw[ar] (be) -- (grd);
+        \draw[ar] (be) -- (db);
+        \draw[ar] (be) -- (fs);
+        \draw[ar] (seg) -- (grd);
+    \end{tikzpicture}
+    \caption{Các thành phần của phần mềm. Máy chủ điều phối hai mô hình chạy trong hai môi trường tách biệt; mặt nạ do phân vùng sinh ra được dùng để cắt khối ảnh cho mô-đun chấm nhãn.}
+    \label{fig:sw_architecture}
+\end{figure}
+
 \subsection{Luồng xử lý một ca chụp}
+
+Một ca đi qua năm bước. Bác sĩ tải lên một thư mục DICOM đã nén; máy chủ giải nén, nhận diện các chuỗi ảnh và dựng khối ba chiều. Tiếp theo TotalSpineSeg phân vùng, cho ra mặt nạ các đốt sống và đĩa đệm. Từ mặt nạ này hệ thống định vị từng đĩa đệm rồi cắt khối ảnh quanh nó, đưa qua mô-đun grading để chấm nhãn. Kết quả hiện lên giao diện cho bác sĩ xem và sửa. Cuối cùng, những ô bác sĩ sửa được ghi vào nhật ký hiệu chỉnh.
 
 \section{Các chức năng chính}
 \label{sec:sw_features}
 
-\subsection{Tải và quản lý dữ liệu ảnh}
+\subsection{Quản lý ca chụp}
 
-\subsection{Phân vùng và chấm nhãn tự động}
+Màn hình đầu tiên là danh sách ca, nhóm theo bệnh nhân (Hình~\ref{fig:app_caselist}). Mỗi bác sĩ có một phòng riêng, đăng nhập bằng mã PIN bốn số, và chỉ thấy ca trong phòng của mình. Cách chia này để nhiều bác sĩ cùng thử phần mềm mà không nhìn thấy kết quả của nhau, nhờ đó nhận xét của họ độc lập với nhau.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{cslt/app_caselist.png}
+    \caption{Màn hình danh sách ca chụp, nhóm theo bệnh nhân. Mỗi ca hiển thị trạng thái xử lý và nút mở sang màn hình đọc phim.}
+    \label{fig:app_caselist}
+\end{figure}
+
+Bác sĩ có thể tạo ca mới rồi tải phim của mình lên, hoặc thêm một ca mẫu đã được chấm sẵn để thử nhanh. Ca mẫu là bản sao riêng của từng phòng, nên bác sĩ sửa thoải mái mà không ảnh hưởng người khác.
+
+\subsection{Xem ảnh và kết quả phân vùng}
+
+Màn hình đọc phim là nơi bác sĩ làm việc nhiều nhất (Hình~\ref{fig:app_viewer}). Ảnh MRI hiển thị ở giữa, mặt nạ phân vùng tô màu chồng lên, mỗi cấu trúc một màu và có chú giải bên phải. Bác sĩ chỉnh được độ trong của lớp màu, tắt hẳn lớp màu để nhìn ảnh gốc, chuyển lát cắt bằng con lăn chuột, và chỉnh độ sáng, độ tương phản bằng cách kéo chuột. Với máy không có chuột, mọi thao tác trên đều có nút bấm tương ứng ở dưới ảnh.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{cslt/app_viewer.png}
+    \caption{Màn hình đọc phim: ảnh MRI cắt dọc với mặt nạ phân vùng tô màu, bảng chú giải cấu trúc giải phẫu, và khung tóm tắt các dấu hiệu bất thường theo từng tầng đĩa đệm.}
+    \label{fig:app_viewer}
+\end{figure}
+
+Bên phải ảnh là khung tóm tắt, chỉ liệt kê những tầng đĩa đệm có dấu hiệu bất thường kèm mức độ. Bác sĩ bấm vào một dòng thì giao diện cuộn xuống đúng ô tương ứng trong bảng nhãn và làm ô đó nhấp nháy. Mục đích là để bác sĩ không phải dò cả bảng mười một dòng khi chỉ muốn kiểm tra một chỗ.
 
 \subsection{Xem và chỉnh sửa nhãn}
 
-\subsection{Ghi nhận chỉnh sửa và vòng phản hồi}
+Kết quả chấm nhãn trình bày dưới dạng bảng mười một nhãn bệnh lý theo tám tầng đĩa đệm, từ T10--T11 đến L5--S1 (Hình~\ref{fig:app_grading_table}). Mỗi ô là một hộp chọn: bác sĩ bấm vào là đổi được giá trị. Ô được tô màu theo mức độ, đỏ cho mức nặng và vàng cho mức vừa, để chỗ cần chú ý nổi lên ngay.
 
-\section{Hiện thực và triển khai}
-\label{sec:sw_implementation}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{cslt/app_grading_table.png}
+    \caption{Bảng chấm điểm mười một nhãn bệnh lý theo tám tầng đĩa đệm. Mỗi ô là một hộp chọn bác sĩ sửa trực tiếp được; màu nền thể hiện mức độ, dấu cảnh báo đánh dấu ô mô hình ít chắc chắn.}
+    \label{fig:app_grading_table}
+\end{figure}
+
+Dấu cảnh báo bên cạnh một số ô đánh dấu những chỗ mô hình ít chắc chắn, gợi ý bác sĩ xem kỹ hơn. Ba nhãn hẹp ống sống và hẹp lỗ liên hợp trái, phải để trống ở các tầng ngực trên, vì bộ dữ liệu huấn luyện chỉ gán nhãn từ tầng L1--L2 trở xuống; để trống thật thà hơn là đoán bừa một giá trị.
+
+Dưới bảng còn ô ghi kết luận của bác sĩ bằng chữ. Phần này không bắt buộc, nhưng là chỗ bác sĩ nói được những điều một bảng điểm không chứa hết.
+
+\subsection{Ghi nhận chỉnh sửa của bác sĩ}
+
+Mỗi lần bác sĩ sửa một ô trong bảng nhãn rồi bấm lưu, hệ thống ghi lại cặp giá trị mô hình dự đoán và giá trị bác sĩ chỉnh, kèm mã ca chụp và tầng đĩa đệm tương ứng. Các bản ghi này được gom thành từng lô (Hình~\ref{fig:app_corrections}).
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\textwidth]{cslt/app_corrections.png}
+    \caption{Thống kê các chỉnh sửa của bác sĩ: số bản ghi đang chờ, số đã gom thành lô, và số lô đã đóng.}
+    \label{fig:app_corrections}
+\end{figure}
+
+Các chỉnh sửa được gom chung cho cả hệ thống chứ không theo từng ca, vì một ca chỉ có vài đĩa đệm, quá ít để huấn luyện. Trong đợt thử nghiệm, hệ thống đã ghi nhận 22 chỉnh sửa và gom thành hai lô.
+
+Hiện tại phần mềm mới chỉ dừng ở việc lưu lại các chỉnh sửa. Mô hình chưa học lại được từ những dữ liệu này; phần huấn luyện lại được đặt làm hướng phát triển ở Chương 7.
 
 \section{Kiểm thử hệ thống}
 \label{sec:sw_testing}
+
+Phần máy chủ có 209 bài kiểm thử tự động, chạy hết trong vài giây và không cần GPU. Chúng phủ các khâu dễ hỏng mà khó phát hiện bằng mắt: giải nén và nhận diện chuỗi DICOM, cắt khối ảnh từ mặt nạ phân vùng, chuỗi phân vùng rồi chấm nhãn, lưu nhãn có đánh phiên bản, ghi nhật ký hiệu chỉnh và đóng lô.
+
+Ngoài kiểm thử tự động, phần mềm còn được kiểm tra bằng cách chạy thật trên trình duyệt với các ca có ảnh thật. Cách này cần thiết vì nhiều lỗi của phần hiển thị ảnh y tế chỉ lộ ra khi ảnh được vẽ lên màn hình, chẳng hạn ảnh hiện ra đen kịt hay mặt nạ vẽ lệch sang chuỗi ảnh khác cùng kích thước.
 
 \section{Nhận xét từ bác sĩ}
 \label{sec:sw_doctor_feedback}
@@ -44,5 +135,9 @@
 % => BẮT BUỘC điền trước khi nộp bản cuối cho khoa.
 % ===================================================================
 
+Phần mềm có sẵn phiếu đánh giá để bác sĩ trả lời sau khi đọc vài ca. Kết quả thu thập từ bác sĩ sẽ được bổ sung vào mục này.
+
 \section{Kết luận chương}
 \label{sec:sw_summary}
+
+Chương này đã trình bày phần mềm đưa mô hình ở Chương 4 vào một quy trình bác sĩ sử dụng được: xem kết quả phân vùng trực tiếp trên ảnh MRI, chỉnh sửa mười một nhãn bệnh lý theo từng tầng đĩa đệm, và lưu lại mọi chỉnh sửa dưới dạng dữ liệu có cấu trúc. Phần thu thập phản hồi đã hoạt động; phần để mô hình học lại từ phản hồi chưa được hiện thực và được trình bày như hướng phát triển ở Chương 7.
