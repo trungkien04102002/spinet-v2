@@ -169,6 +169,17 @@ Luận văn được cấu trúc thành bảy chương:
     Tổng kết các kết quả đã đạt được, nêu những hạn chế còn tồn tại và đề xuất các hướng phát triển tiếp theo.
 \end{itemize}
 
+\prefacesection{Abstract}
+
+\textit{AI-Assisted Medical Image Annotation for Low Back Pain}
+
+Low back pain is the leading cause of disability worldwide, and grading lumbar disc degeneration on MRI is still done by hand, one disc at a time. The work is slow and varies noticeably between readers. Two obstacles stand in the way of automating it. The first is severe class imbalance: the Severe grade, which matters most clinically, accounts for under 5\% of the data, and a model trained in the usual way almost never predicts it. The second is a fixed label space: a model trained on one labelling schema cannot answer a question posed in another without a new output head and a new round of training.
+
+This thesis addresses both with a solution in two parts. On the modelling side it proposes a two-branch hybrid architecture: a volumetric attention branch, a 3D ResNet-34 with CBAM, captures anatomical context across slices, while a frozen BiomedCLIP branch supplies semantic knowledge learned from large-scale biomedical pretraining. A small trainable head fuses the two into a text-aligned vector. Because predictions are made by matching that vector against sentences describing each label, the label set becomes an input to inference, so the same trained model can grade an entirely new label set with no extra head and no retraining. The architecture is paired with an imbalance recipe combining focal loss, square-root class weighting, minority oversampling and augmentation. On the application side, the thesis implements software that lets a radiologist upload DICOM studies, segments them automatically with TotalSpineSeg, grades eleven findings per disc level, and allows every label to be reviewed and corrected directly on the image, with all corrections recorded.
+
+All results are averaged over three random seeds. On RSNA 2024, against the SpineNetV2 baseline, the proposed architecture raises mean macro F1 from 0.420 to 0.527, and most notably raises Severe recall from 12.3\% to 48.6\%, roughly fourfold, and Severe F1 from 0.152 to 0.356. The cost is an 8.6-point drop in mean accuracy, since the baseline earns its accuracy largely by predicting the majority grades; in a clinical setting, missing a severe case is worse than raising a false alarm. Label-space extension is validated on SPIDER, a dataset from a different hospital using a different schema: with no retraining at all, the model grades eight previously unseen labels at a mean F1 of 0.362, and under supervised transfer it reaches 0.653 against 0.646 for SpineNetV2. Part of this work has been published at MIWAI 2026 and appears in Springer's Lecture Notes in Artificial Intelligence.
+
+
 \afterpreface
 
 \include{chapter/chap01.tex}

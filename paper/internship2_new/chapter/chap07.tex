@@ -1,70 +1,53 @@
 \chapter{KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN}
-Nghiên cứu này đã thực hiện quy trình đánh giá thực nghiệm toàn diện và độc lập đối với các mô hình học sâu tiên tiến cho hai bài toán cốt lõi: Phân vùng cấu trúc và phát hiện bất thường trên ảnh MRI cột sống thắt lưng. Kết quả thực nghiệm trên các tập dữ liệu chuẩn hóa đã cung cấp cơ sở định lượng vững chắc cho việc lựa chọn giải pháp kỹ thuật phù hợp với mục tiêu xây dựng hệ thống hỗ trợ gán nhãn tự động.
+
 \section{Tổng kết}
-Dựa trên các chỉ số đánh giá và phân tích định lượng, nghiên cứu rút ra các kết luận chính sau: \\
 
-\textbf{Đối với bài toán phân vùng cột sống:} Mô hình \textbf{TotalSpineSeg} được lựa chọn sau khi so sánh với 3 mô hình khác (SPINEPS, MedCLIP-SAMv2, SpineNetV2).
-    \begin{itemize}
-        \item Mô hình đạt độ chính xác dương tính lên tới \textbf{97.87\%}, đảm bảo vùng được trích xuất gần như không nhiễu, vượt trội so với SPINEPS (52.17\%), MedCLIP-SAMv2 (29.16\%) và SpineNetV2 (51.76\%).
-        \item Mặc dù chỉ số Recall thấp hơn (56.49\%) do khác biệt về định nghĩa nhãn thực tế (TotalSpineSeg chỉ tập trung thân đốt sống, không tính gai sau), nhưng độ ổn định và độ chính xác bề mặt (ASSD = 6.85 mm thấp nhất) khiến đây là lựa chọn tối ưu để trích xuất ROI sạch cho các bước xử lý sau.
-    \end{itemize}
+Luận văn đã xây dựng một giải pháp hỗ trợ bác sĩ gán nhãn ảnh MRI cột sống thắt lưng, gồm hai phần gắn với nhau: một mô hình đánh giá mức độ thoái hóa cho từng đĩa đệm, và một phần mềm đưa mô hình đó tới tay người dùng. Các kết quả chính được tóm tắt dưới đây.
 
-\textbf{Đối với bài toán phát hiện bất thường :} Mô hình \textbf{SpineNetV2} được lựa chọn làm backbone cho mô-đun grading.
-    \begin{itemize}
-        \item Trên 3 nhóm bệnh lý chính (Hẹp ống sống, Hẹp lỗ liên hợp trái và phải), SpineNetV2 đạt F1-Score trung bình \textbf{77.50\%}, thấp hơn Ning Shen (SOTA, F1 80.37\%) khoảng 3\% nhưng được ưu tiên nhờ mã nguồn mở, kiến trúc đơn giản, dễ tinh chỉnh sâu. Ning Shen là ensemble nhiều mô hình lớn, khó duy trì.
-        \item MedGemma bị loại do Recall quá thấp (6-21\%) trên các bệnh lý cột sống thắt lưng do chưa được chuyên biệt hóa.
-    \end{itemize}
+\textbf{Lựa chọn mô-đun phân vùng.} TotalSpineSeg được chọn sau khi so sánh với ba mô hình khác là SPINEPS, MedCLIP-SAMv2 và SpineNetV2. Mô hình đạt độ chính xác dương tính 97.87\%, vượt xa SPINEPS (52.17\%), MedCLIP-SAMv2 (29.16\%) và SpineNetV2 (51.76\%), nên vùng trích xuất gần như không nhiễu. Chỉ số Recall thấp hơn (56.49\%) đến từ khác biệt về định nghĩa nhãn, do TotalSpineSeg chỉ phân vùng thân đốt sống mà không tính gai sau; bù lại, sai số bề mặt thấp nhất trong nhóm (ASSD 6.85 mm) khiến đây là lựa chọn phù hợp để định vị vùng quan tâm.
 
-\textbf{Đối với đóng góp tinh chỉnh sâu mô-đun grading:} Kiến trúc Hybrid CBAM + BiomedCLIP được đề xuất và đánh giá kĩ trên hai dataset độc lập.
-    \begin{itemize}
-        \item Trên RSNA 2024, Hybrid đánh đổi 8.6 điểm Mean Accuracy (SpineNetV2 đạt cao nhất do thiên về lớp đa số Normal/Mild) để cải thiện các chỉ số quan trọng hơn về lâm sàng: Mean F1 macro tăng từ 0.420 lên \textbf{0.527}, Mean Recall macro từ 0.412 lên 0.592, Mean AUC từ 0.835 lên 0.838, Mean AUPRC từ 0.530 lên 0.533.
-        \item Cải thiện đáng kể nhất nằm ở \textbf{lớp Severe}: Severe Recall tăng từ 12.3\% (SpineNetV2) lên \textbf{48.6\%} (Hybrid), gấp khoảng 4 lần. Severe F1 tăng từ 0.152 lên 0.356. Đây là cải tiến có ý nghĩa lâm sàng rõ rệt vì Severe chính là nhóm bệnh nặng cần ưu tiên phát hiện.
-        \item Pipeline xử lý mất cân bằng lớp (FocalLoss + UncertaintyLoss + minority oversampling) đã được triển khai và chứng minh hiệu quả trong việc cải thiện Severe Recall.
-    \end{itemize}
+\textbf{Lựa chọn mô-đun đánh giá bất thường.} SpineNetV2 được chọn làm kiến trúc nền. Trên ba nhóm bệnh lý chính, mô hình đạt F1 trung bình 77.50\%, thấp hơn Ning Shen khoảng ba điểm nhưng được ưu tiên nhờ mã nguồn mở và kiến trúc đủ đơn giản để tinh chỉnh sâu, trong khi Ning Shen là tổ hợp nhiều mô hình lớn, khó duy trì. MedGemma bị loại vì Recall chỉ 6--21\% trên bệnh lý cột sống thắt lưng do chưa được chuyên biệt hóa.
 
-\textbf{Phạm vi đã hoàn thành và phần còn lại.} Giai đoạn thực tập (TT2) là bước tiền đề của Đồ án tốt nghiệp (ĐATN), tập trung vào việc lựa chọn mô hình cho từng nhánh và tinh chỉnh sâu mô-đun grading. Ở giai đoạn này, hai nhánh phân vùng và đánh giá bệnh lý mới sinh ra hai output độc lập (mặt nạ và nhãn bệnh lý); việc \emph{tích hợp} hai output thành một giải pháp hoàn chỉnh và xây dựng phần mềm giao diện cho bác sĩ -- nhằm đạt đầy đủ mục tiêu ở Chương 1 -- chưa được thực hiện và được đưa vào kế hoạch ĐATN (Mục~\ref{sec:datn_plan}).
+\textbf{Đóng góp chính về mô hình.} Luận văn đề xuất kiến trúc Hybrid hai nhánh, kết hợp một nhánh chú ý CBAM trên ResNet-34 ba chiều với một nhánh BiomedCLIP được giữ đông cứng, cùng một quy trình xử lý mất cân bằng lớp. Trên RSNA 2024, so với SpineNetV2, kiến trúc này nâng Mean F1 macro từ 0.420 lên 0.527 và Mean Recall từ 0.412 lên 0.592. Cải thiện rõ nhất nằm ở lớp Severe: Severe Recall tăng từ 12.3\% lên 48.6\%, gấp khoảng bốn lần, còn Severe F1 tăng từ 0.152 lên 0.356. Cái giá là Mean Accuracy giảm 8.6 điểm, do mô hình nền đạt độ chính xác cao chủ yếu nhờ dự đoán thiên về lớp đa số. Trong bối cảnh lâm sàng, bỏ sót một ca nặng nghiêm trọng hơn một lần báo động nhầm, nên đây là đánh đổi có chủ ý.
 
-\textbf{Kết quả đã được công bố.} Một phần kết quả của luận văn, cụ thể là kiến trúc Hybrid hai nhánh và cơ chế mở rộng không gian nhãn zero-shot, đã được \textbf{chấp nhận và trình bày tại hội nghị quốc tế MIWAI 2026} (\textit{The 18th Multi-disciplinary International Conference on Artificial Intelligence}), tổ chức tại Halifax, Nova Scotia, Canada, ngày 10--12/10/2026. Bài báo có nhan đề \textit{``A Two-Branch Hybrid Model for Imbalanced Lumbar Disc Grading and Zero-Shot Label Extension''}, học viên là tác giả thứ nhất và TS. Phan Trọng Nhân là tác giả liên hệ, được xuất bản trong bộ \textit{Lecture Notes in Artificial Intelligence} của Springer. Việc bài báo vượt qua vòng phản biện quốc tế là một kiểm chứng độc lập cho tính mới và tính đúng đắn của phương pháp đề xuất.
+\textbf{Mở rộng không gian nhãn.} Vì dự đoán được thực hiện bằng cách so khớp với câu mô tả nhãn, tập nhãn trở thành đầu vào của suy luận. Trên bộ dữ liệu SPIDER đến từ bệnh viện khác và dùng lược đồ nhãn khác, mô hình chấm được tám nhãn chưa từng thấy mà không huấn luyện lại dòng nào, đạt F1 trung bình 0.362. Khi cho phép huấn luyện có giám sát, mô hình đạt 0.653 so với 0.646 của SpineNetV2, tức ngang bằng, trong khi cấu hình chỉ dùng CBAM tụt xuống 0.619. Điều này cho thấy nhánh đông cứng giữ cho lợi thế của cơ chế chú ý không mất đi khi đổi bộ dữ liệu.
 
-\section{Đề xuất hướng phát triển}
-Để khắc phục các hạn chế hiện tại và hoàn thiện hệ thống hướng tới ứng dụng thực tế, một số hướng nghiên cứu trọng tâm tiếp theo được đề xuất:
+\textbf{Phần mềm hỗ trợ bác sĩ.} Luận văn hiện thực một phần mềm cho phép tải ảnh DICOM, phân vùng tự động, chấm mười một nhãn bệnh lý theo từng tầng đĩa đệm, hiển thị kết quả trực tiếp trên ảnh, và cho bác sĩ chỉnh sửa mọi nhãn. Mọi chỉnh sửa đều được lưu lại làm dữ liệu. Phần máy chủ có 209 bài kiểm thử tự động.
 
-\subsection{Tối ưu hóa TotalSpineSeg cho mặt cắt Axial}
-Mặc dù TotalSpineSeg đang hoạt động tốt trong việc định vị thân đốt sống trên mặt phẳng dọc, nhưng chẩn đoán các bệnh lý như hẹp ống sống hay hẹp ngách bên lại phụ thuộc rất lớn vào thông tin từ mặt cắt ngang .
+\textbf{Kết quả đã được công bố.} Một phần kết quả của luận văn, cụ thể là kiến trúc Hybrid hai nhánh và cơ chế mở rộng không gian nhãn zero-shot, đã được chấp nhận và trình bày tại hội nghị quốc tế MIWAI 2026 (\textit{The 18th Multi-disciplinary International Conference on Artificial Intelligence}), tổ chức tại Halifax, Nova Scotia, Canada, ngày 10--12/10/2026. Bài báo có nhan đề \textit{``A Two-Branch Hybrid Model for Imbalanced Lumbar Disc Grading and Zero-Shot Label Extension''}, học viên là tác giả thứ nhất và TS. Phan Trọng Nhân là tác giả liên hệ, được xuất bản trong bộ \textit{Lecture Notes in Artificial Intelligence} của Springer. Việc bài báo vượt qua vòng phản biện quốc tế là một kiểm chứng độc lập cho phương pháp đề xuất.
 
-Do đó, cần nghiên cứu huấn luyện lại hoặc tinh chỉnh  TotalSpineSeg để thực hiện phân vùng chính xác các cấu trúc (đĩa đệm, ống sống, rễ thần kinh) trên ảnh Axial. Việc có được mặt nạ phân vùng chính xác trên cả hai mặt phẳng sẽ giúp hệ thống định vị vùng tổn thương (ROI) chính xác hơn gấp nhiều lần, từ đó nâng cao đáng kể độ chính xác của mô hình chẩn đoán bệnh lý.
+\section{Hạn chế}
 
-\subsection{Hoàn thiện phần mềm với giao diện cho bác sĩ}
-Một hướng phát triển trực tiếp là hoàn thiện hệ thống thành một sản phẩm phần mềm cho bác sĩ. Các tính năng chính bao gồm: (a) giao diện trực quan để xem kết quả phân vùng và highlight vùng bất thường ngay trên ảnh DICOM, (b) cho phép bác sĩ chỉnh sửa nhãn và điều chỉnh vùng khoanh, (c) xuất ảnh đã gán nhãn dưới dạng độc lập, thuận tiện cho việc lưu trữ và chia sẻ. Sản phẩm sẽ tích hợp pipeline 2 mô-đun đã xây dựng (TotalSpineSeg + Hybrid grading) thành một quy trình end-to-end. Dự kiến hoàn thiện trong giai đoạn nghiên cứu tiếp theo.
+Luận văn còn một số hạn chế cần nêu rõ.
 
-\subsection{Tích hợp Vision-Language Model cho việc sinh báo cáo chẩn đoán}
-Một hướng phát triển khác là tích hợp một mô hình Vision-Language lớn (VLM) như MedGemma vào pipeline để tự động sinh báo cáo chẩn đoán bằng ngôn ngữ tự nhiên. Trong khảo sát của báo cáo (Chương 5), MedGemma nguyên bản có Recall rất thấp (6 -21\%) trên bệnh lý thắt lưng do chưa được chuyên biệt hóa nên không được đưa vào pipeline đề xuất. Hai hướng cải thiện cho việc tích hợp VLM:
-\begin{itemize}
-    \item \textbf{Fine-tune trên dữ liệu MRI thắt lưng:} dùng các cặp (ảnh, văn bản chẩn đoán) từ RSNA và SPIDER để fine-tune nhánh thị giác và nhánh ngôn ngữ của VLM. Mục tiêu cải thiện độ nhạy với các thuật ngữ và pattern hình ảnh cụ thể của bệnh thắt lưng.
-    \item \textbf{Tích hợp VLM với output phân vùng:} mở rộng prompt cho VLM để bao gồm cả mặt nạ phân vùng từ TotalSpineSeg (overlay màu lên ảnh gốc), giúp VLM có thông tin spatial rõ ràng hơn khi viết báo cáo chẩn đoán. Hướng này cũng có thể được mở rộng để xử lý cả mặt cắt Axial bên cạnh mặt cắt Sagittal hiện tại.
-\end{itemize}
+\textbf{Mức độ phát hiện ca nặng chưa đủ cho sàng lọc độc lập.} Severe Recall 48.6\% tuy gấp bốn lần mô hình nền nhưng vẫn thấp hơn nhiều so với mức khoảng 80\% mà một công cụ sàng lọc cần đạt. Vì vậy hệ thống chỉ nên dùng như người đọc thứ hai, đánh dấu những ca nghi ngờ để bác sĩ xem lại, chứ chưa thể dùng độc lập.
 
-\subsection{Cải thiện qua phản hồi từ bác sĩ chẩn đoán}
-Một hướng cải tiến dài hạn là tích hợp cơ chế \textbf{Human-in-the-Loop} . Cụ thể: thông qua giao diện phần mềm tương lai, bác sĩ có thể chỉnh sửa các nhãn AI gán sai trong quá trình sử dụng thực tế. Các cặp ảnh + nhãn đã được chỉnh sửa sẽ được lưu lại dưới dạng dataset mới, dùng để huấn luyện lại mô hình theo định kì, tạo ra một vòng lặp cải tiến liên tục. Hướng này hiện chưa nằm trong scope LVTN do đòi hỏi sự phối hợp với bệnh viện thực tế và một khoảng thời gian đủ dài để thu thập đủ phản hồi, được đặt như định hướng nghiên cứu cho các giai đoạn tiếp theo.
+\textbf{Kết quả yếu hơn ở hai nhóm lỗ liên hợp.} Severe Recall ở hai điều kiện này chỉ nằm trong khoảng 18--22\%, thấp hơn hẳn so với ống sống. Các nghiên cứu kiểm chứng độc lập trên SpineNetV2 cũng ghi nhận giới hạn tương tự khi chỉ đọc mặt cắt dọc, nên nhiều khả năng đây là giới hạn của dữ liệu đầu vào chứ không phải của kiến trúc.
 
-\section{Kế hoạch thực hiện trong giai đoạn Đồ án tốt nghiệp}
-\label{sec:datn_plan}
-Trên cơ sở những gì đã đạt được ở giai đoạn thực tập là lựa chọn mô hình và tinh chỉnh mô-đun grading, giai đoạn Đồ án tốt nghiệp sẽ hoàn thiện giải pháp thành một sản phẩm hoàn chỉnh. Ưu tiên trước hết là hoàn thiện pipeline tích hợp và xây dựng phần mềm giao diện cho bác sĩ, sau đó tiếp tục tinh chỉnh mô-đun grading vì kết quả hiện tại vẫn còn dư địa cải thiện. Trong khuôn khổ thời gian một học kỳ, kế hoạch gồm 4 giai đoạn, chi tiết ở Bảng~\ref{tab:datn_plan}.
+\textbf{Số lần chạy còn ít.} Mọi kết quả lấy trung bình qua ba hạt giống ngẫu nhiên. Đây là mức đủ để thấy xu hướng nhưng chưa đủ để kết luận có ý nghĩa thống kê chặt chẽ.
 
-\begin{table}[H]
-\centering
-\caption{Kế hoạch thực hiện giai đoạn Đồ án tốt nghiệp.}
-\label{tab:datn_plan}
-\renewcommand{\arraystretch}{1.3}
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{|c|p{4.7cm}|p{4.3cm}|c|}
-\hline
-\textbf{GĐ} & \textbf{Nội dung công việc} & \textbf{Phương pháp / công cụ} & \textbf{Thời lượng} \\ \hline
-1 & \textbf{Tích hợp pipeline:} kết hợp hai output mặt nạ (TotalSpineSeg) và nhãn bệnh lý (grading) thành luồng end-to-end thống nhất; dùng mặt nạ để định vị ROI và trực quan hóa kết quả grading trên cùng một ảnh. & Hiện thực bước hợp nhất output, overlay nhãn bệnh lý lên mặt nạ phân vùng. & 3 tuần \\ \hline
-2 & \textbf{Xây dựng phần mềm giao diện cho bác sĩ:} xem kết quả phân vùng, highlight vùng bất thường, chỉnh sửa nhãn, xuất ảnh đã gán nhãn. & Phát triển ứng dụng web hoặc desktop trên nền pipeline đã tích hợp ở giai đoạn 1. & 6 tuần \\ \hline
-3 & \textbf{Tinh chỉnh tiếp mô-đun grading:} mở rộng đánh giá mặt cắt Axial, cải thiện thêm kết quả. & Huấn luyện trên Vast.ai (RTX 4090), PyTorch. & 3 tuần \\ \hline
-4 & Viết Đồ án tốt nghiệp hoàn chỉnh và chuẩn bị bảo vệ. & Tổng hợp kết quả, hoàn thiện báo cáo và slide. & 3 tuần \\ \hline
-\end{tabular}
-\end{table}
+\textbf{Chưa đánh giá trên dữ liệu bệnh viện trong nước.} Hai bộ dữ liệu sử dụng đều là dữ liệu công khai của nước ngoài. Hiệu năng trên ảnh chụp tại các cơ sở y tế Việt Nam, với máy chụp và thông số khác, chưa được kiểm chứng.
 
-Đúng theo định hướng ưu tiên, giai đoạn 1 và 2 -- tích hợp pipeline và xây dựng phần mềm -- là trọng tâm, hiện thực hóa mục tiêu \emph{hệ thống tương tác hoàn chỉnh} (Mục 1.2) vốn chưa được giải quyết ở giai đoạn thực tập. Giai đoạn 3 tiếp tục cải thiện chất lượng mô-đun grading, và giai đoạn 4 hoàn thiện báo cáo để bảo vệ. Việc đánh giá toàn hệ thống trên dữ liệu thực và thu thập phản hồi từ bác sĩ là bước mở rộng tùy chọn, sẽ thực hiện nếu thời gian cho phép.
+\section{Hướng phát triển}
+
+\subsection{Cơ chế học lại từ phản hồi của bác sĩ}
+
+Phần mềm hiện đã thu thập và lưu trữ mọi chỉnh sửa của bác sĩ, nhưng chưa có cơ chế để mô hình học lại từ những dữ liệu đó. Đây là hướng phát triển trực tiếp nhất.
+
+Một vòng phản hồi hoàn chỉnh cần ba phần còn thiếu. Thứ nhất là quy trình huấn luyện lại từ một lô chỉnh sửa, với bài toán khó là số mẫu mỗi lô rất ít so với tập huấn luyện gốc, nên cần kỹ thuật tránh việc mô hình quên những gì đã học. Thứ hai là cách đánh giá phiên bản mới một cách đáng tin trước khi đưa vào dùng. Thứ ba là bước người duyệt: nếu để mô hình tự cập nhật, chỉ vài chỉnh sửa sai cũng đủ làm chất lượng đi xuống mà không ai phát hiện, nên quyết định đưa phiên bản mới vào sử dụng vẫn nên thuộc về con người.
+
+\subsection{Bổ sung mặt cắt ngang cho hai nhóm lỗ liên hợp}
+
+Như đã nêu ở phần hạn chế, hai điều kiện hẹp lỗ liên hợp bị giới hạn bởi thông tin mà mặt cắt dọc cung cấp. Hướng khắc phục là đưa thêm mặt cắt ngang vào mô hình, đồng thời tinh chỉnh TotalSpineSeg để phân vùng chính xác trên mặt cắt này. Có mặt nạ đúng trên cả hai mặt phẳng sẽ giúp định vị vùng tổn thương chính xác hơn, từ đó nâng chất lượng chấm nhãn.
+
+\subsection{Kiến trúc thị giác ngôn ngữ ba chiều}
+
+Nhánh đa phương thức hiện dùng BiomedCLIP, vốn là mô hình hai chiều: nó đọc từng lát một rồi mới gộp lại, nên không nắm được quan hệ không gian giữa các lát. Một mô hình thị giác ngôn ngữ huấn luyện sẵn trên dữ liệu y khoa ba chiều sẽ là nền tốt hơn cho nhánh này.
+
+\subsection{Sinh báo cáo chẩn đoán bằng ngôn ngữ tự nhiên}
+
+Hệ thống hiện trả về nhãn và mức độ. Một bước mở rộng là sinh ra đoạn mô tả bằng lời để bác sĩ tham khảo khi viết kết luận. Khảo sát ở Chương 5 cho thấy MedGemma nguyên bản có Recall rất thấp trên bệnh lý thắt lưng nên không đưa được vào hệ thống, nhưng việc tinh chỉnh một mô hình như vậy trên các cặp ảnh và văn bản chẩn đoán của chính lĩnh vực này là hướng đáng thử.
+
+\subsection{Đánh giá cùng bác sĩ trên dữ liệu thực tế}
+
+Cuối cùng, hệ thống cần được đánh giá bởi chính người sẽ dùng nó. Phần mềm đã có sẵn phiếu đánh giá và cơ chế ghi nhận chỉnh sửa, nên việc còn lại là tổ chức một đợt sử dụng thực tế với bác sĩ chuyên khoa trên dữ liệu của bệnh viện trong nước, vừa để đo mức độ hữu ích, vừa để thu thập dữ liệu cho vòng phản hồi nói trên.

@@ -66,7 +66,7 @@ TS. Phan Trọng Nhân \\
 Đại học Quốc gia Thành phố Hồ Chí Minh \\
 Trường Đại học Bách Khoa \\
 \medskip
-\textit{Báo cáo thực tập 2}
+\textit{Luận văn thạc sĩ}
 }
 
 \date{\today}
@@ -477,22 +477,22 @@ Tối ưu & AdamW, batch 32; Focal + Uncertainty + oversampling \\
 \toprule
 \textbf{Chỉ số} & \textbf{SpineNetV2} & \textbf{CBAM} & \textbf{BMC-only} & \textbf{Hybrid (ours)} \\
 \midrule
-Mean Accuracy   & \textbf{0.814} & 0.690 & 0.692 & 0.721 \\
-Mean F1 (macro) & 0.420 & 0.502 & 0.464 & \textbf{0.528} \\
-Mean AUC        & 0.826 & 0.822 & 0.812 & \textbf{0.837} \\
-Mean AUPRC      & 0.523 & 0.519 & 0.482 & \textbf{0.526} \\
+Mean F1 (macro) & 0.420 & 0.477 & 0.482 & \textbf{0.527} \\
+Mean Recall     & 0.412 & 0.531 & 0.532 & \textbf{0.592} \\
+Mean AUC        & 0.835 & 0.803 & 0.826 & \textbf{0.838} \\
+Mean AUPRC      & 0.530 & 0.498 & 0.513 & \textbf{0.533} \\
 \midrule
 \multicolumn{5}{l}{\textit{Lớp Severe (lớp focus lâm sàng)}} \\
-Severe Recall   & 0.115 & 0.370 & 0.245 & \textbf{0.464} \\
-Severe F1       & 0.149 & 0.304 & 0.229 & \textbf{0.343} \\
-Severe AUC      & 0.860 & 0.886 & 0.874 & \textbf{0.896} \\
-Severe AUPRC    & 0.276 & 0.319 & 0.218 & \textbf{0.321} \\
+Severe Recall   & 0.123 & 0.288 & 0.316 & \textbf{0.486} \\
+Severe F1       & 0.152 & 0.262 & 0.268 & \textbf{0.356} \\
+Severe AUC      & 0.872 & 0.865 & 0.885 & \textbf{0.899} \\
+Severe AUPRC    & 0.284 & 0.278 & 0.275 & \textbf{0.333} \\
 \bottomrule
 \end{tabular}
-\caption{Kết quả trung bình và lớp Severe của 4 cấu hình trên RSNA 2024.}
+\caption{Kết quả 4 cấu hình trên RSNA 2024, trung bình qua 3 hạt giống.}
 \end{table}
 \begin{itemize}
-    \item[$\rightarrow$] SpineNetV2 cao nhất ở Accuracy (do thiên về lớp đa số); Hybrid đánh đổi $\sim$9\% Accuracy để dẫn đầu F1/AUC/AUPRC và đặc biệt là lớp Severe (xem chi tiết bên dưới).
+    \item[$\rightarrow$] Hybrid dẫn đầu mọi chỉ số trong bảng, đánh đổi 8.6 điểm Mean Accuracy (81.0\% $\to$ 72.4\%) vì SpineNetV2 đạt Accuracy cao nhờ thiên về lớp đa số.
 \end{itemize}
 \end{frame}
 
@@ -526,10 +526,10 @@ Severe AUPRC    & 0.276 & 0.319 & 0.218 & \textbf{0.321} \\
  & Hybrid     & \textbf{0.464} & \textbf{0.273} & \textbf{0.343} & \textbf{0.896} & \textbf{0.321} \\
 \bottomrule
 \end{tabular}
-\caption{Chi tiết per-class trên RSNA 2024 (Hybrid: cấu hình đề xuất / ours).}
+\caption{Chi tiết theo từng lớp trên RSNA 2024, một lần chạy đại diện (hạt giống 42).}
 \end{table}
 \begin{itemize}
-    \item[$\rightarrow$] Lớp Severe: Hybrid thắng cả 5 chỉ số, Severe Recall 11.5\% $\to$ 46.4\% (gấp $\sim$4 lần).
+    \item[$\rightarrow$] Lớp Severe: Hybrid thắng cả 5 chỉ số.
 \end{itemize}
 \end{frame}
 
@@ -646,39 +646,47 @@ Disc bulging      & 0.778 & 0.779 & 0.777 & \textbf{0.874} & 0.840 & & \textbf{0
 
 \begin{frame}
 \frametitle{Đóng góp chính}
-Bên cạnh việc khảo sát và lựa chọn mô hình nền cho cả hai mô-đun của hệ thống, đề tài có \textbf{3 đóng góp chính}:
+Bên cạnh việc khảo sát và lựa chọn mô hình nền cho cả hai mô-đun của hệ thống, đề tài có \textbf{4 đóng góp chính}:
 \begin{itemize}
-    \item[1.] \textbf{Đề xuất kiến trúc Hybrid hai nhánh} (Attention + Multimodal) kết hợp \textbf{kỹ thuật xử lý mất cân bằng} (augmentation, oversampling, Focal + Uncertainty loss) cho mô-đun đánh giá, nâng Recall lớp Severe từ \textbf{11.5\% lên 46.4\%} ($\sim$4 lần).
+    \item[1.] \textbf{Đề xuất kiến trúc Hybrid hai nhánh} (Attention + Multimodal) kết hợp \textbf{kỹ thuật xử lý mất cân bằng} (augmentation, oversampling, Focal + Uncertainty loss) cho mô-đun đánh giá, nâng Recall lớp Severe từ \textbf{12.3\% lên 48.6\%} ($\sim$4 lần).
     \item[2.] \textbf{Cơ chế mở rộng nhãn theo hướng zero-shot:} bổ sung nhãn bệnh mới qua mô tả văn bản, không huấn luyện lại.
     \item[3.] \textbf{Đánh giá khả năng tổng quát hóa liên tập dữ liệu} (RSNA $\to$ SPIDER): Hybrid duy trì hiệu năng ổn định.
+    \item[4.] \textbf{Phần mềm hỗ trợ bác sĩ gán nhãn:} tải DICOM, phân vùng, chấm 11 nhãn, bác sĩ sửa trực tiếp trên ảnh, mọi chỉnh sửa được lưu lại.
 \end{itemize}
 \end{frame}
 
 \begin{frame}
 \frametitle{Hạn chế}
 \begin{itemize}
-    \item[--] Hai mô-đun phân vùng và đánh giá còn chạy độc lập, chưa tích hợp thành pipeline hoàn chỉnh.
-    \item[--] Mô hình mới khai thác mặt cắt Sagittal, chưa dùng mặt cắt Axial.
-    \item[--] Chỉ số đo lường tuyệt đối còn thấp (ví dụ Severe F1 $\sim$0.34; vài nhãn SPIDER khó như Modic/Pfirrmann còn yếu) -- cần cải thiện thêm.
+    \item[--] Severe Recall 48.6\% còn thấp hơn mức $\sim$80\% mà một công cụ sàng lọc cần; hệ thống chỉ nên dùng như \textbf{người đọc thứ hai}.
+    \item[--] Hai nhóm lỗ liên hợp yếu hơn hẳn (Severe Recall 18--22\%) -- giới hạn của mặt cắt Sagittal, chưa dùng Axial.
+    \item[--] Phần mềm mới \textbf{lưu} phản hồi của bác sĩ, chưa có cơ chế để mô hình học lại từ đó.
+    \item[--] Kết quả trung bình qua 3 hạt giống, chưa đủ để kết luận có ý nghĩa thống kê chặt chẽ.
 \end{itemize}
 \end{frame}
 
 \begin{frame}
-\frametitle{Kế hoạch giai đoạn Đồ án tốt nghiệp}
-\begin{table}
-\centering
-\begin{tabular}{c p{6.2cm} c}
-\toprule
-\textbf{GĐ} & \textbf{Nội dung} & \textbf{Thời lượng} \\
-\midrule
-1 & Tích hợp pipeline end-to-end (mặt nạ định vị IVV) & 3 tuần \\
-2 & Xây dựng phần mềm giao diện cho bác sĩ & 3 tuần \\
-3 & Bổ sung cơ chế dùng phản hồi của bác sĩ để mô hình tự cải thiện & 3 tuần \\
-4 & Viết Đồ án tốt nghiệp và chuẩn bị bảo vệ & 3 tuần \\
-\bottomrule
-\end{tabular}
-\caption{Kế hoạch thực hiện trong giai đoạn Đồ án tốt nghiệp.}
-\end{table}
+\frametitle{Công bố khoa học}
+\begin{block}{Bài báo đã được chấp nhận và trình bày}
+\textit{``A Two-Branch Hybrid Model for Imbalanced Lumbar Disc Grading and Zero-Shot Label Extension''}
+\end{block}
+\begin{itemize}
+    \item[--] \textbf{MIWAI 2026} -- \textit{The 18th Multi-disciplinary International Conference on Artificial Intelligence}, Halifax, Nova Scotia, Canada, 10--12/10/2026.
+    \item[--] Xuất bản trong bộ \textbf{Lecture Notes in Artificial Intelligence}, Springer.
+    \item[--] Hà Trung Kiên (tác giả thứ nhất), TS. Phan Trọng Nhân (tác giả liên hệ).
+    \item[--] Nội dung: kiến trúc Hybrid hai nhánh và cơ chế mở rộng không gian nhãn zero-shot.
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Hướng phát triển}
+\begin{itemize}
+    \item[1.] \textbf{Cơ chế học lại từ phản hồi bác sĩ:} quy trình huấn luyện lại từ lô chỉnh sửa, cách đánh giá phiên bản mới, và bước người duyệt trước khi đưa vào dùng.
+    \item[2.] \textbf{Bổ sung mặt cắt Axial} cho hai nhóm lỗ liên hợp, kèm tinh chỉnh TotalSpineSeg trên mặt cắt này.
+    \item[3.] \textbf{Kiến trúc thị giác--ngôn ngữ ba chiều} thay cho BiomedCLIP vốn là mô hình 2D.
+    \item[4.] \textbf{Sinh báo cáo chẩn đoán} bằng ngôn ngữ tự nhiên.
+    \item[5.] \textbf{Đánh giá cùng bác sĩ} trên dữ liệu bệnh viện trong nước.
+\end{itemize}
 \end{frame}
 
 %----------------------------------------------------------------------------------------
