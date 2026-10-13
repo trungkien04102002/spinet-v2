@@ -31,7 +31,7 @@ Toàn bộ quá trình huấn luyện và đánh giá được thực hiện tr�
     \item \textbf{Vai trò trong nghiên cứu:} Training set chính + validation set để tinh chỉnh mô-đun grading và so sánh 4 cấu hình ablation.
 \end{itemize}
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=0.95\textwidth]{cslt/rsna_class_distribution.png}
     \caption{Phân bố lớp trên RSNA 2024.}
@@ -73,7 +73,7 @@ Tập dữ liệu SPIDER (van der Graaf và cộng sự, công bố trên Nature
     \item \textbf{Vai trò trong nghiên cứu:} Test set độc lập cho transfer learning, đánh giá: (i) mô hình huấn luyện trên RSNA có chuyển giao tốt sang dataset khác? (ii) các nhãn mới (Pfirrmann, Modic, \ldots) có học được từ feature backbone đã pretrained không?
 \end{itemize}
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=\textwidth]{cslt/spider_class_distribution.png}
     \caption{Phân bố nhãn trên SPIDER 8 conditions.}
@@ -329,7 +329,7 @@ Bốn cấu hình ablation được định nghĩa: (i) \textbf{SpineNetV2} - ch
 
 Bảng~\ref{tab:rsna_ablation} tổng hợp kết quả của 4 cấu hình ablation trên RSNA 2024.
 
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
 \caption{Kết quả 4 cấu hình trên RSNA 2024, trung bình $\pm$ độ lệch chuẩn qua 3 hạt giống ngẫu nhiên 42, 123 và 456.}
 \label{tab:rsna_ablation}
@@ -369,7 +369,7 @@ Các bảng chi tiết trong mục này lấy từ \emph{một lần chạy đ�
 
 Bảng~\ref{tab:rsna_perclass} trình bày 5 chỉ số theo từng lớp cho cả 4 cấu hình. Quan sát chính: ở lớp \textbf{Severe}, Hybrid cải thiện đồng thời cả 5 chỉ số so với SpineNetV2 và vượt hai cấu hình đơn nhánh (CBAM, BMC-only), cho thấy hai nhánh bổ sung cho nhau ở lớp hiếm nhất; ngược lại ở lớp Normal/Mild, SpineNetV2 giữ Recall cao nhất nhưng đây là lớp ít rủi ro lâm sàng nhất.
 
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
 \caption{Chi tiết theo từng lớp trên RSNA, kết quả của một lần chạy đại diện (hạt giống 42).}
 \label{tab:rsna_perclass}
@@ -403,7 +403,7 @@ Bảng~\ref{tab:rsna_perclass} trình bày 5 chỉ số theo từng lớp cho c�
 
 Bảng~\ref{tab:rsna_per_cond_acc} chi tiết theo từng condition × grade với 4 chỉ số phân loại (Acc / Recall / Precision / F1). Cải thiện đáng kể nhất nằm ở Severe Recall trên cả 3 condition: Spinal Canal +35.8\%, L. Foraminal +37.5\%, R. Foraminal +31.3\%, là các con số có ý nghĩa lâm sàng vì giảm trực tiếp tỷ lệ bỏ sót ca nặng.
 
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
 \caption{Chi tiết theo điều kiện và mức độ trên RSNA, một lần chạy đại diện (hạt giống 42).}
 \label{tab:rsna_per_cond_acc}
@@ -430,7 +430,7 @@ R. Foraminal   & \textbf{Severe}  & \textbf{76.6} $\to$ 67.4 & 0.0 $\to$ \textbf
 }
 \end{table}
 
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
 \caption{Chi tiết theo điều kiện và mức độ trên RSNA, một lần chạy đại diện (hạt giống 42), phần AUC và AUPRC.}
 \label{tab:rsna_per_cond_auc}
@@ -470,7 +470,7 @@ R. Foraminal   & \textbf{Severe} & \textbf{0.842} & 0.837 & 0.167 & \textbf{0.18
 \label{sec:spider_transfer_sec}
 Từ checkpoint tốt nhất của mỗi cấu hình trên RSNA, mô hình được thực hiện transfer learning sang SPIDER. Bảng~\ref{tab:spider_aggregate} trình bày kết quả tổng hợp của các cấu hình trên SPIDER.
 
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
 \caption{Kết quả trên tập SPIDER có tinh chỉnh, trung bình $\pm$ độ lệch chuẩn qua 3 hạt giống.}
 \label{tab:spider_aggregate}
@@ -493,7 +493,7 @@ Inference (ms/sample) & 65.5 $\pm$ 2.7 & 66.7 $\pm$ 3.2 & \textbf{65.2 $\pm$ 3.9
 
 Hình~\ref{fig:spider_3seed_bars} minh họa 4 metrics chính trên SPIDER 3-seed với error bars.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=0.95\textwidth]{cslt/spider_3seed_bars.png}
     \caption{SPIDER 8-label: 4 cấu hình $\times$ 4 metrics (3-seed).}
@@ -504,7 +504,7 @@ Hình~\ref{fig:spider_3seed_bars} minh họa 4 metrics chính trên SPIDER 3-see
 
 Bảng~\ref{tab:spider_per_disease} chi tiết theo từng nhóm bệnh với 6 chỉ số (Acc, Recall, Precision, F1, AUC, AUPRC) cho 3 cấu hình chính (SpineNetV2 / CBAM / Hybrid). Cách tiếp cận hybrid đạt giá trị tốt nhất ở phần lớn các chỉ số, chứng minh đặc trưng ngữ nghĩa của BiomedCLIP kết hợp với ngữ cảnh 3D của CBAM giúp tổng quát hóa tốt hơn trên dữ liệu mới.
 
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
 \caption{Chi tiết SPIDER theo từng nhóm bệnh}
 \label{tab:spider_per_disease}
@@ -564,7 +564,7 @@ Bảng~\ref{tab:spider_per_disease} chi tiết theo từng nhóm bệnh với 6 
 }
 \end{table}
 
-% \begin{table}[H]
+% \begin{table}[htbp]
 % \centering
 % \caption{Recall của các nhãn minority lâm sàng quan trọng}
 % \label{tab:spider_minority_recall}

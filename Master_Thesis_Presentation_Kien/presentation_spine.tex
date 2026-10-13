@@ -77,6 +77,19 @@ Trường Đại học Bách Khoa \\
 \end{frame}
 
 \begin{frame}
+\frametitle{Tóm tắt đề tài}
+\begin{block}{Bài toán}
+\footnotesize Đánh giá mức độ thoái hóa đĩa đệm trên MRI cột sống thắt lưng hiện vẫn làm thủ công. Hai khó khăn khi tự động hóa: lớp \textbf{Severe} chiếm chưa tới 5\% dữ liệu nên gần như không bao giờ được dự đoán, và \textbf{không gian nhãn cố định} khiến mô hình không trả lời được bộ nhãn khác.
+\end{block}
+\begin{block}{Phương pháp}
+\footnotesize Kiến trúc \textbf{Hybrid hai nhánh}: nhánh chú ý CBAM trên ResNet-34 ba chiều ghép với nhánh BiomedCLIP đông cứng, dự đoán bằng cách so khớp với \textbf{câu mô tả nhãn} nên tập nhãn trở thành đầu vào. Kèm quy trình xử lý mất cân bằng lớp. Trên nền đó xây dựng \textbf{phần mềm} cho bác sĩ xem và sửa nhãn.
+\end{block}
+\begin{block}{Kết quả}
+\footnotesize Severe Recall \textbf{12.3\% $\to$ 48.6\%} ($\sim$4 lần), Severe F1 0.152 $\to$ 0.356. Chấm được \textbf{8 nhãn chưa từng thấy} trên SPIDER mà không huấn luyện lại. Phần mềm chạy được, 209 bài kiểm thử. Bài báo đã công bố tại \textbf{MIWAI 2026}.
+\end{block}
+\end{frame}
+
+\begin{frame}
 \frametitle{Mục lục}
 \tableofcontents[hideallsubsections]
 \end{frame}
@@ -85,6 +98,7 @@ Trường Đại học Bách Khoa \\
 %	1. GIỚI THIỆU
 %----------------------------------------------------------------------------------------
 \section{Giới thiệu}
+
 {
     \begin{frame}[shrink]
         \frametitle{Mục lục}
@@ -636,6 +650,74 @@ Disc bulging      & 0.778 & 0.779 & 0.777 & \textbf{0.874} & 0.840 & & \textbf{0
 %----------------------------------------------------------------------------------------
 %	6. KẾT LUẬN
 %----------------------------------------------------------------------------------------
+\section{Phần mềm hỗ trợ bác sĩ}
+
+\begin{frame}
+\frametitle{Phần mềm: mục tiêu và kiến trúc}
+\begin{columns}[T]
+\begin{column}{0.44\textwidth}
+\footnotesize
+Mục tiêu: rút ngắn thời gian đọc phim, không thay bác sĩ.
+\begin{itemize}
+    \item[--] Thấy được AI nhìn vào đâu: mặt nạ tô màu ngay trên ảnh MRI.
+    \item[--] Mọi nhãn đều sửa được.
+    \item[--] Mỗi lần sửa là một mẩu dữ liệu, được lưu lại.
+\end{itemize}
+\end{column}
+\begin{column}{0.54\textwidth}
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+    comp/.style={rectangle, draw=blue, fill=blue!8, rounded corners, minimum width=3.3cm,
+                 minimum height=1.0cm, align=center, thick, font=\small},
+    store/.style={rectangle, draw=green!50!black, fill=green!10, rounded corners,
+                  minimum width=3.3cm, minimum height=1.0cm, align=center, thick, font=\small},
+    model/.style={rectangle, draw=orange!80!black, fill=orange!10, rounded corners,
+                  minimum width=3.3cm, minimum height=1.0cm, align=center, thick, font=\small},
+    ar/.style={->, thick, blue!70!black}]
+    \node[comp]  (fe)  at (0,3.3)     {\textbf{Giao diện}\\\scriptsize React + Cornerstone3D};
+    \node[comp]  (be)  at (0,1.2)     {\textbf{Máy chủ}\\\scriptsize FastAPI};
+    \node[model] (seg) at (-4.3,-1.1) {\textbf{Phân vùng}\\\scriptsize TotalSpineSeg};
+    \node[model] (grd) at (0,-1.1)    {\textbf{Chấm nhãn}\\\scriptsize Hybrid};
+    \node[store] (db)  at (4.8,1.2)   {\textbf{CSDL}\\\scriptsize ca chụp, nhãn,\\\scriptsize hiệu chỉnh};
+    \node[store] (fs)  at (4.8,-1.1)  {\textbf{Ổ đĩa}\\\scriptsize ảnh MRI, mặt nạ};
+    \draw[ar] (fe) -- node[right,font=\scriptsize]{HTTP} (be);
+    \draw[ar] (be) -- (seg);  \draw[ar] (be) -- (grd);
+    \draw[ar] (be) -- (db);   \draw[ar] (be) -- (fs);
+    \draw[ar] (seg) -- (grd);
+\end{tikzpicture}}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{Màn hình đọc phim}
+\centering
+\includegraphics[height=0.68\textheight]{image/app_viewer.png}\\[2pt]
+{\footnotesize Mặt nạ phân vùng tô màu trên ảnh MRI, chú giải cấu trúc, và khung tóm tắt các tầng có dấu hiệu bất thường.}
+\end{frame}
+
+\begin{frame}
+\frametitle{Bảng chấm điểm: 11 nhãn $\times$ 8 tầng đĩa đệm}
+\centering
+\includegraphics[width=\textwidth]{image/app_grading_table.png}\\[4pt]
+{\footnotesize Mỗi ô là một hộp chọn bác sĩ sửa trực tiếp được. Màu nền theo mức độ; dấu cảnh báo đánh dấu ô mô hình ít chắc chắn.}
+\end{frame}
+
+\begin{frame}
+\frametitle{Ghi nhận chỉnh sửa của bác sĩ}
+\centering
+\includegraphics[width=0.88\textwidth]{image/app_corrections.png}\\[6pt]
+\begin{itemize}
+    \footnotesize
+    \item[--] Mỗi lần sửa, hệ thống lưu cặp (giá trị mô hình, giá trị bác sĩ) kèm mã ca và tầng đĩa đệm.
+    \item[--] Gom chung toàn hệ thống, không theo từng ca: một ca chỉ có vài đĩa đệm, quá ít để huấn luyện.
+    \item[--] Phần máy chủ có \textbf{209 bài kiểm thử tự động}.
+    \item[--] \textbf{Mới dừng ở việc lưu lại} --- mô hình chưa học lại được từ dữ liệu này (xem Hướng phát triển).
+\end{itemize}
+\end{frame}
+
+%----------------------------------------------------------------------------------------
 \section{Kết luận và hướng phát triển}
 {
     \begin{frame}[shrink]
@@ -681,11 +763,11 @@ Bên cạnh việc khảo sát và lựa chọn mô hình nền cho cả hai mô
 \begin{frame}
 \frametitle{Hướng phát triển}
 \begin{itemize}
-    \item[1.] \textbf{Cơ chế học lại từ phản hồi bác sĩ:} quy trình huấn luyện lại từ lô chỉnh sửa, cách đánh giá phiên bản mới, và bước người duyệt trước khi đưa vào dùng.
-    \item[2.] \textbf{Bổ sung mặt cắt Axial} cho hai nhóm lỗ liên hợp, kèm tinh chỉnh TotalSpineSeg trên mặt cắt này.
-    \item[3.] \textbf{Kiến trúc thị giác--ngôn ngữ ba chiều} thay cho BiomedCLIP vốn là mô hình 2D.
-    \item[4.] \textbf{Sinh báo cáo chẩn đoán} bằng ngôn ngữ tự nhiên.
-    \item[5.] \textbf{Đánh giá cùng bác sĩ} trên dữ liệu bệnh viện trong nước.
+    \item[1.] \textbf{Cơ chế học lại từ phản hồi bác sĩ} --- huấn luyện lại từ lô chỉnh sửa, đánh giá phiên bản mới, bước người duyệt. \hfill \textit{8 tuần}
+    \item[2.] \textbf{Bổ sung mặt cắt Axial} cho hai nhóm lỗ liên hợp, kèm tinh chỉnh TotalSpineSeg. \hfill \textit{6 tuần}
+    \item[3.] \textbf{Kiến trúc thị giác--ngôn ngữ ba chiều} thay BiomedCLIP vốn là mô hình 2D. \hfill \textit{6 tuần}
+    \item[4.] \textbf{Sinh báo cáo chẩn đoán} bằng ngôn ngữ tự nhiên. \hfill \textit{8 tuần}
+    \item[5.] \textbf{Đánh giá cùng bác sĩ} trên dữ liệu bệnh viện trong nước. \hfill \textit{4 tuần}
 \end{itemize}
 \end{frame}
 

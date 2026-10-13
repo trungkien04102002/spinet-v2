@@ -30,6 +30,25 @@ Luận văn còn một số hạn chế cần nêu rõ.
 
 \section{Hướng phát triển}
 
+Năm hướng dưới đây được sắp theo thứ tự ưu tiên, kèm thời lượng dự kiến ở Bảng~\ref{tab:roadmap}.
+
+\begin{table}[htbp]
+\centering
+\caption{Kế hoạch triển khai các hướng phát triển.}
+\label{tab:roadmap}
+\renewcommand{\arraystretch}{1.3}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{|c|p{4.4cm}|p{4.6cm}|c|}
+\hline
+\textbf{TT} & \textbf{Nội dung} & \textbf{Phương pháp} & \textbf{Thời lượng} \\ \hline
+1 & Cơ chế học lại từ phản hồi của bác sĩ & Huấn luyện lại từ lô chỉnh sửa với kỹ thuật chống quên, kèm quy trình đánh giá và bước người duyệt & 8 tuần \\ \hline
+2 & Bổ sung mặt cắt ngang cho hai nhóm lỗ liên hợp & Tinh chỉnh TotalSpineSeg trên mặt cắt ngang, hợp nhất đặc trưng hai mặt phẳng & 6 tuần \\ \hline
+3 & Kiến trúc thị giác ngôn ngữ ba chiều & Thay BiomedCLIP bằng mô hình nền ba chiều, huấn luyện lại tầng hợp nhất & 6 tuần \\ \hline
+4 & Sinh báo cáo chẩn đoán bằng ngôn ngữ tự nhiên & Tinh chỉnh mô hình ngôn ngữ thị giác trên cặp ảnh và văn bản chẩn đoán & 8 tuần \\ \hline
+5 & Đánh giá cùng bác sĩ trên dữ liệu thực tế & Tổ chức đợt sử dụng với bác sĩ chuyên khoa, thu phiếu đánh giá và nhật ký hiệu chỉnh & 4 tuần \\ \hline
+\end{tabular}
+\end{table}
+
 \subsection{Cơ chế học lại từ phản hồi của bác sĩ}
 
 Phần mềm hiện đã thu thập và lưu trữ mọi chỉnh sửa của bác sĩ, nhưng chưa có cơ chế để mô hình học lại từ những dữ liệu đó. Đây là hướng phát triển trực tiếp nhất.

@@ -12,7 +12,7 @@ Hệ thống đề xuất trong luận văn này tích hợp ba mô hình đã �
 Ngoài ba mô hình trên, luận văn cũng khảo sát và so sánh với SPINEPS~\cite{moller2024spineps}, MedCLIP-SAMv2~\cite{koleilat2025medclipsamv2} (cho phân vùng, xem Mục~\ref{sec:eval_segmentation}) và MedGemma~\cite{google2025medgemma} (cho grading, xem Mục~\ref{sec:eval_detection}) như các phương án thay thế.
 Dựa trên các mô hình tham khảo đã trình bày, luận văn này đề xuất một giải pháp hoàn chỉnh hướng tới đầy đủ các mục tiêu ở Chương 1. Luồng xử lý \emph{mục tiêu} là tuần tự: ảnh MRI $\rightarrow$ \textbf{phân vùng} (TotalSpineSeg) sinh ra mặt nạ $\rightarrow$ dùng mặt nạ để định vị vùng quan tâm (ROI) làm \textbf{đầu vào} cho mô-đun \textbf{đánh giá bệnh lý} $\rightarrow$ trình bày kết quả qua một \textbf{phần mềm giao diện} cho bác sĩ. Hình~\ref{fig:pipeline_2stage} minh họa kiến trúc tổng thể. Toàn bộ luồng nét liền đã được hiện thực trong phần mềm trình bày ở Chương~\ref{chap:software}; đường nét đứt phía dưới là đường đi được dùng khi \emph{đánh giá riêng mô-đun grading} ở Chương 5, nơi khối ảnh quanh đĩa đệm lấy từ chú thích điểm mốc có sẵn của bộ dữ liệu thay vì từ mặt nạ phân vùng.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
     \resizebox{\textwidth}{!}{%
     \begin{tikzpicture}[
@@ -61,7 +61,7 @@ Phần này trình bày đóng góp kĩ thuật chính của báo cáo, tinh ch�
 \subsection{Tổng quan kiến trúc Hybrid}
 Báo cáo đề xuất một kiến trúc \textbf{Hybrid hai nhánh} (Hình~\ref{fig:hybrid_arch}) gồm: một nhánh CBAM-3D ResNet-34 \emph{trainable} học đặc trưng trực tiếp từ khối ảnh 3D của đĩa đệm, một nhánh BiomedCLIP \emph{frozen} cung cấp \emph{prior}, đặc trưng nền tổng quát đã học sẵn từ pretraining trên 15 triệu cặp ảnh--văn bản y khoa. Hai nhánh được hợp nhất qua một mô-đun MLP nhỏ, sau đó dẫn vào các head phân loại đa nhiệm cho từng nhãn bệnh lý.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=0.5\textwidth]{cslt/hybrid_architecture.png}
     \caption{Kiến trúc Hybrid hai nhánh.}
@@ -70,14 +70,14 @@ Báo cáo đề xuất một kiến trúc \textbf{Hybrid hai nhánh} (Hình~\ref
 
 Hình~\ref{fig:training_arch} và Hình~\ref{fig:inference_arch} mô tả riêng biệt hai giai đoạn huấn luyện và suy luận. Trong giai đoạn huấn luyện, dữ liệu đi qua thêm augmentation và minority oversampling; gradient chỉ đi qua nhánh trainable (CBAM-ResNet) còn BiomedCLIP frozen hoàn toàn. Loss tổng hợp gồm Focal Loss và Uncertainty Loss được tính ở các head. Trong giai đoạn suy luận, không có augmentation và loss, chỉ thực hiện forward pass để sinh xác suất dự đoán.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=0.58\textwidth]{cslt/training_architecture.png}
     \caption{Kiến trúc huấn luyện.}
     \label{fig:training_arch}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=0.6\textwidth]{cslt/inference_architecture.png}
     \caption{Kiến trúc suy luận.}
