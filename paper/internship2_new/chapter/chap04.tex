@@ -1,7 +1,7 @@
 \chapter{MÔ HÌNH ĐỀ XUẤT}
 
 \section{Ứng dụng các mô hình tham khảo}
-Hệ thống đề xuất trong báo cáo thực tập này tích hợp ba mô hình đã được công bố, mỗi mô hình đảm nhận một vai trò cụ thể trong pipeline:
+Hệ thống đề xuất trong luận văn này tích hợp ba mô hình đã được công bố, mỗi mô hình đảm nhận một vai trò cụ thể trong pipeline:
 \begin{itemize}
     \item \textbf{TotalSpineSeg}~\cite{warszawer2025totalspineseg}: mô hình phân vùng và gán nhãn tự động cột sống, được dùng nguyên bản cho module phân vùng (Mục 4.2).
 
@@ -9,8 +9,8 @@ Hệ thống đề xuất trong báo cáo thực tập này tích hợp ba mô h
 
     \item \textbf{BiomedCLIP}~\cite{zhang2024biomedclip}: mô hình ngôn ngữ--thị giác y khoa pretrained trên 15M cặp ảnh--văn bản từ PubMed, được dùng làm \emph{nhánh frozen} trong kiến trúc Hybrid để cung cấp prior tổng quát (Mục~\ref{sec:phase2_arch}).
 \end{itemize}
-Ngoài ba mô hình trên, báo cáo cũng khảo sát và so sánh với SPINEPS~\cite{moller2024spineps}, MedCLIP-SAMv2~\cite{koleilat2025medclipsamv2} (cho phân vùng, xem Mục~\ref{sec:eval_segmentation}) và MedGemma~\cite{google2025medgemma} (cho grading, xem Mục~\ref{sec:eval_detection}) như các phương án thay thế.
-Dựa trên các mô hình tham khảo đã trình bày, báo cáo thực tập này đề xuất một giải pháp hoàn chỉnh hướng tới đầy đủ các mục tiêu ở Chương 1. Luồng xử lý \emph{mục tiêu} là tuần tự: ảnh MRI $\rightarrow$ \textbf{phân vùng} (TotalSpineSeg) sinh ra mặt nạ $\rightarrow$ dùng mặt nạ để định vị vùng quan tâm (ROI) làm \textbf{đầu vào} cho mô-đun \textbf{đánh giá bệnh lý} $\rightarrow$ trình bày kết quả qua một \textbf{phần mềm giao diện} cho bác sĩ. Hình~\ref{fig:pipeline_2stage} minh họa kiến trúc tổng thể; trong đó phần nét liền là những thành phần đã thực hiện trong giai đoạn thực tập (TT2), còn phần nét đứt (màu xám) là kế hoạch hoàn thiện trong giai đoạn Đồ án tốt nghiệp (ĐATN, xem Chương 6).
+Ngoài ba mô hình trên, luận văn cũng khảo sát và so sánh với SPINEPS~\cite{moller2024spineps}, MedCLIP-SAMv2~\cite{koleilat2025medclipsamv2} (cho phân vùng, xem Mục~\ref{sec:eval_segmentation}) và MedGemma~\cite{google2025medgemma} (cho grading, xem Mục~\ref{sec:eval_detection}) như các phương án thay thế.
+Dựa trên các mô hình tham khảo đã trình bày, luận văn này đề xuất một giải pháp hoàn chỉnh hướng tới đầy đủ các mục tiêu ở Chương 1. Luồng xử lý \emph{mục tiêu} là tuần tự: ảnh MRI $\rightarrow$ \textbf{phân vùng} (TotalSpineSeg) sinh ra mặt nạ $\rightarrow$ dùng mặt nạ để định vị vùng quan tâm (ROI) làm \textbf{đầu vào} cho mô-đun \textbf{đánh giá bệnh lý} $\rightarrow$ trình bày kết quả qua một \textbf{phần mềm giao diện} cho bác sĩ. Hình~\ref{fig:pipeline_2stage} minh họa kiến trúc tổng thể. Toàn bộ luồng nét liền đã được hiện thực trong phần mềm trình bày ở Chương~\ref{chap:software}; đường nét đứt phía dưới là đường đi được dùng khi \emph{đánh giá riêng mô-đun grading} ở Chương 5, nơi khối ảnh quanh đĩa đệm lấy từ chú thích điểm mốc có sẵn của bộ dữ liệu thay vì từ mặt nạ phân vùng.
 
 \begin{figure}[H]
     \centering
@@ -27,14 +27,14 @@ Dựa trên các mô hình tham khảo đã trình bày, báo cáo thực tập 
         \node[outbox] (mask)   at (8.0,0)   {Mặt nạ \\ \scriptsize (NIfTI)};
         \node[box]    (grade)  at (12.0,0)  {\textbf{Đánh giá} \\ Hybrid grading};
         \node[outbox] (labels) at (16.0,0)  {Nhãn bệnh lý \\ \scriptsize (JSON/CSV)};
-        \node[planbox](sw)      at (20.4,0)  {\textbf{Phần mềm} \\ overlay + tương tác};
+        \node[box]    (sw)     at (20.4,0)  {\textbf{Phần mềm} \\ overlay + tương tác};
 
         \draw[arrow] (input) -- (seg);
         \draw[arrow] (seg) -- (mask);
-        \draw[planarrow] (mask) -- node[above,font=\scriptsize,text=gray]{ROI} (grade);
+        \draw[arrow] (mask) -- node[above,font=\scriptsize]{ROI} (grade);
         \draw[arrow] (grade) -- (labels);
-        \draw[planarrow] (labels) -- (sw);
-        \draw[arrow] (input) to[bend right=28] node[below,font=\scriptsize]{TT2: ảnh MRI trực tiếp} (grade);
+        \draw[arrow] (labels) -- (sw);
+        \draw[arrow, dashed] (input) to[bend right=28] node[below,font=\scriptsize]{đường đánh giá mô hình: ảnh MRI trực tiếp} (grade);
     \end{tikzpicture}}
     \caption{Kiến trúc tổng thể của giải pháp đề xuất.}
     \label{fig:pipeline_2stage}
@@ -47,8 +47,9 @@ Dựa trên các mô hình tham khảo đã trình bày, báo cáo thực tập 
 \textbf{Đánh giá các dấu hiệu bất thường với mô-đun grading tinh chỉnh.}
 Ảnh MRI gốc cũng được đưa vào mô-đun grading. Mô-đun này dựa trên SpineNetV2 đã được tinh chỉnh với kiến trúc Hybrid CBAM + BiomedCLIP (chi tiết ở Mục~\ref{sec:phase2_arch}). Quy trình gồm: sử dụng kỹ thuật Hồi quy trường vector (VFR) để phát hiện các đốt sống, trích xuất các khối ảnh quanh đĩa đệm (IVVs), và đưa qua mô hình grading Hybrid để dự đoán nhãn bệnh lý. Kết quả là một file dữ liệu (JSON / CSV) chứa các điểm số định lượng, đánh giá mức độ các loại bệnh lý thoái hóa cho từng đĩa đệm.\\
 
-\textbf{Hiện trạng và phạm vi của giai đoạn thực tập.}
-Trong giai đoạn thực tập (TT2 -- bước tiền đề của ĐATN), hai mô-đun phân vùng và đánh giá bệnh lý được thực hiện \emph{độc lập}: mô-đun grading tự phát hiện đốt sống (VFR) trên ảnh MRI gốc chứ \emph{chưa tái sử dụng mặt nạ} từ TotalSpineSeg làm đầu vào. Hiện tại hai output phục vụ hai mục đích bổ trợ nhau: (i) mặt nạ phân vùng hỗ trợ trực quan hóa và cho phép bác sĩ tương tác trên ảnh; (ii) nhãn bệnh lý giúp bác sĩ biết vùng nào có dấu hiệu bất thường để kiểm tra lại. Ở giai đoạn ĐATN, mặt nạ phân vùng sẽ được \emph{dùng làm đầu vào định vị ROI} cho mô-đun grading, biến hai mô-đun rời rạc thành một pipeline tuần tự hoàn chỉnh kèm phần mềm giao diện -- để đạt đầy đủ mục tiêu đã nêu ở Chương 1 (kế hoạch chi tiết ở Chương 6). Báo cáo này tập trung vào đóng góp tinh chỉnh mô-đun grading (Mục~\ref{sec:phase2_arch}).\\
+\textbf{Mô-đun grading lấy khối ảnh từ đâu.} Trong phần mềm, khối ảnh quanh mỗi đĩa đệm được cắt ra từ kết quả phân vùng của TotalSpineSeg. Còn ở các thí nghiệm tại Chương 5, khối ảnh cắt theo tọa độ đĩa đệm có sẵn trong nhãn của bộ dữ liệu, để mọi phương pháp đem ra so đều nhận cùng một đầu vào. Vì vậy số liệu ở Chương 5 là của riêng mô-đun chấm nhãn, không phải của cả hệ thống.
+
+Khi đến tay bác sĩ, hai kết quả của hệ thống bổ trợ nhau: mặt nạ phân vùng để nhìn và thao tác trực tiếp trên ảnh, còn nhãn bệnh lý chỉ ra chỗ nào có dấu hiệu bất thường cần xem lại.\\
 
 % \textbf{Lưu ý về MedGemma:} Trong quá trình khảo sát, báo cáo cũng đánh giá khả năng dùng một mô hình Vision-Language lớn (MedGemma) như một giải pháp thay thế cho mô-đun grading hoặc cho việc sinh báo cáo chẩn đoán bằng ngôn ngữ tự nhiên. Tuy nhiên, kết quả thực nghiệm trong Chương 5 cho thấy MedGemma có Recall rất thấp (6--21\%) trên các bệnh lý cột sống thắt lưng do chưa được chuyên biệt hóa, nên \emph{không được đưa vào pipeline đề xuất}. Việc fine-tune MedGemma cho bài toán này được đặt làm hướng phát triển trong Chương 6.\\
 
