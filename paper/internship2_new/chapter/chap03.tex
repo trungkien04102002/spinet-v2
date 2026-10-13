@@ -112,7 +112,7 @@ Một điểm sáng tạo đáng chú ý của giải pháp này là chiến lư
 \end{equation}
 Trong đó, trọng số phạt $w_c$ được gán cao hơn cho các lớp thiểu số theo tỷ lệ 1:2:4 (tương ứng với các mức độ từ nhẹ đến nặng). Việc áp dụng trọng số $w_{Severe} = 4$ ép buộc mô hình phải cập nhật tham số mạnh mẽ hơn đối với các ca bệnh nặng, giúp cải thiện đáng kể độ nhạy và giảm thiểu tỷ lệ bỏ sót bệnh trong chẩn đoán lâm sàng.\\
 
-Tác giả báo cáo Mean F1 macro khoảng 0.42 trên 5 nhãn RSNA và Severe F1 = 0.501 (cho riêng Spinal Canal Stenosis). Lưu ý rằng chỉ số Severe F1 0.501 được tính trên một condition cụ thể, trong khi báo cáo này tính macro qua cả 3 conditions chính (canal + left/right foraminal) nên số 0.343 ở Chương 5 không hoàn toàn so sánh trực tiếp. Tác giả công bố mã nguồn trên Kaggle nhưng \emph{chưa qua bình duyệt chính thức (peer-review)}, nên rất khó đánh giá độ tin cậy về methodology.
+Tác giả báo cáo Mean F1 macro khoảng 0.42 trên 5 nhãn RSNA và Severe F1 = 0.501 (cho riêng Spinal Canal Stenosis). Lưu ý rằng chỉ số Severe F1 0.501 được tính trên một condition cụ thể, trong khi luận văn này tính macro qua cả ba điều kiện chính (ống sống và lỗ liên hợp trái, phải) nên số 0.356 ở Chương 5 không hoàn toàn so sánh trực tiếp. Tác giả công bố mã nguồn trên Kaggle nhưng \emph{chưa qua bình duyệt chính thức (peer-review)}, nên rất khó đánh giá độ tin cậy về methodology.
 
 % \section{Đối chiếu các công trình liên quan với mục tiêu đề tài}
 % Phần này tổng hợp xem các công trình đã khảo sát trong các mục trước đáp ứng được những mục tiêu nào của đề tài (đã trình bày ở Chương 1) và còn thiếu sót ở đâu, từ đó biện minh cho lựa chọn pipeline và các đóng góp tinh chỉnh sâu của báo cáo.
@@ -153,7 +153,6 @@ Tác giả báo cáo Mean F1 macro khoảng 0.42 trên 5 nhãn RSNA và Severe F
 % Cụ thể, đối chiếu mục tiêu (Mục 1.2) với những gì các baseline có sẵn:
 % \begin{itemize}
 %     \item Mục tiêu tự động gán nhãn và phân vùng: TotalSpineSeg + SpineNetV2 đã đáp ứng được. Đóng góp tinh chỉnh không thay đổi phần này.
-%     \item Mục tiêu highlight bất thường: Trên ablation 4 cấu hình của báo cáo (Chương 5), Mean F1 macro tăng từ \textbf{0.343} (Baseline) lên \textbf{0.474} (Hybrid), tương ứng cải thiện $+0.131$ absolute. Đáng kể nhất là Severe Recall tăng từ \textbf{11.5\%} lên \textbf{46.4\%} , cải thiện $\sim 4$ lần, có ý nghĩa lâm sàng rõ rệt.
 %     \item Mục tiêu tăng cường độ tin cậy và hiệu quả: chưa có baseline nào đánh giá cross-dataset rigorous. Báo cáo này cung cấp evidence statistical cho việc lựa chọn cấu hình triển khai.
 %     \item Mục tiêu hệ thống tương tác: đây là phần liên quan đến giao diện cho bác sĩ, không có baseline nào tích hợp UI, đây là khoảng trống lớn cho hướng phát triển tương lai (Chương 6).
 % \end{itemize}

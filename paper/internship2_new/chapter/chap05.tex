@@ -287,7 +287,7 @@ Trái lại, MedGemma thể hiện chiến lược dự đoán thận trọng qu
 
 \textbf{Mô hình được chọn:} \textbf{SpineNetV2} được chọn làm backbone cho mô-đun grading vì cân bằng tốt nhất giữa độ chính xác (F1 trung bình 77.50\%, chỉ thấp hơn Ning Shen 3\%) và tính khả thi triển khai (mã nguồn mở, kiến trúc 3D ResNet-34 đơn giản, dễ tinh chỉnh). Ning Shen có F1 cao hơn nhưng là ensemble nhiều mô hình lớn, khó duy trì và không phù hợp với pipeline thực tế của báo cáo. MedGemma bị loại do Recall quá thấp (6--21\%). \\
 
- Khi phân tích sâu hơn theo từng \emph{cấp độ bệnh} trên full RSNA, SpineNetV2 baseline có Severe Recall chỉ 11.5\%, gần 9/10 ca nặng bị bỏ sót, mặc dù detection-level F1 vẫn 77.50\%. Điểm yếu này là động cơ trực tiếp cho thí nghiệm tiếp theo: tinh chỉnh mô-đun grading bằng CBAM + BiomedCLIP để cải thiện cụ thể trên Severe class.
+ Khi phân tích sâu hơn theo từng \emph{cấp độ bệnh} trên full RSNA, SpineNetV2 baseline có Severe Recall chỉ 12.3\%, gần 9/10 ca nặng bị bỏ sót, mặc dù detection-level F1 vẫn 77.50\%. Điểm yếu này là động cơ trực tiếp cho thí nghiệm tiếp theo: tinh chỉnh mô-đun grading bằng CBAM + BiomedCLIP để cải thiện cụ thể trên Severe class.
 
 \section[Thí nghiệm xác thực đóng góp tinh chỉnh]{Thí nghiệm xác thực đóng góp tinh chỉnh}
 \label{sec:phase2_eval}
@@ -331,41 +331,47 @@ Bảng~\ref{tab:rsna_ablation} tổng hợp kết quả của 4 cấu hình abla
 
 \begin{table}[H]
 \centering
-\caption{Kết quả 4 cấu hình trên RSNA 2024}
+\caption{Kết quả 4 cấu hình trên RSNA 2024, trung bình $\pm$ độ lệch chuẩn qua 3 hạt giống ngẫu nhiên 42, 123 và 456.}
 \label{tab:rsna_ablation}
 \renewcommand{\arraystretch}{1.2}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Metric} & \textbf{SpineNetV2} & \textbf{CBAM} & \textbf{BMC-only} & \textbf{Hybrid} \\
+\textbf{Chỉ số} & \textbf{SpineNetV2} & \textbf{CBAM} & \textbf{BMC-only} & \textbf{Hybrid} \\
 \midrule
-Mean Accuracy & \textbf{0.814} & 0.690 & 0.692 & 0.721 \\
-Mean F1 (macro) & 0.420 & 0.502 & 0.464 & \textbf{0.528} \\
-Mean Recall (macro) & 0.411 & 0.569 & 0.528 & \textbf{0.592} \\
-Mean Precision (macro) & 0.486 & 0.510 & 0.475 & \textbf{0.517} \\
-Mean AUC & 0.826 & 0.822 & 0.812 & \textbf{0.837} \\
-Mean AUPRC & 0.523 & 0.519 & 0.482 & \textbf{0.526} \\
+Mean F1 (macro)        & 0.420 $\pm$ 0.010 & 0.477 $\pm$ 0.057 & 0.482 $\pm$ 0.019 & \textbf{0.527 $\pm$ 0.027} \\
+Mean Recall (macro)    & 0.412 $\pm$ 0.005 & 0.531 $\pm$ 0.068 & 0.532 $\pm$ 0.004 & \textbf{0.592 $\pm$ 0.026} \\
+Mean Precision (macro) & 0.493 $\pm$ 0.028 & 0.499 $\pm$ 0.037 & 0.508 $\pm$ 0.037 & \textbf{0.526 $\pm$ 0.013} \\
+Mean AUC               & 0.835 $\pm$ 0.010 & 0.803 $\pm$ 0.050 & 0.826 $\pm$ 0.015 & \textbf{0.838 $\pm$ 0.018} \\
+Mean AUPRC             & 0.530 $\pm$ 0.012 & 0.498 $\pm$ 0.051 & 0.513 $\pm$ 0.030 & \textbf{0.533 $\pm$ 0.024} \\
 \midrule
-\multicolumn{5}{l}{\textit{Per-class Severe metrics (lớp focus)}} \\
+\multicolumn{5}{l}{\textit{Các chỉ số riêng cho lớp Severe}} \\
 \midrule
-Severe F1 & 0.149 & 0.304 & 0.229 & \textbf{0.343} \\
-Severe Recall & 0.115 & 0.370 & 0.245 & \textbf{0.464} \\
-Severe AUC & 0.860 & 0.886 & 0.874 & \textbf{0.896} \\
-Severe AUPRC & 0.276 & 0.319 & 0.218 & \textbf{0.321} \\
+Severe Recall          & 0.123 $\pm$ 0.005 & 0.288 $\pm$ 0.092 & 0.316 $\pm$ 0.042 & \textbf{0.486 $\pm$ 0.016} \\
+Severe F1              & 0.152 $\pm$ 0.008 & 0.262 $\pm$ 0.082 & 0.268 $\pm$ 0.034 & \textbf{0.356 $\pm$ 0.017} \\
+Severe AUC             & 0.872 $\pm$ 0.011 & 0.865 $\pm$ 0.050 & 0.885 $\pm$ 0.010 & \textbf{0.899 $\pm$ 0.011} \\
+Severe AUPRC           & 0.284 $\pm$ 0.019 & 0.278 $\pm$ 0.099 & 0.275 $\pm$ 0.052 & \textbf{0.333 $\pm$ 0.042} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Phân tích chính:} (\emph{Tất cả số liệu được tính trên 3 conditions: Spinal Canal + L/R Foraminal Narrowing.}) SpineNetV2 đạt Mean Accuracy cao nhất (0.814) nhưng chủ yếu do dự đoán thiên về lớp Normal/Mild chiếm đa số; chỉ số này không phản ánh năng lực phát hiện ca nặng. Hybrid chấp nhận giảm khoảng 9\% Accuracy để đổi lấy cải thiện ở các chỉ số quan trọng hơn về mặt lâm sàng: dẫn đầu trên Mean F1 macro (0.528), Mean Recall (0.592), Mean Precision (0.517), Mean AUC (0.837) và Mean AUPRC (0.526). Cải thiện ấn tượng nhất ở \emph{Severe class}: Severe Recall của Hybrid đạt 0.464, gấp 4 lần SpineNetV2 (0.115). Khi phân tách đóng góp, CBAM-only và BMC-only đều cải thiện Severe F1 (lần lượt 0.149 $\to$ 0.304 và 0.149 $\to$ 0.229), Hybrid kết hợp được điểm mạnh của cả hai (Severe F1 = 0.343).
+\textbf{Phân tích chính.} Mọi số liệu trong Bảng~\ref{tab:rsna_ablation} được tính trên ba điều kiện hẹp ống sống và hẹp lỗ liên hợp trái, phải, lấy trung bình qua ba hạt giống ngẫu nhiên. Hybrid dẫn đầu ở toàn bộ các chỉ số trong bảng: Mean F1 macro 0.527, Mean Recall 0.592, Mean Precision 0.526, Mean AUC 0.838 và Mean AUPRC 0.533.
 
-\subsection{Chi tiết per-class trên RSNA}
+Cái giá phải trả nằm ở Mean Accuracy, chỉ số không có trong bảng: SpineNetV2 đạt 81.0\% còn Hybrid chỉ 72.4\%, giảm 8.6 điểm. Nguyên nhân là SpineNetV2 đạt độ chính xác cao chủ yếu nhờ dự đoán thiên về lớp Normal/Mild vốn chiếm đa số, nên chỉ số này không phản ánh năng lực phát hiện ca nặng.
+
+Cải thiện rõ rệt nhất nằm ở lớp Severe. Severe Recall của Hybrid đạt 0.486, gấp khoảng bốn lần SpineNetV2 (0.123), và Severe F1 tăng từ 0.152 lên 0.356, tức hơn gấp đôi. Khi tách riêng đóng góp, CBAM-only và BMC-only đều cải thiện Severe F1 lên quanh mức 0.26, còn Hybrid kết hợp được cả hai và đạt 0.356. Độ lệch chuẩn của hai cấu hình đơn nhánh (0.082 và 0.034) lớn hơn hẳn Hybrid (0.017), cho thấy việc ghép hai nhánh còn giúp kết quả ổn định hơn giữa các lần chạy.
+
+\subsection{Chi tiết theo từng lớp trên RSNA}
 \label{subsec:rsna_perclass}
+
+Các bảng chi tiết trong mục này lấy từ \emph{một lần chạy đại diện} (hạt giống 42) để trình bày được đầy đủ từng lớp và từng điều kiện; số liệu tổng hợp lấy trung bình qua ba hạt giống vẫn là Bảng~\ref{tab:rsna_ablation}.
+
 
 Bảng~\ref{tab:rsna_perclass} trình bày 5 chỉ số theo từng lớp cho cả 4 cấu hình. Quan sát chính: ở lớp \textbf{Severe}, Hybrid cải thiện đồng thời cả 5 chỉ số so với SpineNetV2 và vượt hai cấu hình đơn nhánh (CBAM, BMC-only), cho thấy hai nhánh bổ sung cho nhau ở lớp hiếm nhất; ngược lại ở lớp Normal/Mild, SpineNetV2 giữ Recall cao nhất nhưng đây là lớp ít rủi ro lâm sàng nhất.
 
 \begin{table}[H]
 \centering
-\caption{Chi tiết per-class trên RSNA.}
+\caption{Chi tiết theo từng lớp trên RSNA, kết quả của một lần chạy đại diện (hạt giống 42).}
 \label{tab:rsna_perclass}
 \renewcommand{\arraystretch}{1.15}
 \setlength{\tabcolsep}{5pt}
@@ -399,7 +405,7 @@ Bảng~\ref{tab:rsna_per_cond_acc} chi tiết theo từng condition × grade v�
 
 \begin{table}[H]
 \centering
-\caption{Bảng chi tiết Condition $\times$ Grade trên RSNA }
+\caption{Chi tiết theo điều kiện và mức độ trên RSNA, một lần chạy đại diện (hạt giống 42).}
 \label{tab:rsna_per_cond_acc}
 \renewcommand{\arraystretch}{1.2}
 \setlength{\tabcolsep}{3pt}
@@ -426,7 +432,7 @@ R. Foraminal   & \textbf{Severe}  & \textbf{76.6} $\to$ 67.4 & 0.0 $\to$ \textbf
 
 \begin{table}[H]
 \centering
-\caption{Bảng chi tiết Condition $\times$ Grade trên RSNA}
+\caption{Chi tiết theo điều kiện và mức độ trên RSNA, một lần chạy đại diện (hạt giống 42), phần AUC và AUPRC.}
 \label{tab:rsna_per_cond_auc}
 \renewcommand{\arraystretch}{1.2}
 \setlength{\tabcolsep}{4pt}
@@ -461,11 +467,12 @@ R. Foraminal   & \textbf{Severe} & \textbf{0.842} & 0.837 & 0.167 & \textbf{0.18
 \end{enumerate}
 
 \subsection{Kết quả cross-dataset trên tập SPIDER}
+\label{sec:spider_transfer_sec}
 Từ checkpoint tốt nhất của mỗi cấu hình trên RSNA, mô hình được thực hiện transfer learning sang SPIDER. Bảng~\ref{tab:spider_aggregate} trình bày kết quả tổng hợp của các cấu hình trên SPIDER.
 
 \begin{table}[H]
 \centering
-\caption{Kết quả trên dataset SPIDER }
+\caption{Kết quả trên tập SPIDER có tinh chỉnh, trung bình $\pm$ độ lệch chuẩn qua 3 hạt giống.}
 \label{tab:spider_aggregate}
 \renewcommand{\arraystretch}{1.2}
 \setlength{\tabcolsep}{4pt}
@@ -580,7 +587,9 @@ Bảng~\ref{tab:spider_per_disease} chi tiết theo từng nhóm bệnh với 6 
 Hybrid dẫn đầu về kết quả của các nhãn thiểu số có ý nghĩa lâm sàng (Disc Herniation, Disc Narrowing), nơi tận dụng được từ các data đã được pretraintd từ BiomedCLIP. Quan trọng hơn, Hybrid là cấu hình duy nhất dẫn đầu cả hai bộ dữ liệu (RSNA lẫn SPIDER khi chuyển tập). Nhánh
 BiomedCLIP đóng vai trò chuẩn hóa, giúp mô hình không thoái hóa khi
 chuyển sang dữ liệu khác (so với CBAM bị quá khớp với RSNA và thắng rất ít trên SPIDER). Đây là sự cân bằng cần thiết cho triển khai lâm sàng trên nhiều cơ sở y tế khác nhau.
-\subsection{Thảo luận chung}
-\textbf{Đóng góp methodology:} Báo cáo đã đề xuất kiến trúc Hybrid. Đây là một trong các báo cáo đầu tiên trên cùng dataset có 3-seed mean$\pm$std cho cross-dataset transfer learning.
+\section{Thảo luận chung}
 
-\textbf{Hạn chế và hướng tiếp theo.} Hướng phát triển sâu hơn được trình bày trong Chương 6.
+
+\textbf{Đóng góp về phương pháp.} Luận văn đã đề xuất kiến trúc Hybrid. Đây là một trong các báo cáo đầu tiên trên cùng dataset có 3-seed mean$\pm$std cho cross-dataset transfer learning.
+
+\textbf{Hạn chế và hướng tiếp theo.} Hướng phát triển sâu hơn được trình bày trong Chương 7.

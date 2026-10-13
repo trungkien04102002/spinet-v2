@@ -17,8 +17,8 @@ Dựa trên các chỉ số đánh giá và phân tích định lượng, nghiê
 
 \textbf{Đối với đóng góp tinh chỉnh sâu mô-đun grading:} Kiến trúc Hybrid CBAM + BiomedCLIP được đề xuất và đánh giá kĩ trên hai dataset độc lập.
     \begin{itemize}
-        \item Trên RSNA 2024, Hybrid đánh đổi khoảng 9\% Mean Accuracy (SpineNetV2 đạt cao nhất do thiên về lớp đa số Normal/Mild) để cải thiện các chỉ số quan trọng hơn về lâm sàng: Mean F1 macro tăng từ 0.420 lên \textbf{0.528} (+0.108), Mean Recall macro từ 0.411 lên 0.592, Mean AUC từ 0.826 lên 0.837, Mean AUPRC từ 0.523 lên 0.526.
-        \item Cải thiện đáng kể nhất nằm ở \textbf{Severe class}: Severe Recall tăng từ 11.5\% (SpineNetV2) lên \textbf{46.4\%} (Hybrid), gấp 4 lần. Severe F1 tăng từ 0.149 lên 0.343. Đây là cải tiến có ý nghĩa lâm sàng rõ rệt vì Severe chính là nhóm bệnh nặng cần ưu tiên phát hiện.
+        \item Trên RSNA 2024, Hybrid đánh đổi 8.6 điểm Mean Accuracy (SpineNetV2 đạt cao nhất do thiên về lớp đa số Normal/Mild) để cải thiện các chỉ số quan trọng hơn về lâm sàng: Mean F1 macro tăng từ 0.420 lên \textbf{0.527}, Mean Recall macro từ 0.412 lên 0.592, Mean AUC từ 0.835 lên 0.838, Mean AUPRC từ 0.530 lên 0.533.
+        \item Cải thiện đáng kể nhất nằm ở \textbf{lớp Severe}: Severe Recall tăng từ 12.3\% (SpineNetV2) lên \textbf{48.6\%} (Hybrid), gấp khoảng 4 lần. Severe F1 tăng từ 0.152 lên 0.356. Đây là cải tiến có ý nghĩa lâm sàng rõ rệt vì Severe chính là nhóm bệnh nặng cần ưu tiên phát hiện.
         \item Pipeline xử lý mất cân bằng lớp (FocalLoss + UncertaintyLoss + minority oversampling) đã được triển khai và chứng minh hiệu quả trong việc cải thiện Severe Recall.
     \end{itemize}
 
