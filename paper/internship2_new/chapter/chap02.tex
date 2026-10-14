@@ -28,7 +28,7 @@ Trước khi đi vào chi tiết kĩ thuật, phần này tóm tắt các loại
     \item \textbf{Hẹp ngách bên (Subarticular/lateral recess stenosis - trái và phải):} thu hẹp vùng ngách bên ống sống, nơi rễ thần kinh đi qua trước khi vào lỗ liên hợp.
 \end{itemize}
 
-Báo cáo tập trung tinh chỉnh mô-đun grading cho 3 nhãn theo chuẩn RSNA 2024~\cite{rsna2024dataset} (canal stenosis, foraminal narrowing trái/phải) và mở rộng lên 8 nhãn theo chuẩn SPIDER~\cite{vansluijs2022spider} (thêm Pfirrmann, Modic, narrowing, spondylolisthesis, endplate, herniation, bulging). Hình~\ref{fig:abnormality_examples} minh họa sự khác biệt trực quan giữa case Normal/Mild và Severe cho 3 conditions chính trên ảnh MRI Sagittal T2/STIR.
+Luận văn tập trung tinh chỉnh mô-đun grading cho 3 nhãn theo chuẩn RSNA 2024~\cite{rsna2024dataset} (canal stenosis, foraminal narrowing trái/phải) và mở rộng lên 8 nhãn theo chuẩn SPIDER~\cite{vansluijs2022spider} (thêm Pfirrmann, Modic, narrowing, spondylolisthesis, endplate, herniation, bulging). Hình~\ref{fig:abnormality_examples} minh họa sự khác biệt trực quan giữa case Normal/Mild và Severe cho 3 conditions chính trên ảnh MRI Sagittal T2/STIR.
 
 \begin{figure}[htbp]
     \centering
@@ -50,7 +50,7 @@ Báo cáo tập trung tinh chỉnh mô-đun grading cho 3 nhãn theo chuẩn RSN
 Một khối ảnh MRI cột sống 3D có thể được trình bày dưới ba mặt cắt chính, mỗi mặt cắt phù hợp cho việc đánh giá các cấu trúc khác nhau:
 
 \begin{itemize}
-    \item \textbf{Mặt cắt dọc giữa (Sagittal):} cắt theo mặt phẳng đứng trước-sau, chia cơ thể thành hai nửa trái-phải. Đây là mặt cắt \emph{quan trọng nhất} cho việc đánh giá thoái hóa đĩa đệm, thoát vị, và sắp xếp tổng thể của cột sống. Trên ảnh Sagittal T2-weighted, đĩa đệm khỏe có tín hiệu cao (sáng), tủy sống và CSF nổi bật rõ. Báo cáo này sử dụng chủ yếu các lát cắt sagittal làm input cho mô hình.
+    \item \textbf{Mặt cắt dọc giữa (Sagittal):} cắt theo mặt phẳng đứng trước-sau, chia cơ thể thành hai nửa trái-phải. Đây là mặt cắt \emph{quan trọng nhất} cho việc đánh giá thoái hóa đĩa đệm, thoát vị, và sắp xếp tổng thể của cột sống. Trên ảnh Sagittal T2-weighted, đĩa đệm khỏe có tín hiệu cao (sáng), tủy sống và CSF nổi bật rõ. Luận văn sử dụng chủ yếu các lát cắt sagittal làm input cho mô hình.
     \item \textbf{Mặt cắt ngang (Axial):} cắt theo mặt phẳng ngang, vuông góc với trục cột sống. Đây là mặt cắt tốt nhất để đánh giá hẹp ống sống, hẹp ngách bên, và quan sát mối quan hệ giữa đĩa đệm với rễ thần kinh hai bên. SpineNetV2 baseline chưa khai thác mặt cắt này, đây là một hướng phát triển trong tương lai (xem Chương 6).
     \item \textbf{Mặt cắt trán (Coronal):} cắt theo mặt phẳng đứng song song với lưng. Mặt cắt này ít dùng cho chẩn đoán đĩa đệm nhưng hữu ích cho việc đánh giá vẹo cột sống (scoliosis) và sắp xếp các đốt sống.
 \end{itemize}
@@ -368,7 +368,7 @@ M_s(F') = \sigma\left(\text{Conv}_{7\times 7}\left([\text{AvgPool}(F'); \text{Ma
 
 Đầu ra cuối cùng là $F'' = M_s(F') \otimes F'$.
 
-CBAM rất phù hợp cho bài toán ảnh y tế vì hai lý do chính. Thứ nhất, số tham số mà CBAM thêm vào rất ít, chỉ vài chục nghìn so với hàng chục triệu của backbone CNN, nên không gây overfitting trên các dataset y tế thường có quy mô nhỏ. Thứ hai, cơ chế chú ý ngầm cho phép mô hình học cách "nhìn vào đâu" mà không cần thông tin định vị thủ công (ví dụ bounding box hay mặt nạ phân vùng). Trong báo cáo này, CBAM được chèn sau mỗi stage của 3D ResNet-34 (4 stages tương ứng 64, 128, 256, 512 kênh) trong nhánh trainable của kiến trúc Hybrid đề xuất ở Chương 4.
+CBAM rất phù hợp cho bài toán ảnh y tế vì hai lý do chính. Thứ nhất, số tham số mà CBAM thêm vào rất ít, chỉ vài chục nghìn so với hàng chục triệu của backbone CNN, nên không gây overfitting trên các dataset y tế thường có quy mô nhỏ. Thứ hai, cơ chế chú ý ngầm cho phép mô hình học cách "nhìn vào đâu" mà không cần thông tin định vị thủ công (ví dụ bounding box hay mặt nạ phân vùng). Trong luận văn này, CBAM được chèn sau mỗi stage của 3D ResNet-34 (4 stages tương ứng 64, 128, 256, 512 kênh) trong nhánh trainable của kiến trúc Hybrid đề xuất ở Chương 4.
 
 
 \section{Các mô hình nền tảng trong ảnh y tế}

@@ -205,7 +205,7 @@ với $K$ là số lớp. Khác với F1 weighted (lấy trung bình theo tần 
     \text{AUC} = \int_0^1 \text{TPR}(\text{FPR}^{-1}(t)) \, dt
 \end{equation}
 
-\textbf{AUPRC (Area Under Precision-Recall Curve).} Diện tích dưới đường cong Precision-Recall. Phù hợp hơn AUC cho dữ liệu \emph{mất cân bằng nghiêm trọng}: AUC có thể trông cao một cách giả tạo khi class majority quá lớn, trong khi AUPRC tập trung vào hiệu năng của class hiếm (positive class). Báo cáo sử dụng AUPRC làm chỉ số chính cho lớp Severe.
+\textbf{AUPRC (Area Under Precision-Recall Curve).} Diện tích dưới đường cong Precision-Recall. Phù hợp hơn AUC cho dữ liệu \emph{mất cân bằng nghiêm trọng}: AUC có thể trông cao một cách giả tạo khi class majority quá lớn, trong khi AUPRC tập trung vào hiệu năng của class hiếm (positive class). Luận văn sử dụng AUPRC làm chỉ số chính cho lớp Severe.
 \begin{equation}
     \text{AUPRC} = \int_0^1 \text{Precision}(\text{Recall}^{-1}(t)) \, dt
 \end{equation}
@@ -285,7 +285,7 @@ Trái lại, MedGemma thể hiện chiến lược dự đoán thận trọng qu
 
 \textbf{Độ ổn định giữa các nhóm bệnh:} Ning Shen có độ ổn định cao với F1-Score dao động ít (81.20\% - 81.48\% cho hai bệnh Hẹp lỗ liên hợp phải, hẹp ống sống, 79.43\% cho hẹp lỗ liên hợp trái). SpineNetV2 cũng khá ổn định (76.40\% - 78.79\%). Ngược lại, MedGemma có variance cao (10.75\% - 31.17\%), cho thấy performance không đồng đều và đặc biệt kém với Hẹp lỗ liên hợp phải. \\
 
-\textbf{Mô hình được chọn:} \textbf{SpineNetV2} được chọn làm backbone cho mô-đun grading vì cân bằng tốt nhất giữa độ chính xác (F1 trung bình 77.50\%, chỉ thấp hơn Ning Shen 3\%) và tính khả thi triển khai (mã nguồn mở, kiến trúc 3D ResNet-34 đơn giản, dễ tinh chỉnh). Ning Shen có F1 cao hơn nhưng là ensemble nhiều mô hình lớn, khó duy trì và không phù hợp với pipeline thực tế của báo cáo. MedGemma bị loại do Recall quá thấp (6--21\%). \\
+\textbf{Mô hình được chọn:} \textbf{SpineNetV2} được chọn làm backbone cho mô-đun grading vì cân bằng tốt nhất giữa độ chính xác (F1 trung bình 77.50\%, chỉ thấp hơn Ning Shen 3\%) và tính khả thi triển khai (mã nguồn mở, kiến trúc 3D ResNet-34 đơn giản, dễ tinh chỉnh). Ning Shen có F1 cao hơn nhưng là ensemble nhiều mô hình lớn, khó duy trì và không phù hợp với pipeline thực tế của luận văn. MedGemma bị loại do Recall quá thấp (6--21\%). \\
 
  Khi phân tích sâu hơn theo từng \emph{cấp độ bệnh} trên full RSNA, SpineNetV2 baseline có Severe Recall chỉ 12.3\%, gần 9/10 ca nặng bị bỏ sót, mặc dù detection-level F1 vẫn 77.50\%. Điểm yếu này là động cơ trực tiếp cho thí nghiệm tiếp theo: tinh chỉnh mô-đun grading bằng CBAM + BiomedCLIP để cải thiện cụ thể trên Severe class.
 
@@ -590,6 +590,6 @@ chuyển sang dữ liệu khác (so với CBAM bị quá khớp với RSNA và t
 \section{Thảo luận chung}
 
 
-\textbf{Đóng góp về phương pháp.} Luận văn đã đề xuất kiến trúc Hybrid. Đây là một trong các báo cáo đầu tiên trên cùng dataset có 3-seed mean$\pm$std cho cross-dataset transfer learning.
+\textbf{Đóng góp về phương pháp.} Luận văn đã đề xuất kiến trúc Hybrid. Đây là một trong các công trình đầu tiên trên cùng bộ dữ liệu có 3-seed mean$\pm$std cho cross-dataset transfer learning.
 
 \textbf{Hạn chế và hướng tiếp theo.} Hướng phát triển sâu hơn được trình bày trong Chương 7.

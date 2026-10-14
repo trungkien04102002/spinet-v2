@@ -2,35 +2,31 @@
 
 \section{Tổng kết}
 
-Luận văn đã xây dựng một giải pháp hỗ trợ bác sĩ gán nhãn ảnh MRI cột sống thắt lưng, gồm hai phần gắn với nhau: một mô hình đánh giá mức độ thoái hóa cho từng đĩa đệm, và một phần mềm đưa mô hình đó tới tay người dùng. Các kết quả chính được tóm tắt dưới đây.
+Luận văn đã xây dựng một giải pháp hỗ trợ bác sĩ gán nhãn ảnh MRI cột sống thắt lưng, gồm hai phần gắn với nhau: một mô hình đánh giá mức độ thoái hóa cho từng đĩa đệm, và một phần mềm đưa mô hình đó tới tay người dùng.
 
-\textbf{Lựa chọn mô-đun phân vùng.} TotalSpineSeg được chọn sau khi so sánh với ba mô hình khác là SPINEPS, MedCLIP-SAMv2 và SpineNetV2. Mô hình đạt độ chính xác dương tính 97.87\%, vượt xa SPINEPS (52.17\%), MedCLIP-SAMv2 (29.16\%) và SpineNetV2 (51.76\%), nên vùng trích xuất gần như không nhiễu. Chỉ số Recall thấp hơn (56.49\%) đến từ khác biệt về định nghĩa nhãn, do TotalSpineSeg chỉ phân vùng thân đốt sống mà không tính gai sau; bù lại, sai số bề mặt thấp nhất trong nhóm (ASSD 6.85 mm) khiến đây là lựa chọn phù hợp để định vị vùng quan tâm.
+Ở khâu phân vùng, TotalSpineSeg được chọn sau khi so sánh với SPINEPS, MedCLIP-SAMv2 và SpineNetV2. Mô hình đạt độ chính xác dương tính 97.87\%, trong khi ba mô hình còn lại chỉ đạt lần lượt 52.17\%, 29.16\% và 51.76\%, nên vùng trích xuất gần như không nhiễu. Recall của nó thấp hơn, 56.49\%, nhưng đó là do TotalSpineSeg chỉ phân vùng thân đốt sống mà không tính gai sau, tức khác biệt về định nghĩa nhãn chứ không phải mô hình bỏ sót. Sai số bề mặt thấp nhất trong nhóm, 6.85 mm, nên đây vẫn là lựa chọn phù hợp để định vị vùng quan tâm.
 
-\textbf{Lựa chọn mô-đun đánh giá bất thường.} SpineNetV2 được chọn làm kiến trúc nền. Trên ba nhóm bệnh lý chính, mô hình đạt F1 trung bình 77.50\%, thấp hơn Ning Shen khoảng ba điểm nhưng được ưu tiên nhờ mã nguồn mở và kiến trúc đủ đơn giản để tinh chỉnh sâu, trong khi Ning Shen là tổ hợp nhiều mô hình lớn, khó duy trì. MedGemma bị loại vì Recall chỉ 6--21\% trên bệnh lý cột sống thắt lưng do chưa được chuyên biệt hóa.
+Ở khâu đánh giá bất thường, SpineNetV2 được chọn làm kiến trúc nền với F1 trung bình 77.50\% trên ba nhóm bệnh lý chính. Con số này thấp hơn Ning Shen khoảng ba điểm, nhưng Ning Shen là tổ hợp nhiều mô hình lớn, khó duy trì và khó tinh chỉnh, trong khi SpineNetV2 có mã nguồn mở và kiến trúc đủ đơn giản để can thiệp sâu. MedGemma bị loại vì Recall chỉ 6--21\% trên bệnh lý cột sống thắt lưng.
 
-\textbf{Đóng góp chính về mô hình.} Luận văn đề xuất kiến trúc Hybrid hai nhánh, kết hợp một nhánh chú ý CBAM trên ResNet-34 ba chiều với một nhánh BiomedCLIP được giữ đông cứng, cùng một quy trình xử lý mất cân bằng lớp. Trên RSNA 2024, so với SpineNetV2, kiến trúc này nâng Mean F1 macro từ 0.420 lên 0.527 và Mean Recall từ 0.412 lên 0.592. Cải thiện rõ nhất nằm ở lớp Severe: Severe Recall tăng từ 12.3\% lên 48.6\%, gấp khoảng bốn lần, còn Severe F1 tăng từ 0.152 lên 0.356. Cái giá là Mean Accuracy giảm 8.6 điểm, do mô hình nền đạt độ chính xác cao chủ yếu nhờ dự đoán thiên về lớp đa số. Trong bối cảnh lâm sàng, bỏ sót một ca nặng nghiêm trọng hơn một lần báo động nhầm, nên đây là đánh đổi có chủ ý.
+\textbf{Đóng góp chính về mô hình} là kiến trúc Hybrid hai nhánh, kết hợp một nhánh chú ý CBAM trên ResNet-34 ba chiều với một nhánh BiomedCLIP được giữ đông cứng, cùng một quy trình xử lý mất cân bằng lớp. Trên RSNA 2024, so với SpineNetV2, kiến trúc này nâng Mean F1 macro từ 0.420 lên 0.527 và Mean Recall từ 0.412 lên 0.592. Ở lớp Severe, Severe Recall tăng từ 12.3\% lên 48.6\%, gấp khoảng bốn lần, còn Severe F1 tăng từ 0.152 lên 0.356. Cái giá là Mean Accuracy giảm 8.6 điểm, do mô hình nền đạt độ chính xác cao chủ yếu nhờ dự đoán thiên về lớp đa số. Trong bối cảnh lâm sàng, bỏ sót một ca nặng nghiêm trọng hơn một lần báo động nhầm.
 
-\textbf{Mở rộng không gian nhãn.} Vì dự đoán được thực hiện bằng cách so khớp với câu mô tả nhãn, tập nhãn trở thành đầu vào của suy luận. Trên bộ dữ liệu SPIDER đến từ bệnh viện khác và dùng lược đồ nhãn khác, mô hình chấm được tám nhãn chưa từng thấy mà không huấn luyện lại dòng nào, đạt F1 trung bình 0.362. Khi cho phép huấn luyện có giám sát, mô hình đạt 0.653 so với 0.646 của SpineNetV2, tức ngang bằng, trong khi cấu hình chỉ dùng CBAM tụt xuống 0.619. Điều này cho thấy nhánh đông cứng giữ cho lợi thế của cơ chế chú ý không mất đi khi đổi bộ dữ liệu.
+Vì dự đoán được thực hiện bằng cách so khớp với câu mô tả nhãn, tập nhãn trở thành đầu vào của suy luận. Trên bộ dữ liệu SPIDER, đến từ bệnh viện khác và dùng lược đồ nhãn khác, mô hình chấm được tám nhãn chưa từng thấy mà không huấn luyện lại dòng nào, đạt F1 trung bình 0.362. Khi cho phép huấn luyện có giám sát, mô hình đạt 0.653 so với 0.646 của SpineNetV2, trong khi cấu hình chỉ dùng CBAM tụt xuống 0.619. Nhánh đông cứng vì vậy giữ cho lợi thế của cơ chế chú ý không mất đi khi đổi bộ dữ liệu.
 
-\textbf{Phần mềm hỗ trợ bác sĩ.} Luận văn hiện thực một phần mềm cho phép tải ảnh DICOM, phân vùng tự động, chấm mười một nhãn bệnh lý theo từng tầng đĩa đệm, hiển thị kết quả trực tiếp trên ảnh, và cho bác sĩ chỉnh sửa mọi nhãn. Mọi chỉnh sửa đều được lưu lại làm dữ liệu. Phần máy chủ có 209 bài kiểm thử tự động.
+Phần mềm đi kèm cho phép tải ảnh DICOM, phân vùng tự động, chấm mười một nhãn bệnh lý theo từng tầng đĩa đệm, hiển thị kết quả trực tiếp trên ảnh, và cho bác sĩ chỉnh sửa mọi nhãn. Mọi chỉnh sửa đều được lưu lại. Phần máy chủ có 209 bài kiểm thử tự động.
 
-\textbf{Kết quả đã được công bố.} Một phần kết quả của luận văn, cụ thể là kiến trúc Hybrid hai nhánh và cơ chế mở rộng không gian nhãn zero-shot, đã được chấp nhận và trình bày tại hội nghị quốc tế MIWAI 2026 (\textit{The 18th Multi-disciplinary International Conference on Artificial Intelligence}), tổ chức tại Halifax, Nova Scotia, Canada, ngày 10--12/10/2026. Bài báo có nhan đề \textit{``A Two-Branch Hybrid Model for Imbalanced Lumbar Disc Grading and Zero-Shot Label Extension''}, học viên là tác giả thứ nhất và TS. Phan Trọng Nhân là tác giả liên hệ, được xuất bản trong bộ \textit{Lecture Notes in Artificial Intelligence} của Springer. Việc bài báo vượt qua vòng phản biện quốc tế là một kiểm chứng độc lập cho phương pháp đề xuất.
+\textbf{Kết quả đã được công bố.} Kiến trúc Hybrid hai nhánh và cơ chế mở rộng không gian nhãn zero-shot đã được chấp nhận và trình bày tại hội nghị quốc tế MIWAI 2026 (\textit{The 18th Multi-disciplinary International Conference on Artificial Intelligence}), tổ chức tại Halifax, Nova Scotia, Canada, ngày 10--12/10/2026. Bài báo có nhan đề \textit{``A Two-Branch Hybrid Model for Imbalanced Lumbar Disc Grading and Zero-Shot Label Extension''}, học viên là tác giả thứ nhất và TS. Phan Trọng Nhân là tác giả liên hệ, xuất bản trong bộ \textit{Lecture Notes in Artificial Intelligence} của Springer.
 
 \section{Hạn chế}
 
-Luận văn còn một số hạn chế cần nêu rõ.
+Severe Recall 48.6\% tuy gấp bốn lần mô hình nền nhưng vẫn thấp hơn nhiều so với mức khoảng 80\% mà một công cụ sàng lọc cần đạt. Hệ thống vì vậy chỉ nên dùng như người đọc thứ hai, đánh dấu những ca nghi ngờ để bác sĩ xem lại.
 
-\textbf{Mức độ phát hiện ca nặng chưa đủ cho sàng lọc độc lập.} Severe Recall 48.6\% tuy gấp bốn lần mô hình nền nhưng vẫn thấp hơn nhiều so với mức khoảng 80\% mà một công cụ sàng lọc cần đạt. Vì vậy hệ thống chỉ nên dùng như người đọc thứ hai, đánh dấu những ca nghi ngờ để bác sĩ xem lại, chứ chưa thể dùng độc lập.
+Riêng hai nhóm lỗ liên hợp, Severe Recall chỉ nằm trong khoảng 18--22\%, thấp hơn hẳn so với ống sống. Các nghiên cứu kiểm chứng độc lập trên SpineNetV2 cũng ghi nhận giới hạn tương tự khi chỉ đọc mặt cắt dọc, nên nhiều khả năng đây là giới hạn của dữ liệu đầu vào chứ không phải của kiến trúc.
 
-\textbf{Kết quả yếu hơn ở hai nhóm lỗ liên hợp.} Severe Recall ở hai điều kiện này chỉ nằm trong khoảng 18--22\%, thấp hơn hẳn so với ống sống. Các nghiên cứu kiểm chứng độc lập trên SpineNetV2 cũng ghi nhận giới hạn tương tự khi chỉ đọc mặt cắt dọc, nên nhiều khả năng đây là giới hạn của dữ liệu đầu vào chứ không phải của kiến trúc.
-
-\textbf{Số lần chạy còn ít.} Mọi kết quả lấy trung bình qua ba hạt giống ngẫu nhiên. Đây là mức đủ để thấy xu hướng nhưng chưa đủ để kết luận có ý nghĩa thống kê chặt chẽ.
-
-\textbf{Chưa đánh giá trên dữ liệu bệnh viện trong nước.} Hai bộ dữ liệu sử dụng đều là dữ liệu công khai của nước ngoài. Hiệu năng trên ảnh chụp tại các cơ sở y tế Việt Nam, với máy chụp và thông số khác, chưa được kiểm chứng.
+Mọi kết quả lấy trung bình qua ba hạt giống ngẫu nhiên, đủ để thấy xu hướng nhưng chưa đủ để kết luận có ý nghĩa thống kê chặt chẽ. Và hai bộ dữ liệu sử dụng đều là dữ liệu công khai của nước ngoài, nên hiệu năng trên ảnh chụp tại các cơ sở y tế Việt Nam, với máy chụp và thông số khác, vẫn chưa được kiểm chứng.
 
 \section{Hướng phát triển}
 
-Năm hướng dưới đây được sắp theo thứ tự ưu tiên, kèm thời lượng dự kiến ở Bảng~\ref{tab:roadmap}.
+Bảng~\ref{tab:roadmap} tóm tắt năm hướng tiếp theo cùng thời lượng dự kiến.
 
 \begin{table}[htbp]
 \centering
@@ -51,7 +47,7 @@ Năm hướng dưới đây được sắp theo thứ tự ưu tiên, kèm thờ
 
 \subsection{Cơ chế học lại từ phản hồi của bác sĩ}
 
-Phần mềm hiện đã thu thập và lưu trữ mọi chỉnh sửa của bác sĩ, nhưng chưa có cơ chế để mô hình học lại từ những dữ liệu đó. Đây là hướng phát triển trực tiếp nhất.
+Phần mềm hiện đã thu thập và lưu trữ mọi chỉnh sửa của bác sĩ, nhưng chưa có cơ chế để mô hình học lại từ những dữ liệu đó.
 
 Một vòng phản hồi hoàn chỉnh cần ba phần còn thiếu. Thứ nhất là quy trình huấn luyện lại từ một lô chỉnh sửa, với bài toán khó là số mẫu mỗi lô rất ít so với tập huấn luyện gốc, nên cần kỹ thuật tránh việc mô hình quên những gì đã học. Thứ hai là cách đánh giá phiên bản mới một cách đáng tin trước khi đưa vào dùng. Thứ ba là bước người duyệt: nếu để mô hình tự cập nhật, chỉ vài chỉnh sửa sai cũng đủ làm chất lượng đi xuống mà không ai phát hiện, nên quyết định đưa phiên bản mới vào sử dụng vẫn nên thuộc về con người.
 
