@@ -185,20 +185,7 @@ Trường Đại học Bách Khoa \\
 
 % Slide ẩn (không trình chiếu) — chi tiết Channel & Spatial Attention; chỉ dùng để trả lời nếu hội đồng hỏi.
 \iffalse
-\begin{frame}
-\frametitle{Chi tiết khối Channel \& Spatial Attention}
-\begin{figure}
-\centering
-\includegraphics[width=0.86\textwidth]{image/attention_detail_cbam_paper.png}
-\end{figure}
-\vspace{0.3em}
-\begin{itemize}\small
-\item[--] \textbf{Channel attention $M_c$:} gộp avg + max pool $\to$ MLP chia sẻ $\to$ sigmoid.
-\item[--] \textbf{Spatial attention $M_s$:} pool theo kênh $\to$ conv $\to$ sigmoid.
-\end{itemize}
-\vspace{0.2em}
-{\scriptsize Nguồn hình: Woo và cộng sự (2018)~\cite{woo2018cbam}.}
-\end{frame}
+
 \fi
 
 \begin{frame}
@@ -283,19 +270,7 @@ ASSD       & \textbf{6.85 mm} & 7.48 mm & 19.50 mm & 8.04 mm \\
 \end{itemize}
 \end{frame}
 
-\begin{frame}
-\frametitle{Minh hoạ output phân vùng (TotalSpineSeg)}
-\begin{columns}[c]
-\column{.46\textwidth}
-\centering
-\includegraphics[height=0.62\textheight]{image/totalspineseg_output.png}
-\column{.54\textwidth}
-\begin{itemize}\small
-    \item[--] TotalSpineSeg phân vùng và gán nhãn từng đốt sống, đĩa đệm trên mặt cắt Sagittal.
-    \item[--] Mặt nạ này dùng để định vị khối liên đốt sống (IVV) chứa đĩa đệm cho mô-đun đánh giá ở giai đoạn sau.
-\end{itemize}
-\end{columns}
-\end{frame}
+
 
 \begin{frame}
 \frametitle{Lựa chọn mô-đun đánh giá bất thường}
@@ -319,21 +294,7 @@ MedGemma~\cite{google2025medgemma}    & 38.7\% & 50.1\% & 11.8\% & 18.6\% \\
 \end{itemize}
 \end{frame}
 
-\begin{frame}
-\frametitle{Các thách thức chính}
-\begin{columns}[c]
-\column{.54\textwidth}
-\begin{itemize}\small
-    \item[\textbf{1.}] \textbf{Mất cân bằng lớp:} lớp Severe quá hiếm ($\sim$4\%) $\Rightarrow$ Recall lớp Severe rất thấp, dễ bỏ sót ca nặng.
-    \item[\textbf{2.}] \textbf{Mở rộng nhãn (zero-shot):} thêm nhãn bệnh mới mà không huấn luyện lại; head phân loại cố định không làm được.
-    \item[\textbf{3.}] \textbf{Tổng quát hóa:} mô hình phải giữ được hiệu năng khi chuyển sang bộ dữ liệu khác.
-\end{itemize}
-\column{.46\textwidth}
-\centering
-\includegraphics[width=\linewidth]{image/rsna_class_distribution_nobanner.png}\\[2pt]
-{\scriptsize Phân bố lớp RSNA 2024 (minh họa thách thức 1).}
-\end{columns}
-\end{frame}
+
 
 %----------------------------------------------------------------------------------------
 %	4. MÔ HÌNH ĐỀ XUẤT
@@ -458,28 +419,7 @@ MedGemma~\cite{google2025medgemma}    & 38.7\% & 50.1\% & 11.8\% & 18.6\% \\
 }
 
 \subsection{Thiết lập thực nghiệm}
-\begin{frame}
-\frametitle{Thiết lập thực nghiệm}
-{\footnotesize \textbf{Hai nhóm thực nghiệm:} (1) lựa chọn mô hình nền (mục trước); (2) xác thực đóng góp grading (mục này).}
-\begin{table}
-\centering
-\renewcommand{\arraystretch}{1.3}
-\small
-\begin{tabular}{@{}l p{8.1cm}@{}}
-\toprule
-\textbf{Hạng mục} & \textbf{Cấu hình} \\
-\midrule
-RSNA 2024~\cite{rsna2024dataset} & $\sim$1\,800 BN train / $\sim$225 BN val; Sagittal T2/STIR; 3 nhóm bệnh \\
-SPIDER~\cite{vansluijs2022spider} & 8 nhãn; transfer learning (kiểm chứng tổng quát hóa) \\
-Ablation & SpineNetV2 / CBAM / BMC-only / Hybrid \\
-Phần cứng & NVIDIA RTX 4090 (24GB), Vast.ai \\
-Framework & PyTorch 2.0, Python 3.10 \\
-Tối ưu & AdamW, batch 32; Focal + Uncertainty + oversampling \\
-Đánh giá & macro R/P/F1/AUC/AUPRC + lớp Severe \\
-\bottomrule
-\end{tabular}
-\end{table}
-\end{frame}
+
 
 \subsection{Kết quả tinh chỉnh trên RSNA}
 \begin{frame}
@@ -510,42 +450,7 @@ Severe AUPRC    & 0.284 & 0.278 & 0.275 & \textbf{0.333} \\
 \end{itemize}
 \end{frame}
 
-\begin{frame}
-\frametitle{Kết quả chi tiết theo lớp trên RSNA 2024}
-\begin{table}
-\centering
-\scriptsize
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1.05}
-\begin{tabular}{llccccc}
-\toprule
-\textbf{Lớp} & \textbf{Cấu hình} & R & P & F1 & AUC & AUPRC \\
-\midrule
-\multirow{4}{*}{Normal/Mild}
- & SpineNetV2 & \textbf{0.963} & 0.840 & \textbf{0.897} & 0.829 & 0.948 \\
- & CBAM       & 0.693 & \textbf{0.949} & 0.791 & 0.848 & 0.949 \\
- & BMC-only   & 0.709 & 0.934 & 0.801 & 0.828 & 0.950 \\
- & Hybrid     & 0.746 & 0.937 & 0.825 & \textbf{0.861} & \textbf{0.957} \\
-\midrule
-\multirow{4}{*}{Moderate}
- & SpineNetV2 & 0.173 & \textbf{0.424} & 0.240 & \textbf{0.790} & \textbf{0.345} \\
- & CBAM       & \textbf{0.652} & 0.310 & 0.411 & 0.732 & 0.288 \\
- & BMC-only   & 0.563 & 0.280 & 0.360 & 0.733 & 0.278 \\
- & Hybrid     & 0.564 & 0.341 & \textbf{0.415} & 0.753 & 0.300 \\
-\midrule
-\multirow{4}{*}{\textbf{Severe}}
- & SpineNetV2 & 0.115 & 0.212 & 0.149 & 0.860 & 0.276 \\
- & CBAM       & 0.370 & 0.272 & 0.304 & 0.886 & 0.319 \\
- & BMC-only   & 0.245 & 0.211 & 0.229 & 0.874 & 0.218 \\
- & Hybrid     & \textbf{0.464} & \textbf{0.273} & \textbf{0.343} & \textbf{0.896} & \textbf{0.321} \\
-\bottomrule
-\end{tabular}
-\caption{Chi tiết theo từng lớp trên RSNA 2024, một lần chạy đại diện (hạt giống 42).}
-\end{table}
-\begin{itemize}
-    \item[$\rightarrow$] Lớp Severe: Hybrid thắng cả 5 chỉ số.
-\end{itemize}
-\end{frame}
+
 
 \subsection{Khả năng diễn giải}
 \begin{frame}
@@ -618,34 +523,7 @@ Mean AUPRC         & \textbf{0.633} & 0.580 & 0.544 & 0.611 \\
 \end{itemize}
 \end{frame}
 
-\begin{frame}
-\frametitle{Kết quả chi tiết trên SPIDER}
-\begin{table}
-\centering
-\scriptsize
-\setlength{\tabcolsep}{3.5pt}
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{lccccccccccc}
-\toprule
-& \multicolumn{5}{c}{\textbf{SpineNetV2}} & & \multicolumn{5}{c}{\textbf{Hybrid (ours)}} \\
-\cmidrule(lr){2-6}\cmidrule(lr){8-12}
-\textbf{Nhóm bệnh} & R & P & F1 & AUC & AUPRC & & R & P & F1 & AUC & AUPRC \\
-\midrule
-Modic             & 0.374 & \textbf{0.383} & 0.376 & 0.731 & \textbf{0.545} & & \textbf{0.382} & 0.377 & \textbf{0.379} & \textbf{0.827} & 0.500 \\
-Disc narrowing    & 0.820 & \textbf{0.828} & 0.823 & \textbf{0.927} & 0.882 & & \textbf{0.836} & 0.827 & \textbf{0.831} & 0.916 & \textbf{0.884} \\
-Spondylolisthesis & 0.597 & \textbf{0.793} & \textbf{0.632} & \textbf{0.826} & \textbf{0.325} & & \textbf{0.633} & 0.607 & 0.613 & 0.815 & 0.302 \\
-UP endplate       & 0.727 & 0.746 & 0.728 & 0.820 & \textbf{0.753} & & \textbf{0.753} & \textbf{0.748} & \textbf{0.749} & \textbf{0.828} & 0.751 \\
-LOW endplate      & \textbf{0.754} & \textbf{0.764} & \textbf{0.757} & 0.823 & \textbf{0.775} & & 0.743 & 0.745 & 0.744 & \textbf{0.826} & 0.763 \\
-Disc herniation   & 0.500 & 0.470 & 0.485 & 0.852 & \textbf{0.271} & & \textbf{0.636} & \textbf{0.592} & \textbf{0.601} & \textbf{0.860} & 0.248 \\
-Disc bulging      & 0.778 & 0.779 & 0.777 & \textbf{0.874} & 0.840 & & \textbf{0.796} & \textbf{0.794} & \textbf{0.792} & 0.873 & \textbf{0.851} \\
-\bottomrule
-\end{tabular}}
-\caption{Recall/Precision/F1/AUC/AUPRC theo từng nhóm bệnh trên SPIDER.}
-\end{table}
-\begin{itemize}
-    \item[$\rightarrow$] Hybrid cải thiện Recall/F1/AUC ở phần lớn nhóm bệnh.
-\end{itemize}
-\end{frame}
+
 
 %----------------------------------------------------------------------------------------
 %	6. KẾT LUẬN
@@ -916,6 +794,140 @@ F'' &= M_s(M_c(F)\otimes F)\otimes(M_c(F)\otimes F). \notag
     \includegraphics[width=0.82\textwidth]{image/spider_class_distribution.png}
     \caption{Phân bố nhãn trên SPIDER (8 nhóm bệnh) dùng để kiểm chứng tổng quát hóa.}
 \end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Phụ lục: Chi tiết khối Channel \& Spatial Attention}
+\begin{figure}
+\centering
+\includegraphics[width=0.86\textwidth]{image/attention_detail_cbam_paper.png}
+\end{figure}
+\vspace{0.3em}
+\begin{itemize}\small
+\item[--] \textbf{Channel attention $M_c$:} gộp avg + max pool $\to$ MLP chia sẻ $\to$ sigmoid.
+\item[--] \textbf{Spatial attention $M_s$:} pool theo kênh $\to$ conv $\to$ sigmoid.
+\end{itemize}
+\vspace{0.2em}
+{\scriptsize Nguồn hình: Woo và cộng sự (2018)~\cite{woo2018cbam}.}
+\end{frame}
+
+\begin{frame}
+\frametitle{Phụ lục: Minh hoạ output phân vùng (TotalSpineSeg)}
+\begin{columns}[c]
+\column{.46\textwidth}
+\centering
+\includegraphics[height=0.62\textheight]{image/totalspineseg_output.png}
+\column{.54\textwidth}
+\begin{itemize}\small
+    \item[--] TotalSpineSeg phân vùng và gán nhãn từng đốt sống, đĩa đệm trên mặt cắt Sagittal.
+    \item[--] Mặt nạ này dùng để định vị khối liên đốt sống (IVV) chứa đĩa đệm cho mô-đun đánh giá ở giai đoạn sau.
+\end{itemize}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{Phụ lục: Các thách thức chính}
+\begin{columns}[c]
+\column{.54\textwidth}
+\begin{itemize}\small
+    \item[\textbf{1.}] \textbf{Mất cân bằng lớp:} lớp Severe quá hiếm ($\sim$4\%) $\Rightarrow$ Recall lớp Severe rất thấp, dễ bỏ sót ca nặng.
+    \item[\textbf{2.}] \textbf{Mở rộng nhãn (zero-shot):} thêm nhãn bệnh mới mà không huấn luyện lại; head phân loại cố định không làm được.
+    \item[\textbf{3.}] \textbf{Tổng quát hóa:} mô hình phải giữ được hiệu năng khi chuyển sang bộ dữ liệu khác.
+\end{itemize}
+\column{.46\textwidth}
+\centering
+\includegraphics[width=\linewidth]{image/rsna_class_distribution_nobanner.png}\\[2pt]
+{\scriptsize Phân bố lớp RSNA 2024 (minh họa thách thức 1).}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{Phụ lục: Thiết lập thực nghiệm}
+{\footnotesize \textbf{Hai nhóm thực nghiệm:} (1) lựa chọn mô hình nền (mục trước); (2) xác thực đóng góp grading (mục này).}
+\begin{table}
+\centering
+\renewcommand{\arraystretch}{1.3}
+\small
+\begin{tabular}{@{}l p{8.1cm}@{}}
+\toprule
+\textbf{Hạng mục} & \textbf{Cấu hình} \\
+\midrule
+RSNA 2024~\cite{rsna2024dataset} & $\sim$1\,800 BN train / $\sim$225 BN val; Sagittal T2/STIR; 3 nhóm bệnh \\
+SPIDER~\cite{vansluijs2022spider} & 8 nhãn; transfer learning (kiểm chứng tổng quát hóa) \\
+Ablation & SpineNetV2 / CBAM / BMC-only / Hybrid \\
+Phần cứng & NVIDIA RTX 4090 (24GB), Vast.ai \\
+Framework & PyTorch 2.0, Python 3.10 \\
+Tối ưu & AdamW, batch 32; Focal + Uncertainty + oversampling \\
+Đánh giá & macro R/P/F1/AUC/AUPRC + lớp Severe \\
+\bottomrule
+\end{tabular}
+\end{table}
+\end{frame}
+
+\begin{frame}
+\frametitle{Phụ lục: Kết quả chi tiết theo lớp trên RSNA 2024}
+\begin{table}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Lớp} & \textbf{Cấu hình} & R & P & F1 & AUC & AUPRC \\
+\midrule
+\multirow{4}{*}{Normal/Mild}
+ & SpineNetV2 & \textbf{0.963} & 0.840 & \textbf{0.897} & 0.829 & 0.948 \\
+ & CBAM       & 0.693 & \textbf{0.949} & 0.791 & 0.848 & 0.949 \\
+ & BMC-only   & 0.709 & 0.934 & 0.801 & 0.828 & 0.950 \\
+ & Hybrid     & 0.746 & 0.937 & 0.825 & \textbf{0.861} & \textbf{0.957} \\
+\midrule
+\multirow{4}{*}{Moderate}
+ & SpineNetV2 & 0.173 & \textbf{0.424} & 0.240 & \textbf{0.790} & \textbf{0.345} \\
+ & CBAM       & \textbf{0.652} & 0.310 & 0.411 & 0.732 & 0.288 \\
+ & BMC-only   & 0.563 & 0.280 & 0.360 & 0.733 & 0.278 \\
+ & Hybrid     & 0.564 & 0.341 & \textbf{0.415} & 0.753 & 0.300 \\
+\midrule
+\multirow{4}{*}{\textbf{Severe}}
+ & SpineNetV2 & 0.115 & 0.212 & 0.149 & 0.860 & 0.276 \\
+ & CBAM       & 0.370 & 0.272 & 0.304 & 0.886 & 0.319 \\
+ & BMC-only   & 0.245 & 0.211 & 0.229 & 0.874 & 0.218 \\
+ & Hybrid     & \textbf{0.464} & \textbf{0.273} & \textbf{0.343} & \textbf{0.896} & \textbf{0.321} \\
+\bottomrule
+\end{tabular}
+\caption{Chi tiết theo từng lớp trên RSNA 2024, một lần chạy đại diện (hạt giống 42).}
+\end{table}
+\begin{itemize}
+    \item[$\rightarrow$] Lớp Severe: Hybrid thắng cả 5 chỉ số.
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Phụ lục: Kết quả chi tiết trên SPIDER}
+\begin{table}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3.5pt}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccccccccccc}
+\toprule
+& \multicolumn{5}{c}{\textbf{SpineNetV2}} & & \multicolumn{5}{c}{\textbf{Hybrid (ours)}} \\
+\cmidrule(lr){2-6}\cmidrule(lr){8-12}
+\textbf{Nhóm bệnh} & R & P & F1 & AUC & AUPRC & & R & P & F1 & AUC & AUPRC \\
+\midrule
+Modic             & 0.374 & \textbf{0.383} & 0.376 & 0.731 & \textbf{0.545} & & \textbf{0.382} & 0.377 & \textbf{0.379} & \textbf{0.827} & 0.500 \\
+Disc narrowing    & 0.820 & \textbf{0.828} & 0.823 & \textbf{0.927} & 0.882 & & \textbf{0.836} & 0.827 & \textbf{0.831} & 0.916 & \textbf{0.884} \\
+Spondylolisthesis & 0.597 & \textbf{0.793} & \textbf{0.632} & \textbf{0.826} & \textbf{0.325} & & \textbf{0.633} & 0.607 & 0.613 & 0.815 & 0.302 \\
+UP endplate       & 0.727 & 0.746 & 0.728 & 0.820 & \textbf{0.753} & & \textbf{0.753} & \textbf{0.748} & \textbf{0.749} & \textbf{0.828} & 0.751 \\
+LOW endplate      & \textbf{0.754} & \textbf{0.764} & \textbf{0.757} & 0.823 & \textbf{0.775} & & 0.743 & 0.745 & 0.744 & \textbf{0.826} & 0.763 \\
+Disc herniation   & 0.500 & 0.470 & 0.485 & 0.852 & \textbf{0.271} & & \textbf{0.636} & \textbf{0.592} & \textbf{0.601} & \textbf{0.860} & 0.248 \\
+Disc bulging      & 0.778 & 0.779 & 0.777 & \textbf{0.874} & 0.840 & & \textbf{0.796} & \textbf{0.794} & \textbf{0.792} & 0.873 & \textbf{0.851} \\
+\bottomrule
+\end{tabular}}
+\caption{Recall/Precision/F1/AUC/AUPRC theo từng nhóm bệnh trên SPIDER.}
+\end{table}
+\begin{itemize}
+    \item[$\rightarrow$] Hybrid cải thiện Recall/F1/AUC ở phần lớn nhóm bệnh.
+\end{itemize}
 \end{frame}
 
 \end{document}
