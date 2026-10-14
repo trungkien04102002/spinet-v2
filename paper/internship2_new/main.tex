@@ -143,31 +143,13 @@ Học viên xin cam đoan luận văn \textit{``Ứng dụng AI trong gán nhãn
 \prefacesection{Tóm tắt}
 Đề tài là: \textit{``Ứng dụng AI trong gán nhãn y tế cho bệnh đau thắt lưng''}.
 
-Đau thắt lưng là nguyên nhân gây mất khả năng lao động hàng đầu trên thế giới, và việc đánh giá mức độ thoái hóa trên ảnh MRI cột sống thắt lưng hiện vẫn do bác sĩ thực hiện thủ công cho từng đĩa đệm. Công việc này tốn nhiều thời gian và có độ dao động đáng kể giữa những người đọc khác nhau. Khi tự động hóa, có hai khó khăn chính. Thứ nhất là mất cân bằng lớp nghiêm trọng: nhóm Severe, nhóm quan trọng nhất về mặt lâm sàng, chiếm chưa tới 5\% dữ liệu, và một mô hình huấn luyện theo cách thông thường gần như không bao giờ dự đoán nhóm này. Thứ hai là không gian nhãn cố định: một mô hình huấn luyện trên bộ nhãn này không trả lời được câu hỏi đặt theo bộ nhãn khác nếu không gắn thêm đầu ra mới và huấn luyện lại.
+Đau thắt lưng là nguyên nhân gây mất khả năng lao động hàng đầu trên thế giới. Việc đánh giá mức độ thoái hóa trên ảnh MRI cột sống thắt lưng hiện vẫn do bác sĩ làm thủ công cho từng đĩa đệm, vừa tốn thời gian vừa dao động đáng kể giữa những người đọc khác nhau. Khi tự động hóa, có hai khó khăn chính. Thứ nhất là mất cân bằng lớp: nhóm Severe, nhóm quan trọng nhất về lâm sàng, chiếm chưa tới 5\% dữ liệu nên mô hình huấn luyện theo cách thông thường gần như không bao giờ dự đoán nhóm này. Thứ hai là không gian nhãn cố định: mô hình huấn luyện trên lược đồ nhãn này không trả lời được câu hỏi đặt theo lược đồ khác nếu không gắn thêm đầu ra và huấn luyện lại.
 
-Luận văn giải quyết hai vấn đề trên bằng một giải pháp gồm hai phần. Về mô hình, luận văn đề xuất kiến trúc Hybrid hai nhánh: một nhánh thị giác khối ba chiều có cơ chế chú ý CBAM nắm bắt ngữ cảnh giải phẫu xuyên lát cắt, và một nhánh đa phương thức BiomedCLIP được giữ đông cứng để cung cấp tri thức ngữ nghĩa học từ dữ liệu y sinh quy mô lớn; một tầng hợp nhất nhỏ trộn hai biểu diễn thành một vector căn chỉnh với không gian văn bản. Vì dự đoán được thực hiện bằng cách so khớp vector này với các câu mô tả nhãn, tập nhãn trở thành đầu vào của suy luận, nên cùng một mô hình đã huấn luyện có thể chấm một bộ nhãn hoàn toàn mới mà không cần đầu ra mới và không cần huấn luyện lại. Đi kèm là một quy trình xử lý mất cân bằng gồm focal loss, trọng số lớp theo căn bậc hai, lấy mẫu lại lớp thiểu số và tăng cường dữ liệu. Về ứng dụng, luận văn hiện thực một phần mềm hỗ trợ bác sĩ gán nhãn ảnh MRI: tải ảnh DICOM, phân vùng tự động bằng TotalSpineSeg, chấm các nhãn bệnh lý bằng mô hình đề xuất, cho phép bác sĩ xem và chỉnh sửa trực tiếp trên ảnh, đồng thời lưu lại toàn bộ chỉnh sửa làm cơ sở cho vòng phản hồi cải tiến mô hình.
+Luận văn đề xuất kiến trúc Hybrid hai nhánh, kết hợp một nhánh thị giác khối ba chiều có cơ chế chú ý CBAM với một nhánh BiomedCLIP được giữ đông cứng; một tầng hợp nhất nhỏ trộn hai biểu diễn thành vector căn chỉnh với không gian văn bản. Vì dự đoán được thực hiện bằng cách so khớp vector này với câu mô tả nhãn, tập nhãn trở thành đầu vào của suy luận, nên cùng một mô hình đã huấn luyện có thể chấm một bộ nhãn hoàn toàn mới mà không cần huấn luyện lại. Đi kèm là quy trình xử lý mất cân bằng gồm focal loss, trọng số lớp theo căn bậc hai, lấy mẫu lại lớp thiểu số và tăng cường dữ liệu. Trên nền đó, luận văn hiện thực một phần mềm cho bác sĩ tải ảnh DICOM, xem kết quả phân vùng và chấm nhãn ngay trên ảnh, chỉnh sửa mọi nhãn, và lưu lại các chỉnh sửa.
 
-Mọi kết quả dưới đây là trung bình qua ba hạt giống ngẫu nhiên. Trên bộ dữ liệu RSNA 2024, so với baseline SpineNetV2, kiến trúc đề xuất nâng Mean F1 macro từ 0.420 lên 0.527, và cải thiện lớn nhất nằm ở nhóm Severe: Severe Recall tăng từ 12.3\% lên 48.6\%, tức khoảng bốn lần, còn Severe F1 tăng từ 0.152 lên 0.356. Cái giá phải trả là Mean Accuracy giảm 8.6 điểm, do baseline đạt độ chính xác cao chủ yếu nhờ dự đoán Normal/Mild ở hầu hết trường hợp; trong bối cảnh lâm sàng, bỏ sót một ca nặng nghiêm trọng hơn một lần báo động nhầm. Khả năng mở rộng không gian nhãn được kiểm chứng trên bộ dữ liệu SPIDER, vốn đến từ bệnh viện khác và dùng lược đồ nhãn khác: không huấn luyện lại dòng nào, mô hình chấm được tám nhãn chưa từng thấy với F1 trung bình 0.362, và khi cho phép huấn luyện có giám sát thì đạt mức ngang SpineNetV2 (0.653 so với 0.646). Luận văn cũng so sánh phương pháp đề xuất với hai phương pháp đã công bố trên cùng một cách chia dữ liệu, và trình bày các kết quả âm thu được trong quá trình thử nghiệm.
+Mọi kết quả là trung bình qua ba hạt giống ngẫu nhiên. Trên RSNA 2024, so với SpineNetV2, kiến trúc đề xuất nâng Mean F1 macro từ 0.420 lên 0.527, Severe Recall từ 12.3\% lên 48.6\% và Severe F1 từ 0.152 lên 0.356, đổi lại Mean Accuracy giảm 8.6 điểm do mô hình nền đạt độ chính xác cao chủ yếu nhờ dự đoán thiên về lớp đa số. Trên SPIDER, bộ dữ liệu đến từ bệnh viện khác với lược đồ nhãn khác, mô hình chấm được tám nhãn chưa từng thấy mà không huấn luyện lại, đạt F1 trung bình 0.362; khi cho phép huấn luyện có giám sát thì đạt 0.653 so với 0.646. Một phần kết quả đã được công bố tại hội nghị MIWAI 2026 và xuất bản trong bộ \textit{Lecture Notes in Artificial Intelligence} của Springer.
 
-Một phần kết quả của luận văn đã được công bố tại hội nghị quốc tế \textit{The 18th Multi-disciplinary International Conference on Artificial Intelligence} (MIWAI 2026), Halifax, Nova Scotia, Canada, với bài báo \textit{``A Two-Branch Hybrid Model for Imbalanced Lumbar Disc Grading and Zero-Shot Label Extension''}, xuất bản trong bộ Lecture Notes in Artificial Intelligence của Springer.
-
-Luận văn được cấu trúc thành bảy chương:
-\begin{itemize}
-    \item \textbf{Chương 1: Giới thiệu đề tài}\\
-    Trình bày tổng quan về đề tài, bối cảnh lâm sàng, mục tiêu, giới hạn, đóng góp chính và phạm vi của luận văn.
-    \item \textbf{Chương 2: Cơ sở lí thuyết}\\
-    Trình bày các kiến thức nền tảng về ảnh y tế trong chẩn đoán bệnh cột sống và các mô hình học sâu liên quan như mạng nơ-ron nhân tạo, mạng tích chập, kiến trúc U-Net, Transformer và các mô hình thị giác ngôn ngữ.
-    \item \textbf{Chương 3: Công trình nghiên cứu liên quan}\\
-    Tổng hợp và phân tích các nghiên cứu đã công bố về ứng dụng trí tuệ nhân tạo trong phân tích ảnh y tế cột sống, chỉ ra khoảng trống mà luận văn hướng tới.
-    \item \textbf{Chương 4: Mô hình đề xuất}\\
-    Trình bày kiến trúc Hybrid hai nhánh, cơ chế mở rộng không gian nhãn qua câu mô tả, quy trình xử lý mất cân bằng lớp và cách huấn luyện.
-    \item \textbf{Chương 5: Thực nghiệm và đánh giá mô hình}\\
-    Trình bày các thí nghiệm lựa chọn mô-đun, kết quả của mô hình đề xuất trên hai bộ dữ liệu, so sánh với các phương pháp đã công bố trên cùng cách chia dữ liệu, và các kết quả âm thu được.
-    \item \textbf{Chương 6: Phần mềm hỗ trợ bác sĩ gán nhãn}\\
-    Trình bày yêu cầu, kiến trúc, các chức năng, quá trình hiện thực và kiểm thử của phần mềm, cùng cơ chế ghi nhận chỉnh sửa của bác sĩ.
-    \item \textbf{Chương 7: Kết luận và hướng phát triển}\\
-    Tổng kết các kết quả đã đạt được, nêu những hạn chế còn tồn tại và đề xuất các hướng phát triển tiếp theo.
-\end{itemize}
+Luận văn gồm bảy chương: Chương 1 giới thiệu đề tài, mục tiêu, giới hạn và đóng góp; Chương 2 trình bày cơ sở lí thuyết; Chương 3 phân tích các công trình liên quan; Chương 4 trình bày mô hình đề xuất; Chương 5 trình bày thực nghiệm và đánh giá mô hình; Chương 6 trình bày phần mềm hỗ trợ bác sĩ; Chương 7 kết luận và nêu hướng phát triển.
 
 \prefacesection{Abstract}
 
@@ -214,8 +196,6 @@ All results are averaged over three random seeds. On RSNA 2024, against the Spin
 \bibliography{thesiscite}
 \endgroup
 
-\appendix
-\include{phuluc.tex}
 \end{document}
 
 
