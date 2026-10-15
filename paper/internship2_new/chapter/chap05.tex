@@ -359,7 +359,7 @@ Severe AUPRC           & 0.284 $\pm$ 0.019 & 0.278 $\pm$ 0.099 & 0.275 $\pm$ 0.0
 
 \textbf{Phân tích chính:} Mọi số liệu trong Bảng~\ref{tab:rsna_ablation} được tính trên ba điều kiện hẹp ống sống và hẹp lỗ liên hợp trái, phải, lấy trung bình của ba lần chạy. Hybrid dẫn đầu ở toàn bộ các chỉ số trong bảng: Mean F1 macro 0.527, Mean Recall 0.592, Mean Precision 0.526, Mean AUC 0.838 và Mean AUPRC 0.533.
 
-Cái giá phải trả nằm ở Mean Accuracy, chỉ số không có trong bảng: SpineNetV2 đạt 81.0\% còn Hybrid chỉ 72.4\%, giảm 8.6 điểm. Nguyên nhân là SpineNetV2 đạt độ chính xác cao chủ yếu nhờ dự đoán thiên về lớp Normal/Mild vốn chiếm đa số, nên chỉ số này không phản ánh năng lực phát hiện ca nặng.
+Đổi lại, Mean Accuracy giảm từ 81.0\% xuống 72.4\%, mất 8.6 điểm. Chỉ số này không đưa vào bảng. SpineNetV2 được điểm cao ở đây vì phần lớn ca trong dữ liệu là Normal/Mild, cứ đoán nhóm đó thì phần lớn là đúng. Nhưng đoán như vậy thì bỏ sót gần hết ca nặng.
 
 Cải thiện rõ rệt nhất nằm ở lớp Severe. Severe Recall của Hybrid đạt 0.486, gấp khoảng bốn lần SpineNetV2 (0.123), và Severe F1 tăng từ 0.152 lên 0.356, tức hơn gấp đôi. Khi tách riêng đóng góp, CBAM-only và BMC-only đều cải thiện Severe F1 lên quanh mức 0.26, còn Hybrid kết hợp được cả hai và đạt 0.356. Độ lệch chuẩn của hai cấu hình đơn nhánh (0.082 và 0.034) lớn hơn hẳn Hybrid (0.017), cho thấy việc ghép hai nhánh còn giúp kết quả ổn định hơn giữa các lần chạy.
 
@@ -403,11 +403,11 @@ Bảng~\ref{tab:rsna_perclass} trình bày 5 chỉ số theo từng lớp cho c�
 \end{tabular}
 \end{table}
 
-Bảng~\ref{tab:rsna_per_cond_acc} chi tiết theo từng condition × grade với 4 chỉ số phân loại (Acc / Recall / Precision / F1). Cải thiện đáng kể nhất nằm ở Severe Recall trên cả 3 condition: Spinal Canal +35.8\%, L. Foraminal +37.5\%, R. Foraminal +31.3\%, là các con số có ý nghĩa lâm sàng vì giảm trực tiếp tỷ lệ bỏ sót ca nặng.
+Bảng~\ref{tab:rsna_per_cond_acc} chi tiết theo từng condition × grade với 4 chỉ số phân loại (Acc / Recall / Precision / F1), mỗi ô ghi SpineNetV2 trước rồi tới Hybrid. Cải thiện đáng kể nhất nằm ở Severe Recall trên cả 3 condition: Spinal Canal +35.8\%, L. Foraminal +37.5\%, R. Foraminal +31.3\%, là các con số có ý nghĩa lâm sàng vì giảm trực tiếp tỷ lệ bỏ sót ca nặng.
 
 \begin{table}[htbp]
 \centering
-\caption{Chi tiết theo điều kiện và mức độ trên RSNA, một lần chạy đại diện.}
+\caption{Chi tiết theo điều kiện và mức độ trên RSNA, một lần chạy đại diện. Mỗi ô ghi SpineNetV2 $\to$ Hybrid.}
 \label{tab:rsna_per_cond_acc}
 \renewcommand{\arraystretch}{1.2}
 \setlength{\tabcolsep}{3pt}
@@ -434,7 +434,7 @@ R. Foraminal   & \textbf{Severe}  & \textbf{76.6} $\to$ 67.4 & 0.0 $\to$ \textbf
 
 \begin{table}[htbp]
 \centering
-\caption{Chi tiết theo điều kiện và mức độ trên RSNA, một lần chạy đại diện, phần AUC và AUPRC.}
+\caption{Chi tiết theo điều kiện và mức độ trên RSNA, một lần chạy đại diện, phần AUC và AUPRC. So SpineNetV2 với Hybrid.}
 \label{tab:rsna_per_cond_auc}
 \renewcommand{\arraystretch}{1.2}
 \setlength{\tabcolsep}{4pt}
@@ -467,6 +467,43 @@ R. Foraminal   & \textbf{Severe} & \textbf{0.842} & 0.837 & 0.167 & \textbf{0.18
     \item Sự sụt giảm Accuracy tổng đến từ Recall của Normal/Mild giảm, nhưng Precision của Normal/Mild lại tăng (+5\% / +13\% / +15\%), nghĩa là khi mô hình dự đoán Normal thì độ chính xác cao hơn baseline.
     \item AUC và AUPRC của Severe tăng đồng nhất trên cả 3 condition (Severe AUPRC trung bình $+0.043$, tương đương +16\% tương đối). Vì AUC/AUPRC đánh giá ranking độc lập với ngưỡng, kết quả này khẳng định cải thiện ở mức biểu diễn đặc trưng, không phải artifact của ngưỡng phân loại.
 \end{enumerate}
+
+\subsection{Mở rộng nhãn zero-shot trên SPIDER}
+\label{subsec:spider_zeroshot}
+
+Mô hình Hybrid huấn luyện xong trên RSNA được giữ nguyên trọng số, không huấn luyện thêm bước nào trên SPIDER. Thứ duy nhất thay đổi là danh sách câu mô tả đưa vào bộ mã hóa văn bản: thay tám câu mô tả của SPIDER vào chỗ các câu mô tả của RSNA, rồi chấm trực tiếp trên toàn bộ tập SPIDER.
+
+Hai cấu hình SpineNetV2 và CBAM không chạy được thí nghiệm này. Chúng dùng head tuyến tính cố định ba lớp theo đúng ba điều kiện của RSNA, nên không có cách nào sinh ra dự đoán cho một nhãn chưa từng xuất hiện lúc huấn luyện.
+
+\begin{table}[htbp]
+\centering
+\caption{Kết quả zero-shot trên tám nhãn SPIDER, mô hình Hybrid huấn luyện trên RSNA và không huấn luyện lại.}
+\label{tab:spider_zeroshot}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Nhãn SPIDER} & \textbf{F1} & \textbf{AUC} \\
+\midrule
+Disc bulging          & \textbf{0.613} & 0.829 \\
+Disc narrowing        & 0.586 & 0.834 \\
+Disc herniation       & 0.563 & 0.772 \\
+\midrule
+Lower endplate damage & 0.468 & 0.738 \\
+Upper endplate damage & 0.467 & 0.740 \\
+Pfirrmann (5 lớp)     & 0.155 & 0.687 \\
+Spondylolisthesis     & 0.028 & 0.807 \\
+Modic (4 lớp)         & 0.018 & 0.454 \\
+\midrule
+\textbf{Trung bình 8 nhãn} & \textbf{0.362} & \textbf{0.733} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Bảng~\ref{tab:spider_zeroshot} cho thấy kết quả chia làm ba nhóm rõ rệt. Ba nhãn hình thái đĩa đệm, gồm phồng đĩa đệm, hẹp đĩa đệm và thoát vị đĩa đệm, đạt F1 từ 0.563 đến 0.613. Đây là những dấu hiệu nhìn thấy trực tiếp trên lát cắt dọc và khá gần với ba điều kiện của RSNA, nên đặc trưng học được từ RSNA vẫn dùng lại được. Hai nhãn tổn thương mặt đốt sống đạt khoảng 0.47, thấp hơn nhưng vẫn trên mức đoán ngẫu nhiên.
+
+Nhóm thứ ba gần như thất bại. Modic chỉ đạt F1 0.018 với AUC 0.454, tức là không phân biệt được gì so với đoán ngẫu nhiên. Nguyên nhân là biến đổi Modic được định nghĩa theo tín hiệu tủy xương trên hai chuỗi ảnh T1 và T2 đọc kèm nhau, trong khi mô hình chỉ nhận chuỗi T2. Thông tin cần thiết không có trong đầu vào, nên không câu mô tả nào cứu được. Pfirrmann đạt 0.155 vì là thang năm mức, khó hơn hẳn các nhãn nhị phân. Spondylolisthesis có F1 chỉ 0.028 nhưng AUC tới 0.807: mô hình xếp hạng đúng, chỉ là ngưỡng mặc định không phù hợp với một nhãn chỉ có 2.8\% mẫu dương.
+
+Trung bình tám nhãn đạt F1 0.362, còn xa mức dùng được trên lâm sàng. Luận văn không xem đây là một bộ phân loại hoàn chỉnh cho SPIDER. Điều đáng chú ý là mô hình vẫn chấm được tám nhãn của một hệ tiêu chí khác, ở một bệnh viện khác, mà không phải huấn luyện lại. Hai cấu hình nền không có số để đặt cạnh, vì chúng không chạy được thí nghiệm này.
 
 \subsection{Kết quả cross-dataset trên tập SPIDER}
 \label{sec:spider_transfer_sec}
@@ -591,7 +628,12 @@ BiomedCLIP đóng vai trò chuẩn hóa, giúp mô hình không thoái hóa khi
 chuyển sang dữ liệu khác (so với CBAM bị quá khớp với RSNA và thắng rất ít trên SPIDER). Đây là sự cân bằng cần thiết cho triển khai lâm sàng trên nhiều cơ sở y tế khác nhau.
 \section{Thảo luận chung}
 
+Ba thí nghiệm ở chương này nối tiếp nhau. Thí nghiệm đầu chọn TotalSpineSeg cho khâu phân vùng. Mô hình này dẫn đầu ở bốn trên năm tiêu chí, riêng Precision bỏ xa phần còn lại, 97.87\% so với mức quanh 50\%. Nó cũng là mô hình có Recall thấp nhất, tức là khoanh thiếu nhiều hơn khoanh thừa. Với bài toán này thì đổi như vậy chấp nhận được, vì mặt nạ còn phải dùng tiếp để cắt khối ảnh cho khâu chấm nhãn: khoanh thiếu một phần đĩa đệm vẫn cắt đúng chỗ, còn khoanh lấn sang mô bên cạnh thì khối ảnh lệch. Thí nghiệm thứ hai chọn SpineNetV2 làm nền cho khâu chấm nhãn. Giải pháp giải nhất RSNA 2024 có F1 cao hơn khoảng ba điểm, nhưng là tổ hợp nhiều mô hình lớn, khó duy trì trong một phần mềm chạy thật. Cũng chính thí nghiệm này lộ ra vấn đề: SpineNetV2 đạt F1 phát hiện 77.50\% mà Severe Recall chỉ 12.3\%, nghĩa là gần chín trên mười ca nặng bị bỏ sót. Đó là lý do có thí nghiệm thứ ba.
 
-\textbf{Đóng góp về phương pháp:} Luận văn đã đề xuất kiến trúc Hybrid. Đây là một trong các công trình đầu tiên trên cùng bộ dữ liệu có 3-seed mean$\pm$std cho cross-dataset transfer learning.
+Kết quả của thí nghiệm thứ ba cho thấy phần cải thiện tập trung đúng vào lớp Severe. Severe Recall tăng từ 12.3\% lên 48.6\%, Severe F1 từ 0.152 lên 0.356. Đáng chú ý hơn, Severe AUC tăng từ 0.872 lên 0.899 và Severe AUPRC từ 0.284 lên 0.333. Hai chỉ số sau không phụ thuộc ngưỡng phân loại, nên mức tăng của chúng nói rằng mô hình thật sự xếp hạng ca nặng tốt hơn, chứ không phải chỉ hạ ngưỡng để bắt nhiều hơn.
 
-\textbf{Hạn chế và hướng tiếp theo:} Hướng phát triển sâu hơn được trình bày trong Chương 7.
+Đổi lại Mean Accuracy giảm 8.6 điểm. Mô hình nền được điểm cao ở chỉ số này vì lớp đa số chiếm gần 80\% dữ liệu. Với bài toán sàng lọc thì bỏ sót một ca nặng nặng hơn một lần báo động nhầm, vì báo nhầm thì bác sĩ xem lại ảnh là loại được ngay.
+
+Phần kiểm chứng trên SPIDER trả lời hai câu hỏi khác nhau. Khi cho phép huấn luyện lại, Hybrid đạt F1 0.653 so với 0.646 của mô hình nền, chênh lệch nhỏ và nằm trong khoảng dao động giữa các lần chạy; điều đáng nói ở đây là cấu hình chỉ dùng CBAM tụt xuống 0.619, cho thấy nhánh giữ nguyên trọng số giúp phần lợi thế của cơ chế chú ý không mất đi khi đổi bộ dữ liệu. Khi không huấn luyện lại, mô hình vẫn chấm được tám nhãn mới với F1 trung bình 0.362, mức mà hai cấu hình dùng head cố định không thể có vì không chạy được thí nghiệm.
+
+Những gì chương này chưa giải quyết được cũng khá rõ. Hai nhãn lỗ liên hợp vẫn kém hơn hẳn nhãn ống sống. Nhãn Modic gần như không học được vì cần đọc kèm chuỗi T1 mà mô hình không có. Và mọi kết quả đều lấy trung bình của ba lần chạy, đủ để thấy xu hướng nhưng chưa đủ để kết luận chặt chẽ về mặt thống kê. Chương~\ref{chap:conclusion} bàn tiếp về các hạn chế này.
