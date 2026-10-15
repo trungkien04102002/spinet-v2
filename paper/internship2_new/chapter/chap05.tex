@@ -218,7 +218,7 @@ Ba mô hình được đánh giá trên tập validation gồm 150 bệnh nhân,
 
 Bảng~\ref{tab:scs_metrics} trình bày chi tiết kết quả của nhóm này. Kết quả cho thấy đây là nhóm bệnh lý có tỷ lệ phát hiện tốt nhất. Ning Shen đạt F1-Score 81.20\% với precision 81.82\% và recall 80.60\%, cho thấy model này phát hiện khá chính xác và ít bỏ sót. SpineNetV2 đạt F1-Score 78.79\% với recall 80.00\%, cũng thể hiện khả năng phát hiện tốt. MedGemma có F1-Score thấp hơn nhiều (31.17\%) do recall chỉ 20.87\%, nghĩa là bỏ sót gần 80\% bệnh nhân có bệnh hẹp ống sống.
 
-\begin{table}[h!]
+\begin{table}[H]
     \centering
     \caption{Kết quả chi tiết nhóm Hẹp ống sống}
     \label{tab:scs_metrics}
@@ -238,7 +238,7 @@ Bảng~\ref{tab:scs_metrics} trình bày chi tiết kết quả của nhóm này
 
 Bảng~\ref{tab:nfn_left_metrics} trình bày chi tiết kết quả của nhóm này. Ning Shen đạt F1-Score 79.43\% với Recall cao (87.37\%), phù hợp với yêu cầu của screening là cần ưu tiên phát hiện được nhiều trường hợp bị bệnh. SpineNetV2 cũng có Recall cao (84.00\%) và F1-Score 77.30\%, cho thấy sự cân bằng khá tốt giữa khả năng phát hiện và độ chính xác. MedGemma có hiệu năng kém hơn với F1-Score 13.86\% do Recall chỉ 8.43\%, tức là bỏ sót hơn 91\% bệnh nhân bị bệnh Hẹp lỗ liên hợp trái.
 
-\begin{table}[h!]
+\begin{table}[H]
     \centering
     \caption{Kết quả chi tiết nhóm Hẹp lỗ liên hợp trái}
     \label{tab:nfn_left_metrics}
@@ -258,7 +258,7 @@ Bảng~\ref{tab:nfn_left_metrics} trình bày chi tiết kết quả của nhóm
 
 Bảng~\ref{tab:nfn_right_metrics} trình bày chi tiết kết quả của nhóm này. Ning Shen có F1-Score 81.48\% và Recall 84.62\%, thể hiện sự ổn định trên các nhóm bệnh lý khác nhau. SpineNetV2 đạt F1-Score 76.40\% với Precision và Recall khá cân bằng (75.56\% và 77.27\%). MedGemma có kết quả thấp nhất với F1-Score 10.75\% và Recall cực kỳ thấp (6.02\%), bỏ sót gần 94\% bệnh nhân bị Hẹp lỗ liên hợp phải. Điều này chứng tỏ MedGemma có xu hướng dự đoán quá an toàn (thiên về kết quả bình thường), do đó không đáp ứng được yêu cầu của việc sàng lọc
 
-\begin{table}[h!]
+\begin{table}[H]
     \centering
     \caption{Kết quả chi tiết nhóm Hẹp lỗ liên hợp phải}
     \label{tab:nfn_right_metrics}
