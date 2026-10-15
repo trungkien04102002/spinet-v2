@@ -85,7 +85,7 @@ Trường Đại học Bách Khoa \\
 \footnotesize Kiến trúc \textbf{Hybrid hai nhánh}: nhánh chú ý CBAM trên ResNet-34 ba chiều ghép với nhánh BiomedCLIP đông cứng, dự đoán bằng cách so khớp với \textbf{câu mô tả nhãn} nên tập nhãn trở thành đầu vào. Kèm quy trình xử lý mất cân bằng lớp. Trên nền đó xây dựng \textbf{phần mềm} cho bác sĩ xem và sửa nhãn.
 \end{block}
 \begin{block}{Kết quả}
-\footnotesize Severe Recall \textbf{12.3\% $\to$ 48.6\%} ($\sim$4 lần), Severe F1 0.152 $\to$ 0.356. Chấm được \textbf{8 nhãn chưa từng thấy} trên SPIDER mà không huấn luyện lại. Phần mềm chạy được, 209 bài kiểm thử. Bài báo đã công bố tại \textbf{MIWAI 2026}.
+\footnotesize Severe Recall \textbf{12.3\% $\to$ 48.6\%} ($\sim$4 lần), Severe F1 0.152 $\to$ 0.356. Chấm được \textbf{8 nhãn chưa từng thấy} trên SPIDER mà không huấn luyện lại. Phần mềm chạy được. Bài báo đã công bố tại \textbf{MIWAI 2026}.
 \end{block}
 \end{frame}
 
@@ -590,8 +590,7 @@ Mục tiêu: rút ngắn thời gian đọc phim, không thay bác sĩ.
     \footnotesize
     \item[--] Mỗi lần sửa, hệ thống lưu cặp (giá trị mô hình, giá trị bác sĩ) kèm mã ca và tầng đĩa đệm.
     \item[--] Gom chung toàn hệ thống, không theo từng ca: một ca chỉ có vài đĩa đệm, quá ít để huấn luyện.
-    \item[--] Phần máy chủ có \textbf{209 bài kiểm thử tự động}.
-    \item[--] \textbf{Mới dừng ở việc lưu lại} --- mô hình chưa học lại được từ dữ liệu này (xem Hướng phát triển).
+    \item[--] \textbf{Mới dừng ở việc lưu lại}: mô hình chưa học lại được từ dữ liệu này (xem Hướng phát triển).
 \end{itemize}
 \end{frame}
 
@@ -631,7 +630,7 @@ Bên cạnh việc khảo sát và lựa chọn mô hình nền cho cả hai mô
 \textit{``A Two-Branch Hybrid Model for Imbalanced Lumbar Disc Grading and Zero-Shot Label Extension''}
 \end{block}
 \begin{itemize}
-    \item[--] \textbf{MIWAI 2026} -- \textit{The 18th Multi-disciplinary International Conference on Artificial Intelligence}, Halifax, Nova Scotia, Canada, 10--12/10/2026.
+    \item[--] \textbf{MIWAI 2026} -- \textit{The 19th International Conference on Multi-disciplinary Trends in Artificial Intelligence}, Halifax, Nova Scotia, Canada, 10--12/10/2026.
     \item[--] Xuất bản trong bộ \textbf{Lecture Notes in Artificial Intelligence}, Springer.
     \item[--] Hà Trung Kiên (tác giả thứ nhất), TS. Phan Trọng Nhân (tác giả liên hệ).
     \item[--] Nội dung: kiến trúc Hybrid hai nhánh và cơ chế mở rộng không gian nhãn zero-shot.
