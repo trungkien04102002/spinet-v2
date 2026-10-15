@@ -12,8 +12,8 @@ Toàn bộ quá trình huấn luyện và đánh giá được thực hiện tr�
     \item \textbf{Thư viện chính:} SimpleITK, pydicom, OpenCV, scikit-learn, numpy.
 \end{itemize}
 
-\subsection{Tập dữ liệu RSNA 2024 Lumbar Spine Degenerative Classification \cite{rsna2024dataset}}
-Đây là tập dữ liệu chủ đạo dùng để huấn luyện và đánh giá mô-đun grading. Bộ dữ liệu được tổ chức bởi Hiệp hội X-Quang Bắc Mỹ (RSNA) phối hợp cùng Hiệp hội Thần kinh học Hoa Kỳ (ASNR).
+\subsection{Tập dữ liệu RSNA 2024 Lumbar Spine Degenerative Classification}
+Đây là tập dữ liệu chủ đạo dùng để huấn luyện và đánh giá mô-đun grading~\cite{rsna2024dataset}. Bộ dữ liệu được tổ chức bởi Hiệp hội X-Quang Bắc Mỹ (RSNA) phối hợp cùng Hiệp hội Thần kinh học Hoa Kỳ (ASNR).
 
 \begin{itemize}
     \item \textbf{Nguồn gốc và quy mô:} Dữ liệu được thu thập từ 8 trung tâm y tế lớn trên 5 châu lục, đảm bảo tính đa dạng về quần thể bệnh nhân và thiết bị chụp. Nhãn dữ liệu được gán thủ công bởi hơn 50 chuyên gia chẩn đoán hình ảnh. Train split $\sim$1\,800 patients (4 fold), val split $\sim$225 patients; mỗi patient có nhiều series MRI (Sagittal T2/STIR, Sagittal T1, Axial T2).
@@ -39,7 +39,7 @@ Toàn bộ quá trình huấn luyện và đánh giá được thực hiện tr�
 \end{figure}
 
 
-\subsection{Tập dữ liệu Lumbar Spine Segmentation \cite{chu2015dataset}}
+\subsection{Tập dữ liệu Lumbar Spine Segmentation}
 Tập dữ liệu được công bố bởi Chu và cộng sự \cite{chu2015dataset}, có nguồn gốc từ Viện Công nghệ và cơ sinh học phẫu thuật, Đại học Bern (Thụy Sĩ). Trong phạm vi luận văn này, đây đóng vai trò là tập kiểm thử độc lập để đánh giá hiệu năng phân vùng của TotalSpineSeg.
 
 \begin{itemize}
@@ -53,8 +53,8 @@ Tập dữ liệu được công bố bởi Chu và cộng sự \cite{chu2015dat
     \item \textbf{Mục đích sử dụng:} Đánh giá khả năng định vị và phân vùng cột sống trên miền dữ liệu chưa từng thấy, qua đó kiểm chứng độ bền vững của thuật toán phân vùng được chọn.
 \end{itemize}
 
-\subsection{Tập dữ liệu SPIDER \cite{vansluijs2022spider}}
-Tập dữ liệu SPIDER (van der Graaf và cộng sự, công bố trên Nature Scientific Data 2024) được dùng làm test set độc lập để kiểm chứng khả năng tổng quát hóa cross-dataset của mô-đun grading.
+\subsection{Tập dữ liệu SPIDER}
+Tập dữ liệu SPIDER~\cite{vansluijs2022spider} (van der Graaf và cộng sự, công bố trên Nature Scientific Data 2024) được dùng làm test set độc lập để kiểm chứng khả năng tổng quát hóa cross-dataset của mô-đun grading.
 
 \begin{itemize}
     \item \textbf{Quy mô:} 218 bệnh nhân $\times$ $\sim$5 đĩa đệm $\approx$ 1\,520 IVD samples, hoàn toàn độc lập với RSNA.
@@ -192,20 +192,20 @@ Gọi $TP$ (True Positive) là số mẫu dương tính được dự đoán đ�
     \text{F1-Score} = 2 \times \frac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}}
 \end{equation}
 
-\textbf{Per-class F1 (Severe F1, Moderate F1, Normal F1).} Khi bài toán có nhiều lớp (Normal/Mild, Moderate, Severe), 4 chỉ số ở trên có thể tính \emph{riêng cho từng lớp} (theo cách one-vs-rest). Ví dụ \textit{Severe F1} chỉ tính trên các mẫu thuộc lớp Severe --- đặc biệt quan trọng cho bài toán mất cân bằng vì class hiếm dễ bị ``che lấp'' bởi class chiếm đa số.
+\textbf{Per-class F1 (Severe F1, Moderate F1, Normal F1):} Khi bài toán có nhiều lớp (Normal/Mild, Moderate, Severe), 4 chỉ số ở trên có thể tính \emph{riêng cho từng lớp} (theo cách one-vs-rest). Ví dụ \textit{Severe F1} chỉ tính trên các mẫu thuộc lớp Severe --- đặc biệt quan trọng cho bài toán mất cân bằng vì class hiếm dễ bị ``che lấp'' bởi class chiếm đa số.
 
-\textbf{Mean F1 macro.} Trung bình cộng F1 trên tất cả các lớp, mỗi lớp có trọng số bằng nhau:
+\textbf{Mean F1 macro:} Trung bình cộng F1 trên tất cả các lớp, mỗi lớp có trọng số bằng nhau:
 \begin{equation}
     \text{F1}_{\text{macro}} = \frac{1}{K} \sum_{k=1}^{K} \text{F1}_k
 \end{equation}
 với $K$ là số lớp. Khác với F1 weighted (lấy trung bình theo tần suất class), F1 macro \emph{phạt mạnh các class hiếm có hiệu năng thấp}, phù hợp cho clinical screening vì các ca Severe quan trọng nhưng số lượng ít.
 
-\textbf{AUC (Area Under ROC Curve).} Diện tích dưới đường cong ROC, biểu diễn quan hệ giữa True Positive Rate (Recall) và False Positive Rate khi thay đổi ngưỡng quyết định. AUC = 0.5 tương đương dự đoán ngẫu nhiên, AUC = 1.0 là phân loại hoàn hảo. \emph{Ưu điểm:} không phụ thuộc ngưỡng phân loại, đánh giá chất lượng ranking của xác suất dự đoán.
+\textbf{AUC (Area Under ROC Curve):} Diện tích dưới đường cong ROC, biểu diễn quan hệ giữa True Positive Rate (Recall) và False Positive Rate khi thay đổi ngưỡng quyết định. AUC = 0.5 tương đương dự đoán ngẫu nhiên, AUC = 1.0 là phân loại hoàn hảo. \emph{Ưu điểm:} không phụ thuộc ngưỡng phân loại, đánh giá chất lượng ranking của xác suất dự đoán.
 \begin{equation}
     \text{AUC} = \int_0^1 \text{TPR}(\text{FPR}^{-1}(t)) \, dt
 \end{equation}
 
-\textbf{AUPRC (Area Under Precision-Recall Curve).} Diện tích dưới đường cong Precision-Recall. Phù hợp hơn AUC cho dữ liệu \emph{mất cân bằng nghiêm trọng}: AUC có thể trông cao một cách giả tạo khi class majority quá lớn, trong khi AUPRC tập trung vào hiệu năng của class hiếm (positive class). Luận văn sử dụng AUPRC làm chỉ số chính cho lớp Severe.
+\textbf{AUPRC (Area Under Precision-Recall Curve):} Diện tích dưới đường cong Precision-Recall. Phù hợp hơn AUC cho dữ liệu \emph{mất cân bằng nghiêm trọng}: AUC có thể trông cao một cách giả tạo khi class majority quá lớn, trong khi AUPRC tập trung vào hiệu năng của class hiếm (positive class). Luận văn sử dụng AUPRC làm chỉ số chính cho lớp Severe.
 \begin{equation}
     \text{AUPRC} = \int_0^1 \text{Precision}(\text{Recall}^{-1}(t)) \, dt
 \end{equation}
@@ -320,6 +320,8 @@ Toàn bộ thực nghiệm chạy trên NVIDIA RTX 4090 (24GB VRAM) trên Vast.a
 % \end{tabular}
 % \end{table}
 
+Mỗi cấu hình được huấn luyện lại ba lần với ba giá trị khởi tạo ngẫu nhiên khác nhau (42, 123 và 456); số liệu báo cáo là trung bình và độ lệch chuẩn của ba lần chạy đó.
+
 Bốn cấu hình ablation được định nghĩa: (i) \textbf{SpineNetV2} - chỉ 3D ResNet-34 không có CBAM, không có BiomedCLIP; (ii) \textbf{CBAM} - thêm CBAM vào ResNet-34, không có BiomedCLIP; (iii) \textbf{BMC-only} - bỏ ResNet-34, chỉ dùng BiomedCLIP frozen với linear classifier; (iv) \textbf{Hybrid} - CBAM-ResNet-34 + BiomedCLIP frozen, fusion qua MLP.
 
 
@@ -331,7 +333,7 @@ Bảng~\ref{tab:rsna_ablation} tổng hợp kết quả của 4 cấu hình abla
 
 \begin{table}[htbp]
 \centering
-\caption{Kết quả 4 cấu hình trên RSNA 2024, trung bình $\pm$ độ lệch chuẩn qua 3 hạt giống ngẫu nhiên 42, 123 và 456.}
+\caption{Kết quả 4 cấu hình trên RSNA 2024, trung bình $\pm$ độ lệch chuẩn của ba lần chạy độc lập.}
 \label{tab:rsna_ablation}
 \renewcommand{\arraystretch}{1.2}
 \setlength{\tabcolsep}{4pt}
@@ -355,7 +357,7 @@ Severe AUPRC           & 0.284 $\pm$ 0.019 & 0.278 $\pm$ 0.099 & 0.275 $\pm$ 0.0
 \end{tabular}
 \end{table}
 
-\textbf{Phân tích chính.} Mọi số liệu trong Bảng~\ref{tab:rsna_ablation} được tính trên ba điều kiện hẹp ống sống và hẹp lỗ liên hợp trái, phải, lấy trung bình qua ba hạt giống ngẫu nhiên. Hybrid dẫn đầu ở toàn bộ các chỉ số trong bảng: Mean F1 macro 0.527, Mean Recall 0.592, Mean Precision 0.526, Mean AUC 0.838 và Mean AUPRC 0.533.
+\textbf{Phân tích chính:} Mọi số liệu trong Bảng~\ref{tab:rsna_ablation} được tính trên ba điều kiện hẹp ống sống và hẹp lỗ liên hợp trái, phải, lấy trung bình của ba lần chạy. Hybrid dẫn đầu ở toàn bộ các chỉ số trong bảng: Mean F1 macro 0.527, Mean Recall 0.592, Mean Precision 0.526, Mean AUC 0.838 và Mean AUPRC 0.533.
 
 Cái giá phải trả nằm ở Mean Accuracy, chỉ số không có trong bảng: SpineNetV2 đạt 81.0\% còn Hybrid chỉ 72.4\%, giảm 8.6 điểm. Nguyên nhân là SpineNetV2 đạt độ chính xác cao chủ yếu nhờ dự đoán thiên về lớp Normal/Mild vốn chiếm đa số, nên chỉ số này không phản ánh năng lực phát hiện ca nặng.
 
@@ -364,14 +366,14 @@ Cải thiện rõ rệt nhất nằm ở lớp Severe. Severe Recall của Hybri
 \subsection{Chi tiết theo từng lớp trên RSNA}
 \label{subsec:rsna_perclass}
 
-Các bảng chi tiết trong mục này lấy từ \emph{một lần chạy đại diện} (hạt giống 42) để trình bày được đầy đủ từng lớp và từng điều kiện; số liệu tổng hợp lấy trung bình qua ba hạt giống vẫn là Bảng~\ref{tab:rsna_ablation}.
+Các bảng chi tiết trong mục này lấy từ \emph{một lần chạy đại diện} để trình bày được đầy đủ từng lớp và từng điều kiện; số liệu tổng hợp lấy trung bình của ba lần chạy vẫn là Bảng~\ref{tab:rsna_ablation}.
 
 
 Bảng~\ref{tab:rsna_perclass} trình bày 5 chỉ số theo từng lớp cho cả 4 cấu hình. Quan sát chính: ở lớp \textbf{Severe}, Hybrid cải thiện đồng thời cả 5 chỉ số so với SpineNetV2 và vượt hai cấu hình đơn nhánh (CBAM, BMC-only), cho thấy hai nhánh bổ sung cho nhau ở lớp hiếm nhất; ngược lại ở lớp Normal/Mild, SpineNetV2 giữ Recall cao nhất nhưng đây là lớp ít rủi ro lâm sàng nhất.
 
 \begin{table}[htbp]
 \centering
-\caption{Chi tiết theo từng lớp trên RSNA, kết quả của một lần chạy đại diện (hạt giống 42).}
+\caption{Chi tiết theo từng lớp trên RSNA, kết quả của một lần chạy đại diện.}
 \label{tab:rsna_perclass}
 \renewcommand{\arraystretch}{1.15}
 \setlength{\tabcolsep}{5pt}
@@ -405,7 +407,7 @@ Bảng~\ref{tab:rsna_per_cond_acc} chi tiết theo từng condition × grade v�
 
 \begin{table}[htbp]
 \centering
-\caption{Chi tiết theo điều kiện và mức độ trên RSNA, một lần chạy đại diện (hạt giống 42).}
+\caption{Chi tiết theo điều kiện và mức độ trên RSNA, một lần chạy đại diện.}
 \label{tab:rsna_per_cond_acc}
 \renewcommand{\arraystretch}{1.2}
 \setlength{\tabcolsep}{3pt}
@@ -432,7 +434,7 @@ R. Foraminal   & \textbf{Severe}  & \textbf{76.6} $\to$ 67.4 & 0.0 $\to$ \textbf
 
 \begin{table}[htbp]
 \centering
-\caption{Chi tiết theo điều kiện và mức độ trên RSNA, một lần chạy đại diện (hạt giống 42), phần AUC và AUPRC.}
+\caption{Chi tiết theo điều kiện và mức độ trên RSNA, một lần chạy đại diện, phần AUC và AUPRC.}
 \label{tab:rsna_per_cond_auc}
 \renewcommand{\arraystretch}{1.2}
 \setlength{\tabcolsep}{4pt}
@@ -472,7 +474,7 @@ Từ checkpoint tốt nhất của mỗi cấu hình trên RSNA, mô hình đư�
 
 \begin{table}[htbp]
 \centering
-\caption{Kết quả trên tập SPIDER có tinh chỉnh, trung bình $\pm$ độ lệch chuẩn qua 3 hạt giống.}
+\caption{Kết quả trên tập SPIDER có tinh chỉnh, trung bình $\pm$ độ lệch chuẩn của ba lần chạy.}
 \label{tab:spider_aggregate}
 \renewcommand{\arraystretch}{1.2}
 \setlength{\tabcolsep}{4pt}
@@ -590,6 +592,6 @@ chuyển sang dữ liệu khác (so với CBAM bị quá khớp với RSNA và t
 \section{Thảo luận chung}
 
 
-\textbf{Đóng góp về phương pháp.} Luận văn đã đề xuất kiến trúc Hybrid. Đây là một trong các công trình đầu tiên trên cùng bộ dữ liệu có 3-seed mean$\pm$std cho cross-dataset transfer learning.
+\textbf{Đóng góp về phương pháp:} Luận văn đã đề xuất kiến trúc Hybrid. Đây là một trong các công trình đầu tiên trên cùng bộ dữ liệu có 3-seed mean$\pm$std cho cross-dataset transfer learning.
 
-\textbf{Hạn chế và hướng tiếp theo.} Hướng phát triển sâu hơn được trình bày trong Chương 7.
+\textbf{Hạn chế và hướng tiếp theo:} Hướng phát triển sâu hơn được trình bày trong Chương 7.

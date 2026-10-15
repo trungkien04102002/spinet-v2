@@ -9,9 +9,9 @@ Một mô hình chỉ trả về con số thì bác sĩ khó dùng. Muốn dùng
 Phần mềm được xây dựng nhằm hỗ trợ bác sĩ trong quá trình đọc phim MRI cột sống thắt lưng, với mục tiêu rút ngắn thời gian đọc phim chứ không thay thế vai trò chẩn đoán của bác sĩ. Từ mục tiêu đó, ba yêu cầu sau được đặt ra:
 
 \begin{itemize}
-    \item \textbf{Trực quan hóa kết quả trên ảnh.} Kết quả phân vùng phải được tô màu trực tiếp trên ảnh MRI, kèm chú giải từng cấu trúc giải phẫu, để bác sĩ đối chiếu được bằng mắt thay vì chỉ đọc một bảng điểm tách rời khỏi ảnh.
-    \item \textbf{Cho phép chỉnh sửa toàn bộ nhãn.} Mọi nhãn do mô hình sinh ra đều phải chỉnh sửa được, vì bác sĩ là người đưa ra kết luận cuối cùng.
-    \item \textbf{Lưu lại các chỉnh sửa của bác sĩ.} Mỗi lần bác sĩ sửa một nhãn, hệ thống phải ghi lại cả giá trị mô hình dự đoán lẫn giá trị bác sĩ chỉnh, kèm thông tin ca chụp và tầng đĩa đệm, để dữ liệu này dùng được cho các nghiên cứu tiếp theo.
+    \item \textbf{Trực quan hóa kết quả trên ảnh:} Kết quả phân vùng phải được tô màu trực tiếp trên ảnh MRI, kèm chú giải từng cấu trúc giải phẫu, để bác sĩ đối chiếu được bằng mắt thay vì chỉ đọc một bảng điểm tách rời khỏi ảnh.
+    \item \textbf{Cho phép chỉnh sửa toàn bộ nhãn:} Mọi nhãn do mô hình sinh ra đều phải chỉnh sửa được, vì bác sĩ là người đưa ra kết luận cuối cùng.
+    \item \textbf{Lưu lại các chỉnh sửa của bác sĩ:} Mỗi lần bác sĩ sửa một nhãn, hệ thống phải ghi lại cả giá trị mô hình dự đoán lẫn giá trị bác sĩ chỉnh, kèm thông tin ca chụp và tầng đĩa đệm, để dữ liệu này dùng được cho các nghiên cứu tiếp theo.
 \end{itemize}
 
 \section{Kiến trúc hệ thống}
@@ -48,7 +48,7 @@ TotalSpineSeg được cài trong một môi trường Python riêng và gọi q
         \draw[ar] (be) -- (fs);
         \draw[ar] (seg) -- (grd);
     \end{tikzpicture}
-    \caption{Các thành phần của phần mềm. Máy chủ điều phối hai mô hình chạy trong hai môi trường tách biệt; mặt nạ do phân vùng sinh ra được dùng để cắt khối ảnh cho mô-đun chấm nhãn.}
+    \caption{Các thành phần của phần mềm.}
     \label{fig:sw_architecture}
 \end{figure}
 
@@ -66,7 +66,7 @@ Màn hình đầu tiên là danh sách ca, nhóm theo bệnh nhân (Hình~\ref{f
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=\textwidth]{cslt/app_caselist.png}
-    \caption{Màn hình danh sách ca chụp, nhóm theo bệnh nhân. Mỗi ca hiển thị trạng thái xử lý và nút mở sang màn hình đọc phim.}
+    \caption{Màn hình danh sách ca chụp.}
     \label{fig:app_caselist}
 \end{figure}
 
@@ -79,7 +79,7 @@ Màn hình đọc phim là nơi bác sĩ làm việc nhiều nhất (Hình~\ref{
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=\textwidth]{cslt/app_viewer.png}
-    \caption{Màn hình đọc phim: ảnh MRI cắt dọc với mặt nạ phân vùng tô màu, bảng chú giải cấu trúc giải phẫu, và khung tóm tắt các dấu hiệu bất thường theo từng tầng đĩa đệm.}
+    \caption{Màn hình đọc phim.}
     \label{fig:app_viewer}
 \end{figure}
 
@@ -87,12 +87,12 @@ Bên phải ảnh là khung tóm tắt, chỉ liệt kê những tầng đĩa đ
 
 \subsection{Xem và chỉnh sửa nhãn}
 
-Kết quả chấm nhãn trình bày dưới dạng bảng mười một nhãn bệnh lý theo tám tầng đĩa đệm, từ T10--T11 đến L5--S1 (Hình~\ref{fig:app_grading_table}). Mỗi ô là một hộp chọn: bác sĩ bấm vào là đổi được giá trị. Ô được tô màu theo mức độ, đỏ cho mức nặng và vàng cho mức vừa, để chỗ cần chú ý nổi lên ngay.
+Kết quả chấm nhãn trình bày dưới dạng bảng mười một nhãn bệnh lý theo tám tầng đĩa đệm, từ T10--T11 đến L5--S1 (Hình~\ref{fig:app_grading_table}). Mỗi ô là một hộp chọn: bác sĩ bấm vào là đổi được giá trị. Ô được tô màu theo mức độ, đỏ cho mức nặng và vàng cho mức vừa, để chỗ cần chú ý nổi lên ngay. Những ô mà mô hình ít chắc chắn có thêm một dấu cảnh báo.
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=\textwidth]{cslt/app_grading_table.png}
-    \caption{Bảng chấm điểm mười một nhãn bệnh lý theo tám tầng đĩa đệm. Mỗi ô là một hộp chọn bác sĩ sửa trực tiếp được; màu nền thể hiện mức độ, dấu cảnh báo đánh dấu ô mô hình ít chắc chắn.}
+    \caption{Bảng chấm nhãn theo tầng đĩa đệm.}
     \label{fig:app_grading_table}
 \end{figure}
 
@@ -107,7 +107,7 @@ Mỗi lần bác sĩ sửa một ô trong bảng nhãn rồi bấm lưu, hệ th
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.9\textwidth]{cslt/app_corrections.png}
-    \caption{Thống kê các chỉnh sửa của bác sĩ: số bản ghi đang chờ, số đã gom thành lô, và số lô đã đóng.}
+    \caption{Thống kê chỉnh sửa của bác sĩ.}
     \label{fig:app_corrections}
 \end{figure}
 

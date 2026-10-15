@@ -41,13 +41,13 @@ Dựa trên các mô hình tham khảo đã trình bày, luận văn này đề 
 \end{figure}
 
 
-\textbf{Phân vùng cấu trúc giải phẫu với TotalSpineSeg.}
+\textbf{Phân vùng cấu trúc giải phẫu với TotalSpineSeg:}
 Đầu vào của hệ thống là một ảnh MRI cột sống. Ảnh này được đưa vào mô hình TotalSpineSeg. Mô hình sẽ thực hiện việc phân vùng và gán nhãn tự động. Kết quả là một tập hợp các mặt nạ phân vùng chi tiết cho từng đốt sống và đĩa đệm, cùng với một phiên bản ảnh 2D đã được tô màu để phục vụ cho việc trực quan hóa.\\
 
-\textbf{Đánh giá các dấu hiệu bất thường với mô-đun grading tinh chỉnh.}
+\textbf{Đánh giá các dấu hiệu bất thường với mô-đun grading tinh chỉnh:}
 Ảnh MRI gốc cũng được đưa vào mô-đun grading. Mô-đun này dựa trên SpineNetV2 đã được tinh chỉnh với kiến trúc Hybrid CBAM + BiomedCLIP (chi tiết ở Mục~\ref{sec:phase2_arch}). Quy trình gồm: sử dụng kỹ thuật Hồi quy trường vector (VFR) để phát hiện các đốt sống, trích xuất các khối ảnh quanh đĩa đệm (IVVs), và đưa qua mô hình grading Hybrid để dự đoán nhãn bệnh lý. Kết quả là một file dữ liệu (JSON / CSV) chứa các điểm số định lượng, đánh giá mức độ các loại bệnh lý thoái hóa cho từng đĩa đệm.\\
 
-\textbf{Mô-đun grading lấy khối ảnh từ đâu.} Trong phần mềm, khối ảnh quanh mỗi đĩa đệm được cắt ra từ kết quả phân vùng của TotalSpineSeg. Còn ở các thí nghiệm tại Chương 5, khối ảnh cắt theo tọa độ đĩa đệm có sẵn trong nhãn của bộ dữ liệu, để mọi phương pháp đem ra so đều nhận cùng một đầu vào. Vì vậy số liệu ở Chương 5 là của riêng mô-đun chấm nhãn, không phải của cả hệ thống.
+\textbf{Mô-đun grading lấy khối ảnh từ đâu:} Trong phần mềm, khối ảnh quanh mỗi đĩa đệm được cắt ra từ kết quả phân vùng của TotalSpineSeg. Còn ở các thí nghiệm tại Chương 5, khối ảnh cắt theo tọa độ đĩa đệm có sẵn trong nhãn của bộ dữ liệu, để mọi phương pháp đem ra so đều nhận cùng một đầu vào. Vì vậy số liệu ở Chương 5 là của riêng mô-đun chấm nhãn, không phải của cả hệ thống.
 
 Khi đến tay bác sĩ, hai kết quả của hệ thống bổ trợ nhau: mặt nạ phân vùng để nhìn và thao tác trực tiếp trên ảnh, còn nhãn bệnh lý chỉ ra chỗ nào có dấu hiệu bất thường cần xem lại.\\
 
@@ -108,5 +108,5 @@ với $\gamma = 2.0$ là hyperparameter chuẩn.
 \end{equation}
 Nếu một nhiệm vụ có loss cao (ví dụ subarticular stenosis khó hơn các nhãn khác), tham số $\sigma_k$ sẽ tự động tăng lên để giảm trọng số cho nhiệm vụ đó. Cơ chế này ngăn nhiệm vụ khó áp đảo và làm bias các nhiệm vụ dễ hơn.
 
-\textbf{(c) Minority oversampling.} Với mỗi epoch, các sample chứa ít nhất một head có nhãn Severe sẽ được lặp lại 3 lần (oversample factor = 3). Cách này làm tăng đáng kể số iteration mà model thấy các mẫu Severe, từ đó cải thiện khả năng học của lớp hiếm. Hệ số oversampling được điều chỉnh thực nghiệm, giá trị quá cao (5 - 10) gây overfitting trên các mẫu Severe ít ỏi, giá trị quá thấp (1 - 2) không đủ tác động.
+\textbf{(c) Minority oversampling:} Với mỗi epoch, các sample chứa ít nhất một head có nhãn Severe sẽ được lặp lại 3 lần (oversample factor = 3). Cách này làm tăng đáng kể số iteration mà model thấy các mẫu Severe, từ đó cải thiện khả năng học của lớp hiếm. Hệ số oversampling được điều chỉnh thực nghiệm, giá trị quá cao (5 - 10) gây overfitting trên các mẫu Severe ít ỏi, giá trị quá thấp (1 - 2) không đủ tác động.
 

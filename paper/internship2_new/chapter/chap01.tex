@@ -35,10 +35,10 @@ Về kết quả, mức độ phát hiện ca nặng tuy cải thiện nhiều l
 Luận văn có bốn đóng góp chính.
 
 \begin{enumerate}
-    \item \textbf{Kiến trúc Hybrid hai nhánh.} Kết hợp một nhánh chú ý CBAM trên ResNet-34 ba chiều với một nhánh BiomedCLIP được giữ đông cứng, trong đó nhánh đông cứng đóng vai trò chuẩn hóa, giúp lợi thế của cơ chế chú ý không mất đi khi chuyển sang bộ dữ liệu khác.
-    \item \textbf{Cơ chế mở rộng không gian nhãn theo hướng zero-shot.} Vì dự đoán được thực hiện bằng cách so khớp với câu mô tả nhãn, tập nhãn trở thành đầu vào của suy luận: thêm một nhãn mới chỉ là thêm một câu, không cần đầu ra mới và không cần huấn luyện lại.
-    \item \textbf{Quy trình xử lý mất cân bằng lớp.} Kết hợp focal loss, trọng số lớp theo căn bậc hai, lấy mẫu lại lớp thiểu số và tăng cường dữ liệu, nhằm vào nhóm Severe vốn chiếm chưa tới 5\% mẫu trên RSNA 2024.
-    \item \textbf{Phần mềm hỗ trợ bác sĩ gán nhãn.} Hiện thực một hệ thống hoàn chỉnh từ tải ảnh DICOM, phân vùng, chấm nhãn, tới giao diện cho bác sĩ chỉnh sửa và ghi nhận mọi chỉnh sửa.
+    \item \textbf{Kiến trúc Hybrid hai nhánh:} Vùng bệnh lý trên ảnh MRI chỉ chiếm một phần rất nhỏ của khối ảnh đầu vào, nên mạng tích chập thông thường dễ bị loãng bởi phần mô lành xung quanh. Luận văn chèn CBAM vào sau mỗi tầng của ResNet-34 ba chiều để mạng tự học cách đánh trọng số cho từng kênh đặc trưng và từng vị trí không gian, thay vì xử lý mọi vùng như nhau. Nhánh thứ hai dùng BiomedCLIP giữ nguyên trọng số, đóng vai trò giữ nhịp cho nhánh thứ nhất, nhờ đó phần lợi thế mà cơ chế chú ý mang lại không mất đi khi chuyển sang bộ dữ liệu khác.
+    \item \textbf{Cơ chế mở rộng không gian nhãn theo hướng zero-shot:} Vì dự đoán được thực hiện bằng cách so khớp với câu mô tả nhãn, tập nhãn trở thành đầu vào của suy luận: thêm một nhãn mới chỉ là thêm một câu, không cần đầu ra mới và không cần huấn luyện lại.
+    \item \textbf{Quy trình xử lý mất cân bằng lớp:} Kết hợp focal loss, trọng số lớp theo căn bậc hai, lấy mẫu lại lớp thiểu số và tăng cường dữ liệu, nhằm vào nhóm Severe vốn chiếm chưa tới 5\% mẫu trên RSNA 2024.
+    \item \textbf{Phần mềm hỗ trợ bác sĩ gán nhãn:} Hiện thực một hệ thống hoàn chỉnh từ tải ảnh DICOM, phân vùng, chấm nhãn, tới giao diện cho bác sĩ chỉnh sửa và ghi nhận mọi chỉnh sửa.
 \end{enumerate}
 
 Kiến trúc ở đóng góp thứ nhất và thứ hai đã được công bố tại hội nghị quốc tế MIWAI 2026 và xuất bản trong bộ \textit{Lecture Notes in Artificial Intelligence} của Springer.
@@ -47,10 +47,10 @@ Kiến trúc ở đóng góp thứ nhất và thứ hai đã được công bố
 
 Bốn thách thức sau định hình cách tiếp cận của luận văn.
 
-\textbf{Mất cân bằng lớp.} Nhóm Severe chiếm chưa tới 5\% mẫu, nên một mô hình huấn luyện theo cách thông thường gần như không bao giờ dự đoán nhóm này: nó đạt độ chính xác cao chỉ bằng cách đoán nhóm đa số. Cách giải quyết trình bày ở Chương 4 và kết quả ở Chương 5.
+\textbf{Mất cân bằng lớp:} Nhóm Severe chiếm chưa tới 5\% mẫu, nên một mô hình huấn luyện theo cách thông thường gần như không bao giờ dự đoán nhóm này: nó đạt độ chính xác cao chỉ bằng cách đoán nhóm đa số. Cách giải quyết trình bày ở Chương 4 và kết quả ở Chương 5.
 
-\textbf{Không gian nhãn cố định.} Một mô hình huấn luyện trên lược đồ nhãn này không trả lời được câu hỏi đặt theo lược đồ khác nếu không gắn thêm đầu ra và huấn luyện lại. Đây là trở ngại thực tế, vì mỗi bệnh viện và mỗi bộ dữ liệu lại dùng một bộ tiêu chí riêng.
+\textbf{Không gian nhãn cố định:} Mô hình huấn luyện với bộ nhãn này không trả lời được câu hỏi đặt theo bộ nhãn khác nếu không gắn thêm đầu ra và huấn luyện lại. Đây là trở ngại thực tế, vì mỗi bệnh viện và mỗi bộ dữ liệu lại dùng một bộ tiêu chí riêng.
 
-\textbf{Khả năng tổng quát hóa.} Một mô hình chạy tốt trên bộ dữ liệu huấn luyện chưa chắc giữ được hiệu năng khi đổi sang dữ liệu của cơ sở khác. Luận văn kiểm chứng điều này bằng một bộ dữ liệu độc lập, không dùng bất kỳ ảnh nào của nó trong quá trình huấn luyện.
+\textbf{Khả năng tổng quát hóa:} Một mô hình chạy tốt trên bộ dữ liệu huấn luyện chưa chắc giữ được hiệu năng khi đổi sang dữ liệu của cơ sở khác. Luận văn kiểm chứng điều này bằng một bộ dữ liệu độc lập, không dùng bất kỳ ảnh nào của nó trong quá trình huấn luyện.
 
-\textbf{Khoảng cách giữa mô hình và người dùng.} Một mô hình trả về con số thì bác sĩ khó dùng. Kết quả phải đặt được lên ảnh, phải sửa được, và chỗ sửa phải giữ lại được để về sau còn cải thiện mô hình.
+\textbf{Khoảng cách giữa mô hình và người dùng:} Một mô hình trả về con số thì bác sĩ khó dùng. Kết quả phải đặt được lên ảnh, phải sửa được, và chỗ sửa phải giữ lại được để về sau còn cải thiện mô hình.
