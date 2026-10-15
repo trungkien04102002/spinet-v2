@@ -1,8 +1,6 @@
 \chapter{PHẦN MỀM HỖ TRỢ BÁC SĨ GÁN NHÃN}
 \label{chap:software}
 
-Một mô hình chỉ trả về con số thì bác sĩ khó dùng. Muốn dùng được, họ phải xem được kết quả nằm ở đâu trên ảnh, sửa được chỗ máy chấm sai, và những chỗ sửa đó phải được giữ lại. Phần mềm trình bày trong chương này là nơi ba việc đó gặp nhau.
-
 \section{Mục tiêu và yêu cầu}
 \label{sec:sw_requirements}
 
@@ -96,9 +94,9 @@ Kết quả chấm nhãn trình bày dưới dạng bảng mười một nhãn b
     \label{fig:app_grading_table}
 \end{figure}
 
-Dấu cảnh báo bên cạnh một số ô đánh dấu những chỗ mô hình ít chắc chắn, gợi ý bác sĩ xem kỹ hơn. Ba nhãn hẹp ống sống và hẹp lỗ liên hợp trái, phải để trống ở các tầng ngực trên, vì bộ dữ liệu huấn luyện chỉ gán nhãn từ tầng L1--L2 trở xuống; để trống thật thà hơn là đoán bừa một giá trị.
+Ba nhãn hẹp ống sống và hẹp lỗ liên hợp trái, phải để trống ở các tầng ngực trên, vì bộ dữ liệu huấn luyện chỉ gán nhãn từ tầng L1--L2 trở xuống; để trống thay vì đưa ra một giá trị không có cơ sở.
 
-Dưới bảng còn ô ghi kết luận của bác sĩ bằng chữ. Phần này không bắt buộc, nhưng là chỗ bác sĩ nói được những điều một bảng điểm không chứa hết.
+Dưới bảng còn ô ghi kết luận của bác sĩ bằng chữ. Phần này không bắt buộc, nhưng để bác sĩ ghi thêm những gì bảng điểm không thể hiện được.
 
 \subsection{Ghi nhận chỉnh sửa của bác sĩ}
 
@@ -114,13 +112,6 @@ Mỗi lần bác sĩ sửa một ô trong bảng nhãn rồi bấm lưu, hệ th
 Các chỉnh sửa được gom chung cho cả hệ thống chứ không theo từng ca, vì một ca chỉ có vài đĩa đệm, quá ít để huấn luyện. Trong đợt thử nghiệm, hệ thống đã ghi nhận 22 chỉnh sửa và gom thành hai lô.
 
 Hiện tại phần mềm mới chỉ dừng ở việc lưu lại các chỉnh sửa. Mô hình chưa học lại được từ những dữ liệu này; phần huấn luyện lại được đặt làm hướng phát triển ở Chương 7.
-
-\section{Kiểm thử hệ thống}
-\label{sec:sw_testing}
-
-Phần máy chủ có 209 bài kiểm thử tự động, chạy hết trong vài giây và không cần GPU. Chúng phủ các khâu dễ hỏng mà khó phát hiện bằng mắt: giải nén và nhận diện chuỗi DICOM, cắt khối ảnh từ mặt nạ phân vùng, chuỗi phân vùng rồi chấm nhãn, lưu nhãn có đánh phiên bản, ghi nhật ký hiệu chỉnh và đóng lô.
-
-Ngoài kiểm thử tự động, phần mềm còn được kiểm tra bằng cách chạy thật trên trình duyệt với các ca có ảnh thật. Cách này cần thiết vì nhiều lỗi của phần hiển thị ảnh y tế chỉ lộ ra khi ảnh được vẽ lên màn hình, chẳng hạn ảnh hiện ra đen kịt hay mặt nạ vẽ lệch sang chuỗi ảnh khác cùng kích thước.
 
 \section{Nhận xét từ bác sĩ}
 \label{sec:sw_doctor_feedback}

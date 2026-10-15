@@ -465,7 +465,7 @@ R. Foraminal   & \textbf{Severe} & \textbf{0.842} & 0.837 & 0.167 & \textbf{0.18
 \begin{enumerate}
     \item Cả Moderate và Severe đều cải thiện trên cả 3 condition. Recall của Moderate tăng mạnh hơn Severe (trung bình +50\% so với +25\%) do Moderate có nhiều mẫu hơn, gradient ổn định hơn.
     \item Sự sụt giảm Accuracy tổng đến từ Recall của Normal/Mild giảm, nhưng Precision của Normal/Mild lại tăng (+5\% / +13\% / +15\%), nghĩa là khi mô hình dự đoán Normal thì độ chính xác cao hơn baseline.
-    \item AUC và AUPRC của Severe tăng đồng nhất trên cả 3 condition (Severe AUPRC trung bình $+0.043$, tương đương +16\% tương đối). Vì AUC/AUPRC đánh giá ranking độc lập với ngưỡng, kết quả này khẳng định cải thiện ở mức biểu diễn đặc trưng, không phải artifact của ngưỡng phân loại.
+    \item AUC và AUPRC của Severe tăng đồng nhất trên cả 3 condition (Severe AUPRC trung bình $+0.043$, tương đương +16\% tương đối). Vì AUC/AUPRC đánh giá ranking độc lập với ngưỡng, kết quả này cho thấy cải thiện ở mức biểu diễn đặc trưng, không phải artifact của ngưỡng phân loại.
 \end{enumerate}
 
 \subsection{Mở rộng nhãn zero-shot trên SPIDER}
@@ -503,7 +503,7 @@ Bảng~\ref{tab:spider_zeroshot} cho thấy kết quả chia làm ba nhóm rõ r
 
 Nhóm thứ ba gần như thất bại. Modic chỉ đạt F1 0.018 với AUC 0.454, tức là không phân biệt được gì so với đoán ngẫu nhiên. Nguyên nhân là biến đổi Modic được định nghĩa theo tín hiệu tủy xương trên hai chuỗi ảnh T1 và T2 đọc kèm nhau, trong khi mô hình chỉ nhận chuỗi T2. Thông tin cần thiết không có trong đầu vào, nên không câu mô tả nào cứu được. Pfirrmann đạt 0.155 vì là thang năm mức, khó hơn hẳn các nhãn nhị phân. Spondylolisthesis có F1 chỉ 0.028 nhưng AUC tới 0.807: mô hình xếp hạng đúng, chỉ là ngưỡng mặc định không phù hợp với một nhãn chỉ có 2.8\% mẫu dương.
 
-Trung bình tám nhãn đạt F1 0.362, còn xa mức dùng được trên lâm sàng. Luận văn không xem đây là một bộ phân loại hoàn chỉnh cho SPIDER. Điều đáng chú ý là mô hình vẫn chấm được tám nhãn của một hệ tiêu chí khác, ở một bệnh viện khác, mà không phải huấn luyện lại. Hai cấu hình nền không có số để đặt cạnh, vì chúng không chạy được thí nghiệm này.
+Trung bình tám nhãn đạt F1 0.362, còn xa mức dùng được trên lâm sàng. Luận văn không xem đây là một bộ phân loại hoàn chỉnh cho SPIDER. Dù vậy, mô hình vẫn chấm được tám nhãn của một hệ tiêu chí khác, ở một bệnh viện khác, mà không phải huấn luyện lại. Hai cấu hình nền không có số để đặt cạnh, vì chúng không chạy được thí nghiệm này.
 
 \subsection{Kết quả cross-dataset trên tập SPIDER}
 \label{sec:spider_transfer_sec}
@@ -630,10 +630,10 @@ chuyển sang dữ liệu khác (so với CBAM bị quá khớp với RSNA và t
 
 Ba thí nghiệm ở chương này nối tiếp nhau. Thí nghiệm đầu chọn TotalSpineSeg cho khâu phân vùng. Mô hình này dẫn đầu ở bốn trên năm tiêu chí, riêng Precision bỏ xa phần còn lại, 97.87\% so với mức quanh 50\%. Nó cũng là mô hình có Recall thấp nhất, tức là khoanh thiếu nhiều hơn khoanh thừa. Với bài toán này thì đổi như vậy chấp nhận được, vì mặt nạ còn phải dùng tiếp để cắt khối ảnh cho khâu chấm nhãn: khoanh thiếu một phần đĩa đệm vẫn cắt đúng chỗ, còn khoanh lấn sang mô bên cạnh thì khối ảnh lệch. Thí nghiệm thứ hai chọn SpineNetV2 làm nền cho khâu chấm nhãn. Giải pháp giải nhất RSNA 2024 có F1 cao hơn khoảng ba điểm, nhưng là tổ hợp nhiều mô hình lớn, khó duy trì trong một phần mềm chạy thật. Cũng chính thí nghiệm này lộ ra vấn đề: SpineNetV2 đạt F1 phát hiện 77.50\% mà Severe Recall chỉ 12.3\%, nghĩa là gần chín trên mười ca nặng bị bỏ sót. Đó là lý do có thí nghiệm thứ ba.
 
-Kết quả của thí nghiệm thứ ba cho thấy phần cải thiện tập trung đúng vào lớp Severe. Severe Recall tăng từ 12.3\% lên 48.6\%, Severe F1 từ 0.152 lên 0.356. Đáng chú ý hơn, Severe AUC tăng từ 0.872 lên 0.899 và Severe AUPRC từ 0.284 lên 0.333. Hai chỉ số sau không phụ thuộc ngưỡng phân loại, nên mức tăng của chúng nói rằng mô hình thật sự xếp hạng ca nặng tốt hơn, chứ không phải chỉ hạ ngưỡng để bắt nhiều hơn.
+Kết quả của thí nghiệm thứ ba cho thấy phần cải thiện tập trung đúng vào lớp Severe. Severe Recall tăng từ 12.3\% lên 48.6\%, Severe F1 từ 0.152 lên 0.356. Severe AUC cũng tăng từ 0.872 lên 0.899 và Severe AUPRC từ 0.284 lên 0.333. Hai chỉ số sau không phụ thuộc ngưỡng phân loại, nên mức tăng của chúng nói rằng mô hình thật sự xếp hạng ca nặng tốt hơn, chứ không phải chỉ hạ ngưỡng để bắt nhiều hơn.
 
 Đổi lại Mean Accuracy giảm 8.6 điểm. Mô hình nền được điểm cao ở chỉ số này vì lớp đa số chiếm gần 80\% dữ liệu. Với bài toán sàng lọc thì bỏ sót một ca nặng nặng hơn một lần báo động nhầm, vì báo nhầm thì bác sĩ xem lại ảnh là loại được ngay.
 
-Phần kiểm chứng trên SPIDER trả lời hai câu hỏi khác nhau. Khi cho phép huấn luyện lại, Hybrid đạt F1 0.653 so với 0.646 của mô hình nền, chênh lệch nhỏ và nằm trong khoảng dao động giữa các lần chạy; điều đáng nói ở đây là cấu hình chỉ dùng CBAM tụt xuống 0.619, cho thấy nhánh giữ nguyên trọng số giúp phần lợi thế của cơ chế chú ý không mất đi khi đổi bộ dữ liệu. Khi không huấn luyện lại, mô hình vẫn chấm được tám nhãn mới với F1 trung bình 0.362, mức mà hai cấu hình dùng head cố định không thể có vì không chạy được thí nghiệm.
+Phần kiểm chứng trên SPIDER trả lời hai câu hỏi khác nhau. Khi cho phép huấn luyện lại, Hybrid đạt F1 0.653 so với 0.646 của mô hình nền, chênh lệch nhỏ và nằm trong khoảng dao động giữa các lần chạy, còn cấu hình chỉ dùng CBAM tụt xuống 0.619, cho thấy nhánh giữ nguyên trọng số giúp phần lợi thế của cơ chế chú ý không mất đi khi đổi bộ dữ liệu. Khi không huấn luyện lại, mô hình vẫn chấm được tám nhãn mới với F1 trung bình 0.362, mức mà hai cấu hình dùng head cố định không thể có vì không chạy được thí nghiệm.
 
 Những gì chương này chưa giải quyết được cũng khá rõ. Hai nhãn lỗ liên hợp vẫn kém hơn hẳn nhãn ống sống. Nhãn Modic gần như không học được vì cần đọc kèm chuỗi T1 mà mô hình không có. Và mọi kết quả đều lấy trung bình của ba lần chạy, đủ để thấy xu hướng nhưng chưa đủ để kết luận chặt chẽ về mặt thống kê. Chương~\ref{chap:conclusion} bàn tiếp về các hạn chế này.

@@ -443,7 +443,7 @@ Severe AUC      & 0.872 & 0.865 & 0.885 & \textbf{0.899} \\
 Severe AUPRC    & 0.284 & 0.278 & 0.275 & \textbf{0.333} \\
 \bottomrule
 \end{tabular}
-\caption{Kết quả 4 cấu hình trên RSNA 2024, trung bình qua 3 hạt giống.}
+\caption{Kết quả 4 cấu hình trên RSNA 2024, trung bình của 3 lần chạy.}
 \end{table}
 \begin{itemize}
     \item[$\rightarrow$] Hybrid dẫn đầu mọi chỉ số trong bảng, đánh đổi 8.6 điểm Mean Accuracy (81.0\% $\to$ 72.4\%) vì SpineNetV2 đạt Accuracy cao nhờ thiên về lớp đa số.
@@ -619,9 +619,9 @@ Bên cạnh việc khảo sát và lựa chọn mô hình nền cho cả hai mô
 \frametitle{Hạn chế}
 \begin{itemize}
     \item[--] Severe Recall 48.6\% còn thấp hơn mức $\sim$80\% mà một công cụ sàng lọc cần; hệ thống chỉ nên dùng như \textbf{người đọc thứ hai}.
-    \item[--] Hai nhóm lỗ liên hợp yếu hơn hẳn (Severe Recall 18--22\%) -- giới hạn của mặt cắt Sagittal, chưa dùng Axial.
+    \item[--] Hai nhóm lỗ liên hợp yếu hơn hẳn (Severe Recall khoảng 31--38\%, so với 70\% ở ống sống): lỗ liên hợp nhìn rõ nhất trên mặt cắt Axial mà mô hình chưa dùng.
     \item[--] Phần mềm mới \textbf{lưu} phản hồi của bác sĩ, chưa có cơ chế để mô hình học lại từ đó.
-    \item[--] Kết quả trung bình qua 3 hạt giống, chưa đủ để kết luận có ý nghĩa thống kê chặt chẽ.
+    \item[--] Kết quả là trung bình của 3 lần chạy, chưa đủ để kết luận có ý nghĩa thống kê chặt chẽ.
 \end{itemize}
 \end{frame}
 
@@ -641,11 +641,9 @@ Bên cạnh việc khảo sát và lựa chọn mô hình nền cho cả hai mô
 \begin{frame}
 \frametitle{Hướng phát triển}
 \begin{itemize}
-    \item[1.] \textbf{Cơ chế học lại từ phản hồi bác sĩ} --- huấn luyện lại từ lô chỉnh sửa, đánh giá phiên bản mới, bước người duyệt. \hfill \textit{8 tuần}
+    \item[1.] \textbf{Cơ chế học lại từ phản hồi bác sĩ}: huấn luyện lại từ lô chỉnh sửa, đánh giá phiên bản mới, bước người duyệt. \hfill \textit{8 tuần}
     \item[2.] \textbf{Bổ sung mặt cắt Axial} cho hai nhóm lỗ liên hợp, kèm tinh chỉnh TotalSpineSeg. \hfill \textit{6 tuần}
-    \item[3.] \textbf{Kiến trúc thị giác--ngôn ngữ ba chiều} thay BiomedCLIP vốn là mô hình 2D. \hfill \textit{6 tuần}
-    \item[4.] \textbf{Sinh báo cáo chẩn đoán} bằng ngôn ngữ tự nhiên. \hfill \textit{8 tuần}
-    \item[5.] \textbf{Đánh giá cùng bác sĩ} trên dữ liệu bệnh viện trong nước. \hfill \textit{4 tuần}
+    \item[3.] \textbf{Sinh báo cáo chẩn đoán} bằng ngôn ngữ tự nhiên. \hfill \textit{8 tuần}
 \end{itemize}
 \end{frame}
 
@@ -894,7 +892,7 @@ Tối ưu & AdamW, batch 32; Focal + Uncertainty + oversampling \\
  & Hybrid     & \textbf{0.464} & \textbf{0.273} & \textbf{0.343} & \textbf{0.896} & \textbf{0.321} \\
 \bottomrule
 \end{tabular}
-\caption{Chi tiết theo từng lớp trên RSNA 2024, một lần chạy đại diện (hạt giống 42).}
+\caption{Chi tiết theo từng lớp trên RSNA 2024, một lần chạy đại diện.}
 \end{table}
 \begin{itemize}
     \item[$\rightarrow$] Lớp Severe: Hybrid thắng cả 5 chỉ số.

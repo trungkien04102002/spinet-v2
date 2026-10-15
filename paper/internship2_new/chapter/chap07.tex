@@ -9,11 +9,11 @@ Luận văn đã xây dựng một giải pháp hỗ trợ bác sĩ gán nhãn �
 
 Ở khâu đánh giá bất thường, SpineNetV2 được chọn làm kiến trúc nền với F1 trung bình 77.50\% trên ba nhóm bệnh lý chính. Con số này thấp hơn Ning Shen khoảng ba điểm, nhưng Ning Shen là tổ hợp nhiều mô hình lớn, khó duy trì và khó tinh chỉnh, trong khi SpineNetV2 có mã nguồn mở và kiến trúc đủ đơn giản để can thiệp sâu. MedGemma bị loại vì Recall chỉ 6--21\% trên bệnh lý cột sống thắt lưng.
 
-\textbf{Đóng góp chính về mô hình} là kiến trúc Hybrid hai nhánh, kết hợp một nhánh chú ý CBAM trên ResNet-34 ba chiều với một nhánh BiomedCLIP giữ nguyên trọng số, cùng một quy trình xử lý mất cân bằng lớp. Trên RSNA 2024, so với SpineNetV2, kiến trúc này nâng Mean F1 macro từ 0.420 lên 0.527 và Mean Recall từ 0.412 lên 0.592. Ở lớp Severe, Severe Recall tăng từ 12.3\% lên 48.6\%, gấp khoảng bốn lần, còn Severe F1 tăng từ 0.152 lên 0.356. Cái giá là Mean Accuracy giảm 8.6 điểm, do mô hình nền đạt độ chính xác cao chủ yếu nhờ dự đoán thiên về lớp đa số. Trong bối cảnh lâm sàng, bỏ sót một ca nặng nghiêm trọng hơn một lần báo động nhầm.
+\textbf{Đóng góp chính về mô hình} là kiến trúc Hybrid hai nhánh, kết hợp một nhánh chú ý CBAM trên ResNet-34 ba chiều với một nhánh BiomedCLIP giữ nguyên trọng số, cùng một quy trình xử lý mất cân bằng lớp. Trên RSNA 2024, so với SpineNetV2, kiến trúc này nâng Mean F1 macro từ 0.420 lên 0.527 và Mean Recall từ 0.412 lên 0.592. Ở lớp Severe, Severe Recall tăng từ 12.3\% lên 48.6\%, gấp khoảng bốn lần, còn Severe F1 tăng từ 0.152 lên 0.356. Đổi lại Mean Accuracy giảm 8.6 điểm, vì mô hình nền được điểm cao nhờ đoán theo lớp đa số.
 
-Vì dự đoán được thực hiện bằng cách so khớp với câu mô tả nhãn, tập nhãn trở thành đầu vào của suy luận. Trên bộ dữ liệu SPIDER, đến từ bệnh viện khác và dùng bộ nhãn khác, mô hình chấm được tám nhãn chưa từng thấy mà không huấn luyện lại dòng nào, đạt F1 trung bình 0.362. Khi cho phép huấn luyện có giám sát, mô hình đạt 0.653 so với 0.646 của SpineNetV2, trong khi cấu hình chỉ dùng CBAM tụt xuống 0.619. Nhánh giữ nguyên trọng số vì vậy giữ cho lợi thế của cơ chế chú ý không mất đi khi đổi bộ dữ liệu.
+Nhờ cách chấm nhãn bằng so khớp với câu mô tả, trên bộ dữ liệu SPIDER, đến từ bệnh viện khác và dùng bộ nhãn khác, mô hình chấm được tám nhãn chưa từng thấy mà không huấn luyện lại, đạt F1 trung bình 0.362. Khi cho phép huấn luyện có giám sát, mô hình đạt 0.653 so với 0.646 của SpineNetV2, trong khi cấu hình chỉ dùng CBAM tụt xuống 0.619. Điều này cho thấy nhánh BiomedCLIP giúp lợi thế của CBAM không mất đi khi đổi bộ dữ liệu.
 
-Phần mềm đi kèm cho phép tải ảnh DICOM, phân vùng tự động, chấm mười một nhãn bệnh lý theo từng tầng đĩa đệm, hiển thị kết quả trực tiếp trên ảnh, và cho bác sĩ chỉnh sửa mọi nhãn. Mọi chỉnh sửa đều được lưu lại. Phần máy chủ có 209 bài kiểm thử tự động.
+Phần mềm đi kèm cho phép tải ảnh DICOM, phân vùng tự động, chấm mười một nhãn bệnh lý theo từng tầng đĩa đệm, hiển thị kết quả trực tiếp trên ảnh, và cho bác sĩ chỉnh sửa mọi nhãn. Mọi chỉnh sửa đều được lưu lại.
 
 \textbf{Kết quả đã được công bố:} Kiến trúc Hybrid hai nhánh và cơ chế mở rộng không gian nhãn zero-shot đã được chấp nhận và trình bày tại hội nghị quốc tế MIWAI 2026 (\textit{The 18th Multi-disciplinary International Conference on Artificial Intelligence}), tổ chức tại Halifax, Nova Scotia, Canada, ngày 10--12/10/2026. Bài báo có nhan đề \textit{``A Two-Branch Hybrid Model for Imbalanced Lumbar Disc Grading and Zero-Shot Label Extension''}, học viên là tác giả thứ nhất và TS. Phan Trọng Nhân là tác giả liên hệ, xuất bản trong bộ \textit{Lecture Notes in Artificial Intelligence} của Springer.
 
@@ -21,13 +21,13 @@ Phần mềm đi kèm cho phép tải ảnh DICOM, phân vùng tự động, ch�
 
 Severe Recall 48.6\% tuy gấp bốn lần mô hình nền nhưng vẫn thấp hơn nhiều so với mức khoảng 80\% mà một công cụ sàng lọc cần đạt. Hệ thống vì vậy chỉ nên dùng như người đọc thứ hai, đánh dấu những ca nghi ngờ để bác sĩ xem lại.
 
-Riêng hai nhóm lỗ liên hợp, Severe Recall chỉ nằm trong khoảng 18--22\%, thấp hơn hẳn so với ống sống. Các nghiên cứu kiểm chứng độc lập trên SpineNetV2 cũng ghi nhận giới hạn tương tự khi chỉ đọc mặt cắt dọc, nên nhiều khả năng đây là giới hạn của dữ liệu đầu vào chứ không phải của kiến trúc.
+Riêng hai nhóm lỗ liên hợp, Severe Recall chỉ khoảng 31--38\% (Bảng~\ref{tab:rsna_per_cond_acc}), thấp hơn hẳn mức 70\% của ống sống. Lỗ liên hợp nhìn rõ nhất trên mặt cắt ngang, trong khi mô hình chỉ đọc mặt cắt dọc, nên nhiều khả năng đây là giới hạn của dữ liệu đầu vào chứ không phải của kiến trúc.
 
 Mọi kết quả chỉ lấy trung bình của ba lần chạy, đủ để thấy xu hướng nhưng chưa đủ để kết luận có ý nghĩa thống kê chặt chẽ. Và hai bộ dữ liệu sử dụng đều là dữ liệu công khai của nước ngoài, nên hiệu năng trên ảnh chụp tại các cơ sở y tế Việt Nam, với máy chụp và thông số khác, vẫn chưa được kiểm chứng.
 
 \section{Hướng phát triển}
 
-Bảng~\ref{tab:roadmap} tóm tắt bốn hướng tiếp theo cùng thời lượng dự kiến.
+Bảng~\ref{tab:roadmap} tóm tắt ba hướng tiếp theo cùng thời lượng dự kiến.
 
 \begin{table}[htbp]
 \centering
@@ -41,7 +41,6 @@ Bảng~\ref{tab:roadmap} tóm tắt bốn hướng tiếp theo cùng thời lư�
 1 & Cơ chế học lại từ phản hồi của bác sĩ & Huấn luyện lại từ lô chỉnh sửa với kỹ thuật chống quên, kèm quy trình đánh giá và bước người duyệt & 8 tuần \\ \hline
 2 & Bổ sung mặt cắt ngang cho hai nhóm lỗ liên hợp & Tinh chỉnh TotalSpineSeg trên mặt cắt ngang, hợp nhất đặc trưng hai mặt phẳng & 6 tuần \\ \hline
 3 & Sinh báo cáo chẩn đoán bằng ngôn ngữ tự nhiên & Tinh chỉnh mô hình ngôn ngữ thị giác trên cặp ảnh và văn bản chẩn đoán & 8 tuần \\ \hline
-4 & Đánh giá cùng bác sĩ trên dữ liệu thực tế & Tổ chức đợt sử dụng với bác sĩ chuyên khoa, thu phiếu đánh giá và nhật ký hiệu chỉnh & 4 tuần \\ \hline
 \end{tabular}
 \end{table}
 
@@ -58,7 +57,3 @@ Như đã nêu ở phần hạn chế, hai điều kiện hẹp lỗ liên hợp
 \subsection{Sinh báo cáo chẩn đoán bằng ngôn ngữ tự nhiên}
 
 Hệ thống hiện trả về nhãn và mức độ. Một bước mở rộng là sinh ra đoạn mô tả bằng lời để bác sĩ tham khảo khi viết kết luận. Khảo sát ở Chương 5 cho thấy MedGemma nguyên bản có Recall rất thấp trên bệnh lý thắt lưng nên không đưa được vào hệ thống, nhưng việc tinh chỉnh một mô hình như vậy trên các cặp ảnh và văn bản chẩn đoán của chính lĩnh vực này là hướng đáng thử.
-
-\subsection{Đánh giá cùng bác sĩ trên dữ liệu thực tế}
-
-Cuối cùng, hệ thống cần được đánh giá bởi chính người sẽ dùng nó. Phần mềm đã có sẵn phiếu đánh giá và cơ chế ghi nhận chỉnh sửa, nên việc còn lại là tổ chức một đợt sử dụng thực tế với bác sĩ chuyên khoa trên dữ liệu của bệnh viện trong nước, vừa để đo mức độ hữu ích, vừa để thu thập dữ liệu cho vòng phản hồi nói trên.
