@@ -393,10 +393,10 @@ MedGemma~\cite{google2025medgemma}    & 38.7\% & 50.1\% & 11.8\% & 18.6\% \\
   obox/.style={rectangle,rounded corners=2pt,draw=green!50!black,fill=green!14,align=center,inner sep=3pt},
   ar/.style={->,thick,black!70}]
 \node[io](v){Khối ảnh MRI};
-\node[tr,below=9mm of v,xshift=-15mm](b1){CBAM-3D\\ResNet-34};
+\node[fz,below=9mm of v,xshift=-15mm](b1){CBAM-3D\\ResNet-34};
 \node[fz,below=9mm of v,xshift=15mm](b2){BiomedCLIP\\ViT-B/16};
 \node[tr,below=22mm of v](cat){Concat 1024 $\to$ Fusion MLP};
-\node[tr,below=4mm of cat](head){Classification heads};
+\node[tr,below=4mm of cat](head){Cosine head};
 \node[obox,below=4mm of head](o){Output: xác suất + nhãn};
 \draw[ar](v)--(b1);\draw[ar](v)--(b2);
 \draw[ar](b1)--(cat);\draw[ar](b2)--(cat);
@@ -640,9 +640,10 @@ Bên cạnh việc khảo sát và lựa chọn mô hình nền cho cả hai mô
 \begin{frame}
 \frametitle{Hướng phát triển}
 \begin{itemize}
-    \item[1.] \textbf{Cơ chế học lại từ phản hồi bác sĩ}: huấn luyện lại từ lô chỉnh sửa, đánh giá phiên bản mới, bước người duyệt. \hfill \textit{8 tuần}
-    \item[2.] \textbf{Bổ sung mặt cắt Axial} cho hai nhóm lỗ liên hợp, kèm tinh chỉnh TotalSpineSeg. \hfill \textit{6 tuần}
-    \item[3.] \textbf{Sinh báo cáo chẩn đoán} bằng ngôn ngữ tự nhiên. \hfill \textit{8 tuần}
+    \item[1.] \textbf{Đánh giá phần mềm cùng bác sĩ}: đọc ca thật, trả lời phiếu đánh giá, so nhãn bác sĩ với nhãn mô hình. \hfill \textit{2 tuần}
+    \item[2.] \textbf{Cơ chế học lại từ phản hồi bác sĩ}: huấn luyện lại từ lô chỉnh sửa, đánh giá phiên bản mới, bước người duyệt. \hfill \textit{4 tuần}
+    \item[3.] \textbf{Bổ sung mặt cắt Axial} cho hai nhóm lỗ liên hợp, kèm tinh chỉnh TotalSpineSeg. \hfill \textit{4 tuần}
+    \item[4.] \textbf{Sinh báo cáo chẩn đoán} bằng ngôn ngữ tự nhiên. \hfill \textit{6 tuần}
 \end{itemize}
 \end{frame}
 
@@ -669,7 +670,7 @@ Bên cạnh việc khảo sát và lựa chọn mô hình nền cho cả hai mô
 \midrule
 CBAM-3D ResNet-34 & 21.3M & Frozen (pretrained) \\
 BiomedCLIP ViT-B/16 & 86.2M & Frozen \\
-Khối hợp nhất (fusion + cosine) & $\sim$0.5M & Huấn luyện \\
+Khối hợp nhất (fusion + cosine) & $\sim$1.18M & Huấn luyện \\
 \bottomrule
 \end{tabular}
 \caption{Phân bổ tham số trong kiến trúc Hybrid.}

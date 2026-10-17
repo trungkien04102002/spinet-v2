@@ -30,10 +30,10 @@ Trước khi đi vào chi tiết kĩ thuật, phần này tóm tắt các loại
 
 Luận văn tập trung tinh chỉnh mô-đun grading cho 3 nhãn theo chuẩn RSNA 2024~\cite{rsna2024dataset} (canal stenosis, foraminal narrowing trái/phải) và mở rộng lên 8 nhãn theo chuẩn SPIDER~\cite{vansluijs2022spider} (thêm Pfirrmann, Modic, narrowing, spondylolisthesis, endplate, herniation, bulging). Hình~\ref{fig:abnormality_examples} minh họa sự khác biệt trực quan giữa case Normal/Mild và Severe cho 3 conditions chính trên ảnh MRI Sagittal T2/STIR.
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.85\textwidth]{cslt/abnormality_examples.png}
-    \caption{Ví dụ Normal/Mild vs Severe cho 3 conditions RSNA.}
+    \caption{Ví dụ Normal/Mild vs Severe cho 3 conditions RSNA, ảnh lấy từ bộ dữ liệu RSNA 2024~\cite{rsna2024dataset}.}
     \label{fig:abnormality_examples}
 \end{figure}
 
@@ -111,7 +111,7 @@ Trên ảnh MRI hoặc CT, các cấu trúc giải phẫu của cột sống đ�
  \begin{figure}[htbp]
         \centering
         \includegraphics[scale=0.5]{cslt/lumbar_ver.jpg}
-        \caption{Đốt sống}
+        \caption{Đốt sống~\cite{netter2003atlas}.}
         \label{fig:lumbar_ver-abstract}
     \end{figure}
 \textbf{Đĩa đệm (Intervertebral Disc):} Trên ảnh MRI T2-weighted, đĩa đệm khỏe mạnh có tín hiệu cao ở trung tâm (nhân nhầy - nucleus pulposus) do chứa nhiều nước, và tín hiệu thấp hơn ở vòng ngoài (vòng sợi - annulus fibrosus). Khi đĩa đệm bị thoái hóa, nó sẽ mất nước và giảm tín hiệu (đen hơn). Thoát vị đĩa đệm là hình ảnh nhân nhầy lồi ra khỏi vị trí bình thường, có thể chèn ép vào các cấu trúc thần kinh. Hình~\ref{fig:disc-abstract} minh họa hình ảnh đĩa đệm.
@@ -119,7 +119,7 @@ Trên ảnh MRI hoặc CT, các cấu trúc giải phẫu của cột sống đ�
  \begin{figure}[htbp]
         \centering
         \includegraphics[scale=0.5]{cslt/disc.jpg}
-        \caption{Đĩa đệm}
+        \caption{Đĩa đệm~\cite{surreyimsk_back}.}
         \label{fig:disc-abstract}
     \end{figure}
 
@@ -127,7 +127,7 @@ Trên ảnh MRI hoặc CT, các cấu trúc giải phẫu của cột sống đ�
 \begin{figure}[htbp]
         \centering
         \includegraphics[scale=0.8]{cslt/spinal_cord.jpg}
-        \caption{Tủy sống và rễ thần kinh}
+        \caption{Tủy sống và rễ thần kinh~\cite{sspine_spine}.}
         \label{fig:spinal-cord-abstract}
 \end{figure}
 
@@ -155,14 +155,14 @@ là các phép tính toán và tổng hợp các thông tin dữ liệu đầu v
 gia quá trình tính toán và chuyển đổi các thông tin đầu vào thành
 thông tin đầu ra.
 
-    \item[--] $y$ là output của tiến trình, đại diện cho dữ liệu đầu ra.
+    \item[--] $\hat{y}$ là output của tiến trình, đại diện cho dữ liệu đầu ra.
 
 \end{itemize}
 
 \begin{figure}[!htb]
         \centering
         \includegraphics[width=0.75\textwidth]{cslt/perceptron.png}
-        \caption{Cấu trúc của một Perceptron}
+        \caption{Cấu trúc của một Perceptron~\cite{gfg_perceptron}.}
         \label{fig:perceptron}
     \end{figure}
 
@@ -244,7 +244,7 @@ Phép tích chập đơn giản là phép tìm biên ảnh. Sau khi cho qua bộ
 \section{Kiến trúc Encoder-Decoder}
 Kiến trúc Encoder-Decoder là một mô hình mạng nơ-ron được thiết kế để giải quyết các bài toán \textbf{chuỗi-đến-chuỗi (sequence-to-sequence - Seq2Seq)}, nơi độ dài của chuỗi đầu vào và chuỗi đầu ra có thể khác nhau. Mô hình này đã trở thành nền tảng cho nhiều ứng dụng đột phá trong xử lý ngôn ngữ tự nhiên như dịch máy, tóm tắt văn bản, và trả lời câu hỏi \cite{sutskever2014seq2seq, cho2014learning}. Hình~\ref{fig:en-de-abstract} minh họa kiến trúc Encoder-Decoder tổng quát.
 
-\begin{figure}[!htb]
+\begin{figure}[H]
         \centering
         \includegraphics[width=\textwidth]{cslt/en-de.png}
         \caption{Kiến trúc Encoder-Decoder \cite{ibm_encoderdecoder}.}
@@ -312,7 +312,7 @@ U-Net là một kiến trúc mạng nơ-ron tích chập (CNN) được thiết 
 \begin{figure}[!htb]
         \centering
         \includegraphics[width=\textwidth]{cslt/unet-arch.jpeg}
-        \caption{Kiến trúc U-Net \cite{gfg_unet}.}
+        \caption{Kiến trúc U-Net~\cite{ronneberger2015unet, gfg_unet}.}
         \label{fig:unet}
 \end{figure}
 
@@ -338,6 +338,7 @@ Kiến trúc này thường bao gồm một bộ mã hóa \textbf{hai nhánh}:
 Bằng cách này, Context-Aware Transformer có thể vừa tận dụng khả năng nắm bắt chi tiết tinh vi của CNN, vừa khai thác được khả năng hiểu ngữ cảnh toàn cục của Transformer, từ đó cải thiện đáng kể độ chính xác trong các tác vụ phân vùng phức tạp.
 
 \section{Cơ chế attention CBAM (Convolutional block attention module)}
+\label{sec:cbam_theory}
 Mặc dù mạng tích chập (CNN) trích xuất đặc trưng tốt từ ảnh, không phải mọi kênh đặc trưng và mọi vị trí không gian đều mang thông tin hữu ích như nhau cho bài toán phân loại. Đặc biệt với ảnh y tế, vùng bệnh lý (ví dụ vùng thoát vị đĩa đệm, vùng hẹp ống sống) thường chiếm tỉ lệ rất nhỏ so với toàn bộ khối ảnh đầu vào. \textbf{CBAM (Convolutional Block Attention Module)} được Woo và cộng sự \cite{woo2018cbam} giới thiệu năm 2018 là một mô-đun chú ý nhẹ, có thể chèn vào bất kì vị trí nào của một CNN, giúp mô hình tự động học cách "tập trung" vào các kênh đặc trưng và các vị trí không gian quan trọng nhất.
 
 CBAM bao gồm hai phần tuần tự: \textbf{chú ý theo kênh} (Channel Attention) và \textbf{chú ý theo không gian} (Spatial Attention). Với đầu vào là một tensor đặc trưng $F$ có kích thước $C \times H \times W$, phần Channel Attention tính một vector chú ý theo kênh $M_c$ kích thước $C \times 1 \times 1$ qua các bước:

@@ -322,7 +322,7 @@ Toàn bộ thực nghiệm chạy trên NVIDIA RTX 4090 (24GB VRAM) trên Vast.a
 
 Mỗi cấu hình được huấn luyện lại ba lần với ba giá trị khởi tạo ngẫu nhiên khác nhau (42, 123 và 456); số liệu báo cáo là trung bình và độ lệch chuẩn của ba lần chạy đó.
 
-Bốn cấu hình ablation được định nghĩa: (i) \textbf{SpineNetV2} - chỉ 3D ResNet-34 không có CBAM, không có BiomedCLIP; (ii) \textbf{CBAM} - thêm CBAM vào ResNet-34, không có BiomedCLIP; (iii) \textbf{BMC-only} - bỏ ResNet-34, chỉ dùng BiomedCLIP frozen với linear classifier; (iv) \textbf{Hybrid} - CBAM-ResNet-34 + BiomedCLIP frozen, fusion qua MLP.
+Bốn cấu hình ablation được định nghĩa: (i) \textbf{SpineNetV2} - chỉ 3D ResNet-34 không có CBAM, không có BiomedCLIP; (ii) \textbf{CBAM} - thêm CBAM vào ResNet-34, không có BiomedCLIP; (iii) \textbf{BMC-only} - bỏ ResNet-34, chỉ dùng nhánh BiomedCLIP frozen, chấm nhãn bằng so khớp câu mô tả như Hybrid; (iv) \textbf{Hybrid} - CBAM-ResNet-34 + BiomedCLIP frozen, fusion qua MLP.
 
 
 
@@ -546,7 +546,6 @@ Bảng~\ref{tab:spider_per_disease} chi tiết theo từng nhóm bệnh với 6 
 \begin{table}[htbp]
 \centering
 \caption{Chi tiết SPIDER theo từng nhóm bệnh}
-\label{tab:spider_per_disease}
 \label{tab:spider_per_disease}
 \renewcommand{\arraystretch}{1.15}
 \setlength{\tabcolsep}{3pt}

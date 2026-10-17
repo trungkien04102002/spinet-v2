@@ -19,7 +19,7 @@ Phần mềm đi kèm cho phép tải ảnh DICOM, phân vùng tự động, ch�
 
 \section{Hạn chế}
 
-Severe Recall 48.6\% tuy gấp bốn lần mô hình nền nhưng vẫn thấp hơn nhiều so với mức khoảng 80\% mà một công cụ sàng lọc cần đạt. Hệ thống vì vậy chỉ nên dùng như người đọc thứ hai, đánh dấu những ca nghi ngờ để bác sĩ xem lại.
+Severe Recall 48.6\% tuy gấp bốn lần mô hình nền nhưng vẫn có nghĩa là khoảng một nửa số ca nặng bị bỏ sót, chưa đủ để mô hình tự sàng lọc mà không cần bác sĩ. Hệ thống vì vậy chỉ nên dùng như người đọc thứ hai, đánh dấu những ca nghi ngờ để bác sĩ xem lại.
 
 Riêng hai nhóm lỗ liên hợp, Severe Recall chỉ khoảng 31--38\% (Bảng~\ref{tab:rsna_per_cond_acc}), thấp hơn hẳn mức 70\% của ống sống. Lỗ liên hợp nhìn rõ nhất trên mặt cắt ngang, trong khi mô hình chỉ đọc mặt cắt dọc, nên nhiều khả năng đây là giới hạn của dữ liệu đầu vào chứ không phải của kiến trúc.
 
@@ -27,7 +27,7 @@ Mọi kết quả chỉ lấy trung bình của ba lần chạy, đủ để th�
 
 \section{Hướng phát triển}
 
-Bảng~\ref{tab:roadmap} tóm tắt ba hướng tiếp theo cùng thời lượng dự kiến.
+Bảng~\ref{tab:roadmap} tóm tắt bốn hướng tiếp theo cùng thời lượng dự kiến.
 
 \begin{table}[htbp]
 \centering
@@ -38,11 +38,16 @@ Bảng~\ref{tab:roadmap} tóm tắt ba hướng tiếp theo cùng thời lượn
 \begin{tabular}{|c|p{4.4cm}|p{4.6cm}|c|}
 \hline
 \textbf{TT} & \textbf{Nội dung} & \textbf{Phương pháp} & \textbf{Thời lượng} \\ \hline
-1 & Cơ chế học lại từ phản hồi của bác sĩ & Huấn luyện lại từ lô chỉnh sửa với kỹ thuật chống quên, kèm quy trình đánh giá và bước người duyệt & 8 tuần \\ \hline
-2 & Bổ sung mặt cắt ngang cho hai nhóm lỗ liên hợp & Tinh chỉnh TotalSpineSeg trên mặt cắt ngang, hợp nhất đặc trưng hai mặt phẳng & 6 tuần \\ \hline
-3 & Sinh báo cáo chẩn đoán bằng ngôn ngữ tự nhiên & Tinh chỉnh mô hình ngôn ngữ thị giác trên cặp ảnh và văn bản chẩn đoán & 8 tuần \\ \hline
+1 & Đánh giá phần mềm cùng bác sĩ & Bác sĩ đọc ca thật trên phần mềm, trả lời phiếu đánh giá có sẵn; so nhãn của bác sĩ với nhãn của mô hình & 2 tuần \\ \hline
+2 & Cơ chế học lại từ phản hồi của bác sĩ & Huấn luyện lại từ lô chỉnh sửa với kỹ thuật chống quên, kèm quy trình đánh giá và bước người duyệt & 4 tuần \\ \hline
+3 & Bổ sung mặt cắt ngang cho hai nhóm lỗ liên hợp & Tinh chỉnh TotalSpineSeg trên mặt cắt ngang, hợp nhất đặc trưng hai mặt phẳng & 4 tuần \\ \hline
+4 & Sinh báo cáo chẩn đoán bằng ngôn ngữ tự nhiên & Tinh chỉnh mô hình ngôn ngữ thị giác trên cặp ảnh và văn bản chẩn đoán & 6 tuần \\ \hline
 \end{tabular}
 \end{table}
+
+\subsection{Đánh giá phần mềm cùng bác sĩ}
+
+Phần mềm mới được thử ở mức chức năng, chưa có đánh giá chính thức từ người dùng thật. Phần mềm đã có sẵn một phiếu đánh giá để bác sĩ trả lời sau khi đọc vài ca. Bước tiếp theo là mời bác sĩ dùng phần mềm trên ca thật, thu phiếu đánh giá, và so nhãn bác sĩ chốt với nhãn mô hình đưa ra. Kết quả này cho biết phần mềm có thật sự giúp rút ngắn thời gian đọc phim hay không, và những nhãn nào mô hình hay bị sửa nhất.
 
 \subsection{Cơ chế học lại từ phản hồi của bác sĩ}
 
