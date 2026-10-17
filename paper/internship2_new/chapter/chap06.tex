@@ -1,6 +1,8 @@
 \chapter{PHẦN MỀM HỖ TRỢ BÁC SĨ GÁN NHÃN}
 \label{chap:software}
 
+Chương 5 cho thấy mô hình Hybrid cải thiện rõ ở lớp Severe, nhưng một mô hình chỉ trả về con số thì bác sĩ khó dùng. Chương này trình bày phần mềm đưa mô hình tới người dùng: mục tiêu và yêu cầu (Mục~\ref{sec:sw_requirements}), kiến trúc hệ thống (Mục~\ref{sec:sw_architecture}), và các chức năng chính (Mục~\ref{sec:sw_features}).
+
 \section{Mục tiêu và yêu cầu}
 \label{sec:sw_requirements}
 
@@ -111,4 +113,6 @@ Mỗi lần bác sĩ sửa một ô trong bảng nhãn rồi bấm lưu, hệ th
 
 Các chỉnh sửa được gom chung cho cả hệ thống chứ không theo từng ca, vì một ca chỉ có vài đĩa đệm, quá ít để huấn luyện. Trong đợt thử nghiệm, hệ thống đã ghi nhận 22 chỉnh sửa và gom thành hai lô.
 
-Hiện tại phần mềm mới chỉ dừng ở việc lưu lại các chỉnh sửa. Mô hình chưa học lại được từ những dữ liệu này; phần huấn luyện lại được đặt làm hướng phát triển ở Chương 7.
+\section{Tóm tắt chương}
+
+Tóm lại, phần mềm đã nối được cả chuỗi từ tải ảnh DICOM, phân vùng, chấm nhãn đến hiển thị và chỉnh sửa, đáp ứng ba yêu cầu ở Mục~\ref{sec:sw_requirements}. Còn thiếu hai việc: đánh giá cùng bác sĩ trên ca thật, và cơ chế để mô hình học lại từ các chỉnh sửa đã lưu. Cả hai được đưa vào hướng phát triển ở Chương 7.

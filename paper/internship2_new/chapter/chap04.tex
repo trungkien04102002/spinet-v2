@@ -1,5 +1,7 @@
 \chapter{MÔ HÌNH ĐỀ XUẤT}
 
+Chương này trình bày giải pháp của luận văn. Mục~\ref{sec:gap_analysis} chỉ ra những điểm mà các công trình ở Chương 3 chưa đáp ứng được so với mục tiêu ở Chương 1. Mục~\ref{sec:pipeline_overview} mô tả hệ thống tổng thể và vai trò của từng mô hình được dùng lại. Mục~\ref{sec:phase2_arch} trình bày đóng góp chính là kiến trúc Hybrid, gồm cấu trúc hai nhánh, cách chấm nhãn bằng câu mô tả, cách xử lý mất cân bằng lớp, và quy trình huấn luyện, suy luận.
+
 \section{Hạn chế của các công trình liên quan}
 \label{sec:gap_analysis}
 
@@ -51,7 +53,7 @@ Hệ thống được xây dựng dựa trên ba mô hình đã được công b
 \end{itemize}
 Luận văn cũng thử SPINEPS~\cite{moller2024spineps}, MedCLIP-SAMv2~\cite{koleilat2025medclipsamv2} cho phần phân vùng (Mục~\ref{sec:eval_segmentation}) và MedGemma~\cite{google2025medgemma} cho phần chấm nhãn (Mục~\ref{sec:eval_detection}), nhưng kết quả ở Chương 5 kém hơn nên không chọn.
 
-Hình~\ref{fig:pipeline_2stage} là luồng xử lý của cả hệ thống. Ảnh MRI đi qua TotalSpineSeg để lấy mặt nạ phân vùng. Mặt nạ được dùng để định vị từng đĩa đệm, khối ảnh quanh đĩa đệm đi qua mô-đun chấm nhãn, và kết quả hiện lên phần mềm cho bác sĩ xem và sửa. Các mũi tên nét liền đã được hiện thực trong phần mềm ở Chương~\ref{chap:software}. Mũi tên nét đứt phía dưới là đường đi dùng khi đánh giá riêng mô-đun chấm nhãn ở Chương 5.
+Hình~\ref{fig:pipeline_2stage} là luồng xử lý của cả hệ thống, gồm hai bước nối tiếp. Ở bước đầu, ảnh MRI cột sống đi qua TotalSpineSeg, mô hình trả về mặt nạ cho từng đốt sống và đĩa đệm. Ở bước sau, mặt nạ này được dùng để định vị từng đĩa đệm; quanh mỗi đĩa đệm, hệ thống cắt ra một khối ảnh kích thước $(9, 112, 224)$ và đưa qua mô-đun grading. Mô-đun này dựa trên SpineNetV2 và được tinh chỉnh thành kiến trúc Hybrid ở Mục~\ref{sec:phase2_arch}. Kết quả cuối là mức độ của từng nhãn bệnh lý ở từng tầng đĩa đệm, lưu thành tệp JSON hoặc CSV. Phần mềm ở Chương~\ref{chap:software} hiển thị cả hai kết quả cho bác sĩ: mặt nạ phân vùng để nhìn và thao tác trên ảnh, còn nhãn bệnh lý chỉ ra chỗ nào có dấu hiệu bất thường cần xem lại.
 
 \begin{figure}[htbp]
     \centering
@@ -82,20 +84,13 @@ Hình~\ref{fig:pipeline_2stage} là luồng xử lý của cả hệ thống. �
 \end{figure}
 
 
-\textbf{Phân vùng với TotalSpineSeg:} Ảnh MRI cột sống được đưa vào TotalSpineSeg. Mô hình trả về mặt nạ cho từng đốt sống và đĩa đệm, kèm một ảnh hai chiều đã tô màu để xem nhanh.
+Các mũi tên nét liền trong hình là đường đi đã được hiện thực trong phần mềm. Mũi tên nét đứt phía dưới là đường đi dùng trong thí nghiệm. Ở Chương 5, khối ảnh không được cắt từ mặt nạ của TotalSpineSeg mà cắt theo tọa độ đĩa đệm có sẵn trong nhãn của bộ dữ liệu, để mọi phương pháp đem ra so đều nhận cùng một đầu vào. Vì vậy số liệu ở Chương 5 là của riêng mô-đun grading, không phải của cả hệ thống.
 
-\textbf{Chấm mức độ bệnh lý với mô-đun grading:} Mặt nạ ở bước trên được dùng để định vị từng đĩa đệm. Quanh mỗi đĩa đệm, hệ thống cắt ra một khối ảnh kích thước $(9, 112, 224)$ rồi đưa qua mô-đun grading. Mô-đun này dựa trên SpineNetV2, được tinh chỉnh bằng kiến trúc Hybrid trình bày ở Mục~\ref{sec:phase2_arch}. Kết quả là một tệp JSON hoặc CSV chứa điểm số cho từng nhãn bệnh lý ở từng tầng đĩa đệm.
-
-\textbf{Khác biệt giữa phần mềm và thí nghiệm:} Trong phần mềm, khối ảnh được cắt từ mặt nạ của TotalSpineSeg như vừa mô tả. Còn ở các thí nghiệm tại Chương 5, khối ảnh cắt theo tọa độ đĩa đệm có sẵn trong nhãn của bộ dữ liệu, để mọi phương pháp đem ra so đều nhận cùng một đầu vào. Đường đi này là nét đứt trong Hình~\ref{fig:pipeline_2stage}. Vì vậy số liệu ở Chương 5 là của riêng mô-đun chấm nhãn, không phải của cả hệ thống.
-
-Khi đến tay bác sĩ, hai kết quả của hệ thống bổ trợ nhau: mặt nạ phân vùng để nhìn và thao tác trực tiếp trên ảnh, còn nhãn bệnh lý chỉ ra chỗ nào có dấu hiệu bất thường cần xem lại.
-
-% \textbf{Lưu ý về MedGemma:} Trong quá trình khảo sát, báo cáo cũng đánh giá khả năng dùng một mô hình Vision-Language lớn (MedGemma) như một giải pháp thay thế cho mô-đun grading hoặc cho việc sinh báo cáo chẩn đoán bằng ngôn ngữ tự nhiên. Tuy nhiên, kết quả thực nghiệm trong Chương 5 cho thấy MedGemma có Recall rất thấp (6--21\%) trên các bệnh lý cột sống thắt lưng do chưa được chuyên biệt hóa, nên \emph{không được đưa vào pipeline đề xuất}. Việc fine-tune MedGemma cho bài toán này được đặt làm hướng phát triển trong Chương 6.\\
 
 \section{Đóng góp tinh chỉnh mô-đun grading}
 \label{sec:phase2_arch}
 
-Phần này trình bày đóng góp kĩ thuật chính của luận văn: tinh chỉnh mô-đun grading được chọn từ Thí nghiệm 1. Bốn mục đầu trình bày từng thành phần, hai mục cuối mô tả cách chúng chạy khi huấn luyện và khi suy luận.
+Phần này trình bày đóng góp kĩ thuật chính của luận văn: tinh chỉnh mô-đun grading dựa trên SpineNetV2, mô hình được chọn ở thí nghiệm thứ hai (Mục~\ref{sec:eval_detection}). Kiến trúc sau tinh chỉnh, gọi là Hybrid, nhắm vào cả ba hạn chế đã nêu ở Mục~\ref{sec:gap_analysis}. Với lớp Severe bị bỏ sót, nhánh CBAM giúp mạng tập trung vào vùng tổn thương nhỏ (Mục~\ref{subsec:branch_detail}), còn quy trình xử lý mất cân bằng tăng sức nặng của lớp hiếm khi huấn luyện (Mục~\ref{subsec:imbalance}). Với bộ nhãn cố định, mô hình chấm nhãn bằng cách so ảnh với câu mô tả (Mục~\ref{subsec:cosine_head}). Với khả năng tổng quát hóa, nhánh BiomedCLIP được giữ nguyên trọng số trong suốt quá trình huấn luyện (Mục~\ref{subsec:training_procedure}). Mục~\ref{subsec:hybrid_overview} giới thiệu toàn bộ kiến trúc trước, các mục tiếp theo đi vào từng thành phần, và hai mục cuối mô tả cách chúng chạy khi huấn luyện và khi suy luận.
 
 \subsection{Tổng quan kiến trúc Hybrid}
 \label{subsec:hybrid_overview}
@@ -116,6 +111,8 @@ Khi huấn luyện Hybrid, cả hai bộ mã hóa đều giữ nguyên trọng s
 \subsection{Chi tiết hai nhánh và mô-đun hợp nhất}
 \label{subsec:branch_detail}
 
+Hai nhánh của Hybrid bổ sung cho nhau. Nhánh CBAM được huấn luyện trên chính ảnh cột sống nên nắm được chi tiết của đĩa đệm, còn nhánh BiomedCLIP đem lại kiến thức chung học từ một lượng rất lớn dữ liệu y khoa. Mục này trình bày từng nhánh, rồi đến cách hợp nhất hai nhánh.
+
 \textbf{Nhánh CBAM-3D ResNet-34:} Dựa trên 3D ResNet-34 với tích chập ba chiều kernel $3 \times 3 \times 3$, stride chỉ áp dụng trên hai chiều không gian $(H, W)$ và giữ nguyên chiều lát $D = 9$. Backbone được khởi tạo từ trọng số đã huấn luyện sẵn của SpineNetV2~\cite{windsor2022spinenetv2}. Đầu vào là khối ảnh đĩa đệm kích thước $(9, 112, 224)$. CBAM được chèn sau mỗi stage của ResNet (4 stage: 64, 128, 256, 512 kênh). Cuối stage là nơi đặc trưng đã đủ trừu tượng để cơ chế chú ý phân biệt được vùng đĩa đệm tổn thương với vùng mô lành, nhưng chưa bị nén tới mức mất hết thông tin không gian.
 
 CBAM gốc ở Mục~\ref{sec:cbam_theory} làm trên ảnh hai chiều. Ở đây cả hai bước chú ý được mở rộng sang ba chiều để thấy được cả chiều lát. Với bản đồ đặc trưng $F \in \mathbb{R}^{C \times D \times H \times W}$, chú ý theo kênh và chú ý theo không gian được tính như sau:
@@ -133,7 +130,7 @@ CBAM gốc ở Mục~\ref{sec:cbam_theory} làm trên ảnh hai chiều. Ở đ�
 \end{equation}
 với $\otimes$ là phép nhân từng phần tử. MLP dùng chung cho hai nhánh gộp, có lớp ẩn $C/16$ phần tử. $\text{AvgPool}_{3D}$ và $\text{MaxPool}_{3D}$ gộp trên cả ba chiều $D, H, W$; $\text{AvgPool}_c$ và $\text{MaxPool}_c$ gộp theo chiều kênh. Điểm khác với bản hai chiều nằm ở $M_s$: đây là một mặt nạ ba chiều, mỗi vị trí trên mỗi lát có một trọng số riêng. Nhờ vậy mạng đề cao được một vùng nhỏ chỉ xuất hiện ở vài lát, như vùng hẹp lỗ liên hợp ở một bên. Sau stage cuối, phép gộp trung bình toàn cục cho ra vector $f_{cbam}$ 512 chiều.
 
-\textbf{Nhánh BiomedCLIP:} Cung cấp \emph{prior tổng quát} từ pretraining quy mô lớn. Luận văn chọn BiomedCLIP~\cite{zhang2024biomedclip} thay vì MedCLIP hoặc PMC-CLIP vì BiomedCLIP có dataset pretraining lớn nhất (15M cặp PubMed) và đa dạng modality (MRI, CT, X-ray, mô bệnh học).
+\textbf{Nhánh BiomedCLIP:} Nhánh này mang kiến thức chung mà BiomedCLIP~\cite{zhang2024biomedclip} đã học từ 15 triệu cặp ảnh và chú thích trong các bài báo trên PubMed. Luận văn chọn BiomedCLIP thay vì MedCLIP hay PMC-CLIP vì đây là mô hình có tập dữ liệu học sẵn lớn nhất trong ba mô hình, gồm nhiều loại ảnh như MRI, CT, X-quang và mô bệnh học. Đây cũng là nhánh dùng để giảm hạn chế thứ ba ở Mục~\ref{sec:gap_analysis}: vì trọng số giữ nguyên, kiến thức chung này không bị kéo lệch theo đặc điểm riêng của RSNA.
 
 BiomedCLIP là mô hình hai chiều, chỉ nhận một ảnh phẳng, trong khi đầu vào ở đây là khối chín lát. Nhánh này lấy ba lát ở giữa khối, nhân mỗi lát thành ba kênh và đổi kích thước về $224 \times 224$ cho đúng đầu vào của ViT-B/16, rồi mã hóa riêng từng lát thành một vector $z_i$ 512 chiều. Ba vector được gộp lại bằng trọng số chú ý:
 \begin{equation}
@@ -154,7 +151,7 @@ với $[\cdot\,;\cdot]$ là phép ghép hai vector, $W_1 \in \mathbb{R}^{768 \ti
 \subsection{Cơ chế thêm nhãn mới không cần huấn luyện lại}
 \label{subsec:cosine_head}
 
-Hai cấu hình SpineNetV2 và CBAM dùng một head tuyến tính riêng cho mỗi nhãn. Số nhãn vì vậy bị chốt ngay lúc thiết kế mạng: muốn chấm thêm một nhãn mới thì phải gắn thêm một head và huấn luyện lại.
+Mục này giải quyết hạn chế bộ nhãn cố định nêu ở Mục~\ref{sec:gap_analysis}. Hai cấu hình SpineNetV2 và CBAM dùng một head tuyến tính riêng cho mỗi nhãn, nên số nhãn được cố định ngay từ lúc thiết kế mạng: muốn chấm thêm một nhãn mới thì phải gắn thêm một head và huấn luyện lại.
 
 Cấu hình Hybrid bỏ các head cố định đó. Mỗi mức độ của mỗi nhãn bệnh được viết thành một câu mô tả bằng tiếng Anh, chẳng hạn \textit{``severe spinal canal stenosis''} cho mức nặng của nhãn hẹp ống sống. RSNA có ba nhãn bệnh, mỗi nhãn ba mức, nên có chín câu. Câu này đi qua bộ mã hóa văn bản của BiomedCLIP và trở thành một vector. Khối ảnh đĩa đệm cũng đã được đưa về một vector theo công thức~\eqref{eq:fusion}. Vì BiomedCLIP được huấn luyện để ảnh và văn bản cùng nằm trong một không gian, hai vector này so được với nhau. Mô hình chấm nhãn bằng cách xem vector ảnh gần vector của câu mô tả nào nhất.
 
@@ -170,9 +167,9 @@ Danh sách câu mô tả nằm ngoài mạng chứ không nằm trong kiến tr�
 \subsection{Pipeline xử lý mất cân bằng lớp}
 \label{subsec:imbalance}
 
-Bài toán RSNA có phân bố nhãn rất mất cân bằng: trên trục Severity, Normal/Mild chiếm $\sim$78\%, Moderate $\sim$18\%, Severe chỉ $\sim$4\%. Mô hình baseline huấn luyện với Cross-Entropy thuần thường rơi vào trạng thái lười, chỉ học dự đoán Normal/Mild để đạt accuracy cao, trong khi Severe Recall gần như bằng 0. Luận văn áp dụng ba kĩ thuật phối hợp để xử lý vấn đề này:
+Mục này nhắm vào hạn chế đầu tiên ở Mục~\ref{sec:gap_analysis}: lớp Severe bị bỏ sót. Trên ba nhãn được dùng của RSNA, Normal/Mild chiếm khoảng 81\% số mẫu, Moderate khoảng 15\%, còn Severe chỉ khoảng 4\%. Huấn luyện bằng cross-entropy thông thường thì mô hình chỉ cần đoán Normal/Mild là đã đạt accuracy cao, nên gần như không bao giờ dự đoán Severe. Luận văn xử lý việc này bằng ba kĩ thuật nối tiếp nhau: sửa hàm mất mát, cho mẫu hiếm xuất hiện nhiều hơn, và làm cho các mẫu lặp lại không giống hệt nhau.
 
-\textbf{(a) Focal Loss và trọng số lớp:} Gọi $y$ là mức đúng của một mẫu và $p_y$ là xác suất mô hình gán cho mức đó. Focal Loss~\cite{lin2017focal} giảm đóng góp của các mẫu dễ (mẫu Normal/Mild thường có $p_y$ cao) và tăng cho các mẫu khó (mẫu Severe thường có $p_y$ thấp):
+Kĩ thuật thứ nhất nằm ở hàm mất mát. Gọi $y$ là mức đúng của một mẫu và $p_y$ là xác suất mô hình gán cho mức đó. Focal Loss~\cite{lin2017focal} giảm đóng góp của các mẫu dễ (mẫu Normal/Mild thường có $p_y$ cao) và tăng cho các mẫu khó (mẫu Severe thường có $p_y$ thấp):
 \begin{equation}
     \text{FL} = -\omega_y (1 - p_y)^\gamma \log(p_y)
     \label{eq:focal}
@@ -184,9 +181,9 @@ với $\gamma = 2.0$ cho cấu hình Hybrid. Hệ số $\omega_y$ là trọng s�
 \end{equation}
 với $n_c$ là số mẫu của mức $c$ trong tập huấn luyện; mẫu số làm cho trung bình ba trọng số bằng 1. Cách này cho lớp Severe trọng số khoảng gấp bốn lần lớp đa số. Nếu dùng nghịch đảo tần suất trực tiếp thì chênh lệch lên tới khoảng mười lăm lần, huấn luyện mất ổn định.
 
-\textbf{(b) Minority oversampling:} Với mỗi epoch, các sample chứa ít nhất một head có nhãn Severe sẽ được lặp lại 3 lần (oversample factor = 3). Cách này làm tăng đáng kể số iteration mà model thấy các mẫu Severe, từ đó cải thiện khả năng học của lớp hiếm. Hệ số oversampling được điều chỉnh thực nghiệm, giá trị quá cao (5 - 10) gây overfitting trên các mẫu Severe ít ỏi, giá trị quá thấp (1 - 2) không đủ tác động.
+Sửa hàm mất mát chỉ thay đổi mức phạt, còn số lần mô hình được thấy mẫu hiếm thì vẫn ít. Kĩ thuật thứ hai vì vậy là lấy mẫu lại: trong mỗi epoch, đĩa đệm nào có ít nhất một nhãn ở mức Moderate hoặc Severe thì được lặp lại ba lần.
 
-\textbf{(c) Tăng cường dữ liệu:} Lặp lại mẫu Severe nhiều lần dễ khiến mô hình học thuộc đúng những mẫu đó. Vì vậy mỗi khối ảnh trong tập huấn luyện đều đi qua một chuỗi biến đổi ngẫu nhiên trước khi vào mạng, để các bản lặp không giống hệt nhau. Cấu hình dùng trong luận văn gồm bốn phép biến đổi:
+Nhưng lặp lại mẫu hiếm nhiều lần thì dễ khiến mô hình học thuộc đúng những mẫu đó. Kĩ thuật thứ ba vì vậy là tăng cường dữ liệu: mỗi khối ảnh trong tập huấn luyện đi qua một chuỗi biến đổi ngẫu nhiên trước khi vào mạng, để các bản lặp không giống hệt nhau. Cấu hình dùng trong luận văn gồm bốn phép biến đổi:
 
 \begin{itemize}
     \item Lật ảnh theo trục trước--sau, xác suất 0.5.
@@ -224,10 +221,13 @@ Giữ cố định hai nhánh có hai lý do. Thứ nhất, số mẫu Severe qu
 
 \textbf{Tham số huấn luyện:} AdamW với tốc độ học $10^{-4}$ và weight decay $10^{-4}$, mỗi lô 32 mẫu, tối đa 20 epoch, dừng sớm nếu kết quả trên tập kiểm định không cải thiện sau 5 epoch.
 
-\begin{figure}[htbp]
+
+Hình~\ref{fig:training_arch} mô tả bước 2. Ô màu xám giữ cố định, ô màu xanh được học, ô màu đỏ là hàm mất mát. Luồng dữ liệu qua hai nhánh và Fusion MLP giống như ở Hình~\ref{fig:hybrid_arch}; khác biệt nằm ở ba điểm. Thứ nhất, trước khi vào mạng, khối ảnh được tăng cường ngẫu nhiên và các mẫu có nhãn Moderate hoặc Severe được lặp lại ba lần theo Mục~\ref{subsec:imbalance}. Thứ hai, chín câu mô tả của RSNA (ba nhãn, mỗi nhãn ba mức) được mã hóa sẵn một lần thành các vector $t_{k,c}$ và không đổi trong suốt quá trình huấn luyện. Thứ ba, sau ô cosine, Focal Loss tính mất mát cho từng nhãn, Uncertainty Loss gộp ba mất mát thành $\mathcal{L}_{total}$, và đạo hàm, vẽ bằng đường nét đứt, chỉ đi về các ô màu xanh.
+
+\begin{figure}[H]
     \centering
     \resizebox{\textwidth}{!}{%
-    \begin{tikzpicture}[yscale=0.8,
+    \begin{tikzpicture}[
         io/.style={rectangle, draw=black!60, fill=black!5, rounded corners, minimum width=4.2cm, minimum height=0.9cm, align=center, font=\small},
         fz/.style={rectangle, draw=black!50, fill=black!15, rounded corners, minimum width=4.2cm, minimum height=0.9cm, align=center, font=\small},
         tr/.style={rectangle, draw=blue!70!black, fill=blue!12, rounded corners, minimum width=4.2cm, minimum height=0.9cm, align=center, thick, font=\small},
@@ -236,7 +236,7 @@ Giữ cố định hai nhánh có hai lý do. Thứ nhất, số mẫu Severe qu
         bp/.style={->, thick, dashed, red!65!black}
     ]
         \node[io] (vol)  at (0,0)      {Per-IVD volume\\ \scriptsize $9 \times 112 \times 224$};
-        \node[io] (aug)  at (0,-1.6)   {Augmentation + oversampling\\ \scriptsize Severe $\times 3$};
+        \node[io] (aug)  at (0,-1.6)   {Augmentation + oversampling\\ \scriptsize Moderate/Severe $\times 3$};
         \node[fz] (cbam) at (-3.2,-3.4) {CBAM-3D ResNet-34\\ \scriptsize weights from stage 1};
         \node[fz] (bmc)  at (3.2,-3.4)  {3 centre slices\\ $\to$ BiomedCLIP image encoder};
         \node[tr] (pool) at (3.2,-5.0)  {Slice attention pool ($w_a$)};
@@ -267,7 +267,6 @@ Giữ cố định hai nhánh có hai lý do. Thứ nhất, số mẫu Severe qu
     \label{fig:training_arch}
 \end{figure}
 
-Hình~\ref{fig:training_arch} mô tả bước 2. Ô màu xám giữ cố định, ô màu xanh được học, ô màu đỏ là hàm mất mát. Mỗi lô dữ liệu đi qua các bước sau. Khối ảnh trong tập huấn luyện được tăng cường ngẫu nhiên, và các mẫu Severe xuất hiện ba lần nhờ lấy mẫu lại. Khối ảnh sau đó đi vào hai nhánh: nhánh CBAM cho ra $f_{cbam}$, còn nhánh BiomedCLIP mã hóa ba lát giữa và bộ gộp lát gộp chúng thành $f_{bmc}$. Fusion MLP hợp nhất hai vector thành $\hat{f}_{img}$. Ở bên phải, chín câu mô tả của RSNA (ba nhãn, mỗi nhãn ba mức) đã được mã hóa sẵn một lần thành các vector $t_{k,c}$. Ô cosine tính xác suất theo công thức~\eqref{eq:cosine_prob}, Focal Loss tính mất mát cho từng nhãn, rồi Uncertainty Loss gộp ba mất mát thành $\mathcal{L}_{total}$. Đạo hàm, vẽ bằng đường nét đứt, chỉ đi về các ô màu xanh.
 
 \subsection{Quy trình suy luận}
 \label{subsec:inference}
@@ -316,3 +315,7 @@ Lúc này mọi thành phần đều giữ cố định, khối ảnh không qua
     \item Mức độ và xác suất của mọi nhãn ở mọi tầng đĩa đệm được ghi ra tệp JSON hoặc CSV để phần mềm ở Chương~\ref{chap:software} hiển thị.
 \end{enumerate}
 Đổi sang bộ nhãn khác chỉ là đổi bộ vector ở bước 2, các bước còn lại giữ nguyên.
+
+\section{Tóm tắt chương}
+
+Tóm lại, mỗi hạn chế nêu ở Mục~\ref{sec:gap_analysis} có một thành phần tương ứng trong kiến trúc Hybrid. Focal loss với trọng số căn bậc hai nhắm vào lớp Severe. Việc chấm nhãn bằng so khớp với câu mô tả cho phép thêm nhãn mới mà không huấn luyện lại. Nhánh BiomedCLIP giữ nguyên trọng số được kỳ vọng giúp mô hình ít phụ thuộc vào bộ dữ liệu huấn luyện. Chương 5 kiểm chứng từng thành phần này bằng thực nghiệm trên RSNA 2024 và SPIDER.

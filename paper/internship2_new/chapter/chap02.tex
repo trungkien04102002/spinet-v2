@@ -1,7 +1,9 @@
 \chapter{CƠ SỞ LÍ THUYẾT}
 
+Chương này trình bày các kiến thức nền cần cho các chương sau. Phần đầu đi qua phía y khoa: các loại bất thường thường gặp trên ảnh MRI thắt lưng, các mặt cắt và chuỗi xung, các định dạng tệp ảnh, và hình dạng của từng cấu trúc giải phẫu trên ảnh. Phần sau đi qua phía học sâu, từ mạng nơ-ron, mạng tích chập tới các kiến trúc hay dùng trong ảnh y tế như U-Net, cơ chế chú ý CBAM, và các mô hình nền tảng SAM, BiomedCLIP. CBAM và BiomedCLIP là hai thành phần chính của kiến trúc đề xuất ở Chương 4.
+
 \section{Tổng quan về ảnh y tế trong chẩn đoán bệnh lý cột sống}
-Chẩn đoán hình ảnh đóng vai trò then chốt trong việc xác định nguyên nhân và đánh giá mức độ nghiêm trọng của các bệnh lý cột sống. Việc lựa chọn phương pháp hình ảnh phù hợp phụ thuộc vào tình trạng lâm sàng và cấu trúc giải phẫu cần khảo sát.
+Chẩn đoán hình ảnh là bước chính để xác định nguyên nhân và đánh giá mức độ nghiêm trọng của các bệnh lý cột sống. Việc lựa chọn phương pháp hình ảnh phù hợp phụ thuộc vào tình trạng lâm sàng và cấu trúc giải phẫu cần khảo sát.
 
 \subsection{Các loại bất thường thường gặp trên ảnh MRI thắt lưng}
 Trước khi đi vào chi tiết kĩ thuật, phần này tóm tắt các loại bất thường mà mô hình AI cần phát hiện trên ảnh MRI cột sống thắt lưng. Các bất thường được chia theo cấu trúc giải phẫu bị ảnh hưởng:
@@ -14,7 +16,7 @@ Trước khi đi vào chi tiết kĩ thuật, phần này tóm tắt các loại
     \item \textbf{Hẹp đĩa đệm (Disc narrowing):} giảm chiều cao đĩa đệm so với bình thường.
 \end{itemize}
 
-\textbf{Bất thường ở đốt sống :}
+\textbf{Bất thường ở đốt sống:}
 \begin{itemize}
     \item \textbf{Trượt đốt sống (Spondylolisthesis):} một đốt sống trượt ra trước hoặc sau so với đốt sống liền kề.
     \item \textbf{Tổn thương endplate (Upper/Lower endplate damage):} các vết nứt hoặc schmorl node ở mặt trên hoặc dưới của đốt sống.
@@ -47,6 +49,7 @@ Luận văn tập trung tinh chỉnh mô-đun grading cho 3 nhãn theo chuẩn R
 % \end{figure}
 
 \subsection{Các mặt cắt MRI và hướng chụp cơ bản}
+\label{subsec:mri_planes}
 Một khối ảnh MRI cột sống 3D có thể được trình bày dưới ba mặt cắt chính, mỗi mặt cắt phù hợp cho việc đánh giá các cấu trúc khác nhau:
 
 \begin{itemize}
@@ -62,11 +65,11 @@ Với mỗi mặt cắt, dữ liệu MRI thường có hai chuỗi xung phổ bi
 \end{itemize}
 
 \subsection{Các loại ảnh y tế thường dùng}
-\textbf{X-quang (X-ray):} Là kỹ thuật cơ bản và phổ biến nhất, sử dụng tia X để tạo ra hình ảnh hai chiều của xương. X-quang rất hữu ích để đánh giá cấu trúc tổng thể của cột sống, phát hiện các vấn đề như gãy xương, trượt đốt sống, vẹo cột sống, hoặc các thay đổi thoái hóa ở xương. Tuy nhiên, X-quang có hạn chế trong việc hiển thị các mô mềm như đĩa đệm, tủy sống hay dây thần kinh.\\
+\textbf{X-quang (X-ray):} Là kỹ thuật cơ bản và phổ biến nhất, sử dụng tia X để tạo ra hình ảnh hai chiều của xương. X-quang rất hữu ích để đánh giá cấu trúc tổng thể của cột sống, phát hiện các vấn đề như gãy xương, trượt đốt sống, vẹo cột sống, hoặc các thay đổi thoái hóa ở xương. Tuy nhiên, X-quang có hạn chế trong việc hiển thị các mô mềm như đĩa đệm, tủy sống hay dây thần kinh.
     
-\textbf{Cắt lớp vi tính (Computed Tomography - CT):} Kỹ thuật này cũng sử dụng tia X nhưng kết hợp với xử lý máy tính để tạo ra các hình ảnh cắt lớp ngang chi tiết của cơ thể. CT cho thấy hình ảnh xương với độ phân giải rất cao, vượt trội hơn X-quang trong việc phát hiện các gãy xương phức tạp, hẹp ống sống do xương hoặc các khối u xương. Mặc dù có thể thấy được mô mềm tốt hơn X-quang, CT vẫn không chi tiết bằng MRI.\\
+\textbf{Cắt lớp vi tính (Computed Tomography - CT):} Kỹ thuật này cũng sử dụng tia X nhưng kết hợp với xử lý máy tính để tạo ra các hình ảnh cắt lớp ngang chi tiết của cơ thể. CT cho thấy hình ảnh xương với độ phân giải rất cao, tốt hơn X-quang trong việc phát hiện các gãy xương phức tạp, hẹp ống sống do xương hoặc các khối u xương. Mặc dù có thể thấy được mô mềm tốt hơn X-quang, CT vẫn không chi tiết bằng MRI.
     
- \textbf{Cộng hưởng từ (Magnetic Resonance Imaging - MRI):} Được xem là tiêu chuẩn vàng trong chẩn đoán các bệnh lý liên quan đến mô mềm của cột sống. MRI sử dụng từ trường mạnh và sóng radio để tạo ra hình ảnh cắt lớp chi tiết. Kỹ thuật này khảo sát xuất sắc các cấu trúc như đĩa đệm (phát hiện thoát vị), tủy sống, rễ thần kinh, dây chằng và các khối u mô mềm. MRI là công cụ không thể thiếu để chẩn đoán chính xác nguyên nhân gây chèn ép thần kinh.
+ \textbf{Cộng hưởng từ (Magnetic Resonance Imaging - MRI):} Được xem là tiêu chuẩn vàng trong chẩn đoán các bệnh lý liên quan đến mô mềm của cột sống. MRI sử dụng từ trường mạnh và sóng radio để tạo ra hình ảnh cắt lớp chi tiết. Kỹ thuật này cho thấy rõ các cấu trúc như đĩa đệm (phát hiện thoát vị), tủy sống, rễ thần kinh, dây chằng và các khối u mô mềm. MRI là công cụ chính để chẩn đoán chính xác nguyên nhân gây chèn ép thần kinh.
 
 \subsection{Các định dạng tệp ảnh y tế phổ biến}
 Trong lĩnh vực chẩn đoán hình ảnh, dữ liệu được lưu trữ dưới nhiều định dạng khác nhau, mỗi định dạng có những đặc điểm riêng về cấu trúc và ứng dụng. Hai trong số các định dạng phổ biến nhất trong nghiên cứu và lâm sàng là DICOM và NIfTI; Bảng~\ref{tab:file_formats} tóm tắt đặc điểm của hai định dạng này.
@@ -85,12 +88,12 @@ DICOM & Nhị phân, độ dài thay đổi & .dcm & Số nguyên có dấu và 
 
 \begin{itemize}
     \item \textbf{DICOM (Digital Imaging and Communications in Medicine):} 
-    Đây không chỉ là một định dạng tệp mà còn là một tiêu chuẩn toàn diện cho việc truyền tải, lưu trữ và xử lý hình ảnh y tế. 
+    DICOM vừa là định dạng tệp vừa là tiêu chuẩn chung cho việc truyền tải, lưu trữ và xử lý hình ảnh y tế. 
     \begin{itemize}
-        \item[$\circ$]  \textbf{Cấu trúc:} Điểm cốt lõi và là sức mạnh lớn nhất của DICOM là dữ liệu hình ảnh (pixel) không thể tách rời khỏi siêu dữ liệu (metadata). Một tệp DICOM duy nhất chứa cả hình ảnh và một phần header cực kỳ chi tiết, bao gồm thông tin bệnh nhân, thông số kỹ thuật của máy quét, giao thức chụp (acquisition protocol),... Điều này làm cho mỗi tệp ảnh trở có đầy đủ ngữ cảnh y tế.
+        \item[$\circ$]  \textbf{Cấu trúc:} Đặc điểm chính của DICOM là dữ liệu hình ảnh (pixel) không thể tách rời khỏi siêu dữ liệu (metadata). Một tệp DICOM duy nhất chứa cả hình ảnh và một phần header rất chi tiết, bao gồm thông tin bệnh nhân, thông số kỹ thuật của máy quét, giao thức chụp (acquisition protocol),... Nhờ vậy mỗi tệp ảnh mang đủ thông tin về ca chụp.
         \item[$\circ$]  \textbf{Header có độ dài thay đổi:} Vì phải chứa rất nhiều thông tin đa dạng, header của DICOM có độ dài thay đổi và phụ thuộc vào từng phương thức chụp (modality-dependent).
         \item[$\circ$]  \textbf{Lưu trữ dữ liệu pixel:} Dữ liệu pixel trong DICOM chỉ được lưu dưới dạng số nguyên. Để chuyển đổi sang các giá trị trong thế giới thực (ví dụ: đơn vị Hounsfield trong CT), DICOM sử dụng hai trường trong header là \texttt{slope} (độ dốc) và \texttt{intercept} (hệ số chặn) cho một phép biến đổi tuyến tính.
-        \item[$\circ$]]\textbf{Ứng dụng:} Là tiêu chuẩn bắt buộc trong môi trường lâm sàng, được sử dụng bởi hầu hết các thiết bị y tế như máy MRI, CT, X-quang.
+        \item[$\circ$] \textbf{Ứng dụng:} Là tiêu chuẩn bắt buộc trong môi trường lâm sàng, được sử dụng bởi hầu hết các thiết bị y tế như máy MRI, CT, X-quang.
     \end{itemize}
     
     \item \textbf{NIfTI (Neuroimaging Informatics Technology Initiative):} 
@@ -98,12 +101,12 @@ DICOM & Nhị phân, độ dài thay đổi & .dcm & Số nguyên có dấu và 
     \begin{itemize}
         \item[$\circ$] \textbf{Cấu trúc đơn giản:} Thông thường, dữ liệu được lưu trong một tệp duy nhất có phần mở rộng là \texttt{.nii}, gộp cả header và dữ liệu pixel. Cấu trúc này rất thuận tiện cho việc xử lý và lập trình.
         \item[$\circ$] \textbf{Header có độ dài cố định:} Không giống DICOM, header của NIfTI có kích thước cố định là 352 byte, giúp việc đọc và phân tích tệp trở nên đơn giản hơn.
-        \item[$\circ$] \textbf{Thông tin không gian:} Một cải tiến quan trọng là NIfTI bổ sung thông tin về hướng (orientation) và hệ tọa độ (coordinate system) của ảnh trực tiếp vào header. Điều này giải quyết các vấn đề nhầm lẫn trái-phải thường gặp trong nghiên cứu não bộ và rất hữu ích cho các tác vụ xử lý không gian.
-        \item[$\circ$] \textbf{Ứng dụng:} NIfTI là định dạng thống trị trong cộng đồng nghiên cứu khoa học, được hỗ trợ bởi hầu hết các phần mềm và thư viện phân tích hình ảnh phổ biến như FSL, SPM, Nibabel (Python).
+        \item[$\circ$] \textbf{Thông tin không gian:} NIfTI bổ sung thông tin về hướng (orientation) và hệ tọa độ (coordinate system) của ảnh trực tiếp vào header. Điều này giải quyết các vấn đề nhầm lẫn trái-phải thường gặp trong nghiên cứu não bộ và rất hữu ích cho các tác vụ xử lý không gian.
+        \item[$\circ$] \textbf{Ứng dụng:} NIfTI được dùng phổ biến trong nghiên cứu, được hỗ trợ bởi hầu hết các phần mềm và thư viện phân tích hình ảnh phổ biến như FSL, SPM, Nibabel (Python).
     \end{itemize}
 \end{itemize}
 \subsection{Giải phẫu cột sống trên ảnh y tế}
-Trên ảnh MRI hoặc CT, các cấu trúc giải phẫu của cột sống được hiển thị với các đặc điểm riêng biệt, giúp bác sĩ chẩn đoán bệnh lý. \\
+Trên ảnh MRI hoặc CT, các cấu trúc giải phẫu của cột sống được hiển thị với các đặc điểm riêng biệt, giúp bác sĩ chẩn đoán bệnh lý.
 
 
 \textbf{Đốt sống:} Trên cả CT và MRI, phần xương vỏ (cortical bone) của thân đốt sống có tín hiệu thấp (màu đen), trong khi phần tủy xương (bone marrow) bên trong có tín hiệu cao hơn. CT là phương tiện tốt nhất để đánh giá chi tiết cấu trúc xương. Hình~\ref{fig:lumbar_ver-abstract} minh họa hình ảnh đốt sống trên ảnh y tế.
@@ -139,7 +142,7 @@ tác vụ nào đó với tập thông tin đầu vào. Một mạng nơ-ron th�
 nối và hoạt động cùng nhau. Chúng hoạt động bằng cách tiếp nhận các thông tin đưa vào
 từ các \textit{đuôi gai} (dendrite), tính toán và tổng hợp tại \textit{thân nơ-ron} (cell body),
 sau đó lan truyền kết quả đến các nơ-ron khác thông qua \textit{sợi trục} (axon). Có thể dễ dàng rút ra nhận xét rằng \textbf{nơ-ron sinh học nhận nhiều thông
-tin đầu vào nhưng chỉ đưa ra một kết quả duy nhất thôngc qua quá trình xử lý trung gian phức tạp}.
+tin đầu vào nhưng chỉ đưa ra một kết quả duy nhất thông qua quá trình xử lý trung gian phức tạp}.
 
 Tương tự như cách thức hoạt động nêu trên của mạng nơ-ron thần kinh,
 ANN cũng được cấu thành từ nhiều nơ-ron được gọi là perceptron có cấu
@@ -194,8 +197,8 @@ xác định giá trị đầu ra $\hat{y}$ như là tín hiệu kích hoạt c�
 
 \begin{equation}
     \hat{y} = \left\{\begin{matrix}
-1   & \text{if} f(a) \geq \text{threshold}\\ 
-0 &  \text{if} f(a) < \text{threshold}
+1   & \text{if } f(a) \geq \text{threshold}\\ 
+0 &  \text{if } f(a) < \text{threshold}
 \end{matrix}\right.
 \end{equation}
 \end{enumerate}
@@ -216,8 +219,8 @@ Số lượng tầng ẩn trong mô hình ANN là không giới hạn và đư�
 định tùy thuộc vào bài toán cần giải quyết. Đặc biệt, khi số lượng tầng ẩn
 lớn hơn 1 thì mô hình ANN được gọi là mô hình \textit{Học sâu} (Deep learning).
 
-\section{ Mạng tích chập Convolutional Neural Network - CNN }
-Mạng tích chập có 02 phần chính: \textbf{Lớp trích lọc đặc trưng của ảnh} (Conv, Relu và Pool) và \textbf{Lớp phân loại} (FC và softmax). Hình~\ref{fig:cnn} minh họa cấu trúc tổng thể của một mạng CNN cơ bản.\\
+\section{Mạng tích chập Convolutional Neural Network - CNN}
+Mạng tích chập có hai phần chính: \textbf{Lớp trích lọc đặc trưng của ảnh} (Conv, ReLU và Pool) và \textbf{Lớp phân loại} (FC và softmax). Hình~\ref{fig:cnn} minh họa cấu trúc tổng thể của một mạng CNN cơ bản.
 \begin{figure}[!htb]
         \centering
         \includegraphics[width=\textwidth]{cslt/cnn.png}
@@ -226,23 +229,23 @@ Mạng tích chập có 02 phần chính: \textbf{Lớp trích lọc đặc trư
 \end{figure}
 Đầu vào (dữ liệu training):
 \begin{itemize}
-    \item Input đầu vào là một bức ảnh được biểu diển bởi ma trận pixel với kích thước: $[w \times h \times d]$
-    \item W: chiều rộng
-\item  H: chiều cao
-\item  D: Là độ sâu, hay dễ hiểu là số lớp màu của ảnh. Ví dụ ảnh RBG sẽ là 3 lớp ảnh Đỏ, Xanh Dương, Xanh.
+    \item Input đầu vào là một bức ảnh được biểu diễn bởi ma trận pixel với kích thước: $[w \times h \times d]$
+    \item $w$: chiều rộng
+    \item $h$: chiều cao
+    \item $d$: độ sâu, hay dễ hiểu là số lớp màu của ảnh. Ví dụ ảnh RGB có 3 lớp màu Đỏ, Xanh lá và Xanh dương.
 \end{itemize}
 
-\textbf{Conv layer:} Mục tiêu của các lớp tích chập là trích chọn các đặc trưng của ảnh đầu vào. Ảnh đầu vào được cho qua một bộ lọc chạy dọc bức ảnh. Bộ lọc có kích thước là $m \times n$ và áp dụng phép tích vô hướng để tính toán, cho ra một giá trị duy nhất. Đầu ra của phép tích chập là một tập các giá trị ảnh được gọi là mạng đặc trưng (features map).\\
+\textbf{Conv layer:} Mục tiêu của các lớp tích chập là trích chọn các đặc trưng của ảnh đầu vào. Ảnh đầu vào được cho qua một bộ lọc chạy dọc bức ảnh. Bộ lọc có kích thước là $m \times n$ và áp dụng phép tích vô hướng để tính toán, cho ra một giá trị duy nhất. Đầu ra của phép tích chập là một tập các giá trị ảnh được gọi là bản đồ đặc trưng (feature map).
 
-Phép tích chập đơn giản là phép tìm biên ảnh. Sau khi cho qua bộ lọc nó sẽ làm hiện lên các đặc trưng của đối tượng trong ảnh như đường vẽ xung quanh đối tượng, các góc cạnh,v.v.., và các layer tiếp theo sẽ lại trích xuất tiếp các đặc trưng của đặc trưng của các đối tượng đó, việc có nhiều layer như vậy cho phép chúng ta chia nhỏ đặc trưng của ảnh tới mức nhỏ nhất có thể.\\
+Phép tích chập đơn giản là phép tìm biên ảnh. Sau khi cho qua bộ lọc nó sẽ làm hiện lên các đặc trưng của đối tượng trong ảnh như đường vẽ xung quanh đối tượng, các góc cạnh, v.v., và các layer tiếp theo sẽ lại trích xuất tiếp các đặc trưng của đặc trưng của các đối tượng đó, việc có nhiều layer như vậy cho phép chúng ta chia nhỏ đặc trưng của ảnh tới mức nhỏ nhất có thể.
 
-\textbf{ReLU layer:} ReLU layer áp dụng các kích hoạt (activation function) max(0,x) lên đầu ra của Conv Layer, có tác dụng đưa các giá trị âm về thành 0. Layer này không thay đổi kích thước của ảnh và không có thêm bất kì tham số nào. Mục đích của lớp ReLu là đưa ảnh một mức ngưỡng, ở đây là 0. Để loại bỏ các giá trị âm không cần thiết mà có thể sẽ ảnh hưởng cho việc tính toán ở các layer sau đó.\\
+\textbf{ReLU layer:} ReLU layer áp dụng các kích hoạt (activation function) max(0,x) lên đầu ra của Conv Layer, có tác dụng đưa các giá trị âm về thành 0. Layer này không thay đổi kích thước của ảnh và không có thêm bất kì tham số nào. Mục đích của lớp ReLU là đặt một mức ngưỡng cho ảnh, ở đây là 0, để loại bỏ các giá trị âm không cần thiết mà có thể sẽ ảnh hưởng cho việc tính toán ở các layer sau đó.
 
-\textbf{Pool layer:} Pool Layer thực hiện chức năng làm giảm chiều không gian của đầu và giảm độ phức tạp tính toán của model ngoài ra Pool Layer còn giúp kiểm soát hiện tượng overffiting. Thông thường, Pool layer có nhiều hình thức khác nhau phù hợp cho nhiều bài toán, tuy nhiên Max Pooling là được sử dụng nhiều vào phổ biến hơn cả với ý tưởng cũng rất sát với thực tế con người đó là: Giữ lại chi tiết quan trọng hay hiểu ở trong bài toán này chính giữ lại pixel có giá trị lớn nhất.\\
+\textbf{Pool layer:} Pool Layer thực hiện chức năng làm giảm chiều không gian của đầu vào và giảm độ phức tạp tính toán của model, ngoài ra Pool Layer còn giúp kiểm soát hiện tượng overfitting. Thông thường, Pool layer có nhiều hình thức khác nhau phù hợp cho nhiều bài toán, tuy nhiên Max Pooling là được sử dụng nhiều và phổ biến hơn cả với ý tưởng cũng rất sát với thực tế con người đó là: Giữ lại chi tiết quan trọng hay hiểu ở trong bài toán này chính là giữ lại pixel có giá trị lớn nhất.
 
-\textbf{Fully connected layer (FC):} Tên tiếng việt là Mạng liên kết đầy đủ. Tại lớp mạng này, mỗi một nơ-ron của layer này sẽ liên kết tới mọi nơ-ron của lớp khác. Để đưa ảnh từ các layer trước vào mạng này, buộc phải dàn phẳng bức ảnh ra thành 1 vector thay vì là mảng nhiều chiều như trước. Tại layer cuối cùng sẽ sử dụng 1 hàm kinh điển trong học máy softmax để phân loại đối tượng dựa vào vector đặc trưng đã được tính toán của các lớp trước đó.
+\textbf{Fully connected layer (FC):} Tên tiếng Việt là lớp kết nối đầy đủ. Tại lớp mạng này, mỗi một nơ-ron của layer này sẽ liên kết tới mọi nơ-ron của lớp khác. Để đưa ảnh từ các layer trước vào mạng này, buộc phải dàn phẳng bức ảnh ra thành 1 vector thay vì là mảng nhiều chiều như trước. Tại layer cuối cùng sẽ sử dụng 1 hàm kinh điển trong học máy softmax để phân loại đối tượng dựa vào vector đặc trưng đã được tính toán của các lớp trước đó.
 \section{Kiến trúc Encoder-Decoder}
-Kiến trúc Encoder-Decoder là một mô hình mạng nơ-ron được thiết kế để giải quyết các bài toán \textbf{chuỗi-đến-chuỗi (sequence-to-sequence - Seq2Seq)}, nơi độ dài của chuỗi đầu vào và chuỗi đầu ra có thể khác nhau. Mô hình này đã trở thành nền tảng cho nhiều ứng dụng đột phá trong xử lý ngôn ngữ tự nhiên như dịch máy, tóm tắt văn bản, và trả lời câu hỏi \cite{sutskever2014seq2seq, cho2014learning}. Hình~\ref{fig:en-de-abstract} minh họa kiến trúc Encoder-Decoder tổng quát.
+Kiến trúc Encoder-Decoder là một mô hình mạng nơ-ron được thiết kế để giải quyết các bài toán \textbf{chuỗi-đến-chuỗi (sequence-to-sequence - Seq2Seq)}, nơi độ dài của chuỗi đầu vào và chuỗi đầu ra có thể khác nhau. Mô hình này đã trở thành nền tảng cho nhiều ứng dụng trong xử lý ngôn ngữ tự nhiên như dịch máy, tóm tắt văn bản, và trả lời câu hỏi \cite{sutskever2014seq2seq, cho2014learning}. Hình~\ref{fig:en-de-abstract} minh họa kiến trúc Encoder-Decoder tổng quát.
 
 \begin{figure}[H]
         \centering
@@ -302,7 +305,7 @@ Kiến trúc Encoder-Decoder cơ bản có một hạn chế lớn: nó phải n
     \begin{equation}
         c_i = \sum_{j=1}^{T} \alpha_{ij} h_j
     \end{equation}
-    \item Vector ngữ cảnh động $c_i$ này sau đó được sử dụng để dự đoán đầu ra $y_i$. Bằng cách này, mô hình có thể tập trung vào các phần phù hợp của chuỗi đầu vào khi tạo ra từng phần của chuỗi đầu ra, giúp cải thiện đáng kể hiệu suất, đặc biệt là với các chuỗi dài.
+    \item Vector ngữ cảnh động $c_i$ này sau đó được sử dụng để dự đoán đầu ra $y_i$. Bằng cách này, mô hình có thể tập trung vào các phần phù hợp của chuỗi đầu vào khi tạo ra từng phần của chuỗi đầu ra, giúp mô hình làm tốt hơn, nhất là với các chuỗi dài.
 \end{itemize}
 
 \section{Kiến trúc U-Net}
@@ -318,13 +321,13 @@ U-Net là một kiến trúc mạng nơ-ron tích chập (CNN) được thiết 
 
 Phần đầu tiên, \textbf{đường đi xuống (Encoder)}, hoạt động như một bộ trích xuất đặc trưng. Nó bao gồm các khối lặp lại, mỗi khối chứa hai lớp tích chập 3x3 (theo sau là hàm kích hoạt ReLU) và một lớp gộp cực đại 2x2 (max pooling). Quá trình này giúp giảm dần kích thước không gian của ảnh (downsampling) trong khi tăng dần số lượng kênh đặc trưng. Nhờ đó, mô hình có thể học được các thông tin ngữ cảnh phức tạp và trừu tượng của ảnh đầu vào, hay nói cách khác là "hiểu được cái gì" đang có trong ảnh, nhưng lại làm mất đi thông tin về vị trí chính xác.
 
-Đối xứng với nó là \textbf{đường đi lên (Decoder)}. Nhiệm vụ của phần này là xây dựng lại một bản đồ phân vùng có độ phân giải cao từ các đặc trưng đã được mã hóa. Tại mỗi bước, nó sử dụng một lớp tích chập chuyển vị 2x2 (transposed convolution) để tăng kích thước không gian lên gấp đôi (upsampling). Điểm cải tiến cốt lõi và làm nên sức mạnh của U-Net chính là các \textbf{kết nối tắt (skip connections)}. Tại mỗi bước đi lên, bản đồ đặc trưng sau khi được tăng kích thước sẽ được ghép (concatenate) với bản đồ đặc trưng có cùng độ phân giải từ đường đi xuống tương ứng. Các kết nối tắt này cho phép mô hình kết hợp thông tin ngữ cảnh trừu tượng từ Decoder với thông tin không gian chi tiết, có độ phân giải cao từ Encoder. Sự kết hợp này giúp giải quyết vấn đề mất mát thông tin vị trí, cho phép mô hình định vị các đối tượng một cách cực kỳ chính xác – tức là "biết được nó nằm ở đâu". Sau khi ghép, khối này tiếp tục được xử lý qua hai lớp tích chập 3x3.
+Đối xứng với nó là \textbf{đường đi lên (Decoder)}. Nhiệm vụ của phần này là xây dựng lại một bản đồ phân vùng có độ phân giải cao từ các đặc trưng đã được mã hóa. Tại mỗi bước, nó sử dụng một lớp tích chập chuyển vị 2x2 (transposed convolution) để tăng kích thước không gian lên gấp đôi (upsampling). Điểm cải tiến chính của U-Net là các \textbf{kết nối tắt (skip connections)}. Tại mỗi bước đi lên, bản đồ đặc trưng sau khi được tăng kích thước sẽ được ghép (concatenate) với bản đồ đặc trưng có cùng độ phân giải từ đường đi xuống tương ứng. Các kết nối tắt này cho phép mô hình kết hợp thông tin ngữ cảnh trừu tượng từ Decoder với thông tin không gian chi tiết, có độ phân giải cao từ Encoder. Sự kết hợp này giúp giải quyết vấn đề mất mát thông tin vị trí, cho phép mô hình định vị đối tượng chính xác hơn, tức là "biết được nó nằm ở đâu". Sau khi ghép, khối này tiếp tục được xử lý qua hai lớp tích chập 3x3.
 
 Cuối cùng, một lớp tích chập 1x1 được sử dụng ở lớp cuối cùng để ánh xạ bản đồ đặc trưng đa kênh thành bản đồ phân vùng cuối cùng với số kênh tương ứng với số lớp đối tượng cần phân loại.
 \section{Context-Aware Transformers}
-Trong khi các mạng CNN (như U-Net) rất mạnh trong việc trích xuất các đặc trưng cục bộ chi tiết, chúng lại gặp khó khăn trong việc nắm bắt các mối quan hệ ngữ cảnh ở phạm vi xa  trong một tấm ảnh. Ngược lại, kiến trúc Transformer, vốn thành công trong xử lý ngôn ngữ, lại có khả năng mô hình hóa các mối quan hệ toàn cục nhưng có thể bỏ qua các chi tiết kết cấu ở mức độ pixel.
+Trong khi các mạng CNN (như U-Net) rất mạnh trong việc trích xuất các đặc trưng cục bộ chi tiết, chúng lại gặp khó khăn trong việc nắm bắt các mối quan hệ ngữ cảnh ở phạm vi xa trong một tấm ảnh. Ngược lại, kiến trúc Transformer, vốn thành công trong xử lý ngôn ngữ, lại có khả năng mô hình hóa các mối quan hệ toàn cục nhưng có thể bỏ qua các chi tiết kết cấu ở mức độ pixel.
 
-Để kết hợp ưu điểm của cả hai phương pháp, kiến trúc \textbf{Context-Aware Transformers} đã được đề xuất, đặc biệt cho các bài toán phân vùng y tế, nơi cả ngữ cảnh toàn cục và chi tiết cục bộ đều cực kỳ quan trọng \cite{windsor2022context}. Ý tưởng cốt lõi là tạo ra một mô hình "nhận thức được ngữ cảnh" bằng cách kết hợp song song hai luồng xử lý thông tin.
+Để kết hợp ưu điểm của cả hai phương pháp, kiến trúc \textbf{Context-Aware Transformers} đã được đề xuất, đặc biệt cho các bài toán phân vùng y tế, nơi cả ngữ cảnh toàn cục và chi tiết cục bộ đều quan trọng \cite{windsor2022context}. Ý tưởng chính là tạo ra một mô hình "nhận thức được ngữ cảnh" bằng cách kết hợp song song hai luồng xử lý thông tin.
 
 Kiến trúc này thường bao gồm một bộ mã hóa \textbf{hai nhánh}:
 \begin{enumerate}
@@ -333,9 +336,9 @@ Kiến trúc này thường bao gồm một bộ mã hóa \textbf{hai nhánh}:
     \item \textbf{Nhánh nhận thức toàn cục (Global-Aware Branch):} Đây là một kiến trúc dựa trên Transformer (cụ thể là Vision Transformer - ViT). Ảnh đầu vào được chia thành các "mảnh" (patches) nhỏ, sau đó được "dát phẳng" và đưa vào các khối Transformer Encoder. Nhờ cơ chế tự tập trung (self-attention), nhánh này có thể học được mối tương quan giữa tất cả các cặp mảnh ảnh, bất kể chúng nằm ở đâu. Điều này cho phép mô hình nắm bắt được ngữ cảnh tổng thể của bức ảnh.
 \end{enumerate}
 
-Điểm mấu chốt của mô hình là một \textbf{mô-đun hợp nhất (fusion module)} được thiết kế để kết hợp hiệu quả thông tin từ hai nhánh trên. Các đặc trưng cục bộ chi tiết từ nhánh CNN sẽ được làm giàu thêm bằng các thông tin ngữ cảnh toàn cục từ nhánh Transformer. Biểu diễn kết hợp này sau đó được đưa vào một bộ giải mã, thường có cấu trúc tương tự như U-Net, để tái tạo lại bản đồ phân vùng cuối cùng.
+Hai nhánh được nối với nhau bằng một \textbf{mô-đun hợp nhất (fusion module)}. Các đặc trưng cục bộ chi tiết từ nhánh CNN sẽ được làm giàu thêm bằng các thông tin ngữ cảnh toàn cục từ nhánh Transformer. Biểu diễn kết hợp này sau đó được đưa vào một bộ giải mã, thường có cấu trúc tương tự như U-Net, để tái tạo lại bản đồ phân vùng cuối cùng.
 
-Bằng cách này, Context-Aware Transformer có thể vừa tận dụng khả năng nắm bắt chi tiết tinh vi của CNN, vừa khai thác được khả năng hiểu ngữ cảnh toàn cục của Transformer, từ đó cải thiện đáng kể độ chính xác trong các tác vụ phân vùng phức tạp.
+Nhờ vậy, khi phân vùng, mô hình dùng được cả chi tiết cục bộ từ CNN lẫn ngữ cảnh toàn cục từ Transformer.
 
 \section{Cơ chế attention CBAM (Convolutional block attention module)}
 \label{sec:cbam_theory}
@@ -369,19 +372,23 @@ M_s(F') = \sigma\left(\text{Conv}_{7\times 7}\left([\text{AvgPool}(F'); \text{Ma
 
 Đầu ra cuối cùng là $F'' = M_s(F') \otimes F'$.
 
-CBAM rất phù hợp cho bài toán ảnh y tế vì hai lý do chính. Thứ nhất, số tham số mà CBAM thêm vào rất ít, chỉ vài chục nghìn so với hàng chục triệu của backbone CNN, nên không gây overfitting trên các dataset y tế thường có quy mô nhỏ. Thứ hai, cơ chế chú ý ngầm cho phép mô hình học cách "nhìn vào đâu" mà không cần thông tin định vị thủ công (ví dụ bounding box hay mặt nạ phân vùng). Trong luận văn này, CBAM được chèn sau mỗi stage của 3D ResNet-34 (4 stages tương ứng 64, 128, 256, 512 kênh) trong nhánh trainable của kiến trúc Hybrid đề xuất ở Chương 4.
+CBAM rất phù hợp cho bài toán ảnh y tế vì hai lý do chính. Thứ nhất, số tham số mà CBAM thêm vào rất ít, chỉ vài chục nghìn so với hàng chục triệu của backbone CNN, nên ít làm tăng nguy cơ overfitting trên các bộ dữ liệu y tế vốn thường nhỏ. Thứ hai, cơ chế chú ý ngầm cho phép mô hình học cách "nhìn vào đâu" mà không cần thông tin định vị thủ công (ví dụ bounding box hay mặt nạ phân vùng). Trong luận văn này, CBAM được chèn sau mỗi stage của 3D ResNet-34 (4 stages tương ứng 64, 128, 256, 512 kênh) trong nhánh CBAM của kiến trúc Hybrid đề xuất ở Chương 4.
 
 
 \section{Các mô hình nền tảng trong ảnh y tế}
 
 \subsection{Mô hình Segment Anything (SAM)}
-Mô hình Segment Anything (SAM) được giới thiệu là một mô hình nền tảng cho bài toán phân vùng ảnh, nổi bật với khả năng khái quát hóa zero-shot thông qua kiến trúc có thể điều khiển bằng gợi ý (promptable architecture). Kiến trúc của SAM bao gồm ba thành phần chính: bộ mã hóa hình ảnh mạnh mẽ để trích xuất đặc trưng, bộ mã hóa gợi ý linh hoạt để xử lý các đầu vào như điểm hoặc hộp giới hạn, và bộ giải mã mặt nạ hạng nhẹ để tạo ra kết quả phân vùng \cite{kirillov2023sam}.
+Mô hình Segment Anything (SAM) được giới thiệu là một mô hình nền tảng cho bài toán phân vùng ảnh, có khả năng phân vùng zero-shot thông qua kiến trúc có thể điều khiển bằng gợi ý (promptable architecture). Kiến trúc của SAM bao gồm ba thành phần chính: bộ mã hóa hình ảnh để trích xuất đặc trưng, bộ mã hóa gợi ý để xử lý các đầu vào như điểm hoặc hộp giới hạn, và bộ giải mã mặt nạ hạng nhẹ để tạo ra kết quả phân vùng \cite{kirillov2023sam}.
 
 Trong lĩnh vực chẩn đoán hình ảnh, SAM cho phép thực hiện phân vùng tương tác mà không cần huấn luyện lại trên các tập dữ liệu mới. Tuy nhiên, do được huấn luyện chủ yếu trên ảnh tự nhiên, hiệu suất của SAM trên các cấu trúc y tế phức tạp có thể bị hạn chế. Để khắc phục điều này, các biến thể như MedSAM đã được phát triển bằng cách tinh chỉnh SAM trên tập dữ liệu y tế quy mô lớn, giúp mô hình thích nghi tốt hơn với các đặc điểm giải phẫu đặc thù \cite{ma2024medsam}.
 
 \subsection{Mô hình Ngôn ngữ - Thị giác (Vision-Language Models - CLIP/BiomedCLIP)}
-Các mô hình Ngôn ngữ - Thị giác, điển hình là CLIP (Contrastive Language-Image Pre-Training), đóng vai trò quan trọng trong việc liên kết thông tin đa phương thức. CLIP học cách biểu diễn hình ảnh và văn bản trong cùng một không gian nhúng chia sẻ thông qua cơ chế học tương phản, giúp tối đa hóa sự tương đồng giữa các cặp ảnh-văn bản khớp nhau và giảm thiểu sự tương đồng giữa các cặp không khớp \cite{radford2021clip}.
+Các mô hình Ngôn ngữ - Thị giác, điển hình là CLIP (Contrastive Language-Image Pre-Training), được dùng để liên kết ảnh với văn bản. CLIP học cách biểu diễn hình ảnh và văn bản trong cùng một không gian nhúng chia sẻ thông qua cơ chế học tương phản, giúp tối đa hóa sự tương đồng giữa các cặp ảnh-văn bản khớp nhau và giảm thiểu sự tương đồng giữa các cặp không khớp \cite{radford2021clip}.
 
-Mặc dù CLIP thể hiện khả năng vượt trội trên ảnh tự nhiên, việc áp dụng trực tiếp vào y tế gặp nhiều thách thức do sự phức tạp của thuật ngữ chuyên ngành và các đặc điểm hình ảnh vi mô. BiomedCLIP ra đời để giải quyết vấn đề này bằng cách huấn luyện trên quy mô lớn các cặp hình ảnh và văn bản y sinh (ví dụ: từ PubMed) \cite{zhang2024biomedclip}.
+CLIP làm tốt trên ảnh tự nhiên, nhưng dùng thẳng cho ảnh y tế thì gặp khó vì thuật ngữ chuyên ngành phức tạp và các chi tiết trên ảnh rất nhỏ. BiomedCLIP ra đời để giải quyết vấn đề này bằng cách huấn luyện trên quy mô lớn các cặp hình ảnh và văn bản y sinh (ví dụ: từ PubMed) \cite{zhang2024biomedclip}.
 
-BiomedCLIP sử dụng kiến trúc chuyên biệt với Vision Transformer cho bộ mã hóa ảnh và PubMedBERT cho bộ mã hóa văn bản. Nhờ đó, mô hình có khả năng mã hóa các biểu diễn tiềm ẩn giàu ý nghĩa, giúp định vị chính xác các vùng bệnh lý và hiểu sâu sắc ngữ cảnh y khoa hơn so với mô hình CLIP tiêu chuẩn. Đây là cơ sở quan trọng để phát triển các phương pháp phân vùng zero-shot định hướng bởi văn bản \cite{zhang2024biomedclip}.
+BiomedCLIP dùng Vision Transformer cho bộ mã hóa ảnh và PubMedBERT cho bộ mã hóa văn bản. Vì được học trên dữ liệu y sinh, vector ảnh và vector văn bản của nó khớp với ngữ cảnh y khoa tốt hơn CLIP gốc. Đây là cơ sở cho các phương pháp phân vùng zero-shot dựa trên văn bản \cite{zhang2024biomedclip}.
+
+\section{Tóm tắt chương}
+
+Tóm lại, phần y khoa cho biết mô hình cần nhìn vào đâu: đĩa đệm, ống sống và lỗ liên hợp, chủ yếu trên lát cắt dọc T2. Phần học sâu cho biết những công cụ có sẵn: mạng tích chập 3D để đọc khối ảnh, CBAM để mạng tập trung vào vùng nhỏ chứa tổn thương, và BiomedCLIP để nối ảnh với câu mô tả bằng chữ. Chương 3 xem các công trình trước đã dùng những công cụ này cho bài toán cột sống ra sao.
