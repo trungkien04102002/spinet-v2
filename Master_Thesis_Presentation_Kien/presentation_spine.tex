@@ -69,24 +69,11 @@ Trường Đại học Bách Khoa \\
 \textit{Luận văn thạc sĩ}
 }
 
-\date{\today}
+\date{}
 \begin{document}
 
 \begin{frame}
 \titlepage
-\end{frame}
-
-\begin{frame}
-\frametitle{Tóm tắt đề tài}
-\begin{block}{Bài toán}
-\footnotesize Đánh giá mức độ thoái hóa đĩa đệm trên MRI cột sống thắt lưng hiện vẫn làm thủ công. Hai khó khăn khi tự động hóa: lớp \textbf{Severe} chiếm chưa tới 5\% dữ liệu nên gần như không bao giờ được dự đoán, và \textbf{không gian nhãn cố định} khiến mô hình không trả lời được bộ nhãn khác.
-\end{block}
-\begin{block}{Phương pháp}
-\footnotesize Kiến trúc \textbf{Hybrid hai nhánh}: nhánh chú ý CBAM trên ResNet-34 ba chiều ghép với nhánh BiomedCLIP đông cứng, dự đoán bằng cách so khớp với \textbf{câu mô tả nhãn} nên tập nhãn trở thành đầu vào. Kèm quy trình xử lý mất cân bằng lớp. Trên nền đó xây dựng \textbf{phần mềm} cho bác sĩ xem và sửa nhãn.
-\end{block}
-\begin{block}{Kết quả}
-\footnotesize Severe Recall \textbf{0.123 $\to$ 0.486} ($\sim$4 lần), Severe F1 0.152 $\to$ 0.356. Chấm được \textbf{8 nhãn chưa từng thấy} trên SPIDER mà không huấn luyện lại. Phần mềm chạy được. Bài báo đã công bố tại \textbf{MIWAI 2026}.
-\end{block}
 \end{frame}
 
 \begin{frame}
