@@ -112,7 +112,7 @@ Trường Đại học Bách Khoa \\
 \column{.56\textwidth}
 \centering
 \includegraphics[height=0.62\textheight]{image/abnormality_examples.png}\\[2pt]
-{\scriptsize Ví dụ Normal/Mild so với Severe cho 3 nhóm bệnh lý (RSNA 2024).}
+{\scriptsize Ví dụ Normal/Mild so với Severe cho 3 nhóm bệnh lý (RSNA 2024~\cite{rsna2024dataset}).}
 \end{columns}
 \end{frame}
 
@@ -201,8 +201,8 @@ Trường Đại học Bách Khoa \\
 \toprule
 \textbf{Hướng tiếp cận} & \textbf{Phương pháp} & \textbf{Mục đích / hạn chế} \\
 \midrule
-CNN chuyên biệt cột sống (SpineNetV2~\cite{windsor2022spinenetv2}) & ResNet-34 3D + head softmax & Chuẩn cho cột sống nhưng nhãn cố định, yếu ở lớp hiếm \\
-Học giám sát đa nhãn (Ning Shen~\cite{nshen7_rsna2024}) & Ensemble CNN trên RSNA & Chính xác cao nhưng chỉ 5 nhãn, chưa công bố thành bài báo \\
+CNN chuyên biệt cột sống (SpineNetV2~\cite{windsor2022spinenetv2}) & ResNet-34~\cite{he2016resnet} 3D + head softmax & Chuẩn cho cột sống nhưng nhãn cố định, yếu ở lớp hiếm \\
+Học giám sát đa nhãn (Ning Shen~\cite{nshen7_rsna2024}) & Faster R-CNN + Swin Transformer trên RSNA & Chính xác cao nhưng chỉ 5 nhãn, chưa công bố thành bài báo \\
 VLM zero-shot (MedGemma~\cite{google2025medgemma}) & Prompt ảnh--văn bản & Linh hoạt nhãn nhưng độ chính xác còn thấp \\
 Cơ chế chú ý (CBAM~\cite{woo2018cbam}) & Chú ý kênh + không gian & Tập trung vào vùng tổn thương nhỏ \\
 \bottomrule
@@ -309,7 +309,7 @@ MedGemma~\cite{google2025medgemma}    & 38.7\% & 50.1\% & 11.8\% & 18.6\% \\
     a/.style={->, thick, blue!70!black}
 ]
     \node[box] (in)   at (0,0)    {Ảnh MRI};
-    \node[box] (seg)  at (2.6,0)  {Phân vùng\\\scriptsize TotalSpineSeg};
+    \node[box] (seg)  at (2.6,0)  {Phân vùng\\\scriptsize TotalSpineSeg~\cite{warszawer2025totalspineseg}};
     \node[dataout] (mask) at (5.2,0)  {Mặt nạ};
     \node[box] (gr)   at (7.8,0)  {Đánh giá\\\scriptsize Hybrid grading};
     \node[dataout] (lb)   at (10.4,0) {Nhãn bệnh lý};
@@ -386,7 +386,7 @@ MedGemma~\cite{google2025medgemma}    & 38.7\% & 50.1\% & 11.8\% & 18.6\% \\
 \end{tikzpicture}}
 \end{columns}
 \vspace{0.3em}
-{\footnotesize Huấn luyện: augmentation, oversampling, Focal loss; hai nhánh giữ cố định, chỉ học khối hợp nhất. Suy diễn: chỉ forward pass.}
+{\footnotesize Huấn luyện: augmentation, oversampling, Focal loss~\cite{lin2017focal}, Uncertainty loss~\cite{kendall2018multitask}; hai nhánh giữ cố định, chỉ học khối hợp nhất. Suy diễn: chỉ forward pass.}
 \end{frame}
 
 %----------------------------------------------------------------------------------------
@@ -437,7 +437,7 @@ Severe AUPRC    & 0.284 & 0.278 & 0.275 & \textbf{0.333} \\
 \begin{figure}
 \centering
 \includegraphics[width=0.78\textwidth]{image/grad_cam_nocbam_vs_cbam.png}
-\caption{Grad-CAM ca Severe hẹp ống sống (L4-L5): không CBAM so với có CBAM.}
+\caption{Grad-CAM~\cite{selvaraju2017gradcam} ca Severe hẹp ống sống (L4-L5): không CBAM so với có CBAM.}
 \end{figure}
 \begin{itemize}\footnotesize
     \item[$\rightarrow$] Không CBAM: chú ý dàn trải, xác suất Severe thấp (p=0.26). Có CBAM: tập trung đúng vùng đĩa--ống sống, p=0.53.
@@ -498,9 +498,9 @@ Mean AUPRC         & \textbf{0.633} & 0.580 & 0.544 & 0.611 \\
 \caption{Kết quả trung bình 4 cấu hình trên SPIDER (có tinh chỉnh).}
 \end{table}
 \begin{itemize}
-    \item[--] Hybrid \textbf{ngang} SpineNetV2 (F1 0.653 so với 0.646, chênh nhỏ hơn độ lệch chuẩn); SpineNetV2 còn cao hơn ở AUPRC và Accuracy.
-    \item[--] CBAM \textbf{tụt dưới} mô hình nền (0.619); ghép thêm nhánh BiomedCLIP giữ nguyên trọng số thì lấy lại mức đó.
-    \item[--] Thoát vị đĩa đệm (4.7\% dương tính): SpineNetV2 và CBAM đoán âm tính cho mọi ca, Hybrid đạt Recall 0.636.
+    \item[--] Hybrid \textbf{ngang} SpineNetV2 (F1 0.653 so với 0.646).
+    \item[--] CBAM \textbf{tụt dưới} mô hình nền (0.619).
+    \item[--] Thoát vị đĩa đệm: SpineNetV2 và CBAM bỏ sót mọi ca, Hybrid đạt Recall 0.636.
 \end{itemize}
 \end{frame}
 
@@ -542,7 +542,7 @@ Mục tiêu: rút ngắn thời gian đọc phim, không thay bác sĩ.
     ar/.style={->, thick, blue!70!black}]
     \node[comp]  (fe)  at (0,3.3)     {\textbf{Giao diện}\\\scriptsize React + Cornerstone3D};
     \node[comp]  (be)  at (0,1.2)     {\textbf{Máy chủ}\\\scriptsize FastAPI};
-    \node[model] (seg) at (-4.3,-1.1) {\textbf{Phân vùng}\\\scriptsize TotalSpineSeg};
+    \node[model] (seg) at (-4.3,-1.1) {\textbf{Phân vùng}\\\scriptsize TotalSpineSeg~\cite{warszawer2025totalspineseg}};
     \node[model] (grd) at (0,-1.1)    {\textbf{Chấm nhãn}\\\scriptsize Hybrid};
     \node[store] (db)  at (4.8,1.2)   {\textbf{CSDL}\\\scriptsize ca chụp, nhãn,\\\scriptsize hiệu chỉnh};
     \node[store] (fs)  at (4.8,-1.1)  {\textbf{Ổ đĩa}\\\scriptsize ảnh MRI, mặt nạ};
@@ -563,22 +563,19 @@ Mục tiêu: rút ngắn thời gian đọc phim, không thay bác sĩ.
 \end{frame}
 
 \begin{frame}
-\frametitle{Bảng chấm điểm: 11 nhãn $\times$ 8 tầng đĩa đệm}
+\frametitle{Bảng chấm điểm}
 \centering
 \includegraphics[width=\textwidth]{image/app_grading_table.png}\\[4pt]
 {\footnotesize Mỗi ô là một hộp chọn bác sĩ sửa trực tiếp được. Màu nền theo mức độ; dấu cảnh báo đánh dấu ô mô hình ít chắc chắn.}
 \end{frame}
 
 \begin{frame}
-\frametitle{Ghi nhận chỉnh sửa của bác sĩ}
+\frametitle{Demo phần mềm}
 \centering
-\includegraphics[width=0.88\textwidth]{image/app_corrections.png}\\[6pt]
-\begin{itemize}
-    \footnotesize
-    \item[--] Mỗi lần sửa, hệ thống lưu cặp (giá trị mô hình, giá trị bác sĩ) kèm mã ca và tầng đĩa đệm.
-    \item[--] Gom chung toàn hệ thống, không theo từng ca: một ca chỉ có vài đĩa đệm, quá ít để huấn luyện.
-    \item[--] \textbf{Mới dừng ở việc lưu lại}: mô hình chưa học lại được từ dữ liệu này (xem Hướng phát triển).
-\end{itemize}
+\vfill
+{\Large\textbf{Video demo}}\\[6pt]
+{\small Tải ca chụp, xem kết quả phân vùng và chấm nhãn, bác sĩ sửa nhãn.}
+\vfill
 \end{frame}
 
 %----------------------------------------------------------------------------------------
@@ -592,22 +589,21 @@ Mục tiêu: rút ngắn thời gian đọc phim, không thay bác sĩ.
 
 \begin{frame}
 \frametitle{Đóng góp chính}
-Bên cạnh việc khảo sát và lựa chọn mô hình nền cho cả hai mô-đun của hệ thống, đề tài có \textbf{4 đóng góp chính}:
 \begin{itemize}
-    \item[1.] \textbf{Đề xuất kiến trúc Hybrid hai nhánh} (Attention + Multimodal) kết hợp \textbf{kỹ thuật xử lý mất cân bằng} (augmentation, oversampling, Focal + Uncertainty loss) cho mô-đun đánh giá, nâng Recall lớp Severe từ \textbf{12.3\% lên 48.6\%} ($\sim$4 lần).
-    \item[2.] \textbf{Cơ chế mở rộng nhãn theo hướng zero-shot:} bổ sung nhãn bệnh mới qua mô tả văn bản, không huấn luyện lại.
-    \item[3.] \textbf{Đánh giá khả năng tổng quát hóa liên tập dữ liệu} (RSNA $\to$ SPIDER): CBAM tụt dưới mô hình nền, còn Hybrid giữ được mức mô hình nền và bắt được ca thoát vị mà mô hình nền bỏ sót.
-    \item[4.] \textbf{Phần mềm hỗ trợ bác sĩ gán nhãn:} tải DICOM, phân vùng, chấm 11 nhãn, bác sĩ sửa trực tiếp trên ảnh, mọi chỉnh sửa được lưu lại.
+    \item[1.] \textbf{Kiến trúc Hybrid hai nhánh} và quy trình xử lý mất cân bằng lớp: Severe Recall 0.123 $\to$ 0.486.
+    \item[2.] \textbf{Mở rộng nhãn zero-shot}: thêm nhãn mới bằng câu mô tả, không huấn luyện lại.
+    \item[3.] \textbf{Kiểm chứng trên SPIDER}: Hybrid giữ được mức mô hình nền, CBAM thì tụt.
+    \item[4.] \textbf{Phần mềm hỗ trợ bác sĩ}: phân vùng, chấm 11 nhãn, sửa và lưu chỉnh sửa.
 \end{itemize}
 \end{frame}
 
 \begin{frame}
 \frametitle{Hạn chế}
 \begin{itemize}
-    \item[--] Severe Recall 48.6\% tuy gấp bốn lần mô hình nền nhưng vẫn bỏ sót khoảng một nửa số ca nặng; hệ thống chỉ nên dùng như \textbf{người đọc thứ hai}.
-    \item[--] Hai nhóm lỗ liên hợp yếu hơn hẳn (Severe Recall khoảng 31--38\%, so với 70\% ở ống sống): lỗ liên hợp nhìn rõ nhất trên mặt cắt Axial mà mô hình chưa dùng.
-    \item[--] Phần mềm mới \textbf{lưu} phản hồi của bác sĩ, chưa có cơ chế để mô hình học lại từ đó.
-    \item[--] Kết quả là trung bình của 3 lần chạy, chưa đủ để kết luận có ý nghĩa thống kê chặt chẽ.
+    \item[--] Vẫn sót khoảng một nửa ca nặng: chỉ dùng như \textbf{người đọc thứ hai}.
+    \item[--] Lỗ liên hợp yếu hơn ống sống: mô hình chưa dùng mặt cắt Axial.
+    \item[--] Chỉnh sửa của bác sĩ mới được lưu, mô hình chưa học lại.
+    \item[--] Mới lấy trung bình 3 lần chạy.
 \end{itemize}
 \end{frame}
 
@@ -620,17 +616,16 @@ Bên cạnh việc khảo sát và lựa chọn mô hình nền cho cả hai mô
     \item[--] \textbf{MIWAI 2026} -- \textit{The 19th International Conference on Multi-disciplinary Trends in Artificial Intelligence}, Halifax, Nova Scotia, Canada, 10--12/10/2026.
     \item[--] Xuất bản trong bộ \textbf{Lecture Notes in Artificial Intelligence}, Springer.
     \item[--] Hà Trung Kiên (tác giả thứ nhất), TS. Phan Trọng Nhân (tác giả liên hệ).
-    \item[--] Nội dung: kiến trúc Hybrid hai nhánh và cơ chế mở rộng không gian nhãn zero-shot.
 \end{itemize}
 \end{frame}
 
 \begin{frame}
 \frametitle{Hướng phát triển}
 \begin{itemize}
-    \item[1.] \textbf{Đánh giá phần mềm cùng bác sĩ}: đọc ca thật, trả lời phiếu đánh giá, so nhãn bác sĩ với nhãn mô hình. \hfill \textit{2 tuần}
-    \item[2.] \textbf{Cơ chế học lại từ phản hồi bác sĩ}: huấn luyện lại từ lô chỉnh sửa, đánh giá phiên bản mới, bước người duyệt. \hfill \textit{4 tuần}
-    \item[3.] \textbf{Bổ sung mặt cắt Axial} cho hai nhóm lỗ liên hợp, kèm tinh chỉnh TotalSpineSeg. \hfill \textit{4 tuần}
-    \item[4.] \textbf{Sinh báo cáo chẩn đoán} bằng ngôn ngữ tự nhiên. \hfill \textit{6 tuần}
+    \item[1.] Đánh giá phần mềm cùng bác sĩ trên ca thật.
+    \item[2.] Cho mô hình học lại từ chỉnh sửa của bác sĩ.
+    \item[3.] Bổ sung mặt cắt Axial cho lỗ liên hợp.
+    \item[4.] Sinh báo cáo chẩn đoán bằng ngôn ngữ tự nhiên.
 \end{itemize}
 \end{frame}
 
@@ -656,7 +651,7 @@ Bên cạnh việc khảo sát và lựa chọn mô hình nền cho cả hai mô
 \textbf{Thành phần} & \textbf{Số tham số} & \textbf{Trạng thái} \\
 \midrule
 CBAM-3D ResNet-34 & 21.3M & Frozen (pretrained) \\
-BiomedCLIP ViT-B/16 & 86.2M & Frozen \\
+BiomedCLIP~\cite{zhang2024biomedclip} ViT-B/16 & 86.2M & Frozen \\
 Khối hợp nhất (fusion + cosine) & $\sim$1.18M & Huấn luyện \\
 \bottomrule
 \end{tabular}
@@ -747,17 +742,17 @@ Hybrid (thêm trên nền CBAM) & +24.8 phút & 61.6 \\
 
 \begin{frame}
 \frametitle{Phụ lục: các công thức cốt lõi}
-\textbf{CBAM:}
+\textbf{CBAM~\cite{woo2018cbam}:}
 \begin{align}
 M_c(F) &= \sigma\!\big(\text{MLP}(\text{AvgPool}(F)) + \text{MLP}(\text{MaxPool}(F))\big), \notag\\
 M_s(F') &= \sigma\!\big(f^{7\times7\times7}([\text{AvgPool}_c(F');\,\text{MaxPool}_c(F')])\big), \notag\\
 F'' &= M_s(M_c(F)\otimes F)\otimes(M_c(F)\otimes F). \notag
 \end{align}
-\textbf{Focal Loss (có trọng số lớp, $\gamma=2$):}
+\textbf{Focal Loss~\cite{lin2017focal} (có trọng số lớp, $\gamma=2$):}
 \begin{equation}
 \mathrm{FL}_t(p_t) = -\,w_{c(t)}\,(1-p_t)^{\gamma}\,\log(p_t). \notag
 \end{equation}
-\textbf{Dự đoán zero-shot bằng đối sánh cosine với prompt $\{t_k\}$:}
+\textbf{Dự đoán zero-shot bằng đối sánh cosine với prompt $\{t_k\}$~\cite{radford2021clip}:}
 \begin{equation}
 \hat{y} = \arg\max_{k}\; s\cdot \hat{f}_{\text{img}}^{\top} t_k. \notag
 \end{equation}
@@ -777,7 +772,7 @@ F'' &= M_s(M_c(F)\otimes F)\otimes(M_c(F)\otimes F). \notag
 \begin{figure}
     \centering
     \includegraphics[width=0.82\textwidth]{image/spider_class_distribution.png}
-    \caption{Phân bố nhãn trên SPIDER (8 nhóm bệnh) dùng để kiểm chứng tổng quát hóa.}
+    \caption{Phân bố nhãn trên SPIDER~\cite{vansluijs2022spider} (8 nhóm bệnh) dùng để kiểm chứng tổng quát hóa.}
 \end{figure}
 \end{frame}
 
@@ -804,7 +799,7 @@ F'' &= M_s(M_c(F)\otimes F)\otimes(M_c(F)\otimes F). \notag
 \includegraphics[height=0.62\textheight]{image/totalspineseg_output.png}
 \column{.54\textwidth}
 \begin{itemize}\small
-    \item[--] TotalSpineSeg phân vùng và gán nhãn từng đốt sống, đĩa đệm trên mặt cắt Sagittal.
+    \item[--] TotalSpineSeg~\cite{warszawer2025totalspineseg} phân vùng và gán nhãn từng đốt sống, đĩa đệm trên mặt cắt Sagittal.
     \item[--] Mặt nạ này dùng để định vị khối liên đốt sống (IVV) chứa đĩa đệm cho mô-đun đánh giá ở giai đoạn sau.
 \end{itemize}
 \end{columns}
@@ -822,7 +817,7 @@ F'' &= M_s(M_c(F)\otimes F)\otimes(M_c(F)\otimes F). \notag
 \column{.46\textwidth}
 \centering
 \includegraphics[width=\linewidth]{image/rsna_class_distribution_nobanner.png}\\[2pt]
-{\scriptsize Phân bố lớp RSNA 2024 (minh họa thách thức 1).}
+{\scriptsize Phân bố lớp RSNA 2024~\cite{rsna2024dataset} (minh họa thách thức 1).}
 \end{columns}
 \end{frame}
 
