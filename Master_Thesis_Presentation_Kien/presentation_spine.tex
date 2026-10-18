@@ -46,6 +46,12 @@
   \vskip0pt%
 }
 \setbeamertemplate{caption}[numbered]
+% Outline slides: beamer puts a fixed 1.5em gap before each section when
+% subsections are hidden, which pushed the outline down onto the footer.
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd{\beamer@sectionintoc}{\vskip1.5em}{\vskip0.6em}{}{\typeout{OUTLINE-PATCH-FAILED}}
+\makeatother
 \numberwithin{figure}{section}
 \numberwithin{table}{section}
 
@@ -76,7 +82,7 @@ Trường Đại học Bách Khoa \\
 \titlepage
 \end{frame}
 
-\begin{frame}[shrink]
+\begin{frame}[t]
 \frametitle{Mục lục}
 \tableofcontents[hideallsubsections]
 \end{frame}
@@ -87,7 +93,7 @@ Trường Đại học Bách Khoa \\
 \section{Giới thiệu}
 
 {
-    \begin{frame}[shrink]
+    \begin{frame}[t]
         \frametitle{Mục lục}
         \tableofcontents[currentsection, hideothersubsections]
     \end{frame}
@@ -130,12 +136,6 @@ Trường Đại học Bách Khoa \\
     \item[--] \textbf{Cấu trúc giải phẫu:} đốt sống, đĩa đệm, ống sống và tủy sống.
     \item[--] \textbf{Bệnh lý đánh giá:} hẹp ống sống, hẹp lỗ liên hợp trái/phải (RSNA); mở rộng sang Pfirrmann, Modic, thoát vị, phồng đĩa đệm, trượt đốt sống (SPIDER).
 \end{itemize}
-\pause
-\textbf{Phân chia theo giai đoạn:}
-\begin{itemize}
-    \item[--] \textbf{Thực tập tốt nghiệp:} khảo sát, chọn mô hình nền và tinh chỉnh mô-đun đánh giá theo hình ảnh học (radiological grading).
-    \item[--] \textbf{Đồ án tốt nghiệp:} tích hợp pipeline hoàn chỉnh end-to-end và xây dựng phần mềm giao diện cho bác sĩ.
-\end{itemize}
 \end{frame}
 
 %----------------------------------------------------------------------------------------
@@ -143,7 +143,7 @@ Trường Đại học Bách Khoa \\
 %----------------------------------------------------------------------------------------
 \section{Cơ sở lý thuyết và công trình liên quan}
 {
-    \begin{frame}[shrink]
+    \begin{frame}[t]
         \frametitle{Mục lục}
         \tableofcontents[currentsection, hideothersubsections]
     \end{frame}
@@ -215,7 +215,7 @@ Cơ chế chú ý (CBAM~\cite{woo2018cbam}) & Chú ý kênh + không gian & Tậ
 %----------------------------------------------------------------------------------------
 \section{Dữ liệu và lựa chọn mô hình}
 {
-    \begin{frame}[shrink]
+    \begin{frame}[t]
         \frametitle{Mục lục}
         \tableofcontents[currentsection, hideothersubsections]
     \end{frame}
@@ -290,7 +290,7 @@ MedGemma~\cite{google2025medgemma}    & 38.7\% & 50.1\% & 11.8\% & 18.6\% \\
 %----------------------------------------------------------------------------------------
 \section{Mô hình đề xuất}
 {
-    \begin{frame}[shrink]
+    \begin{frame}[t]
         \frametitle{Mục lục}
         \tableofcontents[currentsection, hideothersubsections]
     \end{frame}
@@ -306,9 +306,7 @@ MedGemma~\cite{google2025medgemma}    & 38.7\% & 50.1\% & 11.8\% & 18.6\% \\
 \begin{tikzpicture}[
     box/.style={rectangle, draw=blue!70, fill=blue!8, rounded corners, minimum width=1.9cm, minimum height=0.95cm, align=center, font=\footnotesize, thick},
     dataout/.style={rectangle, draw=green!50!black, fill=green!12, rounded corners, minimum width=1.9cm, minimum height=0.95cm, align=center, font=\footnotesize, thick},
-    plan/.style={rectangle, draw=gray, dashed, fill=gray!8, rounded corners, minimum width=2.0cm, minimum height=0.95cm, align=center, font=\footnotesize, thick},
-    a/.style={->, thick, blue!70!black},
-    pa/.style={->, thick, gray, dashed}
+    a/.style={->, thick, blue!70!black}
 ]
     \node[box] (in)   at (0,0)    {Ảnh MRI};
     \node[box] (seg)  at (2.6,0)  {Phân vùng\\\scriptsize TotalSpineSeg};
@@ -321,14 +319,9 @@ MedGemma~\cite{google2025medgemma}    & 38.7\% & 50.1\% & 11.8\% & 18.6\% \\
     \draw[a] (mask) -- node[above,font=\scriptsize]{IVV} (gr);
     \draw[a] (gr) -- (lb);
     \draw[a] (lb) -- (sw);
-    \draw[pa] (in) to[bend right=30] node[below,font=\scriptsize,text=gray]{thí nghiệm} (gr);
 \end{tikzpicture}}
-\caption{Pipeline đề xuất. \textcolor{blue!70!black}{Nét liền} = luồng đã hiện thực trong phần mềm; \textcolor{gray}{nét đứt} = luồng dùng khi đánh giá riêng mô-đun chấm nhãn.}
+\caption{Pipeline đề xuất.}
 \end{figure}
-\begin{itemize}
-    \item[--] Phần mềm: MRI $\rightarrow$ phân vùng $\rightarrow$ mặt nạ định vị từng đĩa đệm, cắt khối liên đốt sống (IVV) $\rightarrow$ chấm nhãn $\rightarrow$ bác sĩ xem và sửa.
-    \item[--] Thí nghiệm: khối ảnh cắt theo tọa độ đĩa đệm có sẵn trong nhãn, để mọi mô hình nhận cùng đầu vào.
-\end{itemize}
 \end{frame}
 
 \subsection{Kiến trúc Hybrid hai nhánh}
@@ -401,7 +394,7 @@ MedGemma~\cite{google2025medgemma}    & 38.7\% & 50.1\% & 11.8\% & 18.6\% \\
 %----------------------------------------------------------------------------------------
 \section{Kết quả thực nghiệm}
 {
-    \begin{frame}[shrink]
+    \begin{frame}[t]
         \frametitle{Mục lục}
         \tableofcontents[currentsection, hideothersubsections]
     \end{frame}
@@ -518,7 +511,7 @@ Mean AUPRC         & \textbf{0.633} & 0.580 & 0.544 & 0.611 \\
 %----------------------------------------------------------------------------------------
 \section{Phần mềm hỗ trợ bác sĩ}
 {
-    \begin{frame}[shrink]
+    \begin{frame}[t]
         \frametitle{Mục lục}
         \tableofcontents[currentsection, hideothersubsections]
     \end{frame}
@@ -591,7 +584,7 @@ Mục tiêu: rút ngắn thời gian đọc phim, không thay bác sĩ.
 %----------------------------------------------------------------------------------------
 \section{Kết luận và hướng phát triển}
 {
-    \begin{frame}[shrink]
+    \begin{frame}[t]
         \frametitle{Mục lục}
         \tableofcontents[currentsection, hideothersubsections]
     \end{frame}
