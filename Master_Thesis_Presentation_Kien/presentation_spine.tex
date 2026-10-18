@@ -85,7 +85,7 @@ Trường Đại học Bách Khoa \\
 \footnotesize Kiến trúc \textbf{Hybrid hai nhánh}: nhánh chú ý CBAM trên ResNet-34 ba chiều ghép với nhánh BiomedCLIP đông cứng, dự đoán bằng cách so khớp với \textbf{câu mô tả nhãn} nên tập nhãn trở thành đầu vào. Kèm quy trình xử lý mất cân bằng lớp. Trên nền đó xây dựng \textbf{phần mềm} cho bác sĩ xem và sửa nhãn.
 \end{block}
 \begin{block}{Kết quả}
-\footnotesize Severe Recall \textbf{12.3\% $\to$ 48.6\%} ($\sim$4 lần), Severe F1 0.152 $\to$ 0.356. Chấm được \textbf{8 nhãn chưa từng thấy} trên SPIDER mà không huấn luyện lại. Phần mềm chạy được. Bài báo đã công bố tại \textbf{MIWAI 2026}.
+\footnotesize Severe Recall \textbf{0.123 $\to$ 0.486} ($\sim$4 lần), Severe F1 0.152 $\to$ 0.356. Chấm được \textbf{8 nhãn chưa từng thấy} trên SPIDER mà không huấn luyện lại. Phần mềm chạy được. Bài báo đã công bố tại \textbf{MIWAI 2026}.
 \end{block}
 \end{frame}
 
@@ -127,11 +127,13 @@ Trường Đại học Bách Khoa \\
 \begin{frame}
 \frametitle{Mục tiêu đề tài}
 \begin{itemize}
-    \item[\textbf{1.}] Đề xuất một pipeline giải pháp chẩn đoán đau thắt lưng; khảo sát và chọn mô hình nền cho từng mô-đun.
-    \item[\textbf{2.}] Cải thiện phát hiện lớp bệnh nặng (Severe) trong bài toán mất cân bằng.
-    \item[\textbf{3.}] Mở rộng nhãn bệnh mới theo hướng zero-shot, không huấn luyện lại.
-    \item[\textbf{4.}] Đảm bảo tính tổng quát hóa khi chuyển sang bộ dữ liệu khác.
+    \item[\textbf{1.}] \textbf{Phân vùng tự động} đốt sống, đĩa đệm, ống sống và tủy sống trên MRI; khảo sát và chọn mô hình nền cho từng mô-đun.
+    \item[\textbf{2.}] \textbf{Chấm mức độ bất thường} cho từng tầng đĩa đệm, trọng tâm là lớp Severe hiếm gặp.
+    \item[\textbf{3.}] \textbf{Mở rộng không gian nhãn}: chấm bộ nhãn mới mà không gắn thêm đầu ra, không huấn luyện lại.
+    \item[\textbf{4.}] \textbf{Phần mềm tương tác}: bác sĩ xem kết quả trên ảnh, sửa mọi nhãn, chỉnh sửa được lưu lại.
 \end{itemize}
+\vspace{0.4em}
+{\small Khả năng tổng quát hóa được kiểm chứng trên bộ dữ liệu độc lập SPIDER.}
 \end{frame}
 
 \begin{frame}
@@ -213,7 +215,7 @@ Trường Đại học Bách Khoa \\
 \textbf{Hướng tiếp cận} & \textbf{Phương pháp} & \textbf{Mục đích / hạn chế} \\
 \midrule
 CNN chuyên biệt cột sống (SpineNetV2~\cite{windsor2022spinenetv2}) & ResNet-34 3D + head softmax & Chuẩn cho cột sống nhưng nhãn cố định, yếu ở lớp hiếm \\
-Học giám sát đa nhãn (Ning Shen~\cite{nshen7_rsna2024}) & Ensemble CNN trên RSNA & Chính xác cao nhưng chỉ 5 nhãn, chưa được kiểm duyệt công khai \\
+Học giám sát đa nhãn (Ning Shen~\cite{nshen7_rsna2024}) & Ensemble CNN trên RSNA & Chính xác cao nhưng chỉ 5 nhãn, chưa công bố thành bài báo \\
 VLM zero-shot (MedGemma~\cite{google2025medgemma}) & Prompt ảnh--văn bản & Linh hoạt nhãn nhưng độ chính xác còn thấp \\
 Cơ chế chú ý (CBAM~\cite{woo2018cbam}) & Chú ý kênh + không gian & Tập trung vào vùng tổn thương nhỏ \\
 \bottomrule
@@ -290,7 +292,7 @@ MedGemma~\cite{google2025medgemma}    & 38.7\% & 50.1\% & 11.8\% & 18.6\% \\
 \caption{So sánh phát hiện bất thường (trung bình 3 nhóm bệnh).}
 \end{table}
 \begin{itemize}
-    \item[$\rightarrow$] Chọn \textbf{SpineNetV2} làm backbone: chuyên biệt cột sống, nhiều nhãn, mã nguồn mở. Ning Shen mạnh hơn nhưng chỉ 5 nhãn và chưa được kiểm duyệt công khai; MedGemma Recall quá thấp ($\sim$12\%).
+    \item[$\rightarrow$] Chọn \textbf{SpineNetV2} làm backbone: chuyên biệt cột sống, nhiều nhãn, mã nguồn mở. Ning Shen cao hơn $\sim$3 điểm nhưng là tổ hợp nhiều mô hình lớn, khó duy trì và khó tích hợp; MedGemma Recall quá thấp ($\sim$12\%).
 \end{itemize}
 \end{frame}
 
@@ -326,19 +328,19 @@ MedGemma~\cite{google2025medgemma}    & 38.7\% & 50.1\% & 11.8\% & 18.6\% \\
     \node[dataout] (mask) at (5.2,0)  {Mặt nạ};
     \node[box] (gr)   at (7.8,0)  {Đánh giá\\\scriptsize Hybrid grading};
     \node[dataout] (lb)   at (10.4,0) {Nhãn bệnh lý};
-    \node[plan](sw)   at (13.0,0) {Phần mềm\\\scriptsize giao diện};
+    \node[box](sw)    at (13.0,0) {Phần mềm\\\scriptsize cho bác sĩ};
     \draw[a] (in) -- (seg);
     \draw[a] (seg) -- (mask);
-    \draw[pa] (mask) -- node[above,font=\scriptsize,text=gray]{IVV} (gr);
+    \draw[a] (mask) -- node[above,font=\scriptsize]{IVV} (gr);
     \draw[a] (gr) -- (lb);
-    \draw[pa] (lb) -- (sw);
-    \draw[a] (in) to[bend right=30] (gr);
+    \draw[a] (lb) -- (sw);
+    \draw[pa] (in) to[bend right=30] node[below,font=\scriptsize,text=gray]{thí nghiệm} (gr);
 \end{tikzpicture}}
-\caption{Pipeline đề xuất. \textcolor{blue!70!black}{Nét liền} = đã làm ở giai đoạn thực tập; \textcolor{gray}{nét đứt xám} = chưa làm (kế hoạch Đồ án tốt nghiệp).}
+\caption{Pipeline đề xuất. \textcolor{blue!70!black}{Nét liền} = luồng đã hiện thực trong phần mềm; \textcolor{gray}{nét đứt} = luồng dùng khi đánh giá riêng mô-đun chấm nhãn.}
 \end{figure}
 \begin{itemize}
-    \item[--] Luồng mục tiêu: MRI $\rightarrow$ phân vùng $\rightarrow$ mặt nạ định vị khối liên đốt sống (IVV) $\rightarrow$ đánh giá $\rightarrow$ phần mềm.
-    \item[--] Hiện trạng thực tập: hai mô-đun chạy độc lập, grading nhận ảnh MRI trực tiếp (nét liền cong).
+    \item[--] Phần mềm: MRI $\rightarrow$ phân vùng $\rightarrow$ mặt nạ định vị từng đĩa đệm, cắt khối liên đốt sống (IVV) $\rightarrow$ chấm nhãn $\rightarrow$ bác sĩ xem và sửa.
+    \item[--] Thí nghiệm: khối ảnh cắt theo tọa độ đĩa đệm có sẵn trong nhãn, để mọi mô hình nhận cùng đầu vào.
 \end{itemize}
 \end{frame}
 
@@ -371,7 +373,7 @@ MedGemma~\cite{google2025medgemma}    & 38.7\% & 50.1\% & 11.8\% & 18.6\% \\
   loss/.style={rectangle,rounded corners=2pt,draw=red!55!black,fill=red!12,align=center,inner sep=3pt},
   ar/.style={->,thick,black!70}]
 \node[io](v){Khối ảnh MRI};
-\node[io,below=4mm of v](aug){Augmentation};
+\node[io,below=4mm of v](aug){Augmentation + oversampling};
 \node[fz,below=9mm of aug,xshift=-15mm](b1){CBAM-3D\\ResNet-34};
 \node[fz,below=9mm of aug,xshift=15mm](b2){BiomedCLIP\\ViT-B/16};
 \node[tr,below=22mm of aug](cat){Concat 1024 $\to$ Fusion MLP};
@@ -404,7 +406,7 @@ MedGemma~\cite{google2025medgemma}    & 38.7\% & 50.1\% & 11.8\% & 18.6\% \\
 \end{tikzpicture}}
 \end{columns}
 \vspace{0.3em}
-{\footnotesize Huấn luyện: dùng augmentation + Focal loss để xử lý mất cân bằng, rồi lan truyền ngược. Suy diễn: chỉ forward pass, xuất xác suất và nhãn dự đoán.}
+{\footnotesize Huấn luyện: augmentation, oversampling, Focal loss; hai nhánh giữ cố định, chỉ học khối hợp nhất. Suy diễn: chỉ forward pass.}
 \end{frame}
 
 %----------------------------------------------------------------------------------------
@@ -446,7 +448,7 @@ Severe AUPRC    & 0.284 & 0.278 & 0.275 & \textbf{0.333} \\
 \caption{Kết quả 4 cấu hình trên RSNA 2024, trung bình của 3 lần chạy.}
 \end{table}
 \begin{itemize}
-    \item[$\rightarrow$] Hybrid dẫn đầu mọi chỉ số trong bảng, đánh đổi 8.6 điểm Mean Accuracy (81.0\% $\to$ 72.4\%) vì SpineNetV2 đạt Accuracy cao nhờ thiên về lớp đa số.
+    \item[$\rightarrow$] Hybrid dẫn đầu mọi chỉ số trong bảng, đánh đổi Mean Accuracy (0.810 $\to$ 0.724) vì SpineNetV2 đạt Accuracy cao nhờ thiên về lớp đa số.
 \end{itemize}
 \end{frame}
 
@@ -519,7 +521,9 @@ Mean AUPRC         & \textbf{0.633} & 0.580 & 0.544 & 0.611 \\
 \caption{Kết quả trung bình 4 cấu hình trên SPIDER (có tinh chỉnh).}
 \end{table}
 \begin{itemize}
-    \item[$\rightarrow$] Có tinh chỉnh, kết quả cao hơn hẳn zero-shot (Mean F1 0.653 so với 0.362).
+    \item[--] Hybrid \textbf{ngang} SpineNetV2 (F1 0.653 so với 0.646, chênh nhỏ hơn độ lệch chuẩn); SpineNetV2 còn cao hơn ở AUPRC và Accuracy.
+    \item[--] CBAM \textbf{tụt dưới} mô hình nền (0.619); ghép thêm nhánh BiomedCLIP giữ nguyên trọng số thì lấy lại mức đó.
+    \item[--] Thoát vị đĩa đệm (4.7\% dương tính): SpineNetV2 và CBAM đoán âm tính cho mọi ca, Hybrid đạt Recall 0.636.
 \end{itemize}
 \end{frame}
 
@@ -609,7 +613,7 @@ Bên cạnh việc khảo sát và lựa chọn mô hình nền cho cả hai mô
 \begin{itemize}
     \item[1.] \textbf{Đề xuất kiến trúc Hybrid hai nhánh} (Attention + Multimodal) kết hợp \textbf{kỹ thuật xử lý mất cân bằng} (augmentation, oversampling, Focal + Uncertainty loss) cho mô-đun đánh giá, nâng Recall lớp Severe từ \textbf{12.3\% lên 48.6\%} ($\sim$4 lần).
     \item[2.] \textbf{Cơ chế mở rộng nhãn theo hướng zero-shot:} bổ sung nhãn bệnh mới qua mô tả văn bản, không huấn luyện lại.
-    \item[3.] \textbf{Đánh giá khả năng tổng quát hóa liên tập dữ liệu} (RSNA $\to$ SPIDER): Hybrid duy trì hiệu năng ổn định.
+    \item[3.] \textbf{Đánh giá khả năng tổng quát hóa liên tập dữ liệu} (RSNA $\to$ SPIDER): CBAM tụt dưới mô hình nền, còn Hybrid giữ được mức mô hình nền và bắt được ca thoát vị mà mô hình nền bỏ sót.
     \item[4.] \textbf{Phần mềm hỗ trợ bác sĩ gán nhãn:} tải DICOM, phân vùng, chấm 11 nhãn, bác sĩ sửa trực tiếp trên ảnh, mọi chỉnh sửa được lưu lại.
 \end{itemize}
 \end{frame}
@@ -617,7 +621,7 @@ Bên cạnh việc khảo sát và lựa chọn mô hình nền cho cả hai mô
 \begin{frame}
 \frametitle{Hạn chế}
 \begin{itemize}
-    \item[--] Severe Recall 48.6\% còn thấp hơn mức $\sim$80\% mà một công cụ sàng lọc cần; hệ thống chỉ nên dùng như \textbf{người đọc thứ hai}.
+    \item[--] Severe Recall 48.6\% tuy gấp bốn lần mô hình nền nhưng vẫn bỏ sót khoảng một nửa số ca nặng; hệ thống chỉ nên dùng như \textbf{người đọc thứ hai}.
     \item[--] Hai nhóm lỗ liên hợp yếu hơn hẳn (Severe Recall khoảng 31--38\%, so với 70\% ở ống sống): lỗ liên hợp nhìn rõ nhất trên mặt cắt Axial mà mô hình chưa dùng.
     \item[--] Phần mềm mới \textbf{lưu} phản hồi của bác sĩ, chưa có cơ chế để mô hình học lại từ đó.
     \item[--] Kết quả là trung bình của 3 lần chạy, chưa đủ để kết luận có ý nghĩa thống kê chặt chẽ.
@@ -924,7 +928,7 @@ Disc bulging      & 0.778 & 0.779 & 0.777 & \textbf{0.874} & 0.840 & & \textbf{0
 \caption{Recall/Precision/F1/AUC/AUPRC theo từng nhóm bệnh trên SPIDER.}
 \end{table}
 \begin{itemize}
-    \item[$\rightarrow$] Hybrid cải thiện Recall/F1/AUC ở phần lớn nhóm bệnh.
+    \item[$\rightarrow$] Hybrid có F1 cao nhất ở 4/7 nhóm bệnh; rõ nhất ở thoát vị đĩa đệm, nơi SpineNetV2 đoán âm tính cho mọi ca (Recall 0.500).
 \end{itemize}
 \end{frame}
 

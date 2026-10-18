@@ -221,7 +221,7 @@ Bảng~\ref{tab:nfn_right_metrics} trình bày chi tiết kết quả của nhó
 
 \subsection{Phân tích và thảo luận}
 
-Nhìn chung, Ning Shen cho kết quả tốt nhất với F1 trung bình 80.37\%, dao động ít giữa ba nhóm bệnh (79.43\% đến 81.48\%). Điều này hợp lý vì giải pháp được thiết kế riêng cho RSNA 2024. SpineNetV2 đứng thứ hai với F1 trung bình 77.50\%, kém khoảng ba điểm, và cũng ổn định không kém (76.40\% đến 78.79\%). MedGemma thấp nhất, F1 trung bình chỉ 18.59\%, dao động mạnh giữa các nhóm bệnh (10.75\% đến 31.17\%) và kém nhất ở hẹp lỗ liên hợp phải.
+Nhìn chung, Ning Shen cho kết quả tốt nhất với F1 trung bình 80.70\%, dao động ít giữa ba nhóm bệnh (79.43\% đến 81.48\%). Điều này hợp lý vì giải pháp được thiết kế riêng cho RSNA 2024. SpineNetV2 đứng thứ hai với F1 trung bình 77.50\%, kém khoảng ba điểm, và cũng ổn định không kém (76.40\% đến 78.79\%). MedGemma thấp nhất, F1 trung bình chỉ 18.59\%, dao động mạnh giữa các nhóm bệnh (10.75\% đến 31.17\%) và kém nhất ở hẹp lỗ liên hợp phải.
 
 Nhìn kỹ hơn vào Recall và Precision thì thấy hai nhóm mô hình đi theo hai hướng ngược nhau. Ning Shen và SpineNetV2 đều nghiêng về Recall (80--87\%) hơn Precision (72--82\%), tức chấp nhận báo nhầm để bỏ sót ít hơn. Đây là hướng hợp với sàng lọc: một ca báo nhầm thì bác sĩ xem lại ảnh là loại được, còn một ca bỏ sót thì có thể không ai phát hiện. MedGemma thì ngược lại. Precision ở mức chấp nhận được (38.89\% đến 61.54\%) nhưng Recall chỉ 6.02\% đến 20.87\%, tức bỏ sót 80--94\% số ca có bệnh. Là một mô hình đa dụng chưa được tinh chỉnh cho ảnh cột sống thắt lưng, MedGemma chưa đáp ứng được yêu cầu sàng lọc.
 
@@ -273,7 +273,7 @@ Severe AUPRC           & 0.284 $\pm$ 0.019 & 0.278 $\pm$ 0.099 & 0.275 $\pm$ 0.0
 
 Hybrid dẫn đầu ở toàn bộ các chỉ số trong bảng: Mean F1 macro 0.527, Mean Recall 0.592, Mean Precision 0.526, Mean AUC 0.838 và Mean AUPRC 0.533.
 
-Đổi lại, Mean Accuracy giảm từ 81.0\% xuống 72.4\%, mất 8.6 điểm. Chỉ số này không đưa vào bảng. SpineNetV2 được điểm cao ở đây vì phần lớn ca trong dữ liệu là Normal/Mild, cứ đoán nhóm đó thì phần lớn là đúng. Nhưng đoán như vậy thì bỏ sót gần hết ca nặng.
+Đổi lại, Mean Accuracy giảm từ 0.810 xuống 0.724. Chỉ số này không đưa vào bảng. SpineNetV2 được điểm cao ở đây vì phần lớn ca trong dữ liệu là Normal/Mild, cứ đoán nhóm đó thì phần lớn là đúng. Nhưng đoán như vậy thì bỏ sót gần hết ca nặng.
 
 Cải thiện rõ rệt nhất nằm ở lớp Severe. Severe Recall của Hybrid đạt 0.486, gấp khoảng bốn lần SpineNetV2 (0.123), và Severe F1 tăng từ 0.152 lên 0.356, tức hơn gấp đôi. Khi tách riêng đóng góp, CBAM-only và BMC-only đều cải thiện Severe F1 lên quanh mức 0.26, còn Hybrid kết hợp được cả hai và đạt 0.356. Độ lệch chuẩn của hai cấu hình đơn nhánh (0.082 và 0.034) lớn hơn hẳn Hybrid (0.017), cho thấy việc ghép hai nhánh còn giúp kết quả ổn định hơn giữa các lần chạy.
 
@@ -521,9 +521,9 @@ Tóm lại, trên SPIDER Hybrid không vượt hẳn mô hình nền như trên 
 
 Ba thí nghiệm ở chương này nối tiếp nhau. Thí nghiệm đầu chọn TotalSpineSeg cho mô-đun phân vùng. Mô hình này dẫn đầu ở bốn trên năm tiêu chí, riêng Precision bỏ xa phần còn lại, 97.87\% so với mức quanh 50\%. Nó cũng là mô hình có Recall thấp nhất, tức là khoanh thiếu nhiều hơn khoanh thừa. Với bài toán này thì đổi như vậy chấp nhận được, vì mặt nạ còn phải dùng tiếp để cắt khối ảnh cho bước chấm nhãn: khoanh thiếu một phần đĩa đệm vẫn cắt đúng chỗ, còn khoanh lấn sang mô bên cạnh thì khối ảnh lệch. Thí nghiệm thứ hai chọn SpineNetV2 làm nền cho mô-đun grading. Giải pháp giải nhất RSNA 2024 có F1 cao hơn khoảng ba điểm, nhưng là tổ hợp nhiều mô hình lớn, khó duy trì trong một phần mềm chạy thật. Cũng chính thí nghiệm này lộ ra vấn đề: SpineNetV2 đạt F1 phát hiện 77.50\% mà Severe Recall chỉ 12.3\%, nghĩa là gần chín trên mười ca nặng bị bỏ sót. Đó là lý do có thí nghiệm thứ ba.
 
-Kết quả của thí nghiệm thứ ba cho thấy phần cải thiện tập trung đúng vào lớp Severe. Severe Recall tăng từ 12.3\% lên 48.6\%, Severe F1 từ 0.152 lên 0.356. Severe AUC cũng tăng từ 0.872 lên 0.899 và Severe AUPRC từ 0.284 lên 0.333. Hai chỉ số sau không phụ thuộc ngưỡng phân loại, nên mức tăng của chúng nói rằng mô hình thật sự xếp hạng ca nặng tốt hơn, chứ không phải chỉ hạ ngưỡng để bắt nhiều hơn.
+Kết quả của thí nghiệm thứ ba cho thấy phần cải thiện tập trung đúng vào lớp Severe. Severe Recall tăng từ 0.123 lên 0.486, Severe F1 từ 0.152 lên 0.356. Severe AUC cũng tăng từ 0.872 lên 0.899 và Severe AUPRC từ 0.284 lên 0.333. Hai chỉ số sau không phụ thuộc ngưỡng phân loại, nên mức tăng của chúng nói rằng mô hình thật sự xếp hạng ca nặng tốt hơn, chứ không phải chỉ hạ ngưỡng để bắt nhiều hơn.
 
-Đổi lại Mean Accuracy giảm 8.6 điểm. Mô hình nền được điểm cao ở chỉ số này vì lớp đa số chiếm gần 80\% dữ liệu. Với bài toán sàng lọc thì bỏ sót một ca nặng nặng hơn một lần báo động nhầm, vì báo nhầm thì bác sĩ xem lại ảnh là loại được ngay.
+Đổi lại Mean Accuracy giảm từ 0.810 xuống 0.724. Mô hình nền được điểm cao ở chỉ số này vì lớp đa số chiếm gần 80\% dữ liệu. Với bài toán sàng lọc thì bỏ sót một ca nặng nặng hơn một lần báo động nhầm, vì báo nhầm thì bác sĩ xem lại ảnh là loại được ngay.
 
 Phần kiểm chứng trên SPIDER trả lời hai câu hỏi khác nhau. Khi cho phép huấn luyện lại, Hybrid đạt F1 0.653 so với 0.646 của mô hình nền, chênh lệch nhỏ và nằm trong khoảng dao động giữa các lần chạy, còn cấu hình chỉ dùng CBAM tụt xuống 0.619, cho thấy nhánh giữ nguyên trọng số giúp phần lợi thế của cơ chế chú ý không mất đi khi đổi bộ dữ liệu. Khi không huấn luyện lại, mô hình vẫn chấm được tám nhãn mới với F1 trung bình 0.362, mức mà hai cấu hình dùng head cố định không thể có vì không chạy được thí nghiệm.
 
