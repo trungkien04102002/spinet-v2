@@ -50,7 +50,7 @@
 % subsections are hidden, which pushed the outline down onto the footer.
 \usepackage{etoolbox}
 \makeatletter
-\patchcmd{\beamer@sectionintoc}{\vskip1.5em}{\vskip0.6em}{}{\typeout{OUTLINE-PATCH-FAILED}}
+\patchcmd{\beamer@sectionintoc}{\vskip1.5em}{\vskip0.35em}{}{\typeout{OUTLINE-PATCH-FAILED}}
 \makeatother
 \numberwithin{figure}{section}
 \numberwithin{table}{section}
@@ -91,6 +91,12 @@ Trường Đại học Bách Khoa \\
 %	1. GIỚI THIỆU
 %----------------------------------------------------------------------------------------
 \section{Giới thiệu}
+{
+    \begin{frame}[t]
+        \frametitle{Mục lục}
+        \tableofcontents[currentsection, hideothersubsections]
+    \end{frame}
+}
 
 
 \subsection{Giới thiệu đề tài}
@@ -155,6 +161,12 @@ Trường Đại học Bách Khoa \\
 %	2. CƠ SỞ LÝ THUYẾT VÀ CÔNG TRÌNH LIÊN QUAN
 %----------------------------------------------------------------------------------------
 \section{Cơ sở lý thuyết và công trình liên quan}
+{
+    \begin{frame}[t]
+        \frametitle{Mục lục}
+        \tableofcontents[currentsection, hideothersubsections]
+    \end{frame}
+}
 
 \subsection{Cơ sở lý thuyết: CBAM và BiomedCLIP}
 \begin{frame}
@@ -210,6 +222,12 @@ Cơ chế chú ý (CBAM~\cite{woo2018cbam}) & Chú ý kênh + không gian & Tậ
 %	3. DỮ LIỆU VÀ LỰA CHỌN MÔ HÌNH
 %----------------------------------------------------------------------------------------
 \section{Dữ liệu và lựa chọn mô hình}
+{
+    \begin{frame}[t]
+        \frametitle{Mục lục}
+        \tableofcontents[currentsection, hideothersubsections]
+    \end{frame}
+}
 
 \subsection{Các bộ dữ liệu sử dụng}
 \begin{frame}
@@ -281,6 +299,12 @@ MedGemma~\cite{google2025medgemma}    & 38.7\% & 50.1\% & 11.8\% & 18.6\% \\
 %	4. MÔ HÌNH ĐỀ XUẤT
 %----------------------------------------------------------------------------------------
 \section{Mô hình đề xuất}
+{
+    \begin{frame}[t]
+        \frametitle{Mục lục}
+        \tableofcontents[currentsection, hideothersubsections]
+    \end{frame}
+}
 
 \subsection{Pipeline giải pháp chẩn đoán đau thắt lưng}
 \begin{frame}
@@ -416,6 +440,12 @@ p_{k,c} = \frac{\exp(s\,\hat{f}_{img}^{\top} t_{k,c})}{\sum_{j}\exp(s\,\hat{f}_{
 %	5. KẾT QUẢ THỰC NGHIỆM
 %----------------------------------------------------------------------------------------
 \section{Kết quả thực nghiệm}
+{
+    \begin{frame}[t]
+        \frametitle{Mục lục}
+        \tableofcontents[currentsection, hideothersubsections]
+    \end{frame}
+}
 
 \subsection{Kết quả tổng hợp trên RSNA 2024}
 \begin{frame}
@@ -527,6 +557,12 @@ Mean AUPRC         & \textbf{0.633} & 0.580 & 0.544 & 0.611 \\
 %	6. KẾT LUẬN
 %----------------------------------------------------------------------------------------
 \section{Phần mềm hỗ trợ bác sĩ}
+{
+    \begin{frame}[t]
+        \frametitle{Mục lục}
+        \tableofcontents[currentsection, hideothersubsections]
+    \end{frame}
+}
 
 \subsection{Phần mềm: mục tiêu và kiến trúc}
 \begin{frame}
@@ -589,6 +625,12 @@ Mục tiêu: rút ngắn thời gian đọc phim, không thay bác sĩ.
 
 %----------------------------------------------------------------------------------------
 \section{Kết luận và hướng phát triển}
+{
+    \begin{frame}[t]
+        \frametitle{Mục lục}
+        \tableofcontents[currentsection, hideothersubsections]
+    \end{frame}
+}
 
 \subsection{Đóng góp chính}
 \begin{frame}
