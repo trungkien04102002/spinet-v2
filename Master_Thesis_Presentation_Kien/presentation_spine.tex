@@ -92,12 +92,6 @@ Trường Đại học Bách Khoa \\
 %----------------------------------------------------------------------------------------
 \section{Giới thiệu}
 
-{
-    \begin{frame}[t]
-        \frametitle{Mục lục}
-        \tableofcontents[currentsection, hideothersubsections]
-    \end{frame}
-}
 
 \subsection{Giới thiệu đề tài}
 \begin{frame}
@@ -161,54 +155,36 @@ Trường Đại học Bách Khoa \\
 %	2. CƠ SỞ LÝ THUYẾT VÀ CÔNG TRÌNH LIÊN QUAN
 %----------------------------------------------------------------------------------------
 \section{Cơ sở lý thuyết và công trình liên quan}
-{
-    \begin{frame}[t]
-        \frametitle{Mục lục}
-        \tableofcontents[currentsection, hideothersubsections]
-    \end{frame}
-}
 
-\subsection{Cơ sở lý thuyết}
+\subsection{Cơ sở lý thuyết: CBAM và BiomedCLIP}
 \begin{frame}
-\frametitle{Cơ sở lý thuyết}
-\begin{itemize}\small
-    \item[--] \textbf{Cơ chế chú ý (attention):} tự động tăng trọng số cho kênh và vùng không gian quan trọng; CBAM~\cite{woo2018cbam} kết hợp chú ý theo kênh và không gian.
-    \item[--] \textbf{Mô hình thị giác--ngôn ngữ:} CLIP~\cite{radford2021clip} và BiomedCLIP~\cite{zhang2024biomedclip} học chung không gian ảnh--văn bản $\Rightarrow$ cho phép dự đoán nhãn mới bằng prompt (zero-shot).
-\end{itemize}
-\end{frame}
-
-\subsection{Attention branch (CBAM)}
-\begin{frame}
-\frametitle{Attention branch (CBAM)}
-\begin{figure}
+\frametitle{Cơ sở lý thuyết: CBAM và BiomedCLIP}
+\begin{columns}[T]
+\column{.5\textwidth}
 \centering
-\includegraphics[width=0.84\textwidth]{image/CBAM_overview_paper.png}
-\end{figure}
-\begin{itemize}\small
-\item[--] \textbf{Ý tưởng:} cơ chế chú ý dồn trọng số vào đúng kênh đặc trưng và vùng không gian quan trọng, thay vì xử lý đều toàn ảnh.
-\item[--] \textbf{CBAM-3D:} chú ý theo \textbf{kênh} rồi \textbf{không gian}, mở rộng cho khối ảnh 3D $\Rightarrow$ hữu ích để tập trung vào vùng tổn thương nhỏ.
+{\small\textbf{Cơ chế chú ý CBAM}~\cite{woo2018cbam}}\\[4pt]
+\includegraphics[height=0.36\textheight,width=\linewidth,keepaspectratio]{image/CBAM_overview_paper.png}\\[4pt]
+\begin{itemize}\scriptsize
+\item[--] Chú ý theo \textbf{kênh} rồi theo \textbf{không gian}.
+\item[--] Dồn trọng số vào vùng tổn thương nhỏ thay vì xử lý đều toàn ảnh.
 \end{itemize}
-{\scriptsize Nguồn hình: Woo và cộng sự (2018)~\cite{woo2018cbam}.}
+\column{.5\textwidth}
+\centering
+{\small\textbf{BiomedCLIP (thị giác--ngôn ngữ)}~\cite{zhang2024biomedclip}}\\[4pt]
+\includegraphics[height=0.36\textheight,width=\linewidth,keepaspectratio]{image/bmc_paper.png}\\[4pt]
+\begin{itemize}\scriptsize
+\item[--] Học trên 15 triệu cặp ảnh--văn bản y khoa, theo hướng CLIP~\cite{radford2021clip}.
+\item[--] Ảnh và câu mô tả nằm chung không gian $\Rightarrow$ thêm nhãn mới bằng câu mô tả (zero-shot).
+\end{itemize}
+\end{columns}
+\vspace{2pt}
+{\tiny Nguồn hình: Woo và cộng sự (2018)~\cite{woo2018cbam}; Zhang và cộng sự (2025)~\cite{zhang2024biomedclip}.}
 \end{frame}
 
 % Slide ẩn (không trình chiếu) — chi tiết Channel & Spatial Attention; chỉ dùng để trả lời nếu hội đồng hỏi.
 \iffalse
 
 \fi
-
-\subsection{Multimodal branch (BiomedCLIP)}
-\begin{frame}
-\frametitle{Multimodal branch (BiomedCLIP)}
-\begin{figure}
-\centering
-\includegraphics[width=0.74\textwidth]{image/bmc_paper.png}
-\end{figure}
-\vspace{-0.2em}
-\begin{itemize}\scriptsize
-\item[--] \textbf{Ý tưởng:} mô hình thị giác--ngôn ngữ học sẵn trên dữ liệu y khoa lớn, đặt ảnh và văn bản vào \textbf{chung không gian embedding}.
-\item[--] \textbf{BiomedCLIP}~\cite{zhang2024biomedclip} (\textit{contrastive}, 15M cặp): dự đoán bằng \textbf{cosine} ảnh--prompt $\Rightarrow$ cung cấp đặc trưng y khoa tổng quát và cho phép thêm nhãn mới bằng văn bản (zero-shot).
-\end{itemize}
-\end{frame}
 
 \subsection{Công trình liên quan}
 \begin{frame}
@@ -234,12 +210,6 @@ Cơ chế chú ý (CBAM~\cite{woo2018cbam}) & Chú ý kênh + không gian & Tậ
 %	3. DỮ LIỆU VÀ LỰA CHỌN MÔ HÌNH
 %----------------------------------------------------------------------------------------
 \section{Dữ liệu và lựa chọn mô hình}
-{
-    \begin{frame}[t]
-        \frametitle{Mục lục}
-        \tableofcontents[currentsection, hideothersubsections]
-    \end{frame}
-}
 
 \subsection{Các bộ dữ liệu sử dụng}
 \begin{frame}
@@ -311,12 +281,6 @@ MedGemma~\cite{google2025medgemma}    & 38.7\% & 50.1\% & 11.8\% & 18.6\% \\
 %	4. MÔ HÌNH ĐỀ XUẤT
 %----------------------------------------------------------------------------------------
 \section{Mô hình đề xuất}
-{
-    \begin{frame}[t]
-        \frametitle{Mục lục}
-        \tableofcontents[currentsection, hideothersubsections]
-    \end{frame}
-}
 
 \subsection{Pipeline giải pháp chẩn đoán đau thắt lưng}
 \begin{frame}
@@ -361,15 +325,41 @@ MedGemma~\cite{google2025medgemma}    & 38.7\% & 50.1\% & 11.8\% & 18.6\% \\
 \end{itemize}
 \end{frame}
 
+\subsection{Công thức của mô hình}
+\begin{frame}
+\frametitle{Công thức của mô hình}
+\small
+\textbf{Gộp ba lát của nhánh BiomedCLIP} (lát rõ tổn thương được tính nặng hơn):
+\begin{equation*}
+\alpha_i = \frac{\exp(w_a^\top z_i)}{\sum_{j} \exp(w_a^\top z_j)}, \qquad f_{bmc} = \sum_{i} \alpha_i z_i
+\end{equation*}
+\textbf{Hợp nhất hai nhánh} (Fusion MLP, chuẩn hóa độ dài):
+\begin{equation*}
+f_{img} = W_2\,\phi\big(W_1 [f_{cbam};\, f_{bmc}] + b_1\big) + b_2, \qquad \hat{f}_{img} = \frac{f_{img}}{\|f_{img}\|_2}
+\end{equation*}
+\textbf{Đầu cô-sin}: so với vector câu mô tả $t_{k,c}$ của từng mức độ $c$:
+\begin{equation*}
+p_{k,c} = \frac{\exp(s\,\hat{f}_{img}^{\top} t_{k,c})}{\sum_{j}\exp(s\,\hat{f}_{img}^{\top} t_{k,j})}, \qquad \hat{y}_k = \arg\max_{c}\; p_{k,c}
+\end{equation*}
+\end{frame}
+
 \subsection{Xử lý mất cân bằng lớp}
 \begin{frame}
 \frametitle{Xử lý mất cân bằng lớp}
 \begin{itemize}
-    \item[--] \textbf{Focal Loss}~\cite{lin2017focal} ($\gamma=2$) + \textbf{trọng số lớp theo căn bậc hai}: phạt nặng hơn khi sai ở lớp hiếm.
-    \item[--] \textbf{Oversampling}: mẫu có nhãn Moderate/Severe được lặp lại 3 lần.
-    \item[--] \textbf{Augmentation}: lật, xoay $\pm10^\circ$, đổi độ sáng/tương phản, thêm nhiễu.
+    \item[--] \textbf{Focal Loss}~\cite{lin2017focal} + \textbf{trọng số lớp}: phạt nặng hơn khi sai ở lớp hiếm.
+    \item[--] \textbf{Oversampling}: lặp lại các mẫu Moderate/Severe.
+    \item[--] \textbf{Augmentation}: lật, xoay, đổi độ sáng/tương phản, thêm nhiễu.
     \item[--] \textbf{Uncertainty weighting}~\cite{kendall2018multitask}: tự cân bằng trọng số giữa 3 nhóm bệnh.
 \end{itemize}
+\vspace{4pt}
+\begin{equation*}
+\text{FL} = -\,\omega_y (1 - p_y)^\gamma \log(p_y), \qquad
+\omega_c = \frac{1/\sqrt{n_c}}{\frac{1}{3}\sum_{j=1}^{3} 1/\sqrt{n_j}}
+\end{equation*}
+\begin{equation*}
+\mathcal{L}_{total} = \sum_{k=1}^{3} \left( \frac{1}{2 \sigma_k^2} \mathcal{L}_k + \log \sigma_k \right)
+\end{equation*}
 \end{frame}
 
 \subsection{Giai đoạn huấn luyện và suy diễn}
@@ -426,12 +416,6 @@ MedGemma~\cite{google2025medgemma}    & 38.7\% & 50.1\% & 11.8\% & 18.6\% \\
 %	5. KẾT QUẢ THỰC NGHIỆM
 %----------------------------------------------------------------------------------------
 \section{Kết quả thực nghiệm}
-{
-    \begin{frame}[t]
-        \frametitle{Mục lục}
-        \tableofcontents[currentsection, hideothersubsections]
-    \end{frame}
-}
 
 \subsection{Kết quả tổng hợp trên RSNA 2024}
 \begin{frame}
@@ -543,12 +527,6 @@ Mean AUPRC         & \textbf{0.633} & 0.580 & 0.544 & 0.611 \\
 %	6. KẾT LUẬN
 %----------------------------------------------------------------------------------------
 \section{Phần mềm hỗ trợ bác sĩ}
-{
-    \begin{frame}[t]
-        \frametitle{Mục lục}
-        \tableofcontents[currentsection, hideothersubsections]
-    \end{frame}
-}
 
 \subsection{Phần mềm: mục tiêu và kiến trúc}
 \begin{frame}
@@ -589,20 +567,14 @@ Mục tiêu: rút ngắn thời gian đọc phim, không thay bác sĩ.
 \end{columns}
 \end{frame}
 
-\subsection{Màn hình đọc phim}
-\begin{frame}
-\frametitle{Màn hình đọc phim}
+\subsection{Giao diện phần mềm}
+\begin{frame}[t]
+\frametitle{Giao diện phần mềm}
 \centering
-\includegraphics[height=0.68\textheight]{image/app_viewer.png}\\[2pt]
-{\footnotesize Mặt nạ phân vùng tô màu trên ảnh MRI, chú giải cấu trúc, và khung tóm tắt các tầng có dấu hiệu bất thường.}
-\end{frame}
-
-\subsection{Bảng chấm điểm}
-\begin{frame}
-\frametitle{Bảng chấm điểm}
-\centering
-\includegraphics[width=\textwidth]{image/app_grading_table.png}\\[4pt]
-{\footnotesize Mỗi ô là một hộp chọn bác sĩ sửa trực tiếp được. Màu nền theo mức độ; dấu cảnh báo đánh dấu ô mô hình ít chắc chắn.}
+\includegraphics[height=0.33\textheight]{image/app_viewer.png}\\[1pt]
+{\scriptsize Màn hình đọc phim: mặt nạ phân vùng tô màu trên ảnh MRI.}\\[4pt]
+\includegraphics[width=0.78\textwidth]{image/app_grading_table.png}\\[1pt]
+{\scriptsize Bảng chấm điểm: bác sĩ sửa trực tiếp từng ô; màu nền theo mức độ.}
 \end{frame}
 
 \subsection{Demo phần mềm}
@@ -617,12 +589,6 @@ Mục tiêu: rút ngắn thời gian đọc phim, không thay bác sĩ.
 
 %----------------------------------------------------------------------------------------
 \section{Kết luận và hướng phát triển}
-{
-    \begin{frame}[t]
-        \frametitle{Mục lục}
-        \tableofcontents[currentsection, hideothersubsections]
-    \end{frame}
-}
 
 \subsection{Đóng góp chính}
 \begin{frame}
@@ -663,10 +629,14 @@ Mục tiêu: rút ngắn thời gian đọc phim, không thay bác sĩ.
 \begin{frame}
 \frametitle{Hướng phát triển}
 \begin{itemize}
-    \item[1.] Đánh giá phần mềm cùng bác sĩ trên ca thật.
-    \item[2.] Cho mô hình học lại từ chỉnh sửa của bác sĩ.
-    \item[3.] Bổ sung mặt cắt Axial cho lỗ liên hợp.
-    \item[4.] Sinh báo cáo chẩn đoán bằng ngôn ngữ tự nhiên.
+    \item[1.] \textbf{Đánh giá phần mềm cùng bác sĩ trên ca thật}\\
+    {\footnotesize Bác sĩ đọc ca trên phần mềm và trả lời phiếu đánh giá; so nhãn bác sĩ chốt với nhãn mô hình để biết nhãn nào hay bị sửa.}
+    \item[2.] \textbf{Cho mô hình học lại từ chỉnh sửa của bác sĩ}\\
+    {\footnotesize Huấn luyện lại từ từng lô chỉnh sửa mà không quên kiến thức cũ; phiên bản mới phải qua đánh giá và người duyệt trước khi dùng.}
+    \item[3.] \textbf{Bổ sung mặt cắt Axial cho lỗ liên hợp}\\
+    {\footnotesize Lỗ liên hợp nhìn rõ nhất trên mặt cắt ngang: tinh chỉnh TotalSpineSeg cho Axial và hợp nhất đặc trưng hai mặt phẳng.}
+    \item[4.] \textbf{Sinh báo cáo chẩn đoán bằng ngôn ngữ tự nhiên}\\
+    {\footnotesize Tinh chỉnh mô hình thị giác--ngôn ngữ trên cặp ảnh và văn bản chẩn đoán để gợi ý đoạn kết luận cho bác sĩ.}
 \end{itemize}
 \end{frame}
 
@@ -782,21 +752,13 @@ Hybrid (thêm trên nền CBAM) & +24.8 phút & 61.6 \\
 \end{frame}
 
 \begin{frame}
-\frametitle{Phụ lục: các công thức cốt lõi}
-\textbf{CBAM~\cite{woo2018cbam}:}
-\begin{align}
-M_c(F) &= \sigma\!\big(\text{MLP}(\text{AvgPool}(F)) + \text{MLP}(\text{MaxPool}(F))\big), \notag\\
-M_s(F') &= \sigma\!\big(f^{7\times7\times7}([\text{AvgPool}_c(F');\,\text{MaxPool}_c(F')])\big), \notag\\
-F'' &= M_s(M_c(F)\otimes F)\otimes(M_c(F)\otimes F). \notag
-\end{align}
-\textbf{Focal Loss~\cite{lin2017focal} (có trọng số lớp, $\gamma=2$):}
-\begin{equation}
-\mathrm{FL}_t(p_t) = -\,w_{c(t)}\,(1-p_t)^{\gamma}\,\log(p_t). \notag
-\end{equation}
-\textbf{Dự đoán zero-shot bằng đối sánh cosine với prompt $\{t_k\}$~\cite{radford2021clip}:}
-\begin{equation}
-\hat{y} = \arg\max_{k}\; s\cdot \hat{f}_{\text{img}}^{\top} t_k. \notag
-\end{equation}
+\frametitle{Phụ lục: công thức CBAM-3D}
+Với bản đồ đặc trưng $F \in \mathbb{R}^{C \times D \times H \times W}$~\cite{woo2018cbam}:
+\begin{align*}
+M_c(F) &= \text{sigmoid}\big(\text{MLP}(\text{AvgPool}_{3D}(F)) + \text{MLP}(\text{MaxPool}_{3D}(F))\big)\\
+M_s(F') &= \text{sigmoid}\big(\text{Conv}_{7\times7\times7}([\text{AvgPool}_c(F');\, \text{MaxPool}_c(F')])\big)\\
+F' &= M_c(F) \otimes F, \qquad F'' = M_s(F') \otimes F'
+\end{align*}
 \end{frame}
 
 \begin{frame}
