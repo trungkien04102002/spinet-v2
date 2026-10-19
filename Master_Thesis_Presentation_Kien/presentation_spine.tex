@@ -334,9 +334,9 @@ MedGemma~\cite{google2025medgemma}    & 38.7\% & 50.1\% & 11.8\% & 18.6\% \\
 \end{figure}
 \end{frame}
 
-\subsection{Kiến trúc Hybrid hai nhánh (đề xuất)}
+\subsection{Kiến trúc Hybrid hai nhánh}
 \begin{frame}
-\frametitle{Kiến trúc Hybrid hai nhánh (đề xuất)}
+\frametitle{Kiến trúc Hybrid hai nhánh}
 \begin{figure}
     \centering
     \includegraphics[width=\textwidth]{image/hybrid_arch_generic.pdf}
@@ -349,22 +349,19 @@ MedGemma~\cite{google2025medgemma}    & 38.7\% & 50.1\% & 11.8\% & 18.6\% \\
 \end{itemize}
 \end{frame}
 
-\subsection{Công thức của mô hình}
 \begin{frame}
-\frametitle{Công thức của mô hình}
-\small
-\textbf{Gộp ba lát của nhánh BiomedCLIP} (lát rõ tổn thương được tính nặng hơn):
-\begin{equation*}
-\alpha_i = \frac{\exp(w_a^\top z_i)}{\sum_{j} \exp(w_a^\top z_j)}, \qquad f_{bmc} = \sum_{i} \alpha_i z_i
-\end{equation*}
-\textbf{Hợp nhất hai nhánh} (Fusion MLP, chuẩn hóa độ dài):
+\frametitle{Kiến trúc Hybrid hai nhánh}
+\vfill
+\textbf{Feature fusion} {\small (ghép đặc trưng hai nhánh)}
 \begin{equation*}
 f_{img} = W_2\,\phi\big(W_1 [f_{cbam};\, f_{bmc}] + b_1\big) + b_2, \qquad \hat{f}_{img} = \frac{f_{img}}{\|f_{img}\|_2}
 \end{equation*}
-\textbf{Đầu cô-sin}: so với vector câu mô tả $t_{k,c}$ của từng mức độ $c$:
+\vfill
+\textbf{Cosine classifier} {\small (so với câu mô tả từng mức độ)}
 \begin{equation*}
 p_{k,c} = \frac{\exp(s\,\hat{f}_{img}^{\top} t_{k,c})}{\sum_{j}\exp(s\,\hat{f}_{img}^{\top} t_{k,j})}, \qquad \hat{y}_k = \arg\max_{c}\; p_{k,c}
 \end{equation*}
+\vfill
 \end{frame}
 
 \subsection{Xử lý mất cân bằng lớp}
