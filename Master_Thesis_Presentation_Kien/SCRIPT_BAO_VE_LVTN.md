@@ -498,17 +498,17 @@ $$\alpha_k = \frac{1}{Z}\sum_{i,j}\frac{\partial y^{c}}{\partial A^{k}_{ij}}, \q
 
 > Luận văn có bốn đóng góp. Một là kiến trúc Hybrid hai nhánh cùng quy trình xử lý mất cân bằng,
 > nâng Severe Recall từ 0.123 lên 0.486. Hai là cơ chế mở rộng nhãn zero-shot, thêm nhãn mới bằng
-> câu mô tả. Ba là kiểm chứng trên SPIDER: Hybrid giữ được mức của mô hình nền, CBAM đơn lẻ thì
-> tụt. Bốn là phần mềm hỗ trợ bác sĩ phân vùng, chấm 11 nhãn, sửa và lưu chỉnh sửa.
+> câu mô tả. Ba là kiểm chứng trên SPIDER, dữ liệu của một bệnh viện khác: Hybrid đạt F1 0.653,
+> ngang SpineNetV2, và bắt được ca thoát vị đĩa đệm mà SpineNetV2 bỏ sót. Bốn là phần mềm hỗ trợ bác sĩ phân vùng, chấm 11 nhãn, sửa và lưu chỉnh sửa.
 >
 > Bên cạnh đó, luận văn vẫn còn một số hạn chế.
 
 ### Trang 32 — Hạn chế `[23:35]`
 
 > Thứ nhất, mô hình vẫn bỏ sót khoảng một nửa số ca nặng, nên chỉ nên dùng như một người đọc thứ
-> hai, bác sĩ vẫn là người quyết định. Thứ hai, hai nhãn lỗ liên hợp yếu hơn ống sống, vì lỗ liên
-> hợp nhìn rõ nhất trên mặt cắt Axial mà mô hình chưa dùng. Thứ ba, phần mềm mới lưu chỉnh sửa của
-> bác sĩ, mô hình chưa học lại từ đó. Và thứ tư, kết quả mới là trung bình ba lần chạy.
+> hai, bác sĩ vẫn là người quyết định. Thứ hai, mô hình chưa dùng mặt cắt Axial, trong khi lỗ liên
+> hợp nhìn rõ nhất trên mặt cắt này. Và thứ ba, phần mềm mới lưu chỉnh sửa của bác sĩ, mô hình chưa
+> học lại từ đó.
 
 ### Trang 33 — Công bố khoa học `[24:10]`
 

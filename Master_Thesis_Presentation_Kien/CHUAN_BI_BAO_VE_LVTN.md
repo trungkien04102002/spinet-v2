@@ -90,7 +90,7 @@ Ví dụ dùng chung cho các câu dưới. Cô-sin của một đĩa đệm v�
 - **Trên SPIDER, Hybrid 0.653 so với SpineNetV2 0.646 là gần như ngang?** Đúng, thông điệp là Hybrid giữ được mức mô hình nền khi đổi dữ liệu, còn CBAM tụt xuống 0.619. Riêng thoát vị đĩa đệm, SpineNetV2 và CBAM bỏ sót mọi ca, Hybrid đạt Recall 0.636.
 - **Zero-shot F1 0.362 có thấp không?** Thấp so với có huấn luyện, nhưng mô hình chấm được 8 nhãn của bộ tiêu chí khác, bệnh viện khác, mà không huấn luyện lại. Luận văn không xem đây là bộ phân loại hoàn chỉnh cho SPIDER.
 - **Sao bảng ống sống không có cột CBAM?** Gộp cả 3 nhãn thì Hybrid vẫn hơn; lợi thế của Hybrid nằm ở hai nhãn lỗ liên hợp.
-- **Ba lần chạy có đủ ý nghĩa thống kê không?** Chưa đủ để kết luận chặt chẽ, luận văn đã nêu trong phần hạn chế.
+- **Ba lần chạy có đủ ý nghĩa thống kê không?** Chưa đủ để kết luận chặt chẽ, luận văn đã nêu trong phần hạn chế (slide Hạn chế không ghi ý này, nên trả lời bằng miệng).
 
 ### Về chọn mô hình
 

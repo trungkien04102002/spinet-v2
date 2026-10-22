@@ -635,7 +635,7 @@ Mục tiêu: rút ngắn thời gian đọc phim, không thay bác sĩ.
 \begin{itemize}
     \item[1.] \textbf{Kiến trúc Hybrid hai nhánh} và quy trình xử lý mất cân bằng lớp: Severe Recall 0.123 $\to$ 0.486.
     \item[2.] \textbf{Mở rộng nhãn zero-shot}: thêm nhãn mới bằng câu mô tả, không huấn luyện lại.
-    \item[3.] \textbf{Kiểm chứng trên SPIDER}: Hybrid giữ được mức mô hình nền, CBAM thì tụt.
+    \item[3.] \textbf{Kiểm chứng trên SPIDER} (dữ liệu bệnh viện khác): F1 0.653, ngang SpineNetV2 (0.646), và bắt được ca thoát vị đĩa đệm mà SpineNetV2 bỏ sót.
     \item[4.] \textbf{Phần mềm hỗ trợ bác sĩ}: phân vùng, chấm 11 nhãn, sửa và lưu chỉnh sửa.
 \end{itemize}
 \end{frame}
@@ -645,9 +645,8 @@ Mục tiêu: rút ngắn thời gian đọc phim, không thay bác sĩ.
 \frametitle{Hạn chế}
 \begin{itemize}
     \item[--] Vẫn sót khoảng một nửa ca nặng: chỉ dùng như \textbf{người đọc thứ hai}.
-    \item[--] Lỗ liên hợp yếu hơn ống sống: mô hình chưa dùng mặt cắt Axial.
+    \item[--] Mô hình chưa dùng mặt cắt Axial.
     \item[--] Chỉnh sửa của bác sĩ mới được lưu, mô hình chưa học lại.
-    \item[--] Mới lấy trung bình 3 lần chạy.
 \end{itemize}
 \end{frame}
 
