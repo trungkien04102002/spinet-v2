@@ -42,9 +42,36 @@ Mở sẵn video trong QuickTime trước buổi bảo vệ, tới slide Demo th
 ### Về công thức
 
 - **f_bmc lấy từ đâu?** BiomedCLIP mã hóa từng lát ảnh (3 lát giữa khối), rồi gộp các lát bằng trọng số chú ý: lát nhìn rõ tổn thương hơn được tính nặng hơn (luận văn mục 4.3).
-- **s là gì?** Hệ số nhiệt độ, giãn điểm cô-sin trước khi đưa qua softmax.
+- **s là gì?** Hệ số nhiệt độ, giãn điểm cô-sin trước khi đưa qua softmax (xem mục softmax và argmax bên dưới).
 - **φ là gì?** Hàm kích hoạt GELU giữa hai lớp của MLP. MLP đi 1024 → 768 → 512.
 - **t_{k,c} là gì?** Vector câu mô tả của mức độ c thuộc nhãn k, do bộ mã hóa văn bản của BiomedCLIP tạo ra, đã chuẩn hóa độ dài.
+
+### Về softmax và argmax
+
+Ví dụ dùng chung cho các câu dưới. Cô-sin của một đĩa đệm với 3 câu mô tả Normal/Mild, Moderate, Severe là 0.20 / 0.25 / 0.31.
+
+- **Softmax là gì?** Hàm biến các điểm số thành xác suất: mỗi điểm z được lấy mũ e^z rồi chia cho tổng các mũ, nên mọi xác suất dương và cộng lại bằng 1.
+  - Công thức: p_c = exp(s·cos_c) / Σ_j exp(s·cos_j).
+  - Không nhân s: xác suất gần đều, khoảng 0.32 / 0.33 / 0.35.
+  - Nhân s = 50: điểm thành 10 / 12.5 / 15.5, xác suất thành 0.004 / 0.047 / 0.949.
+- **Argmax là gì?** Lấy **vị trí** của giá trị lớn nhất, không phải giá trị đó. Ở ví dụ trên, argmax = Severe. Đây là bước "chọn mức cao nhất" trên slide.
+- **Sao cần cả hai?** Mỗi cái phục vụ một nhóm chỉ số.
+  - Xác suất từ softmax dùng cho AUC và AUPRC, vì hai chỉ số này cần điểm số liên tục để xếp hạng ca.
+  - Nhãn từ argmax dùng cho Accuracy, Recall, Precision, F1, vì các chỉ số này cần một nhãn cụ thể để đếm đúng/sai.
+  - Code: `train_rsna_hybrid.py`, dòng `probs = softmax(logits)` và `preds = argmax(logits)`.
+- **Hệ số s có làm đổi dự đoán không?** Không. Softmax giữ nguyên thứ tự, nên argmax trên cô-sin, trên logit hay trên xác suất đều ra cùng một mức.
+  - s chỉ đổi độ "tự tin" của xác suất, nên ảnh hưởng tới loss và đạo hàm lúc huấn luyện.
+  - AUC cũng gần như không đổi theo s, vì AUC chỉ xét thứ tự.
+- **s được chọn thế nào?** s được học, không đặt tay. Mô hình học log s, khởi tạo s = 1/0.07 ≈ 14.3 theo CLIP, và chặn tối đa 100 để huấn luyện không mất ổn định. Số 50 ở ví dụ chỉ để minh họa.
+- **Argmax có phải là một ngưỡng không?** Có, đó là ngưỡng mặc định: chọn mức có xác suất lớn nhất, không ưu tiên lớp nào.
+  - Luận văn không tinh chỉnh ngưỡng riêng cho Severe. Vì vậy có những mô hình có AUC khá nhưng F1 thấp: xếp hạng được, nhưng argmax ít khi chọn Severe.
+  - Hạ ngưỡng Severe sẽ tăng Recall nhưng giảm Precision. Nếu bị hỏi, nói đây là hướng có thể làm thêm.
+- **Sao dùng softmax mà không dùng sigmoid?** Mỗi đĩa đệm chỉ có đúng một mức độ cho mỗi nhãn (3 mức loại trừ nhau), nên dùng softmax trên 3 mức. Sigmoid dùng khi một mẫu có thể mang nhiều nhãn cùng lúc.
+- **Softmax còn xuất hiện ở đâu?**
+  - Gộp lát của nhánh BiomedCLIP: softmax biến điểm chú ý của 3 lát thành trọng số cộng lại bằng 1.
+  - SPIDER có tinh chỉnh: AUC và AUPRC tính từ softmax (`eval_spider_auc.py`).
+  - Zero-shot SPIDER **không** qua softmax: dự đoán là argmax thẳng trên cô-sin, AUC tính trên cô-sin (`eval_zeroshot_spider.py`). Kết quả vẫn y như qua softmax, vì argmax và AUC chỉ phụ thuộc thứ tự.
+  - Focal Loss: p_y trong công thức chính là xác suất softmax của mức đúng.
 
 ### Về xử lý mất cân bằng (slide không ghi thông số)
 
