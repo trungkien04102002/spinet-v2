@@ -1,7 +1,7 @@
 # Kịch bản tập nói — Bảo vệ luận văn thạc sĩ (Thứ Hai 02/11/2026)
 
-Deck: `presentation_spine.pdf` (52 trang; trang 1–40 trình bày, trang 41–52 phụ lục).
-Thời lượng: thầy dặn 20–30 phút. Kịch bản này nhắm **khoảng 24 phút kể cả video demo**,
+Deck: `presentation_spine.pdf` (52 trang; trang 1–39 trình bày, trang 40–52 phụ lục).
+Thời lượng: thầy dặn 20–30 phút. Kịch bản này nhắm **khoảng 23 phút kể cả video demo**,
 để còn dư nếu bị ngắt hỏi giữa chừng.
 
 Cách đọc file:
@@ -177,7 +177,7 @@ nằm ở file riêng: `GIAI_THICH_METRIC_VA_CONG_THUC.md`.
 
 ---
 
-## PHẦN 4 — MÔ HÌNH ĐỀ XUẤT `[10:00 → 15:50]`
+## PHẦN 4 — MÔ HÌNH ĐỀ XUẤT `[10:00 → 14:30]`
 
 ### Trang 16 — Pipeline giải pháp `[10:00]`
 
@@ -202,30 +202,21 @@ nằm ở file riêng: `GIAI_THICH_METRIC_VA_CONG_THUC.md`.
 > ra vector f_bmc cũng 512 chiều. Nhánh này mang kiến thức y khoa chung đã học từ dữ liệu rất lớn.
 >
 > Hai vector được ghép lại thành 1024 chiều, đi qua khối hợp nhất, rồi so với vector của các câu
-> mô tả nhãn bằng độ tương đồng cô-sin. Hai ô bên phải cho thấy cùng một mô hình chấm được cả bộ
-> nhãn đã học, như RSNA, lẫn một bộ nhãn mới như SPIDER; hai trường hợp chỉ khác nhau ở bộ câu mô
-> tả đưa vào.
->
-> Slide tiếp theo em xin viết lại luồng này bằng công thức.
-
-### Trang 18 — Công thức Hybrid `[12:10]`
-
-> Công thức trên là bước hợp nhất. Em ghép hai vector f_cbam và f_bmc, nhân với ma trận W1, qua
-> hàm kích hoạt phi, rồi nhân với W2. Đó là một MLP hai lớp, đi từ 1024 xuống 768 rồi 512 chiều.
-> Kết quả f_img được chia cho độ dài của chính nó để có độ dài bằng 1, gọi là f-mũ.
->
-> Công thức dưới là bước chấm nhãn. Với mỗi nhãn bệnh k và mỗi mức độ c, em có vector câu mô tả
-> t_kc, ví dụ câu "severe spinal canal stenosis". Em lấy tích vô hướng giữa vector ảnh và vector câu
-> mô tả. Vì cả hai đều có độ dài 1, tích này chính là cô-sin của góc giữa chúng. Nhân với hệ số
-> nhiệt độ s rồi đưa qua softmax, em được xác suất của từng mức độ. Mức nào có xác suất cao nhất
-> thì được chọn.
+> mô tả nhãn bằng độ tương đồng cô-sin; mức nào giống nhất thì được chọn. Hai ô bên phải cho thấy
+> cùng một mô hình chấm được cả bộ nhãn đã học, như RSNA, lẫn một bộ nhãn mới như SPIDER; hai
+> trường hợp chỉ khác nhau ở bộ câu mô tả đưa vào.
 >
 > Điểm quan trọng là danh sách câu mô tả nằm ngoài mạng. Muốn chấm bộ nhãn khác thì chỉ cần thay
 > danh sách đó, không cần gắn thêm đầu ra hay huấn luyện lại.
 >
 > Có kiến trúc rồi, câu hỏi tiếp theo là huấn luyện thế nào khi lớp Severe chỉ có 4%.
 
-#### 📘 Giải thích công thức (không đọc lên)
+#### 📘 Công thức Hybrid: phụ lục trang 40 (không trình bày, chỉ mở khi được hỏi)
+
+Slide công thức đã chuyển xuống phụ lục, lúc trình bày bấm thẳng từ trang 17 sang trang 18. Nếu
+hội đồng hỏi công thức, mở trang 40 và giải thích theo thứ tự trên slide: gộp lát → ghép hai nhánh
+→ chuẩn hóa → so cô-sin → softmax → argmax. Giải thích kỹ phần gộp lát nằm ở
+`GIAI_THICH_METRIC_VA_CONG_THUC.md`, mục 15.
 
 **Công thức 1: hợp nhất (Fusion MLP)**
 
@@ -276,7 +267,7 @@ $$p_{k,c} = \frac{\exp(s\,\hat f_{img}^{\top} t_{k,c})}{\sum_j \exp(s\,\hat f_{i
   hàng của $W$ ứng với một mức độ cố định. Thêm nhãn mới thì phải thêm hàng mới vào $W$ và học
   lại. Ở Hybrid, "hàng" đó chính là vector câu mô tả $t_{k,c}$, nên lấy được miễn phí từ văn bản.
 
-**Gộp lát của nhánh BiomedCLIP (trong luận văn, không có trên slide)**
+**Công thức 0: gộp lát của nhánh BiomedCLIP (dòng đầu trang 40)**
 
 $$\alpha_i = \frac{\exp(w_a^\top z_i)}{\sum_j \exp(w_a^\top z_j)}, \qquad f_{bmc} = \sum_i \alpha_i z_i$$
 
@@ -288,7 +279,7 @@ $$\alpha_i = \frac{\exp(w_a^\top z_i)}{\sum_j \exp(w_a^\top z_j)}, \qquad f_{bmc
 - Ví dụ: điểm $w_a^\top z_i$ của ba lát là 2, 1, 0, cho $\alpha \approx 0.67, 0.24, 0.09$. Lát
   đầu (nhìn rõ tổn thương hơn) đóng góp gần 70%, thay vì 33% nếu lấy trung bình đều.
 
-### Trang 19 — Xử lý mất cân bằng lớp `[13:50]`
+### Trang 18 — Xử lý mất cân bằng lớp `[12:30]`
 
 > Em dùng bốn kỹ thuật bổ sung cho nhau.
 >
@@ -362,7 +353,7 @@ $$\mathcal{L}_{total} = \sum_{k=1}^{3}\left(\frac{1}{2\sigma_k^2}\,\mathcal{L}_k
 - Cân bằng giữa hai số hạng: nhãn nào có $\mathcal{L}_k$ lớn (khó, như lỗ liên hợp) thì tăng
   $\sigma_k$ có lợi hơn, nên trọng số tự giảm. Nhãn dễ hơn thì $\sigma_k$ nhỏ, trọng số lớn.
 
-### Trang 20 — Huấn luyện và suy diễn `[15:10]`
+### Trang 19 — Huấn luyện và suy diễn `[13:50]`
 
 > Bên trái là luồng huấn luyện. Em huấn luyện theo hai bước. Bước một là huấn luyện cấu hình CBAM
 > trên RSNA với đầy đủ các kỹ thuật xử lý mất cân bằng vừa nói. Bước hai là huấn luyện Hybrid:
@@ -380,9 +371,9 @@ $$\mathcal{L}_{total} = \sum_{k=1}^{3}\left(\frac{1}{2\sigma_k^2}\,\mathcal{L}_k
 
 ---
 
-## PHẦN 5 — KẾT QUẢ THỰC NGHIỆM `[15:50 → 20:20]`
+## PHẦN 5 — KẾT QUẢ THỰC NGHIỆM `[14:30 → 19:00]`
 
-### Trang 22 — Kết quả tổng hợp trên RSNA 2024 `[15:50]`
+### Trang 21 — Kết quả tổng hợp trên RSNA 2024 `[14:30]`
 
 > Đây là câu trả lời cho thách thức thứ nhất, mất cân bằng lớp. Em so bốn cấu hình. SpineNetV2 là
 > mô hình nền. CBAM chỉ có nhánh chú ý. BMC-only chỉ có nhánh BiomedCLIP. Hybrid có cả hai. Mỗi
@@ -405,7 +396,7 @@ $$\mathcal{L}_{total} = \sum_{k=1}^{3}\left(\frac{1}{2\sigma_k^2}\,\mathcal{L}_k
 >
 > Để xem cơ chế chú ý thực sự thay đổi điều gì, em có một ca minh họa.
 
-### Trang 23 — Grad-CAM `[17:30]`
+### Trang 22 — Grad-CAM `[16:10]`
 
 > Đây là một ca hẹp ống sống mức nặng ở tầng L4–L5. Grad-CAM tô màu vùng mà mô hình dựa vào để
 > ra quyết định. Bên trái là mô hình không có CBAM: vùng chú ý dàn trải, và xác suất Severe chỉ
@@ -431,7 +422,7 @@ $$\alpha_k = \frac{1}{Z}\sum_{i,j}\frac{\partial y^{c}}{\partial A^{k}_{ij}}, \q
   cho thấy bản đồ saliency trên dữ liệu này không hơn phép đoán "giữa ảnh", vì khối ảnh vốn đã cắt
   căn giữa vào đĩa đệm. Vậy nên luôn gọi đây là **minh họa**.
 
-### Trang 24 — Zero-shot trên SPIDER `[18:15]`
+### Trang 23 — Zero-shot trên SPIDER `[16:55]`
 
 > Với Hybrid, muốn chấm nhãn mới thì chỉ cần đổi câu mô tả. Em thử với 8 nhãn của SPIDER: những
 > nhãn này không có trong dữ liệu huấn luyện, và em không huấn luyện lại gì cả. SpineNetV2 và CBAM
@@ -446,7 +437,7 @@ $$\alpha_k = \frac{1}{Z}\sum_{i,j}\frac{\partial y^{c}}{\partial A^{k}_{ij}}, \q
 >
 > Còn nếu được huấn luyện lại trên SPIDER thì sao? Đó là thách thức thứ ba.
 
-### Trang 25 — SPIDER có tinh chỉnh `[19:20]`
+### Trang 24 — SPIDER có tinh chỉnh `[18:00]`
 
 > Ở thí nghiệm này, em tinh chỉnh cả bốn cấu hình trên SPIDER để xem lợi thế có còn giữ được khi
 > đổi dữ liệu không. Hybrid đạt F1 0.653, ngang với SpineNetV2 là 0.646. Còn CBAM tụt xuống 0.619,
@@ -460,9 +451,9 @@ $$\alpha_k = \frac{1}{Z}\sum_{i,j}\frac{\partial y^{c}}{\partial A^{k}_{ij}}, \q
 
 ---
 
-## PHẦN 6 — PHẦN MỀM HỖ TRỢ BÁC SĨ `[20:20 → 23:00]`
+## PHẦN 6 — PHẦN MỀM HỖ TRỢ BÁC SĨ `[19:00 → 21:40]`
 
-### Trang 27 — Mục tiêu và kiến trúc `[20:20]`
+### Trang 26 — Mục tiêu và kiến trúc `[19:00]`
 
 > Mục tiêu của phần mềm là rút ngắn thời gian đọc phim, không thay thế bác sĩ. Em đặt ra ba yêu
 > cầu: bác sĩ thấy được AI nhìn vào đâu, thông qua mặt nạ tô màu ngay trên ảnh; mọi nhãn đều sửa
@@ -472,13 +463,13 @@ $$\alpha_k = \frac{1}{Z}\sum_{i,j}\frac{\partial y^{c}}{\partial A^{k}_{ij}}, \q
 > chủ FastAPI gọi hai mô hình phân vùng và chấm nhãn, cơ sở dữ liệu lưu ca chụp, nhãn và các lần
 > hiệu chỉnh.
 
-### Trang 28 — Giao diện `[21:00]`
+### Trang 27 — Giao diện `[19:40]`
 
 > Hình trên là màn hình đọc phim, với mặt nạ phân vùng tô màu trên ảnh MRI. Hình dưới là bảng chấm
 > điểm: mỗi ô là một nhãn ở một tầng đĩa đệm, màu nền theo mức độ, và bác sĩ bấm vào để sửa trực
 > tiếp. Em xin mời thầy cô xem video demo.
 
-### Trang 29 — Demo `[21:25]`
+### Trang 28 — Demo `[20:05]`
 
 *(Cmd+Tab sang QuickTime đã mở sẵn, phát video. Nói kèm nếu video không có tiếng.)*
 
@@ -492,9 +483,9 @@ $$\alpha_k = \frac{1}{Z}\sum_{i,j}\frac{\partial y^{c}}{\partial A^{k}_{ij}}, \q
 
 ---
 
-## PHẦN 7 — KẾT LUẬN `[23:00 → 25:40]`
+## PHẦN 7 — KẾT LUẬN `[21:40 → 24:20]`
 
-### Trang 31 — Đóng góp chính `[23:00]`
+### Trang 30 — Đóng góp chính `[21:40]`
 
 > Luận văn có bốn đóng góp. Một là kiến trúc Hybrid hai nhánh cùng quy trình xử lý mất cân bằng,
 > nâng Severe Recall từ 0.123 lên 0.486. Hai là cơ chế mở rộng nhãn zero-shot, thêm nhãn mới bằng
@@ -503,20 +494,20 @@ $$\alpha_k = \frac{1}{Z}\sum_{i,j}\frac{\partial y^{c}}{\partial A^{k}_{ij}}, \q
 >
 > Bên cạnh đó, luận văn vẫn còn một số hạn chế.
 
-### Trang 32 — Hạn chế `[23:35]`
+### Trang 31 — Hạn chế `[22:15]`
 
 > Thứ nhất, mô hình vẫn bỏ sót khoảng một nửa số ca nặng, nên chỉ nên dùng như một người đọc thứ
 > hai, bác sĩ vẫn là người quyết định. Thứ hai, mô hình chưa dùng mặt cắt Axial, trong khi lỗ liên
 > hợp nhìn rõ nhất trên mặt cắt này. Và thứ ba, phần mềm mới lưu chỉnh sửa của bác sĩ, mô hình chưa
 > học lại từ đó.
 
-### Trang 33 — Công bố khoa học `[24:10]`
+### Trang 32 — Công bố khoa học `[22:50]`
 
 > Một phần kết quả của luận văn đã được chấp nhận và trình bày tại hội nghị MIWAI 2026, lần thứ
 > 19, vào tháng 10 vừa rồi. Bài báo được xuất bản trong bộ Lecture Notes in Artificial
 > Intelligence của Springer; em là tác giả thứ nhất và thầy Nhân là tác giả liên hệ.
 
-### Trang 34 — Hướng phát triển `[24:30]`
+### Trang 33 — Hướng phát triển `[23:10]`
 
 > Từ các hạn chế trên, em có bốn hướng phát triển. Một là đánh giá phần mềm cùng bác sĩ trên ca
 > thật, so nhãn bác sĩ chốt với nhãn mô hình để biết nhãn nào hay bị sửa. Hai là cho mô hình học
@@ -524,9 +515,9 @@ $$\alpha_k = \frac{1}{Z}\sum_{i,j}\frac{\partial y^{c}}{\partial A^{k}_{ij}}, \q
 > trước khi dùng. Ba là bổ sung mặt cắt Axial để cải thiện hai nhãn lỗ liên hợp. Và bốn là sinh
 > báo cáo chẩn đoán bằng ngôn ngữ tự nhiên, gợi ý đoạn kết luận cho bác sĩ.
 
-### Trang 40 — Cảm ơn `[25:20]`
+### Trang 39 — Cảm ơn `[24:00]`
 
-*(Bấm thẳng từ trang 34 sang trang 40, bỏ qua tài liệu tham khảo.)*
+*(Bấm thẳng từ trang 33 sang trang 39, bỏ qua tài liệu tham khảo.)*
 
 > Phần trình bày của em đến đây là kết thúc. Em xin cảm ơn quý thầy cô đã lắng nghe, và em rất
 > mong nhận được góp ý của hội đồng.
@@ -537,6 +528,7 @@ $$\alpha_k = \frac{1}{Z}\sum_{i,j}\frac{\partial y^{c}}{\partial A^{k}_{ij}}, \q
 
 | Câu hỏi | Mở trang | Ý chính |
 |---|---|---|
+| Công thức Hybrid (gộp lát, hợp nhất, cô-sin)? | 40 | Xem khối 📘 dưới trang 17 |
 | Hybrid có bao nhiêu tham số, học bao nhiêu? | 41 | CBAM-ResNet 21.3M và BiomedCLIP 86.2M giữ cố định; chỉ học ~1.18M |
 | Huấn luyện lâu không, suy luận nhanh không? | 42 | Baseline 16.4 phút, CBAM 56 phút, Hybrid **thêm** 24.8 phút; suy luận ~62 ms/mẫu cả ba |
 | CBAM gắn ở đâu? | 43 | Sau mỗi stage của ResNet-34; thêm ~1% tham số |

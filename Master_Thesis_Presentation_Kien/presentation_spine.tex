@@ -349,21 +349,6 @@ MedGemma~\cite{google2025medgemma}    & 38.7\% & 50.1\% & 11.8\% & 18.6\% \\
 \end{itemize}
 \end{frame}
 
-\begin{frame}
-\frametitle{Kiến trúc Hybrid hai nhánh}
-\vfill
-\textbf{Feature fusion} {\small (ghép đặc trưng hai nhánh)}
-\begin{equation*}
-f_{img} = W_2\,\phi\big(W_1 [f_{cbam};\, f_{bmc}] + b_1\big) + b_2, \qquad \hat{f}_{img} = \frac{f_{img}}{\|f_{img}\|_2}
-\end{equation*}
-\vfill
-\textbf{Cosine classifier} {\small (so với câu mô tả từng mức độ)}
-\begin{equation*}
-p_{k,c} = \frac{\exp(s\,\hat{f}_{img}^{\top} t_{k,c})}{\sum_{j}\exp(s\,\hat{f}_{img}^{\top} t_{k,j})}, \qquad \hat{y}_k = \arg\max_{c}\; p_{k,c}
-\end{equation*}
-\vfill
-\end{frame}
-
 \subsection{Xử lý mất cân bằng lớp}
 \begin{frame}
 \frametitle{Xử lý mất cân bằng lớp}
@@ -691,6 +676,26 @@ Mục tiêu: rút ngắn thời gian đọc phim, không thay bác sĩ.
 \end{frame}
 
 \appendix
+\begin{frame}
+\frametitle{Phụ lục: công thức Hybrid}
+\vfill
+\textbf{Slice attention pooling} {\small (gộp 3 lát giữa của nhánh BiomedCLIP)}
+\begin{equation*}
+\alpha_i = \frac{\exp(w_a^{\top} z_i)}{\sum_{j}\exp(w_a^{\top} z_j)}, \qquad f_{bmc} = \sum_{i=1}^{3} \alpha_i\, z_i
+\end{equation*}
+\vfill
+\textbf{Feature fusion} {\small (ghép đặc trưng hai nhánh)}
+\begin{equation*}
+f_{img} = W_2\,\phi\big(W_1 [f_{cbam};\, f_{bmc}] + b_1\big) + b_2, \qquad \hat{f}_{img} = \frac{f_{img}}{\|f_{img}\|_2}
+\end{equation*}
+\vfill
+\textbf{Cosine classifier} {\small (so với câu mô tả từng mức độ)}
+\begin{equation*}
+p_{k,c} = \frac{\exp(s\,\hat{f}_{img}^{\top} t_{k,c})}{\sum_{j}\exp(s\,\hat{f}_{img}^{\top} t_{k,j})}, \qquad \hat{y}_k = \arg\max_{c}\; p_{k,c}
+\end{equation*}
+\vfill
+\end{frame}
+
 \begin{frame}
 \frametitle{Phụ lục: số tham số mô hình}
 \begin{table}

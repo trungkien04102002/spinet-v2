@@ -23,6 +23,7 @@ Mục lục
 12. Thí nghiệm chọn mô hình chấm nhãn: quy về bài toán có/không bệnh
 13. Cách tính trên SPIDER (zero-shot và có tinh chỉnh)
 14. Bảng tra nhanh và câu trả lời một dòng
+15. Slice attention pooling: nhánh BiomedCLIP gộp các lát thế nào
 
 ---
 
@@ -469,7 +470,7 @@ Recall của MedGemma: $(20.87 + 8.43 + 6.02)/3 = 11.77\%$, tức "khoảng 12%"
 
 Hai thí nghiệm đo **hai bài toán khác nhau**:
 
-| | Thí nghiệm chọn mô hình (slide 14) | Thí nghiệm chính (slide 22) |
+| | Thí nghiệm chọn mô hình (slide 14) | Thí nghiệm chính (slide 21) |
 |---|---|---|
 | Đơn vị | bệnh nhân (luật ANY trên 5 tầng) | từng đĩa đệm |
 | Số lớp | 2 (có/không bệnh) | 3 (Normal/Mild, Moderate, Severe) |
@@ -495,7 +496,7 @@ giản để tinh chỉnh.
 
 ## 13. Cách tính trên SPIDER
 
-### 13.1 Zero-shot (slide 24)
+### 13.1 Zero-shot (slide 23)
 
 Code: `eval_zeroshot_spider.py`. Kết quả lưu ở `experiments/paper_results/spider_zeroshot/`.
 
@@ -513,7 +514,7 @@ mức) và Modic (4 mức) rất thấp, vì phân biệt nhiều mức chỉ b�
 sống có AUC 0.807 nhưng F1 0.028: xếp hạng khá, nhưng ngưỡng mặc định (argmax) gần như không bao
 giờ chọn lớp hiếm. Đây là ví dụ thật cho việc AUC và F1 đo hai thứ khác nhau (mục 1).
 
-### 13.2 Có tinh chỉnh (slide 25)
+### 13.2 Có tinh chỉnh (slide 24)
 
 Code: `train_spider_hybrid.py` và `train_spider.py`. Cả bốn cấu hình được huấn luyện thêm trên
 SPIDER. Cách tính giống RSNA: với mỗi nhãn, tính macro qua các mức, rồi **trung bình qua các
@@ -552,3 +553,90 @@ Recall lớp "không" = 1.0 và Recall lớp "có" = 0, nên macro = 0.5. Vì v�
   mức cao nhất. Mô hình xếp hạng tốt nhưng ở ngưỡng mặc định vẫn còn báo nhầm và bỏ sót."
 - *Dice?* "Độ chồng lắp giữa vùng khoanh và vùng chuẩn; thực chất là F1 ở mức voxel."
 - *ASSD?* "Khoảng cách trung bình giữa hai đường viền, tính bằng mm, càng nhỏ càng tốt."
+
+---
+
+## 15. Slice attention pooling: nhánh BiomedCLIP gộp các lát thế nào
+
+Phần này không phải metric, nhưng hội đồng hay hỏi "f_bmc lấy từ đâu". Công thức nằm ở dòng đầu
+slide phụ lục trang 40. Slide công thức không trình bày, chỉ mở khi được hỏi.
+
+### 15.1 Vì sao cần gộp lát
+
+- Khối ảnh của một đĩa đệm có **9 lát** mặt cắt dọc, mỗi lát 112 × 224.
+- BiomedCLIP là mô hình **2D**: mỗi lần chỉ đọc một ảnh phẳng và trả về một vector 512 chiều.
+- Đưa 3 lát vào thì được 3 vector, nhưng khối hợp nhất cần **một** vector f_bmc. Bước gộp 3
+  vector thành 1 chính là slice attention pooling.
+
+### 15.2 Từng bước, theo code
+
+Code: `spinenet/models/grading_hybrid.py`, lớp `SliceAttentionPool` và hàm `forward` của mô hình.
+
+| Bước | Làm gì | Kích thước |
+|---|---|---|
+| 1. Chọn lát | Lấy 3 lát giữa khối: lát 4, 5, 6 trên 9 (code `volume[:, 0, 3:6]`) | 3 × 112 × 224 |
+| 2. Chuẩn bị ảnh | Mỗi lát: đổi kích thước về 224 × 224, nhân thành 3 kênh màu, chuẩn hóa theo thống kê của CLIP | 3 × (3 × 224 × 224) |
+| 3. Mã hóa | Bộ mã hóa ảnh ViT-B/16 của BiomedCLIP, **giữ cố định**, ra vector $z_i$ cho từng lát | 3 × 512 |
+| 4. Chấm điểm | Mỗi lát một điểm: $e_i = w_a^\top z_i + b$ (một lớp tuyến tính 512 → 1) | 3 số |
+| 5. Softmax | Biến 3 điểm thành 3 trọng số $\alpha_i$, cộng lại bằng 1 | 3 số |
+| 6. Cộng có trọng số | $f_{bmc} = \alpha_1 z_1 + \alpha_2 z_2 + \alpha_3 z_3$ | 512 |
+
+Công thức:
+
+$$\alpha_i = \frac{\exp(w_a^\top z_i)}{\sum_{j=1}^{3}\exp(w_a^\top z_j)}, \qquad f_{bmc} = \sum_{i=1}^{3} \alpha_i z_i$$
+
+| Ký hiệu | Ý nghĩa |
+|---|---|
+| $z_i$ | vector 512 chiều của lát thứ $i$, do BiomedCLIP tạo ra |
+| $w_a$ | vector 512 chiều **học được**: mô hình học "lát thế nào thì đáng chú ý" |
+| $w_a^\top z_i$ | điểm chú ý của lát $i$ (tích vô hướng); càng lớn thì lát càng được coi trọng |
+| $\alpha_i$ | trọng số của lát $i$, nằm trong (0, 1), ba trọng số cộng lại bằng 1 |
+| $f_{bmc}$ | vector đại diện cho cả khối ảnh, đưa vào khối hợp nhất cùng với $f_{cbam}$ |
+
+Trong code, lớp chấm điểm có thêm độ lệch $b$, nhưng $b$ **không ảnh hưởng**: cộng cùng một số vào
+cả 3 điểm thì softmax không đổi. Vì vậy công thức trong luận văn bỏ $b$.
+
+### 15.3 Ví dụ bằng số
+
+Giả sử điểm của 3 lát là $w_a^\top z_i$ = 2, 1, 0.
+
+| | Lát 4 | Lát 5 | Lát 6 | Tổng |
+|---|---|---|---|---|
+| Điểm $e_i$ | 2 | 1 | 0 | |
+| $\exp(e_i)$ | 7.39 | 2.72 | 1.00 | 11.11 |
+| $\alpha_i$ = $\exp(e_i)$ / tổng | **0.67** | 0.24 | 0.09 | 1.00 |
+
+Kết quả: $f_{bmc} = 0.67 z_4 + 0.24 z_5 + 0.09 z_6$. Lát có điểm cao nhất đóng góp khoảng 2/3,
+thay vì 1/3 như khi lấy trung bình đều.
+
+### 15.4 Những điểm dễ bị hỏi
+
+- **Trọng số α có cố định cho từng vị trí lát không?** Không. $w_a$ cố định sau khi học, nhưng
+  $z_i$ khác nhau ở mỗi đĩa đệm, nên mỗi đĩa đệm có bộ α riêng. Đĩa này có thể dồn trọng số vào
+  lát 5, đĩa khác vào lát 4.
+- **Không có nhãn "lát nào quan trọng", sao học được $w_a$?** $w_a$ được học cùng khối hợp nhất,
+  qua cùng hàm loss chấm mức độ. Nếu dồn trọng số vào một lát giúp chấm đúng hơn, đạo hàm sẽ đẩy
+  $w_a$ theo hướng đó. Không cần nhãn riêng cho từng lát.
+- **Sao không lấy trung bình đều?** Trung bình đều là trường hợp đặc biệt α = 1/3, 1/3, 1/3. Lớp
+  chú ý để mô hình tự chọn. Nếu trung bình đều là tốt nhất thì mô hình vẫn học ra được (khi $w_a$
+  cho 3 điểm bằng nhau).
+- **Sao không lấy max?** Max lấy giá trị lớn nhất theo từng chiều, nên vector kết quả ghép từ nhiều
+  lát khác nhau, không còn là vector của một lát có thật. Cộng có trọng số cho ra vector nằm "giữa"
+  các lát thật, hợp với không gian mà BiomedCLIP đã học.
+- **Sao chỉ 3 lát, không đủ 9?** BiomedCLIP chạy riêng từng lát, mỗi lát một lượt ViT, nên 9 lát
+  tốn gấp 3. Ba lát giữa đi qua tâm khối ảnh. Thông tin 3 chiều đầy đủ đã có nhánh CBAM đọc cả 9
+  lát.
+- **Phần này có bao nhiêu tham số học?** 512 số của $w_a$ và 1 số $b$, tổng 513. Rất nhỏ so với
+  khoảng 1.18 triệu của khối hợp nhất.
+- **BiomedCLIP có được học lại không?** Không. Bộ mã hóa giữ cố định (code chạy dưới
+  `torch.no_grad()`), chỉ $w_a$ và các phần phía sau được học.
+- **Đổi 112 × 224 thành 224 × 224 có làm méo ảnh không?** Có, ảnh bị giãn gấp đôi theo chiều dọc.
+  Luận văn chọn cách đơn giản này vì BiomedCLIP giữ cố định và nhánh CBAM vẫn đọc ảnh gốc. Nếu bị
+  hỏi, thừa nhận và nói có thể cải thiện bằng cách đệm thêm viền (padding) thay cho kéo giãn.
+- **Trọng số α có dùng để giải thích mô hình được không?** Luận văn **không** phân tích α, nên
+  đừng nói "mô hình chọn đúng lát có tổn thương". Chỉ nói: lớp chú ý cho phép mô hình tự cân các
+  lát.
+
+**Trả lời một dòng:** "BiomedCLIP đọc từng lát 2D, nên em mã hóa 3 lát giữa thành 3 vector, chấm
+điểm từng lát bằng một vector học được, đưa qua softmax ra trọng số, rồi cộng có trọng số thành
+một vector f_bmc."

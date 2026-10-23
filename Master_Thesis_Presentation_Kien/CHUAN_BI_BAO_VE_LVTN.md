@@ -9,7 +9,7 @@ File này gom các câu nói khi trình bày và câu trả lời khi hội đ�
 
 ## 1. Mạch trình bày
 
-Giới thiệu đề tài → **Thách thức** → Mục tiêu → Phạm vi → Cơ sở lý thuyết (CBAM, BiomedCLIP) → Công trình liên quan → Dữ liệu → Chọn mô hình phân vùng → Chọn mô hình chấm nhãn → Pipeline → Kiến trúc Hybrid (hình, rồi công thức) → Xử lý mất cân bằng lớp → Huấn luyện và suy diễn → Kết quả RSNA → Grad-CAM → Zero-shot SPIDER → SPIDER có tinh chỉnh → Phần mềm → Giao diện → **Video demo** → Đóng góp → Hạn chế → Công bố → Hướng phát triển.
+Giới thiệu đề tài → **Thách thức** → Mục tiêu → Phạm vi → Cơ sở lý thuyết (CBAM, BiomedCLIP) → Công trình liên quan → Dữ liệu → Chọn mô hình phân vùng → Chọn mô hình chấm nhãn → Pipeline → Kiến trúc Hybrid (chỉ hình; slide công thức đã chuyển xuống phụ lục trang 40) → Xử lý mất cân bằng lớp → Huấn luyện và suy diễn → Kết quả RSNA → Grad-CAM → Zero-shot SPIDER → SPIDER có tinh chỉnh → Phần mềm → Giao diện → **Video demo** → Đóng góp → Hạn chế → Công bố → Hướng phát triển.
 
 - 4 thách thức ở đầu, mỗi cái có phần kết quả trả lời ở sau. Khi tới kết quả, nói "đây là thách thức 1/2/3…".
   - Thách thức 1 (mất cân bằng) → Kết quả RSNA.
@@ -21,7 +21,9 @@ Giới thiệu đề tài → **Thách thức** → Mục tiêu → Phạm vi �
 
 ## 2. Câu nói cho từng slide
 
-### Kiến trúc Hybrid: slide công thức
+### Kiến trúc Hybrid
+
+Slide công thức không trình bày nữa, đã chuyển xuống phụ lục trang 40. Lời nói dưới đây dùng cho slide hình kiến trúc. Bị hỏi công thức thì mở trang 40.
 
 > "Sau hai nhánh, em có hai vector đặc trưng: f_cbam từ nhánh CBAM và f_bmc từ nhánh BiomedCLIP. Em ghép hai vector này lại, đưa qua một MLP hai lớp để ra vector ảnh chung f_img, rồi chuẩn hóa độ dài về 1. Đây là phần duy nhất được huấn luyện, hai nhánh giữ cố định.
 >
@@ -41,7 +43,7 @@ Mở sẵn video trong QuickTime trước buổi bảo vệ, tới slide Demo th
 
 ### Về công thức
 
-- **f_bmc lấy từ đâu?** BiomedCLIP mã hóa từng lát ảnh (3 lát giữa khối), rồi gộp các lát bằng trọng số chú ý: lát nhìn rõ tổn thương hơn được tính nặng hơn (luận văn mục 4.3).
+- **f_bmc lấy từ đâu?** BiomedCLIP mã hóa từng lát ảnh (3 lát giữa khối), rồi gộp các lát bằng trọng số chú ý học được (slice attention pooling, luận văn mục 4.3). Giải thích chi tiết và ví dụ số ở `GIAI_THICH_METRIC_VA_CONG_THUC.md` mục 15.
 - **s là gì?** Hệ số nhiệt độ, giãn điểm cô-sin trước khi đưa qua softmax (xem mục softmax và argmax bên dưới).
 - **φ là gì?** Hàm kích hoạt GELU giữa hai lớp của MLP. MLP đi 1024 → 768 → 512.
 - **t_{k,c} là gì?** Vector câu mô tả của mức độ c thuộc nhãn k, do bộ mã hóa văn bản của BiomedCLIP tạo ra, đã chuẩn hóa độ dài.
