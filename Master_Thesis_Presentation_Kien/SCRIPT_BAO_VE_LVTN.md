@@ -113,6 +113,84 @@ nằm ở file riêng: `GIAI_THICH_METRIC_VA_CONG_THUC.md`.
 > Bây giờ em xin đặt các hướng tiếp cận hiện có cạnh nhau để thấy khoảng trống mà luận văn nhắm
 > tới.
 
+#### 📘 Ví dụ về cơ chế chú ý CBAM (không đọc lên)
+
+Công thức đầy đủ ở phụ lục trang 45, giải thích ký hiệu ở cuối file này. Phần dưới đây là ví dụ để
+dễ hình dung và để trả lời câu "vì sao tốt hơn".
+
+**Bối cảnh.** Sau mỗi tầng của ResNet-34, mạng có một bản đồ đặc trưng $F$ kích thước
+$C \times D \times H \times W$: $C$ kênh, mỗi kênh là một khối 3D. Mỗi kênh có thể hiểu là một
+"máy dò" một kiểu chi tiết: kênh này phản ứng với cạnh đĩa đệm, kênh kia phản ứng với dịch não
+tủy sáng trong ống sống, kênh khác phản ứng với mỡ hoặc nhiễu. CBAM chỉnh $F$ qua hai bước, kênh
+trước rồi tới không gian.
+
+**Bước 1: chú ý theo kênh ("xem cái gì").** Mỗi kênh nhận một trọng số từ 0 đến 1.
+
+- Cách tính: mỗi kênh được gộp cả khối thành 2 số (trung bình và lớn nhất), đưa qua một MLP nhỏ
+  dùng chung (thu gọn 16 lần), cộng lại rồi qua sigmoid.
+- Ví dụ với 4 kênh ở một đĩa đệm bị hẹp ống sống:
+
+| Kênh | Phản ứng với | Trọng số $M_c$ | Sau khi nhân |
+|---|---|---|---|
+| 1 | bờ sau đĩa đệm lồi vào ống sống | 0.92 | giữ gần nguyên |
+| 2 | dịch não tủy quanh tủy sống | 0.85 | giữ gần nguyên |
+| 3 | mỡ dưới da phía lưng | 0.10 | bị làm mờ 10 lần |
+| 4 | nhiễu nền | 0.05 | gần như bị tắt |
+
+- Ý nghĩa: mạng **tự chọn loại đặc trưng** liên quan tới bệnh đang chấm. Hai kênh 1 và 2 chính là
+  dấu hiệu bác sĩ nhìn khi đánh giá hẹp ống sống (đĩa lồi và dịch não tủy bị ép mất), nên được
+  giữ. Mỡ và nhiễu bị giảm.
+- Trọng số được tính lại cho **từng ảnh**: ca có tổn thương khác thì bộ trọng số khác.
+
+**Bước 2: chú ý theo không gian ("xem ở đâu").** Mỗi vị trí $(d, h, w)$ trong khối 3D nhận một
+trọng số từ 0 đến 1.
+
+- Cách tính: tại mỗi vị trí, gộp tất cả kênh thành 2 số (trung bình và lớn nhất), ra 2 bản đồ 3D;
+  tích chập $7 \times 7 \times 7$ rồi qua sigmoid, ra một mặt nạ 3D.
+- Ví dụ với khối 9 lát của một đĩa đệm bị hẹp lỗ liên hợp **bên trái**:
+  - Vùng lỗ liên hợp trái, ở mấy lát phía trái: trọng số khoảng 0.9.
+  - Ống sống ở các lát giữa: khoảng 0.5.
+  - Thân đốt sống, cơ lưng, nền đen: khoảng 0.1.
+- Ý nghĩa: mạng **tự chọn vùng** cần nhìn. Vì mặt nạ là 3D, mỗi lát có trọng số riêng, nên tổn
+  thương chỉ nằm ở 1–2 lát bên trái vẫn được tô đậm, không bị các lát giữa lấn át. Đây là điểm
+  khác của bản CBAM-3D trong luận văn so với CBAM 2D gốc.
+
+**Vì sao tốt hơn CNN thường: ví dụ "pha loãng tín hiệu".**
+
+Cuối nhánh, CNN gộp trung bình toàn bộ khối thành một vector (global average pooling). Giả sử vùng
+tổn thương chiếm 2% thể tích khối.
+
+| | Tổn thương (2%) | Nền (98%) | Tổn thương chiếm bao nhiêu trong vector cuối |
+|---|---|---|---|
+| CNN thường (mọi vị trí trọng số 1) | 0.02 × 1 = 0.02 | 0.98 × 1 = 0.98 | **2%** |
+| Có chú ý không gian (tổn thương 1, nền 0.1) | 0.02 × 1 = 0.02 | 0.98 × 0.1 = 0.098 | 0.02 / 0.118 ≈ **17%** |
+
+Tín hiệu của tổn thương tăng khoảng 8 lần trong vector cuối, nên lớp phân loại dễ nhận ra ca nặng
+hơn. Đó là lý do CBAM hợp với bài toán này: tổn thương nhỏ, phần lớn khối ảnh là mô bình thường.
+
+**Các câu dễ bị hỏi**
+
+- **Sao làm kênh trước rồi mới tới không gian?** Bài báo CBAM gốc (Woo và cộng sự 2018) đã thử
+  các cách sắp xếp, và cách "kênh trước, không gian sau, nối tiếp" cho kết quả tốt nhất. Hiểu
+  trực giác: chọn đúng loại đặc trưng trước, rồi mới tìm vị trí của đặc trưng đó.
+- **Sao vừa dùng trung bình vừa dùng lớn nhất?** Trung bình phản ánh mức chung của cả kênh, lớn
+  nhất bắt được điểm phản ứng mạnh nhất (thường là chỗ tổn thương). Tổn thương nhỏ dễ bị trung bình
+  làm mờ, nên cần thêm max.
+- **Tốn thêm bao nhiêu?** Khoảng 1% tham số (phụ lục trang 43), vì MLP thu gọn 16 lần và tích chập
+  chỉ có 2 kênh vào, 1 kênh ra. CBAM gắn sau từng tầng mà không phải đổi kiến trúc ResNet, nên vẫn
+  nạp được trọng số đã huấn luyện trước.
+- **Khác self-attention của Transformer chỗ nào?** Self-attention so từng cặp vị trí với nhau, chi
+  phí tăng theo bình phương số vị trí, rất nặng với khối 3D. CBAM chỉ tính một trọng số cho mỗi
+  kênh và mỗi vị trí, nhẹ hơn nhiều.
+- **Bằng chứng trong luận văn:**
+  - Trên RSNA, chỉ thêm CBAM đã nâng Severe F1 từ 0.152 (SpineNetV2) lên khoảng 0.26.
+  - Grad-CAM trang 22 minh họa vùng chú ý tập trung hơn, nhưng đó chỉ là **một ca**.
+- **Giới hạn, nói thật nếu bị hỏi:** CBAM đơn lẻ tụt trên SPIDER (0.619 so với 0.646 của
+  SpineNetV2). Có thể là CBAM học quá sát đặc điểm riêng của ảnh RSNA. Đó là lý do cần ghép thêm
+  nhánh BiomedCLIP.
+- **Đừng nói** "trọng số chú ý cho thấy mô hình nhìn đúng chỗ tổn thương". Các con số trong ví dụ
+  trên là minh họa, luận văn không đo trực tiếp trọng số $M_c$, $M_s$.
+
 ### Trang 10 — Công trình liên quan `[05:30]`
 
 > Bảng này tóm tắt bốn hướng. SpineNetV2 là mạng CNN 3D chuyên cho cột sống, là chuẩn tốt nhưng
