@@ -405,6 +405,37 @@ thành bài báo bình duyệt."
   bằng trọng số chú ý, ra vector 512 chiều, mang kiến thức y khoa chung. Ghép thành 1024, MLP hợp
   nhất ra 512, chuẩn hóa, rồi so cô-sin với vector câu mô tả từng mức; mức giống nhất được chọn.
 
+**Hỏi: So cô-sin với vector văn bản của BiomedCLIP, vậy kiến thức của mô hình dồn hết vào BiomedCLIP,
+nhánh CBAM có tác dụng gì?**
+- **Trả lời ngắn:** Không. Vector văn bản chỉ là **đáp án mẫu cố định**, quyết định là ở vector ảnh,
+  mà vector ảnh được tạo từ **cả hai nhánh**.
+- **Giải thích:**
+  - Chín câu mô tả (3 nhãn × 3 mức) mã hóa **một lần**, giữ cố định, thành 9 điểm mốc trong không
+    gian. Bản thân chúng không nhìn ảnh, không biết gì về ca bệnh.
+  - Việc chấm là xem **vector ảnh $\hat f_{img}$ rơi gần mốc nào**. Vector ảnh do Fusion MLP tạo ra từ
+    $[f_{cbam}; f_{bmc}]$, tức chi tiết 3D của nhánh CBAM góp trực tiếp vào việc vector rơi vào đâu.
+  - Ví von: câu mô tả như các ô đáp án A/B/C in sẵn trên đề; người làm bài là phần đọc ảnh (hai nhánh +
+    MLP). Đề dùng chữ của BiomedCLIP không có nghĩa BiomedCLIP làm bài.
+- **Bằng chứng số:** cấu hình **BMC-only** chính là Hybrid với cùng đầu so cô-sin, cùng 9 câu mô tả,
+  chỉ tắt nhánh CBAM. Thêm nhánh CBAM vào:
+  - Mean F1 0.482 → **0.527**.
+  - Severe F1 0.268 → **0.356**.
+  - Mean Recall 0.532 → **0.592**.
+
+  Nếu kiến thức chỉ nằm ở BiomedCLIP thì hai cấu hình này phải ngang nhau.
+- **Phần đúng của câu hỏi, nên thừa nhận:** BiomedCLIP cung cấp **không gian chung ảnh–văn bản**. Nhờ
+  đó mới viết được câu mô tả cho nhãn mới, tức zero-shot. Nên phần "mở rộng nhãn" dựa vào BiomedCLIP,
+  còn phần "chấm chính xác ca nặng" dựa nhiều vào CBAM.
+- **Cẩn thận khi trích số:** cột **CBAM** trong bảng RSNA (0.477 / 0.262) là mô hình CBAM riêng, dùng
+  đầu tuyến tính, **không** so với văn bản. Muốn chứng minh nhánh CBAM có đóng góp trong cơ chế so
+  cô-sin thì dùng cặp **BMC-only và Hybrid**, đừng dùng cột CBAM.
+
+**Hỏi (nối tiếp): Vector ảnh từ CBAM vốn không cùng không gian với văn bản, sao so được?**
+- **Trả lời:** Chính Fusion MLP làm việc đó: nó học cách chiếu $[f_{cbam}; f_{bmc}]$ vào không gian
+  512 chiều của văn bản BiomedCLIP. Hàm mất mát kéo vector ảnh lại gần câu mô tả đúng mức, đẩy xa
+  các câu sai. Sau khi học, $\hat f_{img}$ nằm trong cùng không gian với văn bản, dù một nửa đầu vào
+  đến từ CBAM.
+
 **Hỏi: Vì sao hai nhánh? Một nhánh không đủ?**
 - **Trả lời:** Bảng RSNA trả lời: CBAM một mình Severe F1 0.262, BiomedCLIP một mình 0.268, ghép lại
   **0.356**. Và độ lệch giữa 3 lần chạy giảm (Severe F1 ±0.082 và ±0.034 xuống ±0.017). Trên SPIDER,
@@ -448,9 +479,10 @@ GELU → dropout 0.1 → Linear 768→512 → chuẩn hóa L2 → $\hat f_{img}$
     chính hàm mất mát chấm nhãn, nên cái nó giữ là phần **có ích cho việc chấm mức độ**, cái nó bỏ là
     phần không liên quan. Nén có chủ đích, không phải mất ngẫu nhiên.
 - **Bằng chứng không bị mất:** nếu MLP làm mất hẳn một nhánh thì Hybrid sẽ chỉ bằng nhánh còn lại.
-  Thực tế Hybrid hơn cả hai: RSNA Mean F1 0.527 so với 0.477 (chỉ CBAM) và 0.482 (chỉ BiomedCLIP),
-  Severe F1 0.356 so với 0.262 và 0.268. Trên SPIDER, chỉ CBAM tụt xuống 0.619 còn Hybrid 0.653. Tức
-  là thông tin của cả hai nhánh đều được dùng.
+  Thực tế Hybrid hơn cả hai: RSNA Mean F1 0.527 so với 0.477 (CBAM riêng) và 0.482 (BMC-only),
+  Severe F1 0.356 so với 0.262 và 0.268. Trên SPIDER, CBAM riêng tụt xuống 0.619 còn Hybrid 0.653. Tức
+  là thông tin của cả hai nhánh đều được dùng. (Cặp so sát nhất là BMC-only và Hybrid, vì cùng đầu
+  so cô-sin; cột CBAM là mô hình riêng với đầu tuyến tính.)
 - **Nói thật nếu hỏi sâu:** em chưa đo trực tiếp mỗi nhánh đóng góp bao nhiêu (ví dụ tắt từng nhánh
   khi suy luận trên mô hình đã học). Đó là phân tích có thể bổ sung.
 
