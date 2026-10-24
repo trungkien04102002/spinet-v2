@@ -5,6 +5,10 @@ Luận văn đã nộp ngày 18/10 (commit `ef23e38`). Số liệu dưới đây
 
 File này gom các câu nói khi trình bày và câu trả lời khi hội đồng hỏi. Có câu mới thì thêm vào đúng mục.
 
+Bộ đầy đủ hơn:
+- `HOI_DAP_BAO_VE.md`: hỏi–đáp theo từng slide, và **Phần 0: các chỗ có thể bị bắt lỗi** (đọc trước).
+- `CONG_THUC_LUAN_VAN.md`: đủ 32 công thức trong luận văn + cách tính từng con số trong các bảng.
+
 ---
 
 ## 1. Mạch trình bày
