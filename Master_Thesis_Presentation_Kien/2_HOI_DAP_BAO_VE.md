@@ -430,6 +430,46 @@ nhánh CBAM có tác dụng gì?**
   đầu tuyến tính, **không** so với văn bản. Muốn chứng minh nhánh CBAM có đóng góp trong cơ chế so
   cô-sin thì dùng cặp **BMC-only và Hybrid**, đừng dùng cột CBAM.
 
+**Hỏi: Chấm bằng cách so với vector văn bản của BiomedCLIP, vậy kết quả có bị phụ thuộc vào bộ mã
+hóa văn bản đó không?**
+- **Trả lời ngắn:** Có, và em nói rõ là phụ thuộc ở mức nào. Với nhãn đã học thì phụ thuộc ít. Với
+  nhãn mới zero-shot thì phụ thuộc nhiều, đó là cái giá để mở rộng nhãn được.
+- **Nhãn đã học (RSNA, và SPIDER có huấn luyện):**
+  - Chín vector câu mô tả đóng vai trò giống **hàng trọng số của một lớp phân loại tuyến tính**, chỉ
+    khác là được **cố định** bằng văn bản thay vì học tự do.
+  - Fusion MLP được huấn luyện để kéo vector ảnh về đúng mốc. Mốc nằm đâu thì MLP học cách đưa ảnh về
+    đó, nên chất lượng bộ mã hóa văn bản không quyết định nhiều.
+  - Chỗ phụ thuộc thật: nếu hai câu, ví dụ "moderate" và "severe" của cùng một nhãn, cho ra hai vector
+    rất gần nhau, thì hai mức đó khó tách hơn. Hệ số $s$ học được (tối đa 100) giúp khuếch đại khoảng
+    cách nhỏ đó.
+  - Bằng chứng không bị kéo xuống: trên RSNA, Hybrid (so với văn bản) cao hơn SpineNetV2 (đầu tuyến
+    tính học tự do); trên SPIDER có huấn luyện, Hybrid đạt 0.653 so với 0.646.
+- **Nhãn mới, zero-shot:** phụ thuộc **gần như hoàn toàn** vào việc bộ mã hóa văn bản hiểu câu mô tả
+  đến đâu, và vào cách viết câu. Vì vậy F1 zero-shot trên SPIDER chỉ 0.362. Em trình bày zero-shot là
+  khả năng **khởi đầu**: chấm được ngay khi chưa có dữ liệu, rồi có dữ liệu thì huấn luyện tiếp lên
+  0.653.
+- **Vì sao chấp nhận:**
+  - Muốn thêm nhãn bằng một câu chữ thì bắt buộc phải có bộ mã hóa văn bản; không có nó thì quay về
+    đầu tuyến tính cố định như SpineNetV2.
+  - Bộ mã hóa văn bản giữ nguyên, mã hóa một lần, nên kết quả ổn định và lặp lại được.
+  - Đây là PubMedBERT học trên văn bản y khoa, hiểu thuật ngữ như "stenosis", "herniation" tốt hơn mô
+    hình văn bản thông thường.
+- **Nói thật nếu hỏi sâu:** em chưa làm thí nghiệm thay 9 vector văn bản bằng 9 vector học tự do để đo
+  chính xác mức phụ thuộc, và chưa dò tối ưu câu mô tả. Hướng cải thiện: viết nhiều câu cho mỗi mức rồi
+  lấy trung bình (prompt ensembling), hoặc cho học thêm vài token trong câu (kiểu CoOp).
+
+**Hỏi: Nhìn hình kiến trúc, những chỗ nào người xem dễ hiểu sai?** (để chủ động nói khi trình bày)
+- **Hộp "text prompts → multimodal text encoder":** đó là **bộ mã hóa văn bản của BiomedCLIP**
+  (PubMedBERT), giữ nguyên, mã hóa câu một lần. Không phải "mọi thứ chạy qua BiomedCLIP": nhánh ảnh
+  CBAM vẫn đi vào Fusion head.
+- **Hình không đánh dấu phần nào đóng băng:** người xem có thể nghĩ huấn luyện cả hơn 100 triệu tham
+  số. Thực tế chỉ học bộ gộp lát, Fusion MLP, $s$ và 3 tham số $\sigma_k$, khoảng 1.18 triệu.
+- **"MRI slices":** chỉ là **3 lát giữa**, không phải cả 9 lát.
+- **Hộp "New label set, zero-shot (e.g. SPIDER)":** đừng để bị hiểu nhầm 0.653 là kết quả zero-shot.
+  Zero-shot là 0.362; 0.653 là khi **có huấn luyện** trên SPIDER, vẫn cùng đầu so với văn bản.
+- **Hai hộp xanh bên phải:** không phải mô hình xuất ra cả hai cùng lúc. Cùng một mô hình, chỉ đổi bộ
+  câu mô tả đưa vào thì chấm bộ nhãn khác.
+
 **Hỏi (nối tiếp): Vector ảnh từ CBAM vốn không cùng không gian với văn bản, sao so được?**
 - **Trả lời:** Chính Fusion MLP làm việc đó: nó học cách chiếu $[f_{cbam}; f_{bmc}]$ vào không gian
   512 chiều của văn bản BiomedCLIP. Hàm mất mát kéo vector ảnh lại gần câu mô tả đúng mức, đẩy xa
