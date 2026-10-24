@@ -4,7 +4,7 @@ Tài liệu ôn bảo vệ luận văn (02/11/2026). Mọi số liệu khớp lu
 Mỗi chỉ số gồm bốn phần: công thức, cách tính trong code, ý nghĩa, và một ví dụ bằng số thật
 của luận văn.
 
-Đọc kèm `SCRIPT_BAO_VE_LVTN.md` (kịch bản nói, có giải thích công thức mô hình).
+Đọc kèm `1_SCRIPT_BAO_VE_LVTN.md` (kịch bản nói, có giải thích công thức mô hình).
 File `DEFENSE_METRICS_VI.md` là bản cũ từ đợt bảo vệ thực tập, dùng số một lần chạy (0.528,
 46.4%…). **Đừng lấy số từ file đó.**
 

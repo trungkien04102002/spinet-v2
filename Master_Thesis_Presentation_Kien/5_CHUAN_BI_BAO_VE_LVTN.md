@@ -6,8 +6,8 @@ Luận văn đã nộp ngày 18/10 (commit `ef23e38`). Số liệu dưới đây
 File này gom các câu nói khi trình bày và câu trả lời khi hội đồng hỏi. Có câu mới thì thêm vào đúng mục.
 
 Bộ đầy đủ hơn:
-- `HOI_DAP_BAO_VE.md`: hỏi–đáp theo từng slide, và **Phần 0: các chỗ có thể bị bắt lỗi** (đọc trước).
-- `CONG_THUC_LUAN_VAN.md`: đủ 32 công thức trong luận văn + cách tính từng con số trong các bảng.
+- `2_HOI_DAP_BAO_VE.md`: hỏi–đáp theo từng slide, và **Phần 0: các chỗ có thể bị bắt lỗi** (đọc trước).
+- `3_CONG_THUC_LUAN_VAN.md`: đủ 32 công thức trong luận văn + cách tính từng con số trong các bảng.
 
 ---
 
@@ -47,7 +47,7 @@ Mở sẵn video trong QuickTime trước buổi bảo vệ, tới slide Demo th
 
 ### Về công thức
 
-- **f_bmc lấy từ đâu?** BiomedCLIP mã hóa từng lát ảnh (3 lát giữa khối), rồi gộp các lát bằng trọng số chú ý học được (slice attention pooling, luận văn mục 4.3). Giải thích chi tiết và ví dụ số ở `GIAI_THICH_METRIC_VA_CONG_THUC.md` mục 15.
+- **f_bmc lấy từ đâu?** BiomedCLIP mã hóa từng lát ảnh (3 lát giữa khối), rồi gộp các lát bằng trọng số chú ý học được (slice attention pooling, luận văn mục 4.3). Giải thích chi tiết và ví dụ số ở `4_GIAI_THICH_METRIC_VA_CONG_THUC.md` mục 15.
 - **s là gì?** Hệ số nhiệt độ, giãn điểm cô-sin trước khi đưa qua softmax (xem mục softmax và argmax bên dưới).
 - **φ là gì?** Hàm kích hoạt GELU giữa hai lớp của MLP. MLP đi 1024 → 768 → 512.
 - **t_{k,c} là gì?** Vector câu mô tả của mức độ c thuộc nhãn k, do bộ mã hóa văn bản của BiomedCLIP tạo ra, đã chuẩn hóa độ dài.

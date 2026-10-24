@@ -15,8 +15,10 @@ Số trong ngoặc như (4.7) là số thứ tự công thức trong chương đ
 xuất hiện, có thể lệch với số in trong PDF nếu Overleaf đánh khác).
 
 Đọc kèm:
-- `GIAI_THICH_METRIC_VA_CONG_THUC.md`: giải thích metric dài hơn, ví dụ ma trận nhầm lẫn.
-- `SCRIPT_BAO_VE_LVTN.md`: khối 📘 dưới trang 9, 17, 18.
+- `0_DOC_TRUOC.md` mục 2: **ý nghĩa của từng chỉ số** (AUC, AUPRC, Mean F1, Severe…) trong một
+  trang. Nên đọc trước file này.
+- `4_GIAI_THICH_METRIC_VA_CONG_THUC.md`: giải thích metric dài hơn, ví dụ ma trận nhầm lẫn.
+- `1_SCRIPT_BAO_VE_LVTN.md`: khối 📘 dưới trang 9, 17, 18.
 
 ---
 
@@ -247,7 +249,7 @@ $$\alpha_i = \frac{\exp(w_a^\top z_i)}{\sum_j \exp(w_a^\top z_j)}, \qquad f_{bmc
   - Học $w_a$ không cần nhãn lát: đạo hàm từ hàm mất mát chấm mức độ tự đẩy $w_a$.
   - Chỉ 513 tham số ($w_a$ 512 + bias 1; bias không ảnh hưởng vì softmax bất biến khi cộng hằng).
   - Trung bình đều là trường hợp riêng $\alpha = 1/3$; mô hình vẫn học ra được nếu đó là tốt nhất.
-- Chi tiết hơn: `GIAI_THICH_METRIC_VA_CONG_THUC.md` mục 15.
+- Chi tiết hơn: `4_GIAI_THICH_METRIC_VA_CONG_THUC.md` mục 15.
 
 ### (4.5) Fusion MLP và chuẩn hóa
 
@@ -538,14 +540,18 @@ F1 (one-vs-rest), AUC, AUPRC (dùng xác suất softmax của mức đó).
 
 **Bước 2: gộp thành con số của lần chạy đó.**
 
-| Dòng trong bảng | Công thức cho một lần chạy |
-|---|---|
-| **Mean F1 (macro)** | $\frac{1}{3}\sum_{k}\Big(\frac{1}{3}\sum_{c} \text{F1}_{k,c}\Big)$: macro theo 3 mức, rồi trung bình 3 nhãn |
-| **Mean Recall / Precision** | như trên, thay F1 bằng Recall / Precision |
-| **Mean AUC / AUPRC** | như trên, với AUC / AUPRC từng mức |
-| **Severe Recall** | $\frac{1}{3}\sum_{k} \text{Recall}_{k,\text{Severe}}$: chỉ lấy ô Severe, trung bình 3 nhãn |
-| **Severe F1 / AUC / AUPRC** | tương tự, chỉ ô Severe |
-| **Mean Accuracy** (lời văn) | $\frac{1}{3}\sum_{k} \text{Accuracy}_k$, accuracy 3 mức của từng nhãn |
+| Dòng trong bảng | Công thức cho một lần chạy | Ý nghĩa |
+|---|---|---|
+| **Mean F1 (macro)** | $\frac{1}{3}\sum_{k}\Big(\frac{1}{3}\sum_{c} \text{F1}_{k,c}\Big)$: macro theo 3 mức, rồi trung bình 3 nhãn | Điểm tổng, mỗi mức độ (kể cả Severe hiếm) nặng ngang nhau |
+| **Mean Recall** | như trên, thay F1 bằng Recall | Trung bình mỗi mức, bắt được bao nhiêu phần ca thật |
+| **Mean Precision** | như trên, thay F1 bằng Precision | Trung bình mỗi mức, báo ra thì đúng bao nhiêu phần |
+| **Mean AUC** | như trên, với AUC từng mức | Khả năng xếp ca thuộc mức đó lên trên ca khác (0.5 là đoán bừa) |
+| **Mean AUPRC** | như trên, với AUPRC từng mức | Như AUC nhưng khắt khe với lớp hiếm (đoán bừa = tỉ lệ ca dương) |
+| **Severe Recall** | $\frac{1}{3}\sum_{k} \text{Recall}_{k,\text{Severe}}$: chỉ lấy ô Severe, trung bình 3 nhãn | Trong 100 ca nặng thật, bắt được bao nhiêu (0.486 → ~49) |
+| **Severe F1** | tương tự, chỉ ô Severe | Cân bằng bắt được và báo đúng, riêng ca nặng |
+| **Severe AUC** | tương tự, chỉ ô Severe | Xác suất ca nặng được chấm cao hơn ca không nặng (0.899 → ~90%) |
+| **Severe AUPRC** | tương tự, chỉ ô Severe | Xếp hạng ca nặng, đoán bừa ≈ 0.04; 0.333 ≈ 8 lần đoán bừa |
+| **Mean Accuracy** (lời văn) | $\frac{1}{3}\sum_{k} \text{Accuracy}_k$, accuracy 3 mức của từng nhãn | Tỉ lệ đoán đúng; bị lớp đa số làm đẹp |
 
 Kiểm tra với Hybrid seed 42:
 

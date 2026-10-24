@@ -7,8 +7,8 @@ code, file kết quả trong repo.
 - Mỗi câu có **Trả lời** (câu nói được ngay, 1–3 câu) và **Vì sao / số liệu** (để hiểu, không cần
   đọc lên).
 - Đi theo thứ tự slide, rồi tới các câu tổng quát về toàn bài.
-- Công thức: xem `CONG_THUC_LUAN_VAN.md` (đủ 32 công thức + cách tính từng bảng).
-- Metric chi tiết: `GIAI_THICH_METRIC_VA_CONG_THUC.md`.
+- Công thức: xem `3_CONG_THUC_LUAN_VAN.md` (đủ 32 công thức + cách tính từng bảng).
+- Metric chi tiết: `4_GIAI_THICH_METRIC_VA_CONG_THUC.md`.
 - Nguyên tắc chung khi bị hỏi khó: **thừa nhận chỗ yếu trước, rồi nói nó ảnh hưởng tới kết luận
   đến đâu**. Đừng chối, đừng nói quá điều luận văn đã chứng minh.
 
@@ -174,7 +174,7 @@ văn đã nộp nên không sửa, nhưng phải có câu trả lời sẵn.
 - **Trả lời:** CBAM là mô-đun chú ý nhẹ gắn vào CNN: chú ý theo kênh (chọn loại đặc trưng) rồi theo
   không gian (chọn vị trí). Self-attention so từng cặp vị trí, chi phí tăng theo bình phương số vị
   trí, rất nặng với khối 3D; CBAM chỉ tính một trọng số cho mỗi kênh và mỗi vị trí.
-- Ví dụ số: `SCRIPT_BAO_VE_LVTN.md` khối 📘 dưới trang 9.
+- Ví dụ số: `1_SCRIPT_BAO_VE_LVTN.md` khối 📘 dưới trang 9.
 
 **Hỏi: Vì sao chọn CBAM mà không chọn SE-Net hay attention khác?**
 - **Trả lời:** SE-Net chỉ có chú ý theo kênh, không chọn được vị trí. Tổn thương của em là một vùng
@@ -274,7 +274,7 @@ thành bài báo bình duyệt."
 
 ### Trang 13: Chọn mô hình phân vùng
 
-**Hỏi: Bốn chỉ số nghĩa là gì?** → `CONG_THUC_LUAN_VAN.md` (5.1)–(5.4).
+**Hỏi: Bốn chỉ số nghĩa là gì?** → `3_CONG_THUC_LUAN_VAN.md` (5.1)–(5.4).
 
 **Hỏi: TotalSpineSeg Recall chỉ 56%, sao vẫn chọn?**
 - **Trả lời:** Nhãn chuẩn của bộ này tính cả gai sau và mỏm ngang, còn TotalSpineSeg chỉ khoanh thân
@@ -306,7 +306,7 @@ thành bài báo bình duyệt."
   Ning Shen theo 3 mức RSNA. Quy về chung một câu hỏi "có bệnh không" (Moderate hoặc Severe = có) thì
   mới so được. Bệnh nhân có bệnh nếu ít nhất 1 trong 5 tầng có bệnh. Đánh giá trên 150 bệnh nhân.
 
-**Hỏi: Số trên slide là gì?** → Trung bình cộng 3 nhóm bệnh (xem `CONG_THUC_LUAN_VAN.md` 5.2).
+**Hỏi: Số trên slide là gì?** → Trung bình cộng 3 nhóm bệnh (xem `3_CONG_THUC_LUAN_VAN.md` 5.2).
 
 **Hỏi: F1 ở đây 77–81% mà bảng RSNA chỉ 0.42–0.53, mâu thuẫn không?**
 - **Trả lời:** Không, hai bài toán khác nhau. Ở đây là có/không bệnh ở mức bệnh nhân (2 lớp, gộp
@@ -372,7 +372,7 @@ thành bài báo bình duyệt."
 - **Trả lời:** Có giãn gấp đôi chiều dọc để đúng đầu vào ViT-B/16. Em chấp nhận vì nhánh này giữ cố
   định, và nhánh CBAM vẫn đọc ảnh gốc. Cải thiện được bằng đệm viền thay vì kéo giãn.
 
-**Hỏi: Slice attention pool hoạt động thế nào?** → `CONG_THUC_LUAN_VAN.md` (4.4).
+**Hỏi: Slice attention pool hoạt động thế nào?** → `3_CONG_THUC_LUAN_VAN.md` (4.4).
 
 **Hỏi: Vì sao ghép (concat) mà không cộng, hay dùng cổng (gating), cross-attention?**
 - **Trả lời:** Cộng đòi hai vector cùng nghĩa ở từng chiều, mà chúng từ hai mạng khác nhau. Ghép rồi
@@ -390,8 +390,8 @@ thành bài báo bình duyệt."
   image of [nhãn]". Có, cách viết câu ảnh hưởng kết quả zero-shot; em chưa dò tối ưu câu mô tả, đó là
   hướng cải thiện.
 
-**Hỏi: Cô-sin, $s$, softmax, argmax?** → `CONG_THUC_LUAN_VAN.md` (4.6), (4.9); và
-`CHUAN_BI_BAO_VE_LVTN.md` mục "Về softmax và argmax".
+**Hỏi: Cô-sin, $s$, softmax, argmax?** → `3_CONG_THUC_LUAN_VAN.md` (4.6), (4.9); và
+`5_CHUAN_BI_BAO_VE_LVTN.md` mục "Về softmax và argmax".
 
 **Hỏi: Khác SpineNetV2 ở đâu?**
 - **Trả lời:** Ba chỗ: (1) gắn CBAM vào backbone; (2) thêm nhánh BiomedCLIP; (3) thay đầu tuyến tính
@@ -404,7 +404,7 @@ thành bài báo bình duyệt."
   thấy** ca hiếm; augmentation làm các bản lặp **không giống hệt** để khỏi học thuộc; uncertainty cân
   **giữa 3 nhãn bệnh** khó dễ khác nhau.
 
-**Hỏi: Focal Loss, trọng số căn, uncertainty?** → `CONG_THUC_LUAN_VAN.md` (4.7), (4.8), (4.10).
+**Hỏi: Focal Loss, trọng số căn, uncertainty?** → `3_CONG_THUC_LUAN_VAN.md` (4.7), (4.8), (4.10).
 
 **Hỏi: Có thí nghiệm bỏ từng kỹ thuật (ablation) không?**
 - **Trả lời:** Trong luận văn, ablation là theo kiến trúc (SpineNetV2 / CBAM / BMC-only / Hybrid). Em
@@ -452,7 +452,7 @@ thành bài báo bình duyệt."
   Hybrid bắt gần một nửa. Severe F1 từ 0.152 lên 0.356. Mean F1 từ 0.420 lên 0.527. Hybrid cao nhất
   mọi dòng trong bảng.
 
-**Hỏi: Các con số tính thế nào?** → `CONG_THUC_LUAN_VAN.md` mục 5.3 (có kiểm tra số).
+**Hỏi: Các con số tính thế nào?** → `3_CONG_THUC_LUAN_VAN.md` mục 5.3 (có kiểm tra số).
 
 **Hỏi: Accuracy giảm từ 0.810 xuống 0.724, vậy là tệ hơn?**
 - **Trả lời:** Không. SpineNetV2 đạt accuracy cao vì gần như luôn đoán Normal/Mild (Recall lớp này
@@ -499,7 +499,7 @@ thành bài báo bình duyệt."
 
 ### Trang 22: Grad-CAM
 
-**Hỏi: Grad-CAM tính thế nào?** → `CONG_THUC_LUAN_VAN.md` mục 6.
+**Hỏi: Grad-CAM tính thế nào?** → `3_CONG_THUC_LUAN_VAN.md` mục 6.
 **Hỏi: Một ca chứng minh được gì?**
 - **Trả lời:** Đây chỉ là một ca minh họa trực quan. Bằng chứng định lượng là bảng kết quả. Em không
   khẳng định mô hình luôn nhìn đúng chỗ.
@@ -660,7 +660,7 @@ thành bài báo bình duyệt."
 
 **Mẹo trả lời**
 - Không biết thì nói: "Phần này em chưa làm / chưa kiểm tra, em xin ghi nhận để bổ sung."
-- Câu hỏi về số: mở đúng trang phụ lục (bảng tra trang ở cuối `SCRIPT_BAO_VE_LVTN.md`).
+- Câu hỏi về số: mở đúng trang phụ lục (bảng tra trang ở cuối `1_SCRIPT_BAO_VE_LVTN.md`).
 - Câu hỏi về công thức: mở trang 40 (công thức Hybrid) hoặc 45 (CBAM-3D), nói theo thứ tự trên slide.
 - Đừng nói quá: "Grad-CAM chứng minh", "Hybrid thắng trên SPIDER", "giải nhất RSNA", "phần mềm chạy
   Hybrid", "có ý nghĩa thống kê".

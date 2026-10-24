@@ -14,7 +14,7 @@ Cách đọc file:
 - Mọi số liệu khớp luận văn đã nộp (commit `ef23e38`): trung bình 3 lần chạy (seed 42, 123, 456).
 
 Giải thích metric (Recall, AUC, AUPRC, Dice, ASSD…) và cách tính ở hai thí nghiệm chọn mô hình
-nằm ở file riêng: `GIAI_THICH_METRIC_VA_CONG_THUC.md`.
+nằm ở file riêng: `4_GIAI_THICH_METRIC_VA_CONG_THUC.md`.
 
 ---
 
@@ -294,7 +294,7 @@ hơn. Đó là lý do CBAM hợp với bài toán này: tổn thương nhỏ, ph
 Slide công thức đã chuyển xuống phụ lục, lúc trình bày bấm thẳng từ trang 17 sang trang 18. Nếu
 hội đồng hỏi công thức, mở trang 40 và giải thích theo thứ tự trên slide: gộp lát → ghép hai nhánh
 → chuẩn hóa → so cô-sin → softmax → argmax. Giải thích kỹ phần gộp lát nằm ở
-`GIAI_THICH_METRIC_VA_CONG_THUC.md`, mục 15.
+`4_GIAI_THICH_METRIC_VA_CONG_THUC.md`, mục 15.
 
 **Công thức 1: hợp nhất (Fusion MLP)**
 
@@ -642,7 +642,7 @@ $$F' = M_c(F) \otimes F, \qquad F'' = M_s(F') \otimes F'$$
 
 ## Câu hỏi khó và cách trả lời
 
-Bộ câu hỏi đầy đủ nằm ở `CHUAN_BI_BAO_VE_LVTN.md` mục 3. Dưới đây là các câu liên quan trực tiếp
+Bộ câu hỏi đầy đủ nằm ở `5_CHUAN_BI_BAO_VE_LVTN.md` mục 3. Dưới đây là các câu liên quan trực tiếp
 tới công thức, chưa có trong file đó.
 
 - **"s là học được hay đặt tay? Sao giới hạn 100?"** Học được. Mô hình học $\log s$, khởi tạo
