@@ -174,7 +174,59 @@ văn đã nộp nên không sửa, nhưng phải có câu trả lời sẵn.
 - **Trả lời:** CBAM là mô-đun chú ý nhẹ gắn vào CNN: chú ý theo kênh (chọn loại đặc trưng) rồi theo
   không gian (chọn vị trí). Self-attention so từng cặp vị trí, chi phí tăng theo bình phương số vị
   trí, rất nặng với khối 3D; CBAM chỉ tính một trọng số cho mỗi kênh và mỗi vị trí.
-- Ví dụ số: `1_SCRIPT_BAO_VE_LVTN.md` khối 📘 dưới trang 9.
+- Ví dụ số đầy đủ: `1_SCRIPT_BAO_VE_LVTN.md` khối 📘 dưới trang 9.
+
+**Hỏi: "Kênh" cụ thể là cái gì? Cho ví dụ.**
+- **Trả lời:** Sau mỗi tầng, ResNet cho ra nhiều "bản đồ" cùng kích thước với ảnh (thu nhỏ). Mỗi bản
+  đồ là một **kênh**, do một bộ lọc tạo ra, sáng lên ở chỗ có một kiểu chi tiết mà bộ lọc đó bắt.
+  - Số thật trong mô hình: tầng 1 có 64 kênh, tầng 2 có 128, tầng 3 có 256, tầng 4 có 512. Ở tầng
+    cuối, mỗi kênh là một khối $9 \times 7 \times 14$ (9 lát giữ nguyên, chiều cao và rộng thu nhỏ
+    16 lần từ $112 \times 224$).
+  - Ví dụ để hình dung (mạng tự học, em không gán tên cho từng kênh):
+
+    | Kênh | "Sáng lên" ở chỗ | Có ích cho chấm hẹp ống sống? |
+    |---|---|---|
+    | A | bờ sau đĩa đệm lồi ra | có, rất |
+    | B | dịch não tủy (màu trắng trên T2) quanh tủy | có: dịch bị ép mất là dấu hiệu hẹp |
+    | C | mỡ dưới da lưng | gần như không |
+    | D | nhiễu, nền đen | không |
+
+  - **Chú ý theo kênh** cho mỗi kênh một số từ 0 đến 1 rồi nhân vào cả kênh: A 0.9, B 0.85, C 0.1,
+    D 0.05. Tức là chọn **loại chi tiết** nào đáng tin cho ca này. Nó không quan tâm chi tiết nằm ở
+    đâu.
+
+**Hỏi: "Không gian" cụ thể là gì? Chú ý theo không gian là theo cái gì?**
+- **Trả lời:** Không gian là **vị trí** trong khối ảnh, tức bộ ba (lát, hàng, cột). Ở tầng cuối có
+  $9 \times 7 \times 14 = 882$ vị trí. Chú ý theo không gian cho mỗi vị trí một số từ 0 đến 1, dùng
+  chung cho mọi kênh.
+  - Ví dụ một đĩa đệm hẹp lỗ liên hợp **bên trái**: các vị trí ở vùng lỗ liên hợp trái trên mấy lát
+    phía trái được khoảng 0.9; ống sống ở lát giữa khoảng 0.5; thân đốt sống, cơ lưng, nền đen khoảng
+    0.1.
+  - Vì là 3D, mỗi lát có trọng số riêng: tổn thương chỉ nằm ở 1–2 lát vẫn được làm nổi lên.
+- **Câu tóm gọn để nói:** "Kênh trả lời câu **xem cái gì** (loại chi tiết nào), không gian trả lời câu
+  **xem ở đâu** (vị trí nào). Kênh trước để lọc ra chi tiết đúng loại, rồi không gian tìm chỗ của chi
+  tiết đó."
+
+**Hỏi: Trọng số chú ý học từ đâu? Có ai chỉ cho mô hình chỗ tổn thương không?**
+- **Trả lời:** Không. Dữ liệu chỉ có nhãn mức độ cho cả đĩa đệm, không có nhãn vị trí. Trọng số chú ý
+  học gián tiếp từ hàm mất mát phân loại: chú ý vào đâu mà chấm đúng hơn thì trọng số đó được giữ.
+
+**Hỏi: CBAM có làm đổi kích thước đặc trưng không? Gắn ở đâu?**
+- **Trả lời:** Không đổi. Nó chỉ **nhân** trọng số vào bản đồ đặc trưng, ra đúng kích thước cũ, nên
+  gắn sau mỗi tầng trong 4 tầng ResNet mà không phải sửa phần còn lại. Nhờ vậy vẫn nạp được trọng số
+  SpineNetV2. Gắn ở cả 4 tầng vì tầng đầu thấy chi tiết nhỏ (cạnh, đường viền), tầng sau thấy cấu trúc
+  lớn (đĩa đệm, ống sống); lọc ở mọi mức.
+
+**Hỏi: Lỡ CBAM chú ý sai chỗ thì sao? Làm sao biết nó nhìn đúng?**
+- **Trả lời:** Có thể chú ý sai, vì không có nhãn vị trí để ép. Em **không** khẳng định nó nhìn đúng
+  chỗ: luận văn không đo trực tiếp trọng số chú ý, Grad-CAM chỉ là minh họa một ca (xem 0.8). Bằng
+  chứng em dùng là kết quả: thêm CBAM nâng Severe F1 từ 0.152 lên khoảng 0.26.
+
+**Hỏi: Nếu kênh "nhiễu" bị nhân 0.05 thì có mất thông tin không?**
+- **Trả lời:** Có giảm, và đó là mục đích: bớt nhiễu để tín hiệu tổn thương rõ hơn. Trọng số không
+  về đúng 0 (sigmoid luôn lớn hơn 0), và mỗi ca tính lại một bộ trọng số, nên kênh bị giảm ở ca này
+  vẫn có thể được giữ ở ca khác. Ngoài ra ResNet có đường tắt (residual) nên thông tin gốc vẫn đi qua
+  các khối sau.
 
 **Hỏi: Vì sao chọn CBAM mà không chọn SE-Net hay attention khác?**
 - **Trả lời:** SE-Net chỉ có chú ý theo kênh, không chọn được vị trí. Tổn thương của em là một vùng
@@ -378,6 +430,71 @@ thành bài báo bình duyệt."
 - **Trả lời:** Cộng đòi hai vector cùng nghĩa ở từng chiều, mà chúng từ hai mạng khác nhau. Ghép rồi
   để MLP học cách trộn là đơn giản nhất, đủ cho dữ liệu cỡ vừa; cổng hay cross-attention thêm tham số,
   dễ học thuộc khi lớp Severe ít mẫu.
+
+#### Nhóm câu hỏi về ghép hai vector ($f_{cbam}$, $f_{bmc}$ → $\hat f_{img}$)
+
+Nhắc lại luồng: $f_{cbam}$ (512 số) và $f_{bmc}$ (512 số) → ghép thành 1024 số → Linear 1024→768 →
+GELU → dropout 0.1 → Linear 768→512 → chuẩn hóa L2 → $\hat f_{img}$.
+
+**Hỏi: Ghép (concat) cụ thể là làm gì? Cho ví dụ.**
+- **Trả lời:** Chỉ là đặt hai vector nối đuôi nhau. Ví dụ thu nhỏ còn 3 số mỗi nhánh:
+  $f_{cbam} = [0.8, 0.1, 0.5]$, $f_{bmc} = [0.2, 0.7, 0.3]$ → ghép $= [0.8, 0.1, 0.5, 0.2, 0.7, 0.3]$.
+  Không cộng, không bỏ số nào. Sau đó MLP mới là nơi trộn hai nhánh với nhau.
+
+**Hỏi: Ghép lại rồi qua MLP, lỡ bị mất đặc trưng ảnh (của một nhánh) thì sao?**
+- **Trả lời:** Tách làm hai chỗ:
+  - **Bước ghép không mất gì:** đủ 1024 số, như ví dụ trên.
+  - **Bước MLP có nén** 1024 → 768 → 512, nên có bỏ bớt thông tin. Nhưng MLP được huấn luyện bằng
+    chính hàm mất mát chấm nhãn, nên cái nó giữ là phần **có ích cho việc chấm mức độ**, cái nó bỏ là
+    phần không liên quan. Nén có chủ đích, không phải mất ngẫu nhiên.
+- **Bằng chứng không bị mất:** nếu MLP làm mất hẳn một nhánh thì Hybrid sẽ chỉ bằng nhánh còn lại.
+  Thực tế Hybrid hơn cả hai: RSNA Mean F1 0.527 so với 0.477 (chỉ CBAM) và 0.482 (chỉ BiomedCLIP),
+  Severe F1 0.356 so với 0.262 và 0.268. Trên SPIDER, chỉ CBAM tụt xuống 0.619 còn Hybrid 0.653. Tức
+  là thông tin của cả hai nhánh đều được dùng.
+- **Nói thật nếu hỏi sâu:** em chưa đo trực tiếp mỗi nhánh đóng góp bao nhiêu (ví dụ tắt từng nhánh
+  khi suy luận trên mô hình đã học). Đó là phân tích có thể bổ sung.
+
+**Hỏi: Làm sao giữ được đặc trưng tốt của từng nhánh?**
+- **Trả lời:** Ba cách:
+  1. **Đóng băng cả hai nhánh.** Đặc trưng của CBAM (đã học tốt trên ảnh cột sống) và của BiomedCLIP
+     (kiến thức y khoa, cùng không gian với văn bản) không bị huấn luyện làm hỏng. Bước 2 chỉ học phần
+     trộn, khoảng 1.18 triệu tham số.
+  2. **MLP đủ rộng:** lớp ẩn 768, lớn hơn đầu ra 512, nên không bị "thắt cổ chai" quá hẹp.
+  3. **Chống học thuộc:** dropout 0.1, và SupCon kéo các ca cùng mức độ lại gần nhau, nên MLP phải giữ
+     đặc trưng phân biệt mức độ thật sự chứ không nhớ từng ca.
+
+**Hỏi: Một nhánh có lấn át nhánh kia không? Hai vector có cùng thang đo không?**
+- **Trả lời (nói thật):** Không cùng thang đo. $f_{bmc}$ được tạo từ các vector BiomedCLIP đã chuẩn
+  hóa độ dài 1, còn $f_{cbam}$ là trung bình bản đồ đặc trưng sau ReLU, không chuẩn hóa, nên độ lớn có
+  thể khác. Lớp tuyến tính đầu của MLP có trọng số riêng cho từng chiều trong 1024 chiều, nên học được
+  cách phóng to hay thu nhỏ từng nhánh. Kết quả ablation ở trên cho thấy không nhánh nào bị bỏ qua.
+  Cải tiến dễ làm: thêm LayerNorm cho từng nhánh trước khi ghép.
+
+**Hỏi: Có thử cách ghép "thông minh" hơn, ví dụ cổng (gating), chưa?**
+- **Trả lời:** Có, ngoài luận văn. Em thử gated fusion kiểu GMU (Arevalo 2017): mỗi chiều có một cổng
+  từ 0 đến 1 quyết định lấy bao nhiêu từ mỗi nhánh. So cùng điều kiện (cùng khởi tạo, 20 epoch, một lần
+  chạy): Severe F1 **0.295 so với 0.321** của ghép + MLP, thua ở cả ba nhãn, rõ nhất ở lỗ liên hợp.
+  Lý do khả dĩ: cổng chỉ chọn tỷ lệ pha giữa hai vector 512 chiều, ít khả năng biểu diễn hơn MLP trên
+  1024 chiều, mà Severe lại ít mẫu. Cross-attention em chưa thử.
+- **Đừng nói** gated là kết quả trong luận văn; chỉ là một lần chạy để kiểm tra lựa chọn thiết kế.
+
+**Hỏi: Sao đầu ra là 512, không giữ 1024? Sao lớp ẩn là 768?**
+- **Trả lời:** 512 để bằng số chiều vector văn bản của BiomedCLIP, nhờ vậy so cô-sin trực tiếp với câu
+  mô tả. 768 là mức ở giữa 1024 và 512 để nén dần; em không dò kỹ con số này.
+
+**Hỏi: Sao chuẩn hóa L2 ở cuối?**
+- **Trả lời:** Để vector ảnh dài 1 giống vector văn bản, khi đó tích vô hướng chính là cô-sin, chỉ còn
+  so **hướng**. Độ "tự tin" do hệ số $s$ điều khiển riêng (xem `3_CONG_THUC_LUAN_VAN.md` 4.6).
+
+**Hỏi: Vì sao dùng GELU mà không ReLU?**
+- **Trả lời:** GELU mượt hơn ReLU ở quanh 0 (không cắt cứng về 0), là hàm kích hoạt mặc định trong
+  Transformer, mà nhánh BiomedCLIP chính là Transformer (ViT). Khác biệt thực tế giữa hai hàm ở đây là
+  nhỏ; em không làm thí nghiệm so riêng.
+
+**Hỏi: Nếu một nhánh hỏng lúc chạy (ví dụ ảnh xấu làm BiomedCLIP ra đặc trưng vô nghĩa) thì sao?**
+- **Trả lời:** Mô hình hiện tại chưa được huấn luyện cho tình huống thiếu nhánh. Code đã có tùy chọn
+  "modality dropout" (khi học, ngẫu nhiên tắt một nhánh) để mô hình chịu được trường hợp này, nhưng bản
+  trong luận văn chưa bật. Đây là hướng làm thêm.
 
 **Hỏi: Zero-shot hoạt động thế nào? Muốn thêm nhãn mới làm gì?**
 - **Trả lời:** Mỗi mức độ của mỗi nhãn viết thành một câu tiếng Anh, BiomedCLIP mã hóa thành vector.
