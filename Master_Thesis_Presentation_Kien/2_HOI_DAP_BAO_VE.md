@@ -588,6 +588,65 @@ GELU → dropout 0.1 → Linear 768→512 → chuẩn hóa L2 → $\hat f_{img}$
 
 ### Trang 18: Xử lý mất cân bằng
 
+#### Giải thích nhanh cả slide (đọc trước các câu hỏi bên dưới)
+
+**Bối cảnh:** khoảng 81% đĩa đệm là Normal/Mild, Severe chỉ khoảng 4%. Học bình thường thì mô hình cứ
+đoán Normal là đúng phần lớn, nên bỏ qua ca nặng: SpineNetV2 chỉ bắt được 12.3% ca Severe. Mỗi kỹ thuật
+dưới đây lo một phần.
+
+**1. Focal Loss: bớt học ca dễ.**
+- Nhân thêm $(1-p_y)^\gamma$ với $\gamma = 2$; $p_y$ là xác suất mô hình gán cho mức đúng.
+- Ví dụ: ca dễ, mô hình đã chắc 90% ($p_y = 0.9$) → $0.1^2 = 0.01$, phạt giảm **100 lần**. Ca khó,
+  chỉ chắc 30% → $0.7^2 = 0.49$, phạt chỉ giảm một nửa.
+- Mục đích: hàng nghìn ca Normal dễ không lấn át nữa, mô hình dồn sức vào ca khó, mà ca khó phần lớn
+  là Moderate và Severe.
+
+**2. Trọng số lớp (căn bậc hai): sai ở lớp hiếm thì phạt nặng hơn.**
+- $\omega \propto 1/\sqrt{n}$: Normal **0.38**, Moderate **0.89**, Severe **1.73**. Sai một ca Severe
+  bị phạt gấp khoảng 4.5 lần sai một ca Normal.
+- Không dùng $1/n$ vì chênh khoảng 20 lần, mô hình báo Severe tràn lan và huấn luyện mất ổn định.
+- Khác Focal: Focal chọn theo **độ khó**, trọng số lớp chọn theo **lớp hiếm**. Hai cái bổ sung nhau.
+
+**3. Oversampling: cho thấy ca hiếm nhiều lần hơn.**
+- Đĩa đệm có ít nhất một nhãn Moderate hoặc Severe được lặp **3 lần** mỗi epoch.
+- Hai kỹ thuật trên chỉnh **mức phạt**; kỹ thuật này tăng **số lần nhìn thấy**.
+
+**4. Augmentation: làm các bản lặp không giống hệt.**
+- Lật trước–sau, xoay ±10°, độ sáng/tương phản ±20%, thêm nhiễu.
+- Lặp nguyên một ca Severe 3 lần thì mô hình dễ học thuộc tấm ảnh đó; biến đổi nhẹ buộc nó học dấu
+  hiệu bệnh thật.
+- Không lật trái–phải, vì lỗ liên hợp trái sẽ thành phải mà nhãn không đổi theo.
+
+**5. Uncertainty weighting: cân bằng giữa 3 nhãn bệnh, không phải giữa các lớp.**
+- Ba bệnh khó dễ khác nhau: ống sống dễ hơn, lỗ liên hợp khó hơn (nhìn rõ nhất trên mặt cắt ngang mà
+  mô hình không dùng). Cộng đều ba hàm mất mát thì bệnh có mất mát lớn kéo cả mô hình.
+- $\mathcal{L} = \sum_k \frac{1}{2\sigma_k^2}\mathcal{L}_k + \log\sigma_k$, mỗi bệnh một $\sigma_k$ tự
+  học. Mất mát lớn → $\sigma_k$ tăng → trọng số giảm. Số hạng $\log\sigma_k$ chặn không cho $\sigma$
+  tăng mãi, nếu không mô hình "bỏ" luôn bệnh đó.
+- Ví dụ: $\mathcal{L}_{canal} = 0.2$, $\mathcal{L}_{foraminal} = 0.8$. Tối ưu tại $\sigma^2 = \mathcal{L}$
+  → trọng số 2.5 và 0.625 → nhân với mất mát đều ra 0.5: mỗi bệnh **đóng góp ngang nhau**.
+- Lợi ích: không phải dò tay trọng số cho 3 bệnh.
+
+**Kết quả cả bộ kỹ thuật mang lại:**
+
+| Chỉ số | SpineNetV2 | Hybrid |
+|---|---|---|
+| Severe Recall | 0.123 | **0.486** (gấp khoảng 4 lần) |
+| Severe F1 | 0.152 | **0.356** |
+| Mean Recall | 0.412 | **0.592** |
+| Accuracy | 0.810 | 0.724 ⬇ |
+
+- Accuracy giảm là cái giá chấp nhận được: SpineNetV2 cao nhờ hầu như luôn đoán Normal. Hybrid chịu
+  đoán Moderate và Severe nên bắt được ca nặng.
+- Mặt trái: Severe Precision khoảng 0.27, báo nhầm ca nặng khá nhiều. Với vai trò người đọc thứ hai thì
+  chấp nhận được: báo nhầm thì bác sĩ gạt đi, bỏ sót mới nguy hiểm.
+
+**⚠️ Nói thật nếu bị hỏi:** luận văn **không tách riêng** đóng góp của từng kỹ thuật. Các con số trên là
+hiệu quả của **cả bộ kỹ thuật cộng với kiến trúc**. Câu nên nói: *"Mỗi kỹ thuật lo một việc khác nhau;
+tách riêng từng cái là phần em có thể bổ sung."*
+
+#### Các câu hỏi
+
 **Hỏi: Vì sao cần cả bốn kỹ thuật?**
 - **Trả lời:** Mỗi cái lo một việc. Focal và trọng số lớp sửa **mức phạt**; oversampling tăng **số lần
   thấy** ca hiếm; augmentation làm các bản lặp **không giống hệt** để khỏi học thuộc; uncertainty cân
