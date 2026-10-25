@@ -677,6 +677,34 @@ tách riêng từng cái là phần em có thể bổ sung."*
   thuộc; chỉ học khoảng 1.18 triệu thì an toàn hơn. Hai, nếu cập nhật BiomedCLIP theo RSNA, không gian
   chung ảnh–văn bản sẽ bị kéo lệch về 9 câu của RSNA, câu mô tả nhãn mới khó so được, mất zero-shot.
 
+**Hỏi: Bài dùng những hàm loss nào để huấn luyện?** (đã kiểm trong code và log huấn luyện)
+
+| Mô hình | Hàm loss |
+|---|---|
+| **Hybrid** (chính) | Focal Loss ($\gamma = 2$, trọng số lớp căn bậc hai) + 0.1 × SupCon, cho từng nhãn bệnh; 3 nhãn gộp bằng Uncertainty weighting |
+| BMC-only | Giống Hybrid (cùng code, chỉ tắt nhánh CBAM) |
+| CBAM (bước 1, cũng là nhánh CBAM của Hybrid) | Focal Loss + trọng số căn bậc hai + Uncertainty weighting; không có SupCon (đầu tuyến tính) |
+| SpineNetV2 (mô hình nền) | Cross-entropy thường, không trọng số |
+| Hybrid fine-tune trên SPIDER | Cross-entropy có trọng số lớp |
+
+- **Công thức tổng của Hybrid:**
+  $\mathcal{L} = \sum_{k=1}^{3}\Big[\frac{1}{2\sigma_k^2}\big(\text{FL}_k + 0.1\,\text{SupCon}_k\big) + \log\sigma_k\Big]$,
+  với $k$ là ống sống, lỗ liên hợp trái, lỗ liên hợp phải.
+- **Vai trò từng cái:**
+  - **Focal Loss:** loss phân loại chính. Bớt học ca dễ, kèm trọng số lớp để phạt nặng khi sai lớp hiếm.
+  - **SupCon** (supervised contrastive): trong mỗi lô, kéo vector ảnh của các ca **cùng mức** lại gần
+    nhau và đẩy ca **khác mức** ra xa. Nó giúp không gian vector ảnh gọn theo mức độ, nên so cô-sin với
+    câu mô tả dễ hơn. Hệ số chỉ 0.1 vì mỗi lô có rất ít ca Severe, SupCon trên lớp hiếm dễ dao động; nó
+    là loss phụ, không phải loss chính.
+  - **Uncertainty weighting:** không phải một loss riêng, mà là cách **gộp** 3 loss của 3 nhãn bệnh
+    với trọng số tự học.
+- **Trọng số lớp thật trong log** (seed 123): Normal 0.391, Moderate 0.922, Severe 1.686. Con số 0.38 /
+  0.89 / 1.73 trong file công thức là tính tay từ tỉ lệ làm tròn 81% / 15% / 4%, nên cùng bậc.
+- **⚠️ Chi tiết nhỏ nếu bị hỏi sâu:** log của cấu hình CBAM (bước 1) ghi $\gamma = 1.8$ và lặp mẫu
+  hiếm **5 lần**. Luận văn chỉ nêu $\gamma = 2$ và lặp 3 lần **cho cấu hình Hybrid** (chương 4 ghi rõ
+  "cho cấu hình Hybrid"), và log Hybrid khớp đúng như vậy. Nếu bị hỏi: "Bước 1 huấn luyện nhánh CBAM
+  dùng $\gamma = 1.8$ và lặp 5 lần; bước 2 Hybrid dùng $\gamma = 2$ và lặp 3 lần."
+
 **Hỏi: Những gì được học ở bước 2?**
 - **Trả lời:** $w_a$ (gộp lát), Fusion MLP, hệ số $s$, 3 tham số $\sigma_k$. Tổng khoảng 1.18 triệu.
   CBAM-ResNet 21.3 triệu và BiomedCLIP 86.2 triệu giữ cố định.
