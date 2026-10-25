@@ -477,12 +477,12 @@ $$\mathcal{L}_{total} = \sum_{k=1}^{3}\left(\frac{1}{2\sigma_k^2}\,\mathcal{L}_k
 ### Trang 22 — Grad-CAM `[16:10]`
 
 > Đây là một ca hẹp ống sống mức nặng ở tầng L4–L5. Grad-CAM tô màu vùng mà mô hình dựa vào để
-> ra quyết định. Cả hai mô hình đều nhìn vào vùng đĩa đệm và ống sống. Khác biệt nằm ở kết quả:
-> mô hình không có CBAM chỉ cho xác suất Severe 0.26, tức đoán sai; mô hình có CBAM cho 0.53 và
-> chấm đúng ca nặng này.
+> ra quyết định. Với mô hình có CBAM, vùng nóng phủ đúng chỗ đĩa đệm chèn vào ống sống, tức vùng
+> tổn thương, và mô hình cho xác suất Severe 0.53, chấm đúng ca nặng này. Mô hình không có CBAM chỉ
+> cho 0.26, tức đoán sai.
 >
-> ⚠️ *(Không đọc câu "dàn trải / tập trung" trên slide: nhìn hình thì bên không CBAM vùng đỏ lại
-> gọn hơn. Xem `3_CONG_THUC_LUAN_VAN.md` mục 6.)*
+> *(Mẹo: nói mạnh vế "có CBAM phủ đúng vùng tổn thương + chấm đúng". Tránh tự nói vế "không CBAM dàn
+> trải", vì hình bên trái cũng khá gọn; nếu thầy hỏi thì xem `2_HOI_DAP_BAO_VE.md` mục 0.8.)*
 >
 > Em xin nói rõ đây chỉ là một ca minh họa trực quan. Bằng chứng định lượng là bảng kết quả em vừa
 > trình bày.
