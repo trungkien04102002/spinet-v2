@@ -96,6 +96,12 @@ văn đã nộp nên không sửa, nhưng phải có câu trả lời sẵn.
 - Một ca, chỉ là **minh họa**. Thử nghiệm sau luận văn cho thấy bản đồ nhiệt trên dữ liệu này không
   hơn phép đoán "giữa ảnh", vì khối ảnh vốn cắt căn giữa vào đĩa đệm.
 - **Không bao giờ nói** "Grad-CAM chứng minh mô hình nhìn đúng chỗ".
+- **Hình không có trong luận văn** (lấy từ bài báo MIWAI). Nếu hỏi: "Hình này em đưa thêm trong bài
+  báo để minh họa, luận văn chỉ báo cáo bảng số."
+- **Chữ trên slide không khớp hình:** slide ghi "không CBAM dàn trải, có CBAM tập trung", nhưng hình
+  cho thấy bên không CBAM vùng đỏ lại gọn hơn. Nếu thầy chỉ ra, nhận luôn: "Dạ đúng, câu chữ em viết
+  chưa chính xác. Hai bản đồ đều nằm ở vùng đĩa đệm và ống sống; điểm khác là xác suất Severe 0.26 so
+  với 0.53."
 
 ---
 

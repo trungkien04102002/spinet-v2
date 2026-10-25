@@ -181,6 +181,55 @@ $$L_{WCE} = -\frac{1}{N}\sum_{i=1}^{N}\sum_{c=1}^{C} w_c \, y_{i,c} \log(\hat{y}
 Đây là phần **chắc chắn bị hỏi**. Thứ tự đi đúng theo dòng dữ liệu: ảnh → nhánh CBAM (4.1–4.3)
 → nhánh BiomedCLIP (4.4) → hợp nhất (4.5) → chấm nhãn (4.6, 4.9) → hàm mất mát (4.7, 4.8, 4.10).
 
+### 3.0 Đi một vòng từ đầu đến cuối: một đĩa đệm thành con số trong bảng
+
+Đọc mục này trước, rồi mới đọc từng công thức bên dưới. Mỗi bước ghi: **công thức nào**, **vào gì**,
+**ra gì**. Số ở bước 4–7 là ví dụ minh họa để tính tay; số ở bước 8–10 là **số thật** của Hybrid seed 42.
+
+**Phần A. Suy luận: một đĩa đệm ra nhãn** (lúc chạy thật và lúc đánh giá đều đi đường này)
+
+| Bước | Công thức | Vào | Ra |
+|---|---|---|---|
+| 0. Đầu vào | | Đĩa đệm L4-L5, cắt khối quanh nó | Khối $9 \times 112 \times 224$, giá trị 0–1 |
+| 1. Nhánh CBAM (đóng băng) | (4.1)–(4.3) ở cả 4 tầng, rồi GAP | Khối ảnh | Tầng cuối $512 \times 9 \times 7 \times 14$ → GAP → $f_{cbam}$ **512 số** |
+| 2. Nhánh BiomedCLIP (đóng băng) + gộp lát | (4.4) | Lát 4, 5, 6 (kéo về $224 \times 224$) | 3 vector $z_4, z_5, z_6$ dài 1 → trọng số $\alpha$ → $f_{bmc}$ **512 số** |
+| 3. Hợp nhất | (4.5) | $[f_{cbam}; f_{bmc}]$ **1024 số** | 1024 → 768 → 512 → chuẩn hóa → $\hat f_{img}$ **512 số, dài 1** |
+| 4. So cô-sin | (4.6) | $\hat f_{img}$ và 3 câu mô tả của nhãn ống sống | 3 cô-sin, ví dụ **0.20 / 0.25 / 0.31** |
+| 5. Nhân $s$ + softmax | (4.9) | 3 cô-sin, $s \approx 14.3$ | Logit 2.86 / 3.57 / 4.43 → xác suất **0.127 / 0.260 / 0.613** |
+| 6. Argmax | (4.6) | 3 xác suất | Nhãn **Severe** |
+
+- Bước 4–6 làm **3 lần**, mỗi lần cho một nhãn bệnh (ống sống, lỗ liên hợp trái, phải), mỗi nhãn
+  có 3 câu mô tả riêng. Cuối cùng mỗi đĩa đệm có: 3 nhãn × (3 xác suất + 1 mức dự đoán).
+- Xác suất (bước 5) dùng tính AUC/AUPRC; mức dự đoán (bước 6) dùng tính Recall/Precision/F1.
+
+**Phần B. Huấn luyện: từ dự đoán ra loss** (chỉ lúc học, chỉ cập nhật $w_a$, Fusion MLP, $s$, $\sigma$)
+
+| Bước | Công thức | Ví dụ tính tay |
+|---|---|---|
+| 7a. Focal cho một đĩa đệm, một nhãn | (4.7) + (4.8) | Nhãn thật **Severe**, $p_y = 0.613$: CE $= -\ln 0.613 = 0.49$; hệ số $(1-0.613)^2 = 0.15$; $\omega = 1.686$ → FL $= 1.686 \times 0.15 \times 0.49 \approx$ **0.124** |
+| | | Nếu nhãn thật là **Normal**, $p_y = 0.127$ (đoán sai): CE $= 2.06$; hệ số $0.76$; $\omega = 0.391$ → FL $\approx$ **0.614**, gấp 5 lần vì đoán sai |
+| 7b. Cộng SupCon | lời văn | $\mathcal{L}_k = $ trung bình FL trên cả lô $+ 0.1 \times$ SupCon của lô |
+| 7c. Gộp 3 nhãn | (4.10) | Ví dụ $\mathcal{L} = 0.30 / 0.80 / 0.75$. Lúc đầu mọi trọng số bằng 1. Học dần tới $1/\sigma^2 = 1/\mathcal{L}$ = 3.33 / 1.25 / 1.33, tức nhãn nào loss nhỏ thì trọng số lớn, để mỗi nhãn góp ngang nhau |
+| 7d. Lan truyền ngược | | Đạo hàm của tổng chỉ cập nhật ~1.18 triệu tham số; hai nhánh đứng yên |
+
+**Phần C. Đánh giá: từ 1.942 đĩa đệm ra con số trong bảng** (số thật, Hybrid seed 42)
+
+| Bước | Công thức | Ví dụ |
+|---|---|---|
+| 8. Đếm, mỗi nhãn × mỗi mức (one-vs-rest) | (5.6), (5.7) | Ống sống, Severe: 81 ca thật, bắt được 57 (TP), sót 24 (FN), báo nhầm 90 (FP) |
+| 9. Recall, Precision, F1 của ô đó | (5.6)–(5.8) | Recall $57/81 = 0.704$; Precision $57/147 = 0.388$; F1 $= 2 \times 57/(81+147) = $ **0.500** |
+| 10a. Macro trong một nhãn | (5.9) | Ống sống: F1 3 mức 0.952 / 0.390 / 0.500 → **0.614** |
+| 10b. Trung bình 3 nhãn = **Mean F1** | | (0.614 + 0.471 + 0.498) / 3 = **0.528** |
+| 10c. Chỉ lấy ô Severe = **Severe F1** | | (0.500 + 0.278 + 0.252) / 3 = **0.343** |
+| 11. AUC / AUPRC | (5.10), (5.11) | Không dùng nhãn bước 6, mà xếp 1.942 đĩa đệm theo xác suất Severe ở bước 5 rồi đo xếp hạng |
+| 12. Ba lần chạy | mục 5.3 | Lặp bước 0–11 với seed 42, 123, 456 (mỗi seed chia tập khác). Severe F1 0.343 / 0.348 / 0.375 → **0.356 ± 0.017**: con số trên slide trang 21 |
+
+**Câu nói gọn nếu thầy bảo "đi lại từ đầu":** "Khối ảnh đĩa đệm qua hai nhánh ra hai vector 512, ghép
+1024, MLP nén về 512 và chuẩn hóa. So cô-sin với 3 câu mô tả của từng nhãn, nhân $s$, softmax ra xác
+suất, argmax ra mức. Lúc học, xác suất của mức đúng đi vào Focal Loss có trọng số lớp, cộng SupCon,
+ba nhãn gộp bằng Uncertainty. Lúc đánh giá, đếm TP, FP, FN từng mức, tính F1, lấy macro theo mức,
+trung bình theo nhãn, rồi trung bình 3 lần chạy."
+
 ### (4.1) CBAM-3D: chú ý theo kênh
 
 $$M_c(F) = \sigma\big(\text{MLP}(\text{AvgPool}_{3D}(F)) + \text{MLP}(\text{MaxPool}_{3D}(F))\big) \in \mathbb{R}^{C \times 1 \times 1 \times 1}$$
@@ -385,6 +434,11 @@ $$\mathcal{L}_{total} = \sum_{k=1}^{3}\left(\frac{1}{2\sigma_k^2}\mathcal{L}_k +
   Nhãn khó (loss lớn) tự được giảm trọng số, nên không lấn át nhãn dễ.
 - **Vì sao dùng:** lỗ liên hợp khó hơn ống sống trên mặt cắt dọc. Cộng thẳng thì đạo hàm bị hai
   nhãn lỗ liên hợp chi phối.
+- **Code so với luận văn (nếu thầy hỏi cài đặt):** code học $v_k = \log\sigma_k^2$ (khởi tạo 0, tức
+  mọi trọng số bằng 1) và tính $\sum_k \big(e^{-v_k}\mathcal{L}_k + v_k\big)$. Biểu thức này đúng
+  bằng **2 lần** công thức (4.10). Nhân cả hàm loss với 2 không đổi điểm tối ưu ($\sigma_k^2 =
+  \mathcal{L}_k$), chỉ làm đạo hàm lớn gấp đôi, nên hai cách cho cùng kết quả. Học $\log\sigma^2$
+  thay vì $\sigma$ để $\sigma^2$ luôn dương, không chia cho 0.
 
 ---
 
@@ -625,12 +679,26 @@ Rồi trung bình ± độ lệch chuẩn qua 3 seed như 5.3.
 
 ### 5.8 Bảng phụ lục số tham số và chi phí (trang 41, 42)
 
-- **Số tham số** = đếm số phần tử của mọi ma trận trọng số. Hybrid chỉ học ~1.18M = $W_1$, $W_2$,
-  bias, $w_a$, $s$, 3 số $\sigma_k$.
+- **Số tham số** = đếm số phần tử của mọi ma trận trọng số. Hybrid chỉ học ~1.18M. Tách chính xác
+  (khớp log huấn luyện 1,181,442):
+
+| Thành phần | Cách đếm | Số |
+|---|---|---|
+| Fusion lớp 1 | $1024 \times 768$ + 768 bias | 787,200 |
+| Fusion lớp 2 | $768 \times 512$ + 512 bias | 393,728 |
+| Gộp lát $w_a$ | 512 + 1 bias | 513 |
+| Hệ số $s$ | 1 | 1 |
+| **Tổng trong mô hình** | | **1,181,442** |
+| $\sigma_k$ (nằm trong hàm loss) | 3 | +3 |
+
 - **Thời gian huấn luyện** = thời gian thật trên RTX 4090. Hybrid "+24.8 phút" là thời gian **thêm**
   của bước 2, chưa tính bước 1 huấn luyện CBAM.
 - **Suy luận ms/mẫu** = thời gian chạy hết tập val / số mẫu (~62 ms trên RSNA, ~65–67 ms trên
   SPIDER do khác máy/lần đo).
+- ⚠️ **Nguồn của trang 42:** thời gian 16.4 / 56.0 / 24.8 phút và 62.0 / 62.4 / 61.6 ms lấy từ **một
+  lần chạy (seed 42)** trong nhật ký thí nghiệm (`experiments/v3_20260503/RESULTS_LOG.md`) và bản báo
+  cáo một seed; **luận văn không có bảng này** (luận văn chỉ có thời gian suy luận trên SPIDER,
+  65–67 ms). Nếu bị hỏi: "Số đo trên một lần chạy, để tham khảo chi phí."
 
 ---
 
@@ -646,6 +714,13 @@ $$\alpha_k = \frac{1}{Z}\sum_{i,j}\frac{\partial y^c}{\partial A^k_{ij}}, \qquad
   3. Cộng các bản đồ theo trọng số $\alpha_k$, qua ReLU để chỉ giữ vùng **làm tăng** điểm Severe,
      phóng to về kích thước ảnh rồi tô màu.
 - **Giới hạn phải nói:** một ca chỉ là **minh họa**, không phải bằng chứng. Bằng chứng là bảng số.
+- ⚠️ **Hình này không có trong luận văn**, lấy từ bài báo MIWAI. Số 0.26 và 0.53 là xác suất Severe
+  in trên tiêu đề hình.
+- ⚠️ **Chữ trên slide không khớp hình.** Slide ghi "không CBAM: chú ý dàn trải; có CBAM: tập trung
+  đúng vùng", nhưng nhìn hình thì bên **không CBAM** vùng đỏ gọn ngay ống sống, bên **có CBAM** vùng
+  nóng rộng hơn và có thêm một đốm phía trên. Khi trình bày, đừng đọc câu "dàn trải / tập trung". Nói:
+  "Cả hai đều nhìn vào vùng đĩa đệm và ống sống; khác biệt rõ là xác suất Severe tăng từ 0.26 lên
+  0.53, mô hình có CBAM chấm đúng ca nặng này. Đây chỉ là một ca minh họa."
 
 ---
 
