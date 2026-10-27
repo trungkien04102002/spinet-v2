@@ -103,6 +103,23 @@ văn đã nộp nên không sửa, nhưng phải có câu trả lời sẵn.
   chưa chính xác. Hai bản đồ đều nằm ở vùng đĩa đệm và ống sống; điểm khác là xác suất Severe 0.26 so
   với 0.53."
 
+### 0.9 SpineNetV2 gốc **có** xử lý mất cân bằng (luận văn viết ngược)
+
+- Luận văn chương 4 (mục phân tích khoảng trống) viết: *"SpineNetV2 huấn luyện bằng cross-entropy
+  thông thường, không có cơ chế riêng cho lớp hiếm."*
+- Paper gốc (Windsor 2022, mục 4.4.3) ghi: mỗi nhãn trong Genodisc mất cân bằng nặng, *"hence a
+  balanced cross entropy loss is used in all cases"*, tức **cross-entropy có cân bằng lớp**.
+- Cấu hình SpineNetV2 **trong thí nghiệm của em** đúng là cross-entropy thường: giữ nguyên thân mạng,
+  chỉ học lại đầu ra trên RSNA, không trọng số lớp (log: `class_weight_mode: none`, 4,617 tham số học).
+- **Nếu thầy chỉ ra:** "Dạ đúng, câu đó em viết chưa chính xác. Bản gốc trên Genodisc có dùng
+  cross-entropy cân bằng lớp. Ý em là cấu hình mô hình nền khi em học lại đầu ra trên RSNA dùng
+  cross-entropy thường. Phần cải thiện của Hybrid vì vậy đến từ cả kiến trúc lẫn quy trình xử lý mất cân
+  bằng; luận văn cũng trình bày hai thứ này như một gói."
+- **Câu hỏi nối tiếp có thể gặp:** "Sao không cho SpineNetV2 dùng cùng quy trình cân bằng để so cho công
+  bằng?" → "Đó là thí nghiệm đối chứng em chưa chạy. Bằng chứng hiện có là BMC-only và Hybrid dùng
+  **cùng** quy trình cân bằng, mà Hybrid vẫn hơn rõ (Severe F1 0.268 lên 0.356), nên kiến trúc có đóng
+  góp riêng." Xem thêm Phần 7d.
+
 ---
 
 ## Phần 1. Giới thiệu (trang 4–7)
@@ -1162,6 +1179,93 @@ kênh. Lặp 3 kênh giống nhau là cách chuẩn để dùng ảnh xám mà k
   do chính lỗ liên hợp kém hơn ống sống, ngoài việc thiếu mặt cắt ngang. Em đã thử một mô hình riêng đọc
   T1 cho lỗ liên hợp, AUPRC tăng khoảng 0.04–0.05, nhưng chưa đưa vào luận văn."
 - **Đừng tự nêu** nếu không bị hỏi. Đừng nói "mô hình nhìn thấy lỗ liên hợp rõ".
+
+---
+
+## Phần 7d. Mô hình nền SpineNetV2 (dựa trên paper gốc)
+
+Nguồn: Windsor, Jamaludin, Kadir, Zisserman, *SpineNetV2: Automated Detection, Labelling and
+Radiological Grading of Clinical MR Scans*, arXiv:2205.01683, 2022 (Oxford VGG, báo cáo kỹ thuật).
+Thầy có thể hỏi "mô hình nền em dùng làm gì, học trên dữ liệu gì, em thay đổi chỗ nào".
+
+**Hỏi: SpineNetV2 gồm những gì?**
+- **Trả lời:** Bốn mạng nối tiếp:
+  1. **Phát hiện đốt sống** bằng *Vector Field Regression*: một U-Net ra 13 kênh, gồm 5 kênh bản đồ
+     nhiệt Gauss cho 4 góc và tâm mỗi đốt sống, và 8 kênh trường vector (mỗi góc 2 kênh x, y) "chỉ" từ
+     góc về tâm. Các góc chỉ về cùng một tâm thì gom thành một đốt sống; gom giữa các lát nếu IoU > 0.25.
+  2. **Mạng ngoại hình (appearance)**: nhìn một khối quanh đốt sống, đoán tầng (S1 … C3, 23 lớp).
+  3. **Mạng ngữ cảnh (context)**: sửa dự đoán dựa trên các đốt sống lân cận.
+  4. **Beam search** (ý tưởng từ mô hình ngôn ngữ): chọn dãy nhãn tầng hợp lý nhất, phạt dãy vô lý
+     (hai đốt sống cùng tầng, thiếu tầng).
+  Sau đó cắt **IVV** quanh từng đĩa đệm và đưa vào **mạng chấm nhãn**.
+
+**Hỏi: SpineNetV2 cắt IVV thế nào? Em cắt có giống không?**
+- **SpineNetV2:** tâm = trung điểm tâm hai đốt sống liền kề; **xoay khối** cho mặt dưới đốt sống trên
+  nằm ngang; rộng gấp đôi đốt sống lớn hơn; tỉ lệ 2:1; lấy mọi lát có đốt sống; rồi lấy mẫu lại về
+  $112 \times 224 \times 9$.
+- **Luận văn (thí nghiệm RSNA):** cắt khung cố định 240 × 120 pixel quanh tọa độ nhãn RSNA, **không xoay**,
+  9 lát quanh lát của tọa độ, rồi đổi về $112 \times 224$. Giống ở kích thước đầu ra và tỉ lệ 2:1; khác
+  ở chỗ không xoay và không co giãn theo cỡ đốt sống. Tăng cường xoay ±10° bù một phần.
+- **Vì sao không dùng cách cắt của SpineNetV2 cho RSNA:** RSNA đã cho sẵn tọa độ đĩa đệm do bác sĩ đánh
+  dấu, dùng trực tiếp thì mọi cấu hình nhận cùng đầu vào, không phụ thuộc lỗi phát hiện.
+
+**Hỏi: Mạng chấm nhãn của SpineNetV2 cụ thể là gì?**
+- **Trả lời:** ResNet 3D làm thân, mã hóa mỗi IVV thành **vector 512 chiều**, rồi mỗi nhãn một đầu ra
+  riêng. Một mô hình dùng chung cho mọi nhãn và mọi tầng.
+- **Chi tiết paper và code lệch nhau, nên biết:** paper chỗ ghi ResNet34, chỗ ghi "ResNet32", và nói chỉ
+  lớp đầu dùng kernel 3D. Nhưng **code và trọng số công bố** dùng kernel $3 \times 3 \times 3$ ở mọi lớp
+  (63.5 triệu tham số), stride chỉ trên chiều cao và rộng. Paper cũng mô tả đầu ra là MLP 2 lớp; trong
+  luận văn, cấu hình SpineNetV2 và CBAM gắn **một đầu tuyến tính** cho mỗi nhãn. Nếu hỏi: "Em theo đúng
+  code và trọng số nhóm tác giả công bố."
+
+**Hỏi: Trọng số SpineNetV2 học trên dữ liệu nào?**
+- **Trả lời:** **Genodisc**: ảnh MRI thắt lưng T2 từ **6 trung tâm** quốc tế, khoảng **2,279 bệnh nhân**
+  (2,819 lần chụp), mỗi ca do bác sĩ chẩn đoán hình ảnh chuyên khoa chấm. Phần phát hiện đốt sống còn học
+  thêm trên OWS (ảnh toàn cột sống, 196 bệnh nhân). Đây là lý do khởi tạo từ SpineNetV2 hợp lý: thân mạng
+  đã quen ảnh MRI thắt lưng T2.
+
+**Hỏi: Nhãn của SpineNetV2 khác RSNA thế nào? Sao phải học lại đầu ra?**
+
+| Nhãn | SpineNetV2 (Genodisc) | RSNA 2024 |
+|---|---|---|
+| Hẹp ống sống | 4 mức | 3 mức (Normal/Mild, Moderate, Severe) |
+| Hẹp lỗ liên hợp trái / phải | có / không (2 lớp) | 3 mức |
+| Pfirrmann, hẹp khe đĩa, tổn thương tấm tận, biến đổi tủy xương, trượt đốt sống, thoát vị | có | không có |
+
+- Số lớp khác nhau nên đầu ra cũ không dùng được; giữ thân mạng, học lại đầu ra cho 3 nhãn RSNA.
+- **Trong phần mềm**, 8 nhãn còn lại (Pfirrmann, thoát vị…) lấy từ **đầu ra gốc của SpineNetV2** (học trên
+  Genodisc), em không huấn luyện lại.
+
+**Hỏi: SpineNetV2 báo cáo kết quả thế nào? So với số của em được không?**
+- **Trả lời:** Họ dùng **balanced accuracy** trên phần dữ liệu Genodisc giữ lại, ví dụ hẹp ống sống 4
+  mức 64.9%, lỗ liên hợp trái / phải 84.8% / 82.4% (2 lớp), thoát vị 80.4%, Pfirrmann 70.9%. **Không so
+  trực tiếp** với số của em được: khác dữ liệu, khác số lớp (lỗ liên hợp của họ chỉ 2 lớp, dễ hơn 3 mức),
+  khác chỉ số.
+
+**Hỏi: SpineNetV2 gốc có xử lý mất cân bằng không?** → Xem **0.9**. Có: cross-entropy cân bằng lớp.
+Cấu hình nền trong luận văn thì dùng cross-entropy thường.
+
+**Hỏi: SpineNetV2 huấn luyện thế nào? Em có kế thừa gì?**
+- **SpineNetV2:** học toàn mạng bằng Adam lr $10^{-4}$, dừng khi 10 epoch liền không cải thiện balanced
+  accuracy trên val; **sau đó giữ cố định thân mạng**, học riêng từng đầu ra với lr $10^{-5}$. Tăng cường:
+  dịch, xoay, lật, độ sáng và tương phản ±10%, 50% số mẫu thêm nhiễu Gauss 10%.
+- **Luận văn:** cùng tinh thần "giữ thân mạng, học phần nhỏ phía sau". Tăng cường tương tự nhưng mạnh hơn
+  (độ sáng và tương phản ±20%), không lật trái–phải, thêm Focal Loss, trọng số căn bậc hai, lặp mẫu hiếm.
+
+**Hỏi: SpineNetV2 chạy nhanh cỡ nào?**
+- **Trả lời:** Theo paper, trên GPU: phát hiện và gán tầng khoảng 2–3 giây, chấm nhãn khoảng 1 giây cho
+  một ca thắt lưng. Hybrid suy luận khoảng 62 ms một đĩa đệm, tức khoảng 0.3 giây cho 5 đĩa đệm, cùng
+  bậc.
+
+**Hỏi: Vì sao không dùng phần phát hiện đốt sống của SpineNetV2 mà dùng TotalSpineSeg?**
+- **Trả lời:** Ở bước chọn mô hình phân vùng (trang 13), TotalSpineSeg có Precision 97.87%, cao hơn hẳn
+  SpineNetV2 (51.76%), và sai số bề mặt thấp nhất (6.85 mm so với 8.04 mm). Vùng tô chính xác thì khối cắt
+  ra ít lẫn mô khác.
+
+**Hỏi: Em thay đổi gì so với SpineNetV2? (câu chốt)**
+- **Trả lời:** Giữ thân ResNet 3D và trọng số Genodisc. Thêm bốn thứ: (1) CBAM-3D sau mỗi tầng; (2) nhánh
+  BiomedCLIP giữ cố định; (3) thay các đầu ra cố định bằng đầu cô-sin so với câu mô tả, nhờ đó thêm được
+  nhãn mới; (4) quy trình xử lý mất cân bằng cho RSNA.
 
 ---
 

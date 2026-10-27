@@ -121,7 +121,7 @@ Springer.
 
 ---
 
-## 4. Năm chỗ dễ bị bắt lỗi (chi tiết ở file 2, Phần 0)
+## 4. Bảy chỗ dễ bị bắt lỗi (chi tiết ở file 2, Phần 0)
 
 1. **Phần mềm đang chạy cấu hình CBAM (cộng SpineNetV2 cho 8 nhãn khác), không phải Hybrid.** Đừng
    nói "phần mềm chạy Hybrid". Bị hỏi thì nhận: "Bản phần mềm hiện tại chạy nhánh CBAM, chưa tích
@@ -130,6 +130,10 @@ Springer.
 3. **SPIDER có tinh chỉnh chia theo đĩa đệm**, không theo bệnh nhân. RSNA thì chia theo bệnh nhân.
 4. **Ning Shen không phải giải nhất.** Chỉ gọi là "một giải pháp công khai mạnh trên RSNA".
 5. **Tập val 395 bệnh nhân** (luận văn ghi 225); độ lệch chuẩn Severe Recall đúng là ±0.019.
+6. **SpineNetV2 gốc có dùng cross-entropy cân bằng lớp** (paper mục 4.4.3), trong khi luận văn viết
+   "cross-entropy thông thường". Cấu hình nền *trong thí nghiệm của em* mới là cross-entropy thường.
+7. **Số tham số trên slide phụ lục sai:** CBAM-3D ResNet-34 là 63.5M (slide ghi 21.3M, số bản 2D);
+   CBAM chỉ thêm chưa tới 0.1% (slide ghi ~1%).
 
 **Năm câu không được nói:** "Grad-CAM chứng minh…", "Hybrid thắng trên SPIDER", "giải nhất RSNA",
 "phần mềm chạy Hybrid", "có ý nghĩa thống kê".
