@@ -95,7 +95,7 @@ ngưỡng để bắt nhiều hơn.
 | **Mean AUC zero-shot 0.733** | Trung bình AUC 8 nhãn; trên 0.5 nghĩa là có xếp hạng đúng hơn đoán bừa |
 | **Recall 0.500 ở thoát vị (SPIDER)** | Recall trong bảng này là trung bình của lớp "có" và "không". 0.500 = (1.0 + 0.0) / 2: đoán "không" cho **mọi** ca, **không bắt được ca nào** |
 | **Inference ms/mẫu** | Thời gian chấm một đĩa đệm. Khoảng 62–67 ms cho mọi cấu hình, nên nhánh BiomedCLIP gần như không làm chậm |
-| **Số tham số 1.18M** | Số trọng số được học ở bước 2. Hai nhánh (21.3M + 86.2M) giữ cố định |
+| **Số tham số 1.18M** | Số trọng số được học ở bước 2. Hai nhánh giữ cố định (CBAM-ResNet 3D 63.5M; slide trang 41 ghi nhầm 21.3M là số bản 2D) |
 
 ---
 

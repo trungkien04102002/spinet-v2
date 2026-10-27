@@ -176,7 +176,7 @@ hơn. Đó là lý do CBAM hợp với bài toán này: tổn thương nhỏ, ph
 - **Sao vừa dùng trung bình vừa dùng lớn nhất?** Trung bình phản ánh mức chung của cả kênh, lớn
   nhất bắt được điểm phản ứng mạnh nhất (thường là chỗ tổn thương). Tổn thương nhỏ dễ bị trung bình
   làm mờ, nên cần thêm max.
-- **Tốn thêm bao nhiêu?** Khoảng 1% tham số (phụ lục trang 43), vì MLP thu gọn 16 lần và tích chập
+- **Tốn thêm bao nhiêu?** Rất ít: cả 4 khối CBAM chỉ 46 nghìn tham số, chưa tới 0.1% (slide trang 43 ghi "~1%" là ước lượng quá tay), vì MLP thu gọn 16 lần và tích chập
   chỉ có 2 kênh vào, 1 kênh ra. CBAM gắn sau từng tầng mà không phải đổi kiến trúc ResNet, nên vẫn
   nạp được trọng số đã huấn luyện trước.
 - **Khác self-attention của Transformer chỗ nào?** Self-attention so từng cặp vị trí với nhau, chi
@@ -610,9 +610,9 @@ $$\alpha_k = \frac{1}{Z}\sum_{i,j}\frac{\partial y^{c}}{\partial A^{k}_{ij}}, \q
 | Câu hỏi | Mở trang | Ý chính |
 |---|---|---|
 | Công thức Hybrid (gộp lát, hợp nhất, cô-sin)? | 40 | Xem khối 📘 dưới trang 17 |
-| Hybrid có bao nhiêu tham số, học bao nhiêu? | 41 | CBAM-ResNet 21.3M và BiomedCLIP 86.2M giữ cố định; chỉ học ~1.18M |
+| Hybrid có bao nhiêu tham số, học bao nhiêu? | 41 | CBAM-ResNet 3D 63.5M (slide ghi nhầm 21.3M) và BiomedCLIP 86.2M giữ cố định; chỉ học ~1.18M |
 | Huấn luyện lâu không, suy luận nhanh không? | 42 | Baseline 16.4 phút, CBAM 56 phút, Hybrid **thêm** 24.8 phút; suy luận ~62 ms/mẫu cả ba |
-| CBAM gắn ở đâu? | 43 | Sau mỗi stage của ResNet-34; thêm ~1% tham số |
+| CBAM gắn ở đâu? | 43 | Sau mỗi stage của ResNet-34; thêm chưa tới 0.1% tham số (46K) |
 | SpineNetV2 khác Hybrid chỗ nào? | 44 | Đầu softmax cố định so với đầu cô-sin với câu mô tả |
 | Công thức CBAM? | 45 | Xem khối giải thích ngay dưới |
 | Pipeline gốc SpineNetV2? | 46 | Phát hiện mốc → gom đốt sống → gán mức → cắt IVV → chấm |

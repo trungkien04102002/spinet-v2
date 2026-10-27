@@ -236,7 +236,7 @@ văn đã nộp nên không sửa, nhưng phải có câu trả lời sẵn.
 
 **Hỏi: Vì sao chọn CBAM mà không chọn SE-Net hay attention khác?**
 - **Trả lời:** SE-Net chỉ có chú ý theo kênh, không chọn được vị trí. Tổn thương của em là một vùng
-  nhỏ, nên cần chú ý không gian. CBAM có cả hai, rất nhẹ (thêm khoảng 1% tham số), gắn được vào
+  nhỏ, nên cần chú ý không gian. CBAM có cả hai, rất nhẹ (cả 4 khối CBAM chỉ 46 nghìn tham số, chưa tới 0.1%), gắn được vào
   ResNet mà vẫn nạp được trọng số SpineNetV2 đã huấn luyện.
 
 **Hỏi: BiomedCLIP là gì? Khác CLIP?**
@@ -713,7 +713,7 @@ tách riêng từng cái là phần em có thể bổ sung."*
 
 **Hỏi: Những gì được học ở bước 2?**
 - **Trả lời:** $w_a$ (gộp lát), Fusion MLP, hệ số $s$, 3 tham số $\sigma_k$. Tổng khoảng 1.18 triệu.
-  CBAM-ResNet 21.3 triệu và BiomedCLIP 86.2 triệu giữ cố định.
+  CBAM-ResNet 3D 63.5 triệu (slide trang 41 ghi nhầm 21.3M, là số của bản 2D) và bộ mã hóa ảnh BiomedCLIP 86.2 triệu giữ cố định.
 
 **Hỏi: Siêu tham số?**
 - **Trả lời:** AdamW, learning rate $10^{-4}$, weight decay $10^{-4}$, batch 32, tối đa 20 epoch, dừng
@@ -1021,6 +1021,147 @@ Kiểu câu hội đồng hay hỏi để thử xem em có hiểu lựa chọn c
 - **Trả lời:** Trong luận văn em báo cáo trung bình ± độ lệch chuẩn của 3 lần chạy. Bài báo MIWAI có thêm
   kiểm định t ghép cặp trên SPIDER: Hybrid hơn CBAM với $p = 0.011$. Với 3 lần chạy, p-value chỉ mang tính
   tham khảo (xem câu "3 lần chạy có đủ ý nghĩa thống kê?" ở Trang 21).
+
+---
+
+## Phần 7c. Thầy hỏi sâu vào xử lý ảnh, code, numpy
+
+Bạn cùng lớp kể thầy "hỏi code với lý thuyết căng", "numpy hỏi tới bến", "cái gì nghĩ mình chưa hiểu
+là hỏi hết". Phần này đi theo **đúng những gì code làm** (đã đọc `rsna_dataloader.py`,
+`spider_dataloader.py`, `biomedclip_wrapper.py`, và chạy thử mô hình để in kích thước tensor).
+
+### Bài em có phải xử lý ảnh không?
+
+- **Trả lời:** Có. Bài thuộc **phân tích ảnh y khoa**, nhánh thị giác máy tính dùng học sâu. Đầu vào là
+  ảnh MRI; pipeline có các bước xử lý ảnh thật: đọc DICOM, sắp lát, cắt vùng, nội suy đổi kích thước,
+  chuẩn hóa cường độ, phân vùng (TotalSpineSeg), tăng cường ảnh. Phần đóng góp chính là mô hình học sâu
+  phân loại, không phải bộ lọc cổ điển (lọc nhiễu, hình thái học), nên cần nắm chắc cả hai phía: **các
+  bước tiền xử lý ảnh** và **bên trong mạng**.
+
+### A. Ảnh đi từ file DICOM tới tensor thế nào? (RSNA, `rsna_dataloader.py`)
+
+| Bước | Code làm gì | Ra gì |
+|---|---|---|
+| 1. Chọn chuỗi ảnh | Lọc theo mô tả chuỗi: có "t2" và "sag", không có "ax", "cor" | Chuỗi Sagittal T2 |
+| 2. Đọc và sắp lát | `pydicom` đọc từng file; sắp theo `ImagePositionPatient[2]` (dự phòng: `InstanceNumber`) | Danh sách lát đúng thứ tự |
+| 3. Chọn 9 lát | Lấy lát có số thứ tự đúng tọa độ nhãn làm tâm, lấy tâm −4 … tâm +4; tràn biên thì lặp lát ngoài cùng | 9 lát |
+| 4. Cắt vùng | Mỗi lát cắt khung **240 × 120 pixel** quanh tọa độ $(x, y)$ của nhãn | 9 ảnh 120 × 240 |
+| 5. Đổi kích thước | `cv2.resize(..., (224, 112), INTER_LINEAR)`: nội suy song tuyến, thu nhỏ 0.93 lần | 9 ảnh 112 × 224 |
+| 6. Xếp chồng | `np.stack` | Mảng `(9, 112, 224)` float32 |
+| 7. Chuẩn hóa | Lấy phân vị 1% và 99% **trên cả khối**, cắt ngoài khoảng đó (`np.clip`), rồi đưa về 0–1 | Giá trị trong [0, 1] |
+| 8. Lưu | `np.save` thành `.npy`, khoảng 8 GB cho cả tập | Đọc lại nhanh khi huấn luyện |
+| 9. Vào mạng | `np.load` → tensor → thêm chiều kênh và chiều lô | `[B, 1, 9, 112, 224]` |
+
+**Hỏi: Sao chuẩn hóa bằng phân vị 1–99%, không min-max hay z-score?**
+- **Trả lời:** Cường độ MRI không có đơn vị tuyệt đối như CT (Hounsfield), mỗi máy, mỗi lần chụp một
+  thang khác, nên phải chuẩn hóa theo từng khối. Min-max thì một điểm quá sáng (mỡ, nhiễu, artefact)
+  cũng kéo cả ảnh tối đi. Cắt 1% hai đầu bỏ các điểm ngoại lai đó trước, rồi mới co về 0–1. Z-score
+  không giới hạn khoảng giá trị, còn em cần đầu vào 0–1 cho cả nhánh BiomedCLIP.
+
+**Hỏi: Sao nội suy song tuyến (bilinear), không lân cận gần nhất (nearest)?**
+- **Trả lời:** Với ảnh cường độ, bilinear cho ảnh mượt, không bị răng cưa khối. Nearest chỉ dùng cho
+  **mặt nạ nhãn** (giá trị là số nhãn, không được trộn). Ở đây chỉ thu nhỏ 0.93 lần nên mất mát rất ít.
+
+**Hỏi: Cắt theo pixel, vậy máy có độ phân giải khác nhau thì vùng cắt khác nhau à?** *(câu dễ bị bắt)*
+- **Trả lời thật:** Đúng. RSNA cắt theo **pixel** (240 × 120), không theo **milimét**, nên ca có khoảng
+  cách pixel khác nhau thì vùng cắt thật to nhỏ khác nhau một chút. Với SPIDER, em cắt theo **milimét**
+  (120 × 60 mm, đọc khoảng cách pixel từ file) để khớp với RSNA, với giả định RSNA khoảng 0.5 mm/pixel.
+  Cắt theo milimét cho cả RSNA là cải tiến nên làm.
+
+**Hỏi: Đĩa đệm sát mép ảnh thì sao?**
+- **Trả lời:** Khung cắt bị kẹp ở mép nên nhỏ hơn 240 × 120, rồi bị kéo giãn về 112 × 224, tức méo nhẹ.
+  Theo chiều lát, nếu thiếu lát thì lặp lát ngoài cùng. Trường hợp này hiếm vì đĩa đệm thắt lưng nằm
+  giữa ảnh.
+
+**Hỏi: 9 lát này phủ bao nhiêu milimét theo chiều trái–phải?**
+- **Trả lời:** Tùy độ dày lát của từng máy (lát dọc thường khoảng 3–4 mm), nên 9 lát phủ khoảng 3 cm,
+  không cố định giữa các ca. Code không nội suy lại theo milimét theo chiều này.
+
+### B. Kích thước tensor qua từng tầng (chạy thử thật với một khối)
+
+| Vị trí | Kích thước `[B, C, D, H, W]` | Ghi chú |
+|---|---|---|
+| Đầu vào | `[1, 1, 9, 112, 224]` | 1 kênh xám, 9 lát |
+| conv1 (kernel 3×7×7, stride (1,2,2)) | `[1, 64, 9, 56, 112]` | Stride chỉ trên H, W; **chiều lát giữ 9** |
+| maxpool (stride (1,2,2)) | `[1, 64, 9, 28, 56]` | |
+| layer1 + CBAM | `[1, 64, 9, 28, 56]` | CBAM không đổi kích thước |
+| layer2 + CBAM | `[1, 128, 9, 28, 56]` | |
+| layer3 + CBAM | `[1, 256, 9, 14, 28]` | |
+| layer4 + CBAM | `[1, 512, 9, 7, 14]` | |
+| GAP (`AdaptiveAvgPool3d(1)`) | `[1, 512, 1, 1, 1]` → $f_{cbam}$ 512 | Trung bình mỗi kênh trên 882 vị trí |
+
+**Hỏi: Sao không giảm chiều lát (stride theo D)?**
+- **Trả lời:** Chỉ có 9 lát, giảm nữa thì mất thông tin trái–phải. Đây là thiết kế của SpineNetV2:
+  stride chỉ trên chiều cao và rộng, `stride=(1, s, s)` trong code.
+
+**Hỏi: Một khối ảnh tốn bao nhiêu bộ nhớ?**
+- **Trả lời:** $9 \times 112 \times 224 = 225{,}792$ số × 4 byte (float32) ≈ **0.86 MB**. Một lô 32 khối
+  ≈ 27.6 MB cho đầu vào; phần lớn bộ nhớ GPU là đặc trưng trung gian của các tầng.
+
+### C. Số tham số: tính tay được
+
+- conv1: $64 \times 1 \times 3 \times 7 \times 7 = $ **9,408**.
+- Một conv $3 \times 3 \times 3$ từ 64 lên 64 kênh: $64 \times 64 \times 27 = $ **110,592**. Bản 2D
+  ($3 \times 3$) chỉ 36,864, tức **3D tốn khoảng 3 lần** vì kernel có thêm chiều sâu 3.
+- **Toàn nhánh CBAM-3D ResNet-34: 63.5 triệu** (code đếm 63,507,969; log SpineNetV2 ghi 63,461,705
+  khi chưa có CBAM). ⚠️ Slide phụ lục trang 41 ghi 21.3M là **số của ResNet-34 2D**, không đúng cho
+  bản 3D. Nếu bị hỏi: "Dạ con số đúng là khoảng 63.5 triệu vì kernel 3D; 21.3 triệu là của bản 2D,
+  em ghi nhầm trên slide."
+- **CBAM cả 4 tầng: 46,264 tham số, khoảng 0.07%** (slide trang 43 ghi "~1%" là ước lượng quá tay; nói
+  "chưa tới 0.1%").
+- Tổng mô hình Hybrid khoảng **260.6 triệu** (log), trong đó học **1,181,442**.
+
+### D. Lý thuyết bên trong mạng, câu ngắn
+
+- **Tích chập 3D khác 2D:** kernel trượt cả theo chiều lát, nên đặc trưng nhìn được quan hệ giữa các lát
+  liền nhau (ví dụ đĩa lồi kéo dài qua vài lát).
+- **BatchNorm:** chuẩn hóa đầu ra mỗi kênh theo trung bình và phương sai của lô, giúp học ổn định, cho
+  phép tốc độ học lớn hơn. Lúc suy luận dùng trung bình tích lũy, không dùng của lô.
+- **Residual (đường tắt):** cộng đầu vào vào đầu ra của khối, $y = F(x) + x$, để đạo hàm truyền qua mạng
+  sâu không bị tắt dần.
+- **GAP:** lấy trung bình mỗi kênh trên toàn khối, không cần tham số, không phụ thuộc kích thước ảnh.
+- **Sigmoid trong CBAM, softmax ở đầu ra:** CBAM cần mỗi kênh một trọng số **độc lập** từ 0 đến 1, các
+  kênh không cần cộng lại bằng 1, nên dùng sigmoid. Đầu ra chọn **một** mức trong ba, nên dùng softmax.
+- **Vì sao đóng băng thì nhanh:** không cần tính đạo hàm và lưu đặc trưng trung gian cho hai nhánh lớn.
+  Code chạy nhánh CBAM trong `torch.no_grad()`.
+
+### E. Tiền xử lý của nhánh BiomedCLIP (`biomedclip_wrapper.py`)
+
+| Bước | Làm gì |
+|---|---|
+| 1 | Lấy lát 4, 5, 6 (chỉ số 3:6) của khối đã chuẩn hóa 0–1 |
+| 2 | `F.interpolate(..., (224, 224), bilinear)`: kéo 112 × 224 thành 224 × 224, giãn đôi chiều cao |
+| 3 | Lặp 1 kênh xám thành 3 kênh RGB giống nhau |
+| 4 | Chuẩn hóa bằng trung bình và độ lệch chuẩn RGB của CLIP |
+
+**Hỏi: Sao lặp ảnh xám thành 3 kênh?** BiomedCLIP được học với ảnh 3 kênh, lớp đầu của ViT chờ đúng 3
+kênh. Lặp 3 kênh giống nhau là cách chuẩn để dùng ảnh xám mà không đổi mô hình.
+
+### F. Tiền xử lý SPIDER (`spider_dataloader.py`)
+
+| Bước | Làm gì |
+|---|---|
+| 1 | Đọc ảnh và mặt nạ `.mha` bằng SimpleITK, xoay về cùng hướng chuẩn |
+| 2 | Tìm đĩa đệm trong mặt nạ: nhãn 201–207; tâm = giữa hộp bao của vùng nhãn đó |
+| 3 | Lấy 9 lát dọc quanh tâm |
+| 4 | Cắt 60 mm (trên–dưới) × 120 mm (trước–sau), đổi milimét sang pixel bằng khoảng cách pixel của file |
+| 5 | Nếu số lát khác 9 thì nội suy tuyến tính giữa hai lát gần nhất (`np.linspace`) |
+| 6 | Đổi kích thước về 112 × 224, chuẩn hóa phân vị 1–99% như RSNA |
+
+### G. ⚠️ Câu khó nhất có thể bị hỏi: khối 9 lát có chứa lỗ liên hợp không?
+
+- **Code làm gì:** mẫu được tạo từ tọa độ trên chuỗi **T2**, mà tọa độ trên T2 là của **ống sống**
+  (đường giữa). Khối 9 lát vì vậy **căn giữa vào đường giữa**, và nhãn lỗ liên hợp trái, phải được gắn
+  vào chính khối đó. Lỗ liên hợp nằm lệch sang hai bên.
+- **Đã đo thêm sau luận văn** (báo cáo Phase 3 gửi thầy hướng dẫn, **không có trong luận văn**): lỗ liên
+  hợp lệch trung bình khoảng 4 lát so với tâm; khoảng **32% (trái) và 47% (phải) nằm ngoài cửa sổ 9
+  lát**. Ngoài ra, nhãn lỗ liên hợp trong RSNA được bác sĩ chấm trên chuỗi **T1**, trong khi mô hình chỉ
+  đọc T2.
+- **Cách trả lời nếu bị hỏi:** "Dạ đúng, đây là hạn chế em phát hiện sau khi nộp. Khối ảnh căn giữa theo
+  ống sống, nên một phần lỗ liên hợp nằm ngoài 9 lát; nhãn lỗ liên hợp lại được chấm trên T1. Đó là lý
+  do chính lỗ liên hợp kém hơn ống sống, ngoài việc thiếu mặt cắt ngang. Em đã thử một mô hình riêng đọc
+  T1 cho lỗ liên hợp, AUPRC tăng khoảng 0.04–0.05, nhưng chưa đưa vào luận văn."
+- **Đừng tự nêu** nếu không bị hỏi. Đừng nói "mô hình nhìn thấy lỗ liên hợp rõ".
 
 ---
 
