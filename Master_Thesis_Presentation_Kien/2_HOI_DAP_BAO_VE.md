@@ -924,6 +924,106 @@ tách riêng từng cái là phần em có thể bổ sung."*
 
 ---
 
+## Phần 7b. Câu hỏi sâu về phương pháp ("tại sao làm vậy, sao không làm khác")
+
+Kiểu câu hội đồng hay hỏi để thử xem em có hiểu lựa chọn của mình không. Cách trả lời chung: **nói lý do
+→ thừa nhận cái giá → nêu hướng cải thiện**. Không bịa số cho thứ chưa làm.
+
+**Hỏi: Ba mức Normal < Moderate < Severe có thứ bậc, sao em coi như ba lớp độc lập?**
+- **Trả lời:** Đúng, em dùng phân loại thường (softmax 3 lớp), nên đoán Severe thành Moderate bị phạt
+  ngang với đoán Severe thành Normal, dù sai một bậc thì nhẹ hơn. Em giữ cách này để so công bằng với
+  SpineNetV2 và cách gán nhãn của RSNA, và vì đầu cô-sin cần mỗi mức một câu mô tả riêng. Hướng cải
+  thiện: dùng hàm mất mát có thứ bậc (ordinal loss) để sai càng xa thì phạt càng nặng.
+
+**Hỏi: Đĩa đệm bị thiếu nhãn thì xử lý sao?**
+- **Trả lời:** Nhãn thiếu được gán −1. Hàm loss bỏ qua các ô −1 (`ignore_index`), trọng số lớp và các
+  chỉ số đánh giá cũng không tính chúng. Nếu cả lô không có nhãn nào cho một bệnh thì bệnh đó nghỉ lô
+  đó. Em không đoán bù nhãn.
+
+**Hỏi: Ba bệnh dùng chung một mô hình hay ba mô hình riêng? Vì sao?**
+- **Trả lời:** Một mô hình chung, ba đầu ra (học đa nhiệm). Ba bệnh nhìn cùng một khối ảnh và liên
+  quan nhau: đĩa đệm lồi có thể gây hẹp cả ống sống lẫn lỗ liên hợp, nên dùng chung đặc trưng thì
+  nhãn bệnh này giúp nhãn bệnh kia, lại rẻ hơn ba lần. Cái giá là bệnh khó có thể lấn át bệnh dễ khi
+  học, nên em dùng uncertainty weighting để cân.
+
+**Hỏi: Sao chấm bằng argmax mà không chỉnh ngưỡng riêng cho Severe?**
+- **Trả lời:** Argmax không cần thêm dữ liệu để chỉnh và giữ so sánh công bằng giữa bốn cấu hình. Nếu
+  chỉnh ngưỡng trên tập val rồi báo cáo trên chính tập val thì kết quả sẽ đẹp giả. Muốn chỉnh ngưỡng
+  đúng cách cần thêm một tập riêng. Bù lại, bảng đã có AUC và AUPRC, là các chỉ số không phụ thuộc
+  ngưỡng. Trong thực tế, bệnh viện có thể chọn ngưỡng theo nhu cầu: hạ ngưỡng để bắt thêm ca nặng, chấp
+  nhận báo nhầm nhiều hơn.
+
+**Hỏi: Sao không dùng chỉ số chính thức của cuộc thi RSNA?**
+- **Trả lời:** Cuộc thi chấm bằng log loss có trọng số (1 / 2 / 4 cho Normal / Moderate / Severe) trên
+  cả ca chụp, đủ 5 nhãn × 5 tầng, trên tập test ẩn. Em dùng 3 trên 5 nhãn và chia tập riêng, nên số của
+  em không so được với bảng xếp hạng. Em chọn Recall và F1 vì mục tiêu là bắt ca nặng. Log loss đo xác
+  suất có "chuẩn" hay không (calibration); đó là chỉ số nên báo cáo thêm.
+
+**Hỏi: Dùng cùng lúc Focal, trọng số lớp và lặp mẫu, có bị bù quá tay không?**
+- **Trả lời:** Có nguy cơ, và đã có dấu hiệu: Severe Precision khoảng 0.27, tức mô hình báo nặng khá
+  nhiều. Em đã giảm mức bù: trọng số lấy căn bậc hai thay vì $1/n$, bước Hybrid lặp mẫu 3 lần thay vì
+  5. Mức còn lại là chấp nhận được với vai trò người đọc thứ hai, nơi bắt được ca nặng quan trọng hơn.
+  Em chưa có thí nghiệm tách riêng từng kỹ thuật.
+
+**Hỏi: Tập val có bị lặp mẫu hay biến đổi ảnh không? Số đo có bị "đẹp giả" không?**
+- **Trả lời:** Không. Chỉ tập train được lặp và biến đổi. Tập val giữ nguyên phân bố thật, khoảng 4% là
+  Severe (seed 42 có 1,942 đĩa đệm), nên số đo phản ánh đúng tỉ lệ thật. Trọng số lớp cũng tính từ tập
+  train gốc, trước khi lặp.
+
+**Hỏi: Siêu tham số chọn thế nào? Có dò lưới (grid search) không?**
+- **Trả lời:** Phần lớn lấy mặc định của các bài gốc: $\gamma = 2$ của Focal Loss (Lin 2017), $s$ khởi
+  tạo $1/0.07$ của CLIP, tỉ lệ thu gọn 16 và kernel 7 của CBAM, AdamW lr $10^{-4}$. Một vài giá trị như
+  hệ số SupCon 0.1 và số lần lặp mẫu được chọn qua vài lần thử. Em chưa dò lưới kỹ vì chi phí GPU, nên
+  kết quả có thể còn tăng nếu dò thêm. Không có giá trị nào được chọn dựa trên tập test.
+
+**Hỏi: Vì sao cắt riêng từng đĩa đệm, không đưa cả ảnh cột sống vào?**
+- **Trả lời:** Nhãn RSNA cho theo từng tầng đĩa đệm. Cắt khối quanh đĩa giúp mô hình nhìn đúng chỗ, đầu
+  vào nhỏ, và mỗi ca chụp cho 5 mẫu (5 tầng). Đây cũng là cách SpineNetV2 làm. Cái giá là mất ngữ cảnh
+  các tầng lân cận.
+
+**Hỏi: RSNA và SPIDER khác máy chụp, khác bệnh viện, em xử lý lệch dữ liệu thế nào?**
+- **Trả lời:** Mọi khối ảnh đều đưa về cùng kích thước $9 \times 112 \times 224$ và cường độ về 0–1, và
+  khi học có biến đổi độ sáng, tương phản. Em không dùng kỹ thuật thích nghi miền chuyên biệt. Kết quả
+  đo được: zero-shot đạt 0.362, có tinh chỉnh đạt 0.653, ngang SpineNetV2. Trên dữ liệu Việt Nam thì
+  chưa thử.
+
+**Hỏi: Nhãn RSNA có nhiễu không? Bác sĩ chấm có thống nhất không?**
+- **Trả lời:** Ranh giới Moderate với Severe vốn dao động giữa các bác sĩ, và RSNA không công bố độ đồng
+  thuận giữa người chấm. Vì vậy chỉ số Severe có một mức trần do chính nhiễu nhãn. Em không làm sạch nhãn
+  mà dùng nguyên nhãn của bộ dữ liệu.
+
+**Hỏi: Vì sao khởi tạo từ trọng số SpineNetV2, không học từ đầu?**
+- **Trả lời:** Ca Severe quá ít để học một mạng 3D từ đầu. Khởi tạo từ mạng đã học trên MRI cột sống giúp
+  hội tụ nhanh và ổn định hơn. CBAM gắn thêm không đổi kích thước đặc trưng nên vẫn nạp được trọng số
+  cũ.
+
+**Hỏi: Nhãn RSNA cố định, dùng đầu tuyến tính là đủ, sao phải dùng đầu cô-sin?**
+- **Trả lời:** Để cùng một mô hình mở rộng được sang nhãn mới (SPIDER, zero-shot), đúng với mục tiêu 3 của
+  luận văn. Trên RSNA, dùng đầu cô-sin không làm mô hình kém đi: Hybrid vẫn hơn SpineNetV2, vốn dùng đầu
+  tuyến tính.
+
+**Hỏi: Sao hệ số $s$ phải học, không cố định?**
+- **Trả lời:** Cô-sin chỉ nằm trong khoảng −1 đến 1, khoảng cách giữa các mức rất nhỏ, nên cần $s$ để
+  softmax phân biệt rõ. Cho mô hình tự học $s$ thì nó tự chọn mức "tự tin" phù hợp. Khởi tạo như CLIP và
+  chặn tối đa 100 để huấn luyện không mất ổn định.
+
+**Hỏi: Kết quả có lặp lại được không?**
+- **Trả lời:** Code nằm trong repo, seed cố định (42, 123, 456) cho cả cách chia tập lẫn khởi tạo; mỗi
+  seed chia bệnh nhân khác nhau. Trọng số BiomedCLIP công khai, log huấn luyện lưu đủ. Chạy trên GPU khác
+  có thể lệch nhỏ.
+
+**Hỏi: Sao không dùng Transformer 3D hay mô hình lớn hơn?**
+- **Trả lời:** Dữ liệu khoảng 2,000 bệnh nhân, Severe chỉ khoảng 4%, nên mô hình lớn rất dễ học thuộc.
+  ResNet-34 3D đã có sẵn trọng số cột sống. Phần Transformer (ViT của BiomedCLIP) thì em có dùng, nhưng
+  giữ cố định. Thêm nữa là giới hạn phần cứng, chỉ một GPU RTX 4090.
+
+**Hỏi: Có kiểm định thống kê cho chênh lệch giữa các cấu hình không?**
+- **Trả lời:** Trong luận văn em báo cáo trung bình ± độ lệch chuẩn của 3 lần chạy. Bài báo MIWAI có thêm
+  kiểm định t ghép cặp trên SPIDER: Hybrid hơn CBAM với $p = 0.011$. Với 3 lần chạy, p-value chỉ mang tính
+  tham khảo (xem câu "3 lần chạy có đủ ý nghĩa thống kê?" ở Trang 21).
+
+---
+
 ## Phần 8. Câu hỏi tổng quát, mẹo
 
 **Hỏi: Nếu được làm lại, em sẽ làm gì khác?**
