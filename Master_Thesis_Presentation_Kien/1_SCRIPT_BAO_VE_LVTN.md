@@ -482,7 +482,7 @@ $$\mathcal{L}_{total} = \sum_{k=1}^{3}\left(\frac{1}{2\sigma_k^2}\,\mathcal{L}_k
 > cho 0.26, tức đoán sai.
 >
 > *(Mẹo: nói mạnh vế "có CBAM phủ đúng vùng tổn thương + chấm đúng". Tránh tự nói vế "không CBAM dàn
-> trải", vì hình bên trái cũng khá gọn; nếu thầy hỏi thì xem `2_HOI_DAP_BAO_VE.md` mục 0.8.)*
+> trải", vì hình bên trái cũng khá gọn; nếu thầy hỏi thì xem `9_PHONG_KHI_BI_HOI_VAN.md`.)*
 >
 > Em xin nói rõ đây chỉ là một ca minh họa trực quan. Bằng chứng định lượng là bảng kết quả em vừa
 > trình bày.

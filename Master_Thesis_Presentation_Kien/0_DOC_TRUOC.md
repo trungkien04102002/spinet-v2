@@ -12,7 +12,7 @@ Các file được đánh số theo thứ tự đọc. Đọc **in đậm** là 
 |---|---|---|---|
 | 0 | `0_DOC_TRUOC.md` (file này) | **Toàn bộ**: ý nghĩa chỉ số, con số phải thuộc, chỗ dễ bị bắt lỗi | 20 phút |
 | 1 | `1_SCRIPT_BAO_VE_LVTN.md` | **Lời nói từng slide** (khung `>`). Bỏ qua các khối 📘 lần đầu | 30 phút |
-| 2 | `2_HOI_DAP_BAO_VE.md` | **Phần 0** (chỗ dễ bị bắt lỗi) và **phần trả lời** các câu hỏi. Lướt phần "Vì sao" | 40 phút |
+| 2 | `2_HOI_DAP_BAO_VE.md` | **phần trả lời** các câu hỏi, theo thứ tự slide. Lướt phần "Vì sao" | 40 phút |
 | 3 | `3_CONG_THUC_LUAN_VAN.md` | **Mục 3** (công thức mô hình, chương 4) và **mục 5** (cách tính các bảng). Mục 1–2 chỉ lướt | 40 phút |
 | 4 | `4_GIAI_THICH_METRIC_VA_CONG_THUC.md` | Tra cứu khi muốn hiểu sâu một chỉ số (ma trận nhầm lẫn, đường ROC/PR) | khi cần |
 | 5 | `5_CHUAN_BI_BAO_VE_LVTN.md` | Ghi chú cũ, đã gộp vào file 2. Chỉ xem mục softmax/argmax | khi cần |
@@ -121,19 +121,9 @@ Springer.
 
 ---
 
-## 4. Bảy chỗ dễ bị bắt lỗi (chi tiết ở file 2, Phần 0)
+## 4. Ghi chú phòng khi bị hỏi vặn
 
-1. **Phần mềm đang chạy cấu hình CBAM (cộng SpineNetV2 cho 8 nhãn khác), không phải Hybrid.** Đừng
-   nói "phần mềm chạy Hybrid". Bị hỏi thì nhận: "Bản phần mềm hiện tại chạy nhánh CBAM, chưa tích
-   hợp nhánh BiomedCLIP; luận văn ghi Hybrid là chưa chính xác."
-2. **Bảng SPIDER theo nhãn thiếu Pfirrmann**; ở nhãn này SpineNetV2 0.592 hơn Hybrid 0.544.
-3. **SPIDER có tinh chỉnh chia theo đĩa đệm**, không theo bệnh nhân. RSNA thì chia theo bệnh nhân.
-4. **Ning Shen không phải giải nhất.** Chỉ gọi là "một giải pháp công khai mạnh trên RSNA".
-5. **Tập val 395 bệnh nhân** (luận văn ghi 225); độ lệch chuẩn Severe Recall đúng là ±0.019.
-6. **SpineNetV2 gốc có dùng cross-entropy cân bằng lớp** (paper mục 4.4.3), trong khi luận văn viết
-   "cross-entropy thông thường". Cấu hình nền *trong thí nghiệm của em* mới là cross-entropy thường.
-7. **Số tham số trên slide phụ lục sai:** CBAM-3D ResNet-34 là 63.5M (slide ghi 21.3M, số bản 2D);
-   CBAM chỉ thêm chưa tới 0.1% (slide ghi ~1%).
+Đã tách ra `9_PHONG_KHI_BI_HOI_VAN.md`. **Không cần đọc**, chỉ mở khi bị hỏi trúng.
 
 **Năm câu không được nói:** "Grad-CAM chứng minh…", "Hybrid thắng trên SPIDER", "giải nhất RSNA",
 "phần mềm chạy Hybrid", "có ý nghĩa thống kê".
