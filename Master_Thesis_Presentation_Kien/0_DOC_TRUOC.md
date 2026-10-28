@@ -51,7 +51,24 @@ báo nhầm cũng nhiều hơn (Precision giảm). Luận văn **ưu tiên Recal
 | **Severe Recall / F1 / AUC / AUPRC** | Chỉ lấy **mức Severe**, trung bình 3 nhãn bệnh | Đo đúng lớp quan trọng nhất về lâm sàng |
 | **± (độ lệch chuẩn)** | Kết quả dao động bao nhiêu giữa **3 lần chạy** với 3 seed | Nhỏ là ổn định. Hybrid Severe Recall 0.486 ± 0.019: cả 3 lần đều quanh 0.46–0.50 |
 
-**Vì sao macro mà không lấy trung bình theo số mẫu (weighted)?** Lấy theo số mẫu thì lớp Normal/Mild
+**Ví dụ đi từng bậc, số thật của Hybrid (seed 42).** Hình dung một bảng 3 hàng (3 nhãn bệnh) × 3
+cột (3 mức). Mỗi ô là một F1 riêng, tổng cộng 9 ô. Các chỉ số trên chỉ là các cách gộp 9 ô đó.
+
+| Bậc | Làm gì | Tính thế nào | Ra |
+|---|---|---|---|
+| 1. Một ô | Ống sống, mức Severe | Có 81 ca nặng thật. Mô hình bắt được 57, sót 24, báo nhầm thêm 90. Recall = 57/81 = 0.704; Precision = 57/(57+90) = 0.388; F1 = 0.500 | **F1 ô này 0.500** |
+| 2. Gộp theo hàng (macro) | Ống sống, 3 mức | F1 Normal/Mild 0.952, Moderate 0.390, Severe 0.500 → (0.952 + 0.390 + 0.500)/3 | **Macro F1 ống sống 0.614** |
+| 3a. Gộp cả bảng | Lấy macro của 3 hàng | Ống sống 0.614, lỗ liên hợp trái 0.471, phải 0.498 → trung bình | **Mean F1 0.528** |
+| 3b. Chỉ lấy cột Severe | Lấy ô Severe của 3 hàng | 0.500, 0.278, 0.252 → trung bình | **Severe F1 0.343** |
+| 4. Ba lần chạy | Làm lại bậc 1–3 với seed 42, 123, 456 | Severe F1 0.343 / 0.348 / 0.375 → trung bình ± độ lệch chuẩn | **0.356 ± 0.017** (số trên slide) |
+
+Mean F1 trên slide là **0.527**, là trung bình 3 lần chạy; riêng seed 42 ra 0.528. Mean Recall, Severe
+Recall… tính y hệt, chỉ thay F1 trong mỗi ô bằng Recall. Muốn xem cả đường từ ảnh tới con số: file 3,
+mục 3.0, phần C.
+
+**Vì sao macro mà không lấy trung bình theo số mẫu (weighted)?** Ở bậc 2, nếu lấy theo số mẫu (giả sử tỉ lệ
+81% / 15% / 4%) thì được khoảng 0.81 × 0.952 + 0.15 × 0.390 + 0.04 × 0.500 ≈ **0.85**: ô Severe gần như
+không ảnh hưởng. Lấy theo số mẫu thì lớp Normal/Mild
 81% quyết định gần hết điểm, mô hình bỏ sót hết ca nặng vẫn được điểm cao.
 
 ### 2.3 AUC và AUPRC: không cần ngưỡng, đo khả năng xếp hạng
