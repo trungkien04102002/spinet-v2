@@ -496,6 +496,26 @@ GELU → dropout 0.1 → Linear 768→512 → chuẩn hóa L2 → $\hat f_{img}$
 - **Vì sao tính trước được:** câu không đổi và bộ mã hóa văn bản không học, nên vector văn bản cố định.
   Tính lại mỗi bước chỉ tốn thời gian mà ra y hệt.
 
+**Hỏi: Có vector ảnh rồi, tính cô-sin xong thì ra nhãn thế nào? Tính bao nhiêu lần?**
+- **Trả lời:** Vector ảnh không so với một câu mà với **3 câu** (3 mức) của một nhãn, rồi chọn câu giống
+  nhất. Ví dụ ống sống:
+
+  | Bước | Làm gì | Ví dụ |
+  |---|---|---|
+  | 1 | Cô-sin với 3 câu Normal/Mild, Moderate, Severe | 0.20 / 0.25 / 0.31 |
+  | 2 | Nhân $s \approx 14.3$ | 2.86 / 3.57 / 4.43 |
+  | 3 | Softmax ra xác suất, tổng bằng 1 | 0.127 / 0.260 / 0.613 |
+  | 4 | Argmax | **Severe** |
+
+- **Hình dung:** các vector đều là mũi tên dài 1; cô-sin đo **góc** giữa hai mũi tên, góc càng nhỏ càng
+  giống. Chọn câu có mũi tên cùng hướng nhất với ảnh.
+- **Vì sao nhân $s$:** ba cô-sin sát nhau, softmax thẳng thì ra 0.32 / 0.33 / 0.35, gần chia đều. Nhân $s$
+  để giãn ra; $s$ cũng được học.
+- **Bao nhiêu lần:** mỗi đĩa đệm 3 nhãn × 3 mức = **9 cô-sin**, ra 3 mức dự đoán. Code không lặp từng cái:
+  một phép nhân ma trận $[B, 512] \times [512, 3]$ tính cả lô với 3 câu cùng lúc, làm cho 3 nhãn.
+- **Dùng vào đâu:** mức dự đoán (argmax) để tính Recall/Precision/F1; xác suất để tính AUC/AUPRC và, lúc
+  học, đưa vào Focal Loss.
+
 **Hỏi: Vậy vector văn bản đứng yên, cái gì học?**
 - **Trả lời:** Phía ảnh học. Fusion MLP (cùng gộp lát, $s$) được chỉnh để **kéo vector ảnh về gần câu
   đúng** và đẩy xa hai câu còn lại. Có thể hiểu 3 vector văn bản là 3 "cột mốc" cố định có nghĩa, mô
