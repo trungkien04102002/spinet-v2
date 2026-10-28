@@ -530,6 +530,9 @@ $$\text{AUC} = \int_0^1 \text{TPR}\big(\text{FPR}^{-1}(t)\big)\,dt$$
 - **Ví dụ 5 ca** (sắp theo điểm giảm dần): Bệnh 0.9, Không 0.8, Bệnh 0.7, Không 0.4, Không 0.2.
   Có 2 × 3 = 6 cặp bệnh–không; ca bệnh cao hơn ở 5 cặp → AUC = 5/6 = 0.833.
 - **Không cần ngưỡng:** chỉ xét thứ tự xếp hạng.
+- **Ý nghĩa thực tế (Severe AUC 0.899):** bốc ngẫu nhiên một đĩa đệm hẹp nặng và một đĩa không nặng,
+  thì khoảng **9/10 lần** mô hình chấm đĩa hẹp nặng điểm cao hơn. Nói cách khác, mô hình **xếp thứ tự**
+  ca nặng lên trên khá tốt, nên dùng được để sắp danh sách cho bác sĩ đọc ca nghi nặng trước.
 - **Code:** `sklearn.metrics.roc_auc_score`.
 
 ### (5.11) AUPRC
@@ -544,6 +547,12 @@ $$\text{AUPRC} = \int_0^1 \text{Precision}\big(\text{Recall}^{-1}(t)\big)\,dt$$
   đoán bừa luôn 0.5). Nên Severe AUPRC 0.333 là khoảng 8 lần đoán bừa.
 - **Vì sao cần cả AUPRC:** AUC tính cả TN, mà lớp hiếm thì TN rất nhiều nên AUC dễ đẹp. AUPRC chỉ
   nhìn vào ca dương nên khắt khe hơn. Đó là lý do Severe AUC 0.899 nhưng Severe AUPRC chỉ 0.333.
+- **Ý nghĩa thực tế (Severe AUPRC 0.333):** nếu mô hình đánh dấu một loạt đĩa là "nghi hẹp nặng", thì
+  trung bình khoảng **1 trong 3** đĩa đó là nặng thật. Nghe thấp, nhưng nếu bốc ngẫu nhiên thì chỉ
+  khoảng **1 trong 25** (4%). Tức là bác sĩ xem danh sách mô hình gợi ý sẽ gặp ca nặng nhiều hơn khoảng
+  8 lần so với xem ngẫu nhiên. Vì vậy mô hình phù hợp để **sàng lọc, ưu tiên ca**, chưa thay bác sĩ chẩn đoán.
+- **Câu nói gọn khi bị hỏi:** "AUC cho biết mô hình xếp thứ tự ca nặng tốt (0.9), AUPRC cho biết khi mô
+  hình báo nặng thì đúng khoảng 1/3, gấp 8 lần đoán bừa. Nên em định vị là công cụ hỗ trợ ưu tiên ca."
 - **Code:** `sklearn.metrics.average_precision_score`.
 
 ---
