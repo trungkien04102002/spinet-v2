@@ -1255,6 +1255,64 @@ Thầy có thể hỏi "mô hình nền em dùng làm gì, học trên dữ li�
 
 ---
 
+## Phần 7e. Theo hướng của thầy phản biện (tối ưu, hệ thống, dữ liệu)
+
+Thầy làm về tối ưu, lập lịch, blockchain, federated learning; không làm ảnh y tế. Nên giải thích bằng
+lời thường, ít thuật ngữ y khoa, và chuẩn bị các câu về hàm mục tiêu, chi phí, dữ liệu.
+
+**Hỏi: Bài toán tối ưu của em là gì? Tối ưu cái gì, theo biến nào?**
+- **Trả lời:** Cực tiểu tổng loss $\mathcal{L} = \sum_{k=1}^{3}\big(\frac{1}{2\sigma_k^2}\mathcal{L}_k + \log\sigma_k\big)$,
+  với $\mathcal{L}_k$ = Focal Loss trung bình của nhãn $k$ + 0.1 × SupCon. Biến tối ưu chỉ khoảng **1.18
+  triệu tham số** (Fusion MLP, gộp lát, hệ số $s$) cộng 3 tham số $\sigma_k$; hai nhánh lớn đứng yên.
+  Thuật toán AdamW, lr $10^{-4}$, weight decay $10^{-4}$, lô 32.
+
+**Hỏi: Có đảm bảo hội tụ không?**
+- **Trả lời:** Bài toán không lồi nên không có đảm bảo hội tụ về tối ưu toàn cục, giống mọi mạng nơ-ron.
+  Em kiểm soát bằng thực nghiệm: theo dõi Severe F1 trên tập val, dừng sớm sau 5 epoch không cải thiện,
+  và chạy 3 seed. Kết quả ổn định (Severe F1 0.356 ± 0.017), nên lời giải tìm được không phụ thuộc
+  nhiều vào khởi tạo.
+
+**Hỏi: Uncertainty weighting thực chất làm gì, dưới góc tối ưu?**
+- **Trả lời:** Mỗi nhãn có một trọng số $1/(2\sigma_k^2)$ được học cùng mạng. Đạo hàm theo $\sigma_k^2$ bằng
+  0 cho $\sigma_k^2 = \mathcal{L}_k$, tức trọng số tỉ lệ $1/\mathcal{L}_k$: nhãn loss lớn nhận trọng số nhỏ, để
+  ba nhãn đóng góp cân nhau. Số hạng $\log\sigma_k$ là "phạt" để $\sigma_k$ không tăng mãi (nếu không, cách
+  dễ nhất để loss nhỏ là cho mọi trọng số về 0).
+- **Liên hệ hướng của thầy:** cùng tinh thần với các cách gộp có trọng số theo loss trong federated
+  learning: dùng chính loss để quyết định mỗi phần đóng góp bao nhiêu, thay vì cố định tay.
+
+**Hỏi: Sao không dò lưới (grid search) trọng số 3 nhãn cho chắc?**
+- **Trả lời:** Mỗi tổ hợp trọng số là một lần huấn luyện khoảng 25 phút; dò lưới 3 chiều, mỗi chiều vài
+  giá trị, đã là hàng chục lần chạy, nhân 3 seed. Uncertainty weighting học luôn trọng số trong một lần
+  chạy, chỉ thêm 3 tham số.
+
+**Hỏi: Chi phí tính toán? Có chạy được thực tế không?**
+- **Trả lời:** Học bước 2 của Hybrid thêm khoảng **25 phút** trên một RTX 4090 (đo trên một lần chạy).
+  Suy luận khoảng **62 ms một đĩa đệm**; một ca 5 đĩa đệm thắt lưng là dưới 1 giây cho phần chấm điểm.
+  Trong app, cả quy trình (phân vùng + chấm) cho một ca mất khoảng một phút trên GPU, chủ yếu do phân vùng.
+  Đóng băng hai nhánh lớn giúp học nhanh và chỉ cần một GPU.
+
+**Hỏi: Độ phức tạp theo số nhãn?**
+- **Trả lời:** Phần tốn nhất (hai nhánh ảnh) chạy **một lần** cho mỗi đĩa đệm, không phụ thuộc số nhãn.
+  Mỗi nhãn thêm chỉ là một phép nhân ma trận $[512] \times [512, m]$ với $m$ câu mô tả, gần như không đáng kể.
+  Vector văn bản tính một lần rồi lưu lại.
+
+**Hỏi: Dữ liệu bệnh nhân và quyền riêng tư?**
+- **Trả lời:** RSNA 2024 và SPIDER là bộ dữ liệu công khai, đã ẩn danh trước khi phát hành. App trong luận
+  văn chạy thử với ca mẫu. Nếu triển khai thật thì cần ẩn danh thông tin trong file DICOM và chạy trong mạng
+  nội bộ bệnh viện, không gửi ảnh ra ngoài.
+
+**Hỏi: Nhiều bệnh viện muốn cùng huấn luyện mà không chia sẻ dữ liệu thì sao?**
+- **Trả lời:** Federated learning phù hợp: mỗi bệnh viện học tại chỗ, chỉ gửi cập nhật trọng số về để gộp.
+  Mô hình em hợp với cách này vì phần cần học nhỏ (khoảng 1.18 triệu tham số, vài MB mỗi lần gửi), hai
+  nhánh lớn đứng yên. Em chưa làm, đây là hướng phát triển; khó khăn chính là dữ liệu mỗi nơi lệch nhau
+  (máy chụp khác, tỉ lệ bệnh khác).
+
+**Hỏi: Vòng phản hồi bác sĩ trong app là gì, có phải học trực tuyến không?**
+- **Trả lời:** Không tức thì. Bác sĩ sửa nhãn, app ghi lại; khi đủ dữ liệu thì gom thành tập mới và huấn
+  luyện lại theo đợt. Như vậy kiểm soát được chất lượng nhãn trước khi đưa vào mô hình.
+
+---
+
 ## Phần 8. Câu hỏi tổng quát, mẹo
 
 **Hỏi: Nếu được làm lại, em sẽ làm gì khác?**
