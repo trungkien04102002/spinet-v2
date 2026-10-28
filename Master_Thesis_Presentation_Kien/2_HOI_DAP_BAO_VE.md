@@ -838,6 +838,48 @@ tách riêng từng cái là phần em có thể bổ sung."*
   biến đổi tủy xương trên, dưới, thoát vị. Bảng 8 tầng từ T10–T11 tới L5–S1; 3 nhãn RSNA để trống ở
   tầng ngực vì dữ liệu huấn luyện chỉ có từ L1–L2.
 
+**Hỏi: Trong phần mềm, một ca đi qua các mô hình thế nào?**
+- **Trả lời:** Hai đường chạy song song trên cùng khối ảnh sagittal T2, rồi ghép lại:
+  1. **TotalSpineSeg** phân vùng cả khối, ra một bản đồ nhãn: mỗi điểm ảnh mang số hiệu của cấu trúc nó
+     thuộc về (tủy sống, ống sống, từng đốt C1 → L5, xương cùng, từng đĩa đệm).
+  2. **Tìm đĩa đệm:** lấy 5 nhãn đĩa thắt lưng (L1-L2 … L5-S1). Mỗi đĩa lấy **tâm** = trung bình tọa độ
+     các điểm ảnh của đĩa đó, ra (lát, y, x).
+  3. **Cắt khối** quanh tâm **giống hệt tiền xử lý RSNA**: 9 lát quanh lát tâm, khung 240 × 120 quanh
+     (x, y), đổi về 224 × 112, chuẩn hóa phân vị 1–99% về 0–1 → khối `(9, 112, 224)`.
+  4. **Mô hình của em** chấm khối đó, ra 3 nhãn: ống sống, lỗ liên hợp trái, phải.
+  5. **Song song, SpineNetV2 gốc** chạy nguyên quy trình của nó trên cả khối (tự phát hiện đốt sống, gán
+     tầng, cắt IVV, chấm), ra 8 nhãn còn lại. Ba nhãn ống sống/lỗ liên hợp của SpineNetV2 bị **bỏ**, thay
+     bằng của mô hình em.
+  6. **Ghép** thành bảng 11 nhãn theo từng tầng, hiện trên giao diện cùng mặt nạ phân vùng.
+
+**Hỏi: TotalSpineSeg bên trong làm gì, cho ra gì?**
+- **Trả lời:** Hai mạng nnU-Net nối tiếp (xem Phần 3). Đầu ra là **một ảnh nhãn cùng kích thước ảnh gốc**,
+  mỗi điểm ảnh là một số: ví dụ 1 tủy sống, 2 ống sống, 41–45 đốt L1–L5, 50 xương cùng, các số 9x là đĩa
+  đệm. App dùng nó vào hai việc: **hiển thị** mặt nạ cho bác sĩ xem, và **định vị đĩa đệm** để cắt khối
+  cho mô hình chấm nhãn. Em dùng nguyên bản, không huấn luyện lại.
+
+**Hỏi: SpineNetV2 bên trong làm gì?**
+- **Trả lời:** Tóm gọn 3 bước (chi tiết Phần 7d): **phát hiện** thân đốt sống (U-Net dự đoán góc và tâm),
+  **gán tầng** cho từng đốt (mạng ngoại hình + mạng ngữ cảnh + beam search), rồi **cắt IVV** quanh từng đĩa
+  (xoay theo đốt sống, co giãn theo cỡ đốt) và **chấm** bằng ResNet-34 3D, mỗi nhãn một đầu ra. Trong app
+  em gọi đúng ba hàm của thư viện: phát hiện đốt sống → lấy IVV → chấm.
+
+**Hỏi: Mô hình của em bên trong làm gì?**
+- **Trả lời:** Nhận khối `(9, 112, 224)`, qua ResNet-34 3D có CBAM ở 4 tầng: mỗi tầng CBAM chọn **kênh**
+  (loại đặc trưng) rồi **vị trí** quan trọng; cuối cùng gộp trung bình ra vector 512 số; 3 đầu ra cho 3
+  nhãn, mỗi đầu ra softmax 3 mức. Thân mạng khởi tạo từ trọng số SpineNetV2, học thêm trên RSNA với
+  Focal Loss, trọng số lớp và Uncertainty weighting.
+
+**Hỏi: Sao SpineNetV2 không dùng luôn vị trí đĩa của TotalSpineSeg?**
+- **Trả lời:** Cách cắt IVV của SpineNetV2 cần các đốt sống do chính nó phát hiện (để xoay và co giãn theo
+  cỡ đốt). Em giữ nguyên quy trình gốc để 8 nhãn đó chạy đúng như nhóm tác giả đã kiểm chứng. Còn mô hình
+  của em học trên khối cắt kiểu RSNA (không xoay), nên dùng tâm đĩa từ TotalSpineSeg rồi cắt đúng kiểu đó.
+
+**Hỏi: TotalSpineSeg phân vùng sai thì sao?**
+- **Trả lời:** Nếu sai vị trí đĩa thì khối cắt lệch và nhãn chấm sai theo. Giao diện hiện mặt nạ và khung
+  cắt từng đĩa nên bác sĩ thấy được, và sửa được nhãn. Em chưa đánh giá toàn chuỗi (phân vùng rồi chấm)
+  trên dữ liệu có nhãn; đó là việc tiếp theo.
+
 **Hỏi: Một ca chạy bao lâu?**
 - **Trả lời:** Trên máy có GPU khoảng 1 phút một ca (phân vùng chiếm phần lớn). Trên CPU lâu hơn nhiều.
 
