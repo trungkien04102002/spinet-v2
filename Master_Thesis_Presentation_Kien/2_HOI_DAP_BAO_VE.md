@@ -1357,6 +1357,17 @@ chuỗi ảnh y tế, mã hóa vị trí (positional encoding), hợp nhất đa
 
 ---
 
+**Hỏi: Nhóm thầy hướng dẫn có bài MIWAI 2025 về đau thắt lưng bằng học tương phản. Bài em khác gì?**
+- **Bối cảnh:** Le, Vo, Mai, Phan, "Revolutionizing Precise Low Back Pain Diagnosis via Contrastive
+  Learning", MIWAI 2025. Thầy chủ tịch cũng có bài ở MIWAI 2025 nên có thể biết bài này. Bài MIWAI 2026
+  của em có trích dẫn nó (`le2025lumbarclip`); luận văn thì không có trong danh mục tài liệu.
+- **Trả lời:** "Dạ bài đó huấn luyện một mô hình kiểu CLIP **từ đầu** trên cặp ảnh MRI thắt lưng và văn bản
+  để chẩn đoán đau thắt lưng. Bài em thì **giữ nguyên** BiomedCLIP đã học sẵn và mạng 3D của SpineNetV2,
+  chỉ học phần hợp nhất nhỏ, rồi đọc kết quả bằng cô-sin với câu mô tả. Mục tiêu của em khác: chấm mức độ
+  hẹp từng đĩa đệm khi dữ liệu rất lệch, và **mở rộng sang bộ nhãn mới** (SPIDER) bằng cách đổi câu mô tả,
+  thay vì tăng độ chính xác trên cùng một bộ dữ liệu."
+- Nếu bị hỏi sao luận văn không trích: "Dạ em có trích trong bài báo, em sẽ bổ sung vào luận văn bản cuối."
+
 ## Phần 7g. Theo hướng của thầy ủy viên (tối ưu tổ hợp, tin sinh học, học tương phản)
 
 Thầy làm tối ưu tổ hợp, hình học tính toán, tin sinh học; bài gần đây dùng **học tương phản** và **phân cụm
