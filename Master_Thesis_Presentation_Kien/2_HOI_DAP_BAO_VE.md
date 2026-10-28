@@ -986,6 +986,46 @@ là hỏi hết". Phần này đi theo **đúng những gì code làm** (đã đ
 - **Trả lời:** Tùy độ dày lát của từng máy (lát dọc thường khoảng 3–4 mm), nên 9 lát phủ khoảng 3 cm,
   không cố định giữa các ca. Code không nội suy lại theo milimét theo chiều này.
 
+### A2. Numpy: câu hỏi ngắn
+
+**Câu nói gọn nếu thầy hỏi "numpy em dùng thế nào":** "Dạ numpy em dùng ở bước tiền xử lý. Mỗi đĩa đệm
+em lấy 9 lát cắt dọc, mỗi lát cắt vùng quanh đĩa rồi resize về 112 × 224, xếp chồng thành mảng 3D
+(9, 112, 224) float32, chuẩn hóa phân vị 1–99% trên cả khối rồi đưa về 0–1, lưu .npy. Lúc huấn luyện load
+lên, đổi sang tensor, thêm chiều kênh và chiều lô thành [B, 1, 9, 112, 224]."
+
+**Hỏi: (9, 112, 224) nghĩa là gì?**
+- **Trả lời:** Mảng 3 chiều, đọc là (số lát, cao, rộng):
+  - **9**: số lát cắt dọc (sagittal), đi theo hướng **trái → phải** của bệnh nhân, lát giữa nằm đúng vị trí nhãn.
+  - **112**: chiều cao mỗi lát, hướng **trên → dưới** dọc cột sống, đủ chứa đĩa đệm và một phần hai thân đốt kề.
+  - **224**: chiều rộng mỗi lát, hướng **trước → sau**, từ thân đốt qua ống sống tới phía sau.
+  - Mỗi phần tử là cường độ sáng của một điểm ảnh, đã đưa về 0–1. Ví dụ `vol[4, 56, 112]` là điểm
+    chính giữa của lát giữa.
+
+**Hỏi: Các lệnh numpy chính?**
+
+| Việc | Lệnh | Ý nghĩa |
+|---|---|---|
+| Cắt vùng | `img[y0:y1, x0:x1]` (cắt lát mảng) | Lấy khung 120 × 240 quanh tọa độ nhãn |
+| Xếp 9 lát | `np.stack(slices)` | 9 ảnh 2D → mảng `(9, 112, 224)` |
+| Lấy ngưỡng | `np.percentile(vol, [1, 99])` | Bỏ 1% điểm quá tối và 1% quá sáng (nhiễu) |
+| Kẹp giá trị | `np.clip(vol, p1, p99)` | Giá trị ngoài khoảng bị kéo về biên |
+| Đưa về 0–1 | `(vol - p1) / (p99 - p1)` | Tính trên cả mảng một lần, không cần vòng lặp |
+| Lưu, đọc | `np.save` / `np.load` | Khỏi đọc lại DICOM mỗi lần huấn luyện |
+
+**Hỏi: Vì sao là mảng 3D?** Vì mạng tích chập 3D cần nhìn cả quan hệ giữa các lát liền nhau (ví dụ đĩa
+lồi kéo dài qua vài lát), không chỉ một ảnh phẳng.
+
+**Hỏi: Vì sao float32 mà không float64?** Đủ chính xác cho ảnh, nhẹ bằng một nửa, GPU tính float32 nhanh
+hơn, và trọng số mạng cũng là float32.
+
+**Hỏi: Numpy khác tensor PyTorch chỗ nào?** Numpy chạy trên CPU, không tính đạo hàm. Tensor chạy được
+trên GPU và có autograd để lan truyền ngược. Nên numpy dùng cho tiền xử lý, tensor dùng cho mô hình.
+Đổi qua lại bằng `torch.from_numpy(vol)` và `tensor.numpy()`.
+
+**Hỏi: Thêm chiều kênh và chiều lô là sao?** `Conv3d` chờ đầu vào 5 chiều [lô, kênh, sâu, cao, rộng].
+Ảnh MRI là ảnh xám nên 1 kênh: `(9, 112, 224)` → `unsqueeze(0)` → `(1, 9, 112, 224)`; DataLoader
+gộp B khối thành `[B, 1, 9, 112, 224]`, với B = 32.
+
 ### B. Kích thước tensor qua từng tầng (chạy thử thật với một khối)
 
 | Vị trí | Kích thước `[B, C, D, H, W]` | Ghi chú |
