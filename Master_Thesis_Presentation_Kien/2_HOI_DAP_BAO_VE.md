@@ -1357,6 +1357,45 @@ chuỗi ảnh y tế, mã hóa vị trí (positional encoding), hợp nhất đa
 
 ---
 
+## Phần 7g. Theo hướng của thầy ủy viên (tối ưu tổ hợp, tin sinh học, học tương phản)
+
+Thầy làm tối ưu tổ hợp, hình học tính toán, tin sinh học; bài gần đây dùng **học tương phản** và **phân cụm
+trên không gian embedding**, rất gần SupCon của bài. Câu về tối ưu, độ phức tạp: xem Phần 7e. Câu về
+kiểm định thống kê, 3 lần chạy: Phần 5 (Trang 21) và Phần 7b. Câu về bán giám sát: Phần 7f.
+
+**Hỏi: SupCon cụ thể tính thế nào?**
+- **Trả lời:** Trong một lô, với mỗi đĩa đệm (gọi là neo), các đĩa **cùng mức** của cùng nhãn bệnh là cặp
+  dương, các đĩa khác mức là cặp âm. Tính cô-sin giữa mọi cặp vector ảnh (sau Fusion MLP, đã chuẩn hóa),
+  chia nhiệt độ $\tau = 0.07$, rồi softmax trên tất cả các đĩa khác trong lô; loss là trung bình $-\log$ xác
+  suất rơi vào cặp dương. Kết quả: ca cùng mức bị kéo lại gần, khác mức bị đẩy ra. Làm riêng cho 3 nhãn.
+
+**Hỏi: Cặp dương lấy ở đâu? Có tăng cường ảnh để tạo cặp như SimCLR không?**
+- **Trả lời:** Không. SimCLR (tự giám sát) tạo cặp dương bằng hai phiên bản tăng cường của cùng một ảnh.
+  SupCon (có giám sát) dùng **nhãn**: mọi ca cùng mức trong lô đều là cặp dương. Em dùng nhãn vì đã có nhãn.
+
+**Hỏi: Lô chỉ có đúng một ca Severe thì sao?**
+- **Trả lời:** Thẳng thắn: ca đó không có cặp dương. Code em xử lý đơn giản là **bỏ SupCon của cả lô đó**
+  (loss bằng 0), chỉ còn Focal Loss. Vậy SupCon chỉ có tác dụng ở các lô mà mức nào có mặt cũng có ít nhất
+  2 ca; lặp mẫu hiếm ×3 giúp chuyện này xảy ra thường hơn. Đây cũng là lý do SupCon chỉ là phần phụ (hệ số
+  0.1), phần chính vẫn là Focal Loss. Cách tốt hơn: chỉ bỏ những neo không có cặp dương thay vì cả lô, hoặc
+  dùng bộ nhớ đệm (memory bank) giữ vector ca Severe từ các lô trước. Đó là hướng cải thiện.
+
+**Hỏi: Nhiệt độ 0.07 lấy đâu ra? Sao không học như $s$?**
+- **Trả lời:** 0.07 là giá trị mặc định của bài SupCon và CLIP gốc; em giữ cố định, không dò. $s$ ở đầu ra
+  được học vì nó quyết định trực tiếp xác suất dự đoán; nhiệt độ của SupCon chỉ ở loss phụ nên em không
+  thêm tham số.
+
+**Hỏi: Có kiểm tra không gian embedding có tách cụm theo mức độ không (t-SNE, UMAP)?**
+- **Trả lời:** Em đánh giá gián tiếp qua kết quả phân loại (vì đầu ra chính là cô-sin với câu mô tả, nếu
+  không tách cụm thì F1 đã không lên). Vẽ t-SNE/UMAP theo mức độ là phần em nên bổ sung để thấy trực tiếp.
+
+**Hỏi: Ba nhãn có thứ tự (nhẹ < vừa < nặng), sao không tận dụng thứ tự?**
+- **Trả lời:** Đúng là nhãn có thứ tự. Hiện em coi là 3 lớp rời nhau, nên đoán Normal cho ca Severe bị phạt
+  bằng đoán Moderate. Các cách tận dụng thứ tự (hồi quy thứ tự, loss có trọng số theo khoảng cách mức) là
+  hướng cải thiện. Xem thêm Phần 7b.
+
+---
+
 ## Phần 8. Câu hỏi tổng quát, mẹo
 
 **Hỏi: Nếu được làm lại, em sẽ làm gì khác?**
