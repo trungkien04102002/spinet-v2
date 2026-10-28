@@ -1308,6 +1308,42 @@ Thầy có thể hỏi "mô hình nền em dùng làm gì, học trên dữ li�
   SpineNetV2 (51.76%), và sai số bề mặt thấp nhất (6.85 mm so với 8.04 mm). Vùng tô chính xác thì khối cắt
   ra ít lẫn mô khác.
 
+**Hỏi: Đi lại từng bước: SpineNetV2 gốc chấm nhãn thế nào, em sửa ở bước nào?**
+
+| Bước | SpineNetV2 gốc (paper) | Mô hình nền trong luận văn (chưa sửa) | Sau khi em sửa (CBAM → Hybrid) |
+|---|---|---|---|
+| 1. Định vị đĩa | Tự phát hiện đốt sống, gán tầng | Dùng tọa độ đĩa do bác sĩ RSNA đánh dấu | Như cột giữa (app thì dùng TotalSpineSeg) |
+| 2. Cắt khối | IVV xoay theo đốt sống, rộng gấp đôi đốt, về $112 \times 224 \times 9$ | Khung cố định 240 × 120, không xoay, về $9 \times 112 \times 224$ | Như cột giữa |
+| 3. Thân mạng | ResNet-34 3D, học trên Genodisc | Giữ nguyên trọng số Genodisc, **đóng băng** | **+ CBAM-3D** sau 4 tầng (bước 1); **+ nhánh BiomedCLIP** 3 lát giữa (bước 2) |
+| 4. Hợp nhất | Không có | Không có | Ghép 512 + 512, Fusion MLP về 512, chuẩn hóa |
+| 5. Đầu ra | 8 đầu MLP 2 lớp cho 8 nhãn Genodisc | **3 đầu tuyến tính mới** cho 3 nhãn RSNA (chỉ học 4,617 tham số) | CBAM: 3 đầu tuyến tính. Hybrid: **cô-sin với câu mô tả**, nhân $s$ |
+| 6. Loss | Cross-entropy cân bằng lớp | Cross-entropy thường, không trọng số | Focal + trọng số lớp căn bậc hai + Uncertainty; Hybrid thêm 0.1 × SupCon |
+| 7. Mất cân bằng | Chỉ loss cân bằng | Không xử lý | + lặp mẫu hiếm (×5 bước 1, ×3 bước 2) + tăng cường (không lật trái–phải) |
+| 8. Học | Học cả mạng (Adam, lr $10^{-4}$), rồi đóng băng thân, học riêng từng đầu ra (lr $10^{-5}$) | Đóng băng thân, học đầu ra | Bước 1 đóng băng thân, học CBAM + đầu ra; bước 2 đóng băng cả hai nhánh, học 1.18 triệu tham số |
+
+- **Câu nói gọn:** "SpineNetV2 gốc: phát hiện đốt sống, cắt IVV, ResNet-34 3D ra vector 512, 8 đầu ra.
+  Mô hình nền của em giữ thân mạng đó, đóng băng, thay đầu ra bằng 3 đầu cho RSNA, học bằng cross-entropy
+  thường. Em sửa ba chỗ: thêm CBAM vào thân mạng, thêm nhánh BiomedCLIP và đầu cô-sin, và thêm quy trình
+  xử lý mất cân bằng."
+
+**Hỏi: Em có thử bật/tắt từng thành phần (ablation) không?**
+- **Trả lời:** "Dạ có, theo **từng nhánh kiến trúc**, mỗi cấu hình chạy 3 lần trên RSNA:"
+
+  | Cấu hình | CBAM | BiomedCLIP | Mean F1 | Severe Recall | Severe F1 |
+  |---|---|---|---|---|---|
+  | SpineNetV2 (nền) | tắt | tắt | 0.420 | 0.123 | 0.152 |
+  | CBAM | **bật** | tắt | 0.477 | 0.288 | 0.262 ± 0.082 |
+  | BMC-only | tắt | **bật** | 0.482 | 0.316 | 0.268 ± 0.034 |
+  | Hybrid | **bật** | **bật** | **0.527** | **0.486** | **0.356 ± 0.017** |
+
+  "Bật riêng từng nhánh đều tăng Severe F1 lên khoảng 0.26; bật cả hai lên 0.356 và ổn định hơn hẳn (độ
+  lệch chuẩn 0.017 so với 0.082 và 0.034). Nghĩa là hai nhánh bổ sung cho nhau, không nhánh nào thừa."
+- **Phần chưa làm, nói thẳng:** "Còn các kỹ thuật xử lý mất cân bằng (Focal, trọng số lớp, lặp mẫu, SupCon)
+  em bật **cùng lúc**, chưa tắt riêng từng cái để đo đóng góp. Đây là thí nghiệm em sẽ bổ sung." Thêm ý
+  nếu cần: cấu hình nền (không xử lý gì) chỉ bắt 12% ca Severe, nên cả cụm kỹ thuật này rõ ràng có tác dụng;
+  chỉ chưa biết cái nào góp bao nhiêu.
+- **Một ablation nhỏ khác đã có:** thử thay cách ghép (concat) bằng cổng (gated), không hơn (xem Phần 4).
+
 **Hỏi: Em thay đổi gì so với SpineNetV2? (câu chốt)**
 - **Trả lời:** Giữ thân ResNet 3D và trọng số Genodisc. Thêm bốn thứ: (1) CBAM-3D sau mỗi tầng; (2) nhánh
   BiomedCLIP giữ cố định; (3) thay các đầu ra cố định bằng đầu cô-sin so với câu mô tả, nhờ đó thêm được
