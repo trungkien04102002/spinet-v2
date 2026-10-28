@@ -1,0 +1,320 @@
+<title>Từ SpineNetV2 đến Hybrid</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column; each pipeline drawn as a row of stage cards that stacks on phones. */
+:root {
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --fg: #16202b;
+  --muted: #5a6876;
+  --line: #d5dde5;
+  --orig: #e7ecf1;      /* stage kept from SpineNetV2 */
+  --orig-fg: #2c3e50;
+  --mine: #fdf0e1;      /* stage the thesis changed */
+  --mine-line: #d98a3a;
+  --mine-fg: #7a3e06;
+  --accent: #2f6f8f;
+  --bar: #2f6f8f;
+  --bar-best: #d98a3a;
+  --f-body: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11161c; --surface: #18202a; --fg: #e4eaf0; --muted: #9aa8b6; --line: #2c3a48;
+    --orig: #1f2a36; --orig-fg: #cfdae5; --mine: #33261a; --mine-line: #e59a4e; --mine-fg: #f4c690;
+    --accent: #7db6d4; --bar: #5d9cbd; --bar-best: #e59a4e; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11161c; --surface: #18202a; --fg: #e4eaf0; --muted: #9aa8b6; --line: #2c3a48;
+  --orig: #1f2a36; --orig-fg: #cfdae5; --mine: #33261a; --mine-line: #e59a4e; --mine-fg: #f4c690;
+  --accent: #7db6d4; --bar: #5d9cbd; --bar-best: #e59a4e; color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 16px; line-height: 1.6; }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 40px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1 { font-size: clamp(28px, 5vw, 40px); line-height: 1.15; margin: 0 0 12px; text-wrap: balance; font-weight: 700; }
+h2 { font-size: 24px; margin: 0 0 8px; text-wrap: balance; }
+h3 { font-size: 17px; margin: 24px 0 8px; }
+p, li { max-width: 68ch; }
+.lede { color: var(--muted); font-size: 17px; margin: 0 0 20px; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); font-weight: 600; margin-bottom: 6px; }
+section { margin-top: 56px; display: grid; gap: 4px; }
+code, .mono { font-family: var(--f-mono); font-size: .88em; }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 14px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.sw { width: 18px; height: 12px; border-radius: 3px; border: 1px solid var(--line); background: var(--orig); }
+.sw.mine { background: var(--mine); border-color: var(--mine-line); }
+
+/* pipeline */
+.pipe { display: flex; align-items: stretch; gap: 0; margin: 16px 0 8px; overflow-x: auto; padding-bottom: 4px; }
+.stage { flex: 1 1 0; min-width: 150px; background: var(--orig); color: var(--orig-fg); border: 1px solid var(--line);
+  border-radius: 8px; padding: 12px 12px 14px; display: grid; gap: 6px; align-content: start; }
+.stage.mine { background: var(--mine); color: var(--mine-fg); border-color: var(--mine-line); border-width: 1.5px; }
+.stage .n { font-family: var(--f-mono); font-size: 12px; opacity: .8; }
+.stage b { font-size: 15px; line-height: 1.3; }
+.stage small { font-size: 13px; line-height: 1.45; }
+.stage .shape { font-family: var(--f-mono); font-size: 12px; padding: 2px 6px; border-radius: 4px; background: var(--surface); color: var(--fg); justify-self: start; }
+.arrow { flex: 0 0 26px; display: grid; place-items: center; color: var(--muted); font-size: 18px; }
+@media (max-width: 720px) {
+  .pipe { flex-direction: column; overflow-x: visible; }
+  .stage { min-width: 0; }
+  .arrow { flex-basis: 24px; transform: rotate(90deg); }
+}
+
+/* two-branch hybrid */
+.hyb { display: grid; grid-template-columns: 1fr; gap: 10px; margin: 16px 0; }
+.branches { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.branch { border: 1px dashed var(--line); border-radius: 10px; padding: 10px; display: grid; gap: 8px; min-width: 0; }
+.branch h4 { margin: 0; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.down { text-align: center; color: var(--muted); font-size: 18px; line-height: 1; }
+@media (max-width: 720px) { .branches { grid-template-columns: 1fr; } }
+
+/* tables */
+.tbl { overflow-x: auto; margin: 12px 0; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 620px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 600; background: var(--bg); }
+tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--f-mono); white-space: nowrap; }
+td.changed { background: var(--mine); color: var(--mine-fg); }
+.best { font-weight: 700; color: var(--mine-fg); }
+
+/* bars */
+.bars { display: grid; gap: 10px; margin: 14px 0; max-width: 640px; }
+.brow { display: grid; grid-template-columns: 110px 1fr 112px; align-items: center; gap: 10px; font-size: 14px; }
+.track { height: 18px; background: var(--orig); border-radius: 4px; position: relative; }
+.fill { position: absolute; inset: 0 auto 0 0; background: var(--bar); border-radius: 4px; }
+.fill.best { background: var(--bar-best); }
+.brow .v { font-family: var(--f-mono); font-variant-numeric: tabular-nums; font-size: 13px; color: var(--muted); }
+.axis { display: grid; grid-template-columns: 110px 1fr 112px; gap: 10px; font-family: var(--f-mono); font-size: 11px; color: var(--muted); }
+.axis div:nth-child(2) { display: flex; justify-content: space-between; }
+
+.note { border-left: 3px solid var(--accent); padding: 8px 14px; background: var(--surface); border-radius: 0 6px 6px 0; font-size: 15px; max-width: 72ch; }
+.say { border: 1px solid var(--mine-line); background: var(--mine); color: var(--mine-fg); padding: 14px 16px; border-radius: 8px; font-size: 15.5px; max-width: 72ch; }
+.say b { display: block; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
+ul.tight { margin: 6px 0; padding-left: 20px; display: grid; gap: 4px; }
+.src { font-size: 13px; color: var(--muted); margin-top: 40px; border-top: 1px solid var(--line); padding-top: 14px; }
+.src a { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Ôn bảo vệ LVTN · mô-đun chấm nhãn</div>
+  <h1>Từ SpineNetV2 đến Hybrid</h1>
+  <p class="lede">SpineNetV2 gốc chấm nhãn đĩa đệm thế nào, mô hình nền trong luận văn giữ lại gì, và em đã sửa ở những bước nào. Mỗi pipeline vẽ theo đúng thứ tự dữ liệu đi qua.</p>
+  <div class="legend">
+    <span><i class="sw"></i>Giữ nguyên từ SpineNetV2</span>
+    <span><i class="sw mine"></i>Em thay hoặc thêm</span>
+  </div>
+
+  <!-- 1 -->
+  <section id="goc">
+    <div class="eyebrow">Phần 1 · theo paper Windsor và cộng sự</div>
+    <h2>SpineNetV2 gốc: từ ảnh MRI tới 8 nhãn</h2>
+    <p>Đầu vào là ảnh MRI cắt dọc (sagittal) T2. Bốn bước nối tiếp, ba bước đầu chỉ để tìm và cắt đúng vùng đĩa đệm, bước cuối mới chấm nhãn.</p>
+    <div class="pipe" role="list">
+      <div class="stage" role="listitem"><span class="n">bước 1</span><b>Phát hiện thân đốt sống</b><small>U-Net ra 13 kênh: 5 bản đồ nhiệt (4 góc + tâm) và 8 kênh trường vector chỉ từ góc về tâm. Góc nào chỉ về cùng một tâm thì gom thành một đốt; gom giữa các lát khi IoU &gt; 0.25.</small></div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="stage" role="listitem"><span class="n">bước 2</span><b>Gán tên tầng</b><small>Mạng ngoại hình đoán tầng của từng đốt (23 lớp, S1 → C3); mạng ngữ cảnh sửa theo các đốt lân cận; beam search chọn dãy tên hợp lý nhất.</small></div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="stage" role="listitem"><span class="n">bước 3</span><b>Cắt khối đĩa đệm (IVV)</b><small>Tâm = trung điểm tâm hai đốt liền kề. Xoay cho mặt dưới đốt trên nằm ngang; rộng gấp đôi đốt lớn hơn; tỉ lệ 2:1; lấy mọi lát có đốt sống.</small><span class="shape">112 × 224 × 9</span></div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="stage" role="listitem"><span class="n">bước 4</span><b>Mạng chấm nhãn</b><small>ResNet-34 3D mã hóa mỗi IVV thành vector 512 số, rồi 8 đầu MLP 2 lớp, mỗi đầu một nhãn. Một mạng dùng chung cho mọi tầng.</small><span class="shape">512 → 8 đầu ra</span></div>
+    </div>
+
+    <h3>8 nhãn và kết quả trên Genodisc (balanced accuracy, %)</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>Nhãn</th><th class="num">Số lớp</th><th class="num">Kết quả</th><th>Ghi chú</th></tr></thead>
+      <tbody>
+        <tr><td>Pfirrmann (thoái hóa đĩa)</td><td class="num">5</td><td class="num">70.9</td><td></td></tr>
+        <tr><td>Hẹp khe đĩa đệm</td><td class="num">4</td><td class="num">76.3</td><td></td></tr>
+        <tr><td>Hẹp ống sống trung tâm</td><td class="num">4</td><td class="num">64.9</td><td>Nhãn khó nhất</td></tr>
+        <tr><td>Tổn thương mâm sụn trên / dưới</td><td class="num">2</td><td class="num">84.9 / 89.6</td><td></td></tr>
+        <tr><td>Thay đổi tủy xương (Modic) trên / dưới</td><td class="num">2</td><td class="num">88.9 / 88.2</td><td>Gộp Modic 1, 2, 3, hỗn hợp</td></tr>
+        <tr><td>Hẹp lỗ liên hợp trái / phải</td><td class="num">2</td><td class="num">84.8 / 82.4</td><td></td></tr>
+        <tr><td>Trượt đốt sống</td><td class="num">2</td><td class="num">95.0</td><td>Code thật có 3 đầu ra</td></tr>
+        <tr><td>Thoát vị đĩa đệm</td><td class="num">2</td><td class="num">80.4</td><td></td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>SpineNetV2 được huấn luyện thế nào</h3>
+    <ul class="tight">
+      <li><b>Dữ liệu:</b> Genodisc, ảnh T2 thắt lưng từ 6 trung tâm, khoảng 2,279 bệnh nhân (2,819 lần chụp), bác sĩ chẩn đoán hình ảnh chấm.</li>
+      <li><b>Loss:</b> cross-entropy cân bằng lớp cho cả 8 nhãn, vì nhãn nào cũng lệch.</li>
+      <li><b>Tăng cường:</b> dịch, xoay, lật, độ sáng và tương phản ±10%; 50% mẫu thêm nhiễu Gauss 10%.</li>
+      <li><b>Hai giai đoạn:</b> học cả mạng bằng Adam, lr 10⁻⁴, tới khi 10 epoch liền không tăng balanced accuracy; rồi đóng băng thân, học riêng từng đầu ra với lr 10⁻⁵.</li>
+      <li><b>Tốc độ:</b> ảnh thắt lưng mất khoảng 2 giây cho phát hiện và gán tầng, 1 giây cho chấm nhãn.</li>
+    </ul>
+  </section>
+
+  <!-- 2 -->
+  <section id="nen">
+    <div class="eyebrow">Phần 2 · mốc so sánh trên RSNA 2024</div>
+    <h2>Mô hình nền trong luận văn: SpineNetV2 chưa sửa</h2>
+    <p>RSNA có nhãn khác Genodisc (3 mức Normal/Mild, Moderate, Severe cho hẹp ống sống và hai lỗ liên hợp), nên phải thay đầu ra. Mọi thứ còn lại giữ nguyên để làm mốc.</p>
+    <div class="pipe" role="list">
+      <div class="stage mine" role="listitem"><span class="n">bước 1–3</span><b>Cắt khối theo tọa độ RSNA</b><small>Dùng tọa độ đĩa do bác sĩ RSNA đánh dấu: 9 lát quanh lát nhãn, khung 240 × 120 pixel, không xoay, đổi về 224 × 112, chuẩn hóa phân vị 1–99%.</small><span class="shape">9 × 112 × 224</span></div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="stage" role="listitem"><span class="n">thân mạng</span><b>ResNet-34 3D, trọng số Genodisc</b><small>Đóng băng, không học. 63.5 triệu tham số.</small><span class="shape">→ 512</span></div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="stage mine" role="listitem"><span class="n">đầu ra</span><b>3 đầu tuyến tính mới</b><small>Mỗi nhãn RSNA một đầu 512 → 3. Chỉ học 4,617 tham số.</small></div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="stage" role="listitem"><span class="n">loss</span><b>Cross-entropy thường</b><small>Không trọng số lớp, không lặp mẫu hiếm.</small></div>
+    </div>
+    <p class="note">Kết quả: Mean F1 0.420, nhưng <b>chỉ bắt được 12.3% ca Severe</b> (Severe F1 0.152). Mô hình gần như luôn đoán Normal/Mild, lớp chiếm khoảng 81% dữ liệu.</p>
+  </section>
+
+  <!-- 3 -->
+  <section id="cbam">
+    <div class="eyebrow">Phần 3 · cải tiến bước 1</div>
+    <h2>Thêm CBAM-3D và xử lý mất cân bằng</h2>
+    <p>Gắn CBAM sau mỗi tầng trong 4 tầng ResNet. Mỗi CBAM làm hai việc nối tiếp, nhân trực tiếp lên khối đặc trưng nên không đổi kích thước, nạp lại được trọng số SpineNetV2.</p>
+    <div class="pipe" role="list">
+      <div class="stage" role="listitem"><span class="n">vào</span><b>Khối đặc trưng của tầng</b><span class="shape">C × D × H × W</span></div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="stage mine" role="listitem"><span class="n">CBAM · kênh</span><b>Chọn loại đặc trưng</b><small>Gộp trung bình và gộp cực đại trên toàn khối → MLP thu gọn 16 lần → sigmoid → mỗi kênh một trọng số 0–1.</small></div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="stage mine" role="listitem"><span class="n">CBAM · không gian</span><b>Chọn vị trí</b><small>Gộp theo kênh → tích chập kernel 7 → sigmoid → mỗi điểm một trọng số 0–1.</small></div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="stage" role="listitem"><span class="n">ra</span><b>Cùng kích thước, đã nhấn vùng quan trọng</b><span class="shape">C × D × H × W</span></div>
+    </div>
+    <h3>Kích thước tensor qua thân mạng (chạy thử thật)</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>Tầng</th><th class="num">Kích thước [C, D, H, W]</th><th>Ghi chú</th></tr></thead>
+      <tbody>
+        <tr><td>Đầu vào</td><td class="num">[1, 9, 112, 224]</td><td>1 kênh ảnh xám, 9 lát</td></tr>
+        <tr><td>Tích chập đầu (3, 7, 7), bước (1, 2, 2)</td><td class="num">[64, 9, 56, 112]</td><td>Chỉ giảm cao, rộng; 9 lát giữ nguyên tới cuối</td></tr>
+        <tr><td>Max pool</td><td class="num">[64, 9, 28, 56]</td><td></td></tr>
+        <tr><td>Tầng 1 + CBAM</td><td class="num">[64, 9, 28, 56]</td><td>3 khối</td></tr>
+        <tr><td>Tầng 2 + CBAM</td><td class="num">[128, 9, 28, 56]</td><td>4 khối, không giảm kích thước</td></tr>
+        <tr><td>Tầng 3 + CBAM</td><td class="num">[256, 9, 14, 28]</td><td>6 khối</td></tr>
+        <tr><td>Tầng 4 + CBAM</td><td class="num">[512, 9, 7, 14]</td><td>3 khối</td></tr>
+        <tr><td>Gộp trung bình (GAP)</td><td class="num">[512]</td><td>Vector đặc trưng của đĩa đệm</td></tr>
+      </tbody>
+    </table></div>
+    <h3>Học thế nào</h3>
+    <ul class="tight">
+      <li>Thân ResNet vẫn đóng băng; chỉ học CBAM (46,264 tham số, dưới 0.1% mạng) và 3 đầu ra.</li>
+      <li>Focal Loss (γ = 1.8) với trọng số lớp căn bậc hai; 3 nhãn gộp bằng Uncertainty weighting.</li>
+      <li>Lặp đĩa có ca Moderate/Severe 5 lần mỗi epoch; tăng cường xoay, độ sáng, tương phản, nhiễu, lật trước–sau; <b>không lật trái–phải</b> vì sẽ đổi lỗ liên hợp trái thành phải.</li>
+    </ul>
+  </section>
+
+  <!-- 4 -->
+  <section id="hybrid">
+    <div class="eyebrow">Phần 4 · cải tiến bước 2 (mô hình chính)</div>
+    <h2>Hybrid: thêm BiomedCLIP và chấm bằng câu mô tả</h2>
+    <p>Cùng một khối ảnh đi vào hai nhánh đã học sẵn và đóng băng. Chỉ phần hợp nhất ở giữa được học.</p>
+
+    <div class="hyb">
+      <div class="stage" style="justify-self:center; max-width:420px; width:100%"><span class="n">vào</span><b>Khối ảnh đĩa đệm</b><span class="shape">9 × 112 × 224</span></div>
+      <div class="down" aria-hidden="true">↓ ↓</div>
+      <div class="branches">
+        <div class="branch">
+          <h4>Nhánh A · hình thái 3D</h4>
+          <div class="stage mine"><b>CBAM-ResNet-34 3D</b><small>Đã học ở bước 1, nay đóng băng. Đủ 9 lát, giữ thứ tự trái–phải.</small><span class="shape">63.5 M tham số</span></div>
+          <div class="down" aria-hidden="true">↓</div>
+          <div class="stage"><b>GAP</b><span class="shape">f_cbam: 512</span></div>
+        </div>
+        <div class="branch">
+          <h4>Nhánh B · ngữ nghĩa y khoa</h4>
+          <div class="stage mine"><b>3 lát giữa → BiomedCLIP ViT-B/16</b><small>Mỗi lát đổi về 224 × 224, lặp thành 3 kênh, chuẩn hóa kiểu CLIP. Đóng băng.</small><span class="shape">86.2 M tham số · 3 × 512</span></div>
+          <div class="down" aria-hidden="true">↓</div>
+          <div class="stage mine"><b>Gộp lát có trọng số</b><small>α = softmax(wᵀz) cho 3 lát; 513 tham số.</small><span class="shape">f_bmc: 512</span></div>
+        </div>
+      </div>
+      <div class="down" aria-hidden="true">↓ ↓</div>
+      <div class="pipe" role="list" style="margin-top:0">
+        <div class="stage mine" role="listitem"><span class="n">hợp nhất</span><b>Ghép rồi Fusion MLP</b><small>[f_cbam ; f_bmc] → 768 → 512, GELU, dropout 0.1, chuẩn hóa dài 1.</small><span class="shape">1024 → 512</span></div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="stage mine" role="listitem"><span class="n">so khớp</span><b>Cô-sin với 3 câu mô tả</b><small>Mỗi nhãn 3 câu, ví dụ “severe spinal canal stenosis”, mã hóa <b>một lần</b> bằng bộ mã hóa văn bản BiomedCLIP.</small><span class="shape">[512] × [512, 3]</span></div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="stage mine" role="listitem"><span class="n">ra nhãn</span><b>× s → softmax → argmax</b><small>s học được, khởi tạo 1/0.07 ≈ 14.3. Ví dụ cô-sin 0.20 / 0.25 / 0.31 → xác suất 0.127 / 0.260 / 0.613 → Severe.</small></div>
+      </div>
+    </div>
+
+    <h3>Học thế nào</h3>
+    <ul class="tight">
+      <li>Chỉ học <b>1,181,442 tham số</b>: Fusion MLP, gộp lát, hệ số s (thêm 3 tham số σ trong loss).</li>
+      <li>Loss mỗi nhãn: Focal Loss (γ = 2, trọng số lớp 0.391 / 0.922 / 1.686) + 0.1 × SupCon; 3 nhãn gộp bằng Uncertainty weighting.</li>
+      <li>Lặp mẫu hiếm 3 lần; AdamW, lr 10⁻⁴, lô 32, tối đa 20 epoch, dừng sớm sau 5 epoch; chọn epoch có Severe F1 val cao nhất.</li>
+      <li>Thêm nhãn mới: viết thêm câu mô tả và mã hóa, <b>không sửa mạng</b>. Đây là cách luận văn mở rộng sang 8 nhãn SPIDER.</li>
+    </ul>
+  </section>
+
+  <!-- 5 -->
+  <section id="sosanh">
+    <div class="eyebrow">Phần 5 · đặt cạnh nhau</div>
+    <h2>Gốc, nền và sau khi sửa</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Bước</th><th>SpineNetV2 gốc (paper)</th><th>Mô hình nền (chưa sửa)</th><th>Sau khi sửa (CBAM → Hybrid)</th></tr></thead>
+      <tbody>
+        <tr><td>Định vị đĩa</td><td>Tự phát hiện đốt sống, gán tầng</td><td>Tọa độ RSNA</td><td>Tọa độ RSNA (phần mềm dùng TotalSpineSeg)</td></tr>
+        <tr><td>Cắt khối</td><td>Xoay theo đốt, co giãn theo cỡ đốt</td><td>Khung cố định, không xoay</td><td>Khung cố định, không xoay</td></tr>
+        <tr><td>Thân mạng</td><td>ResNet-34 3D</td><td>Như gốc, đóng băng</td><td class="changed">+ CBAM-3D; + nhánh BiomedCLIP</td></tr>
+        <tr><td>Hợp nhất</td><td>Không</td><td>Không</td><td class="changed">Ghép 1024 → Fusion MLP → 512</td></tr>
+        <tr><td>Đầu ra</td><td>8 MLP 2 lớp</td><td>3 đầu tuyến tính</td><td class="changed">Cô-sin với câu mô tả, × s</td></tr>
+        <tr><td>Loss</td><td>Cross-entropy cân bằng lớp</td><td>Cross-entropy thường</td><td class="changed">Focal + trọng số căn bậc hai + Uncertainty (+ SupCon)</td></tr>
+        <tr><td>Mất cân bằng</td><td>Chỉ loss cân bằng</td><td>Không xử lý</td><td class="changed">+ lặp mẫu hiếm, tăng cường không lật trái–phải</td></tr>
+        <tr><td>Phần được học</td><td>Cả mạng, rồi từng đầu ra</td><td>4,617 tham số</td><td>Bước 1: CBAM + đầu ra · Bước 2: 1.18 triệu</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- 6 -->
+  <section id="ablation">
+    <div class="eyebrow">Phần 6 · bật / tắt từng nhánh</div>
+    <h2>Ablation trên RSNA 2024</h2>
+    <p>1,973 bệnh nhân, 9,748 đĩa đệm, chia theo bệnh nhân 80/20. Mỗi cấu hình chạy 3 lần (seed 42, 123, 456), số là trung bình ± độ lệch chuẩn.</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Cấu hình</th><th>CBAM</th><th>BiomedCLIP</th><th class="num">Mean F1</th><th class="num">Severe Recall</th><th class="num">Severe F1</th><th class="num">Severe AUC</th></tr></thead>
+      <tbody>
+        <tr><td>SpineNetV2 (nền)</td><td>tắt</td><td>tắt</td><td class="num">0.420</td><td class="num">0.123</td><td class="num">0.152 ± 0.008</td><td class="num">0.872</td></tr>
+        <tr><td>CBAM</td><td>bật</td><td>tắt</td><td class="num">0.477</td><td class="num">0.288</td><td class="num">0.262 ± 0.082</td><td class="num">0.865</td></tr>
+        <tr><td>BMC-only <span class="mono" style="color:var(--muted)">(bỏ ResNet)</span></td><td>tắt</td><td>bật</td><td class="num">0.482</td><td class="num">0.316</td><td class="num">0.268 ± 0.034</td><td class="num">0.885</td></tr>
+        <tr><td><b>Hybrid</b></td><td>bật</td><td>bật</td><td class="num best">0.527</td><td class="num best">0.486</td><td class="num best">0.356 ± 0.017</td><td class="num best">0.899</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Severe F1</h3>
+    <div class="bars" role="img" aria-label="Severe F1: SpineNetV2 0.152, CBAM 0.262, BMC-only 0.268, Hybrid 0.356">
+      <div class="brow"><span>SpineNetV2</span><div class="track"><div class="fill" style="width:38%"></div></div><span class="v">0.152</span></div>
+      <div class="brow"><span>CBAM</span><div class="track"><div class="fill" style="width:65.5%"></div></div><span class="v">0.262 ± 0.082</span></div>
+      <div class="brow"><span>BMC-only</span><div class="track"><div class="fill" style="width:67%"></div></div><span class="v">0.268 ± 0.034</span></div>
+      <div class="brow"><span>Hybrid</span><div class="track"><div class="fill best" style="width:89%"></div></div><span class="v">0.356 ± 0.017</span></div>
+      <div class="axis"><div></div><div><span>0</span><span>0.1</span><span>0.2</span><span>0.3</span><span>0.4</span></div><div></div></div>
+    </div>
+    <ul class="tight">
+      <li>Bật riêng từng nhánh đều đưa Severe F1 lên khoảng 0.26. Bật cả hai lên 0.356 và ổn định hơn hẳn (độ lệch chuẩn 0.017).</li>
+      <li>Đổi lại Mean Accuracy giảm từ 0.810 xuống 0.724, vì mô hình bớt đoán Normal/Mild cho mọi ca.</li>
+      <li><b>Chưa làm:</b> các kỹ thuật mất cân bằng (Focal, trọng số lớp, lặp mẫu, SupCon) bật cùng lúc, chưa tắt riêng từng cái.</li>
+      <li><b>SPIDER</b> (218 bệnh nhân, 8 nhãn mới): Hybrid ngang SpineNetV2 (F1 0.653 so với 0.646, chênh nhỏ hơn độ lệch chuẩn); CBAM và BMC-only đứng riêng thì thấp hơn.</li>
+    </ul>
+  </section>
+
+  <!-- 7 -->
+  <section id="app">
+    <div class="eyebrow">Phần 7 · trong phần mềm</div>
+    <h2>Một ca đi qua các mô hình</h2>
+    <div class="pipe" role="list">
+      <div class="stage" role="listitem"><span class="n">1</span><b>TotalSpineSeg</b><small>Phân vùng cả khối: tủy, ống sống, từng đốt, từng đĩa. Dùng nguyên bản.</small></div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="stage mine" role="listitem"><span class="n">2</span><b>Tâm 5 đĩa thắt lưng</b><small>Trung bình tọa độ các điểm ảnh của mỗi đĩa, rồi cắt khối đúng kiểu RSNA.</small><span class="shape">9 × 112 × 224</span></div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="stage mine" role="listitem"><span class="n">3</span><b>Mô hình của em</b><small>Nhánh CBAM, chấm 3 nhãn: ống sống, lỗ liên hợp trái, phải.</small></div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="stage" role="listitem"><span class="n">4</span><b>Ghép 11 nhãn</b><small>Song song, SpineNetV2 gốc chạy quy trình riêng cho 8 nhãn còn lại; 3 nhãn trùng của nó bị bỏ.</small></div>
+    </div>
+  </section>
+
+  <section id="noi">
+    <div class="say"><b>Câu nói gọn</b>SpineNetV2 gốc phát hiện đốt sống, cắt khối quanh đĩa, rồi ResNet-34 3D ra vector 512 và 8 đầu ra. Mô hình nền của em giữ thân mạng đó, đóng băng, thay đầu ra cho 3 nhãn RSNA và học bằng cross-entropy thường, nên chỉ bắt được 12% ca nặng. Em sửa ba chỗ: thêm CBAM vào thân mạng, thêm nhánh BiomedCLIP và chấm bằng cô-sin với câu mô tả, và thêm quy trình xử lý mất cân bằng. Kết quả Severe Recall lên 0.486 và thêm được nhãn mới chỉ bằng câu mô tả.</div>
+  </section>
+
+  <p class="src">Nguồn: Windsor và cộng sự, <a href="https://arxiv.org/abs/2205.01683">SpineNetV2</a> (mục 3.3–3.4, 4.3, 4.4.3, 5.2–5.3); luận văn chương 4–5; log huấn luyện và code trong repo spinet-v2 và spine-labeling-app.</p>
+</div>
