@@ -483,6 +483,30 @@ GELU → dropout 0.1 → Linear 768→512 → chuẩn hóa L2 → $\hat f_{img}$
   "modality dropout" (khi học, ngẫu nhiên tắt một nhánh) để mô hình chịu được trường hợp này, nhưng bản
   trong luận văn chưa bật. Đây là hướng làm thêm.
 
+**Hỏi: Lúc huấn luyện và lúc chạy thật, phần văn bản đi thế nào? Có phải định nghĩa câu trước?**
+- **Trả lời:** Đúng, định nghĩa trước. Ba bước:
+  1. **Viết sẵn 9 câu** (3 nhãn × 3 mức) trong code (`RSNA_PROMPTS`), ví dụ "normal or mild spinal canal
+     stenosis", "moderate …", "severe spinal canal stenosis".
+  2. **Mã hóa một lần** trước khi học: mỗi câu qua tokenizer và bộ mã hóa văn bản của BiomedCLIP (đóng
+     băng) ra vector 512 số, chuẩn hóa dài 1. Lưu thành bảng: mỗi nhãn một ma trận $[3, 512]$.
+  3. **Mỗi bước sau đó chỉ ảnh đi qua mạng:** ảnh → hai nhánh → hợp nhất → vector ảnh $[B, 512]$. Nhân với
+     bảng văn bản: $[B, 512] \times [512, 3] = [B, 3]$ cô-sin → nhân $s$ → softmax → xác suất 3 mức.
+- Lúc chạy thật y hệt, chỉ bỏ phần tính loss: bảng văn bản tính một lần, ảnh mới so với 3 vector rồi
+  argmax.
+- **Vì sao tính trước được:** câu không đổi và bộ mã hóa văn bản không học, nên vector văn bản cố định.
+  Tính lại mỗi bước chỉ tốn thời gian mà ra y hệt.
+
+**Hỏi: Vậy vector văn bản đứng yên, cái gì học?**
+- **Trả lời:** Phía ảnh học. Fusion MLP (cùng gộp lát, $s$) được chỉnh để **kéo vector ảnh về gần câu
+  đúng** và đẩy xa hai câu còn lại. Có thể hiểu 3 vector văn bản là 3 "cột mốc" cố định có nghĩa, mô
+  hình học cách đặt ảnh vào gần cột mốc đúng.
+
+**Hỏi: Thế khác gì lớp tuyến tính bình thường?**
+- **Trả lời:** Về phép tính thì giống: lớp tuyến tính cũng là nhân vector đặc trưng với ma trận trọng số
+  $[512, 3]$. Khác ở chỗ ma trận đó **khởi tạo ngẫu nhiên và phải học**, còn ở đây ma trận là **vector của
+  câu mô tả**, có sẵn ý nghĩa và không cần học. Nhờ vậy thêm nhãn mới chỉ cần viết câu mới, không phải
+  thêm đầu ra và học lại.
+
 **Hỏi: Zero-shot hoạt động thế nào? Muốn thêm nhãn mới làm gì?**
 - **Trả lời:** Mỗi mức độ của mỗi nhãn viết thành một câu tiếng Anh, BiomedCLIP mã hóa thành vector.
   Mô hình chọn mức có câu giống vector ảnh nhất. Muốn thêm nhãn mới, ví dụ "disc herniation", chỉ cần
