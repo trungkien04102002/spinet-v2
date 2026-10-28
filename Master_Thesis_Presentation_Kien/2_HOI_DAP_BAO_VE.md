@@ -1313,6 +1313,50 @@ lời thường, ít thuật ngữ y khoa, và chuẩn bị các câu về hàm 
 
 ---
 
+## Phần 7f. Theo hướng của thầy chủ tịch (thị giác máy tính, ảnh y tế, hợp nhất đa nhiệm)
+
+Thầy làm đúng mảng của bài: thị giác máy tính, phân vùng ảnh y tế với dữ liệu ít, chuẩn hóa và tăng cường
+chuỗi ảnh y tế, mã hóa vị trí (positional encoding), hợp nhất đa phương thức và đa nhiệm. Thầy cũng có bài
+ở MIWAI 2025 nên biết rõ hội nghị. Đây là người hỏi chuyên môn sâu nhất.
+
+**Đã có sẵn, xem lại:**
+
+| Chủ đề thầy có thể hỏi | Ở đâu trong file này |
+|---|---|
+| Vì sao ghép (concat) mà không cổng / cross-attention; đã thử gated | Phần 4, "Vì sao ghép (concat)…" và câu ngay sau về gated |
+| Một mô hình đa nhiệm hay ba mô hình riêng | Phần 7b, "Một mô hình chung, ba đầu ra" |
+| Tăng cường dữ liệu, sao không lật trái–phải | Phần 4, Trang 18, "Augmentation cụ thể?" |
+| Chuẩn hóa phân vị 1–99%, nội suy, cắt theo pixel | Phần 7c, mục A |
+| Chọn TotalSpineSeg, Recall 56% | Phần 3 |
+
+**Hỏi: Gộp lát bên nhánh BiomedCLIP có dùng thông tin vị trí (positional encoding) không?**
+- **Trả lời:** Không. Trọng số $\alpha_i = \text{softmax}(w_a^\top z_i)$ chỉ dựa vào nội dung từng lát, đổi
+  thứ tự 3 lát thì kết quả y hệt. Em chấp nhận vì chỉ có 3 lát giữa, sát nhau, vai trò gần như ngang nhau.
+  Thông tin theo chiều trái–phải (quan trọng cho lỗ liên hợp trái/phải) nằm ở nhánh CBAM: tích chập 3D
+  trượt qua 9 lát theo đúng thứ tự. Thêm mã hóa vị trí cho phần gộp lát là một hướng cải thiện.
+
+**Hỏi: Dữ liệu thiếu nhãn thì em xử lý thế nào? Có dùng bán giám sát không?**
+- **Trả lời:** Nhãn thiếu ghi là −1 và bị bỏ qua khi tính loss (`ignore_index`), nên một đĩa đệm thiếu một
+  nhãn vẫn học được từ hai nhãn còn lại. Em chưa dùng bán giám sát (ví dụ gán nhãn giả cho dữ liệu chưa
+  nhãn); đó là hướng hợp lý vì lớp Severe rất ít.
+
+**Hỏi: Dữ liệu ít và lệch, sao không học lại toàn bộ mạng?**
+- **Trả lời:** Học lại khoảng 150 triệu tham số trên khoảng 10 nghìn đĩa đệm, lớp Severe chỉ 4%, rất dễ học thuộc.
+  Em giữ hai nhánh đã học sẵn (SpineNetV2 học trên Genodisc, BiomedCLIP học trên 15 triệu cặp ảnh–chữ y
+  khoa), chỉ học khoảng 1.18 triệu tham số ở phần hợp nhất. Đây là cách tận dụng tri thức có sẵn khi dữ
+  liệu nhỏ.
+
+**Hỏi: Ảnh RSNA từ nhiều máy khác nhau, cường độ lệch nhau thì sao?**
+- **Trả lời:** MRI không có thang cường độ tuyệt đối như CT, nên em chuẩn hóa **theo từng khối**: lấy phân
+  vị 1–99% của chính khối đó rồi đưa về 0–1. Cách này bỏ được điểm nhiễu quá sáng/tối và đưa các máy về
+  cùng khoảng. Em chưa dùng chuẩn hóa mạnh hơn như khớp histogram giữa các máy.
+
+**Hỏi: MIWAI là hội nghị cỡ nào?**
+- **Trả lời:** Nói đúng mức: "Hội nghị quốc tế về AI, kỷ yếu xuất bản trong Springer LNAI, bài được phản
+  biện." Không thổi phồng hạng hội nghị.
+
+---
+
 ## Phần 8. Câu hỏi tổng quát, mẹo
 
 **Hỏi: Nếu được làm lại, em sẽ làm gì khác?**
