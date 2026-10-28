@@ -527,6 +527,13 @@ GELU → dropout 0.1 → Linear 768→512 → chuẩn hóa L2 → $\hat f_{img}$
   câu mô tả**, có sẵn ý nghĩa và không cần học. Nhờ vậy thêm nhãn mới chỉ cần viết câu mới, không phải
   thêm đầu ra và học lại.
 
+**Hỏi: Vậy mô hình bị giới hạn trong các câu mô tả đã viết?**
+- **Trả lời:** "Dạ đúng, mỗi lần chạy mô hình chỉ **chọn** trong các câu đã định nghĩa, giống trắc nghiệm,
+  không tự sinh ra mức mới. Lớp tuyến tính cũng vậy, chỉ ra được số lớp cố định, nhưng muốn thêm lớp thì
+  phải sửa mạng và học lại. Ở đây muốn thêm nhãn chỉ cần viết thêm câu, mã hóa một lần. Tuy nhiên chất
+  lượng zero-shot còn phụ thuộc cách viết câu và việc BiomedCLIP có hiểu thuật ngữ đó không, nên với
+  nhãn mới em vẫn tinh chỉnh thêm (thí nghiệm SPIDER: zero-shot chạy được, tinh chỉnh tốt hơn rõ)."
+
 **Hỏi: Zero-shot hoạt động thế nào? Muốn thêm nhãn mới làm gì?**
 - **Trả lời:** Mỗi mức độ của mỗi nhãn viết thành một câu tiếng Anh, BiomedCLIP mã hóa thành vector.
   Mô hình chọn mức có câu giống vector ảnh nhất. Muốn thêm nhãn mới, ví dụ "disc herniation", chỉ cần
