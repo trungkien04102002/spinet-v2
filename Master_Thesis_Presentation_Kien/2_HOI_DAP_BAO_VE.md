@@ -622,7 +622,7 @@ tách riêng từng cái là phần em có thể bổ sung."*
 
 **Hỏi: Những gì được học ở bước 2?**
 - **Trả lời:** $w_a$ (gộp lát), Fusion MLP, hệ số $s$, 3 tham số $\sigma_k$. Tổng khoảng 1.18 triệu.
-  CBAM-ResNet 3D 63.5 triệu (slide trang 41 ghi nhầm 21.3M, là số của bản 2D) và bộ mã hóa ảnh BiomedCLIP 86.2 triệu giữ cố định.
+  CBAM-ResNet 3D 63.5 triệu và bộ mã hóa ảnh BiomedCLIP 86.2 triệu giữ cố định.
 
 **Hỏi: Siêu tham số?**
 - **Trả lời:** AdamW, learning rate $10^{-4}$, weight decay $10^{-4}$, batch 32, tối đa 20 epoch, dừng
@@ -1030,6 +1030,35 @@ là hỏi hết". Phần này đi theo **đúng những gì code làm** (đã đ
   kênh không cần cộng lại bằng 1, nên dùng sigmoid. Đầu ra chọn **một** mức trong ba, nên dùng softmax.
 - **Vì sao đóng băng thì nhanh:** không cần tính đạo hàm và lưu đặc trưng trung gian cho hai nhánh lớn.
   Code chạy nhánh CBAM trong `torch.no_grad()`.
+
+### D2. ResNet-34 là gì (câu nền tảng)
+
+**Hỏi: ResNet là gì?**
+- **Trả lời:** Mạng tích chập có **đường tắt (residual)**: mỗi khối học phần chênh lệch $F(x)$ rồi cộng
+  lại với đầu vào, $y = F(x) + x$. Trước ResNet, mạng càng sâu càng khó học vì đạo hàm tắt dần; đường tắt
+  cho đạo hàm đi thẳng về các tầng đầu, nên học được mạng rất sâu (He và cộng sự, 2016).
+
+**Hỏi: Số 34 nghĩa là gì?**
+- **Trả lời:** 34 tầng có trọng số: 1 tích chập đầu + 16 khối × 2 tích chập = 32, + 1 tầng đầu ra = 34.
+  16 khối chia thành 4 tầng **[3, 4, 6, 3]**, số kênh 64 → 128 → 256 → 512.
+
+**Hỏi: Một khối BasicBlock gồm gì?**
+- **Trả lời:** Tích chập 3×3×3 → BatchNorm → ReLU → tích chập 3×3×3 → BatchNorm → cộng đường tắt → ReLU.
+  Khi số kênh hoặc kích thước thay đổi, đường tắt đi qua một tích chập 1×1×1 để khớp kích thước rồi mới cộng.
+
+**Hỏi: Sao chọn ResNet-34, không phải 18 hay 50?**
+- **Trả lời:** Vì SpineNetV2 dùng đúng ResNet-34 3D và đã có trọng số học trên Genodisc. Em giữ nguyên
+  để nạp được trọng số đó; đổi sang 18 hay 50 thì phải học lại từ đầu trên dữ liệu ít. ResNet-50 trở lên
+  dùng khối Bottleneck (1×1, 3×3, 1×1), nặng hơn nhiều khi chuyển sang 3D.
+
+**Hỏi: Bản 3D của em khác ResNet-34 gốc (2D) chỗ nào?**
+- **Trả lời:** Ba chỗ: (1) kernel 3D, ví dụ 3×3×3, nên nhìn được quan hệ giữa các lát; (2) bước nhảy chỉ
+  theo cao và rộng, `stride=(1, s, s)`, nên **9 lát giữ nguyên tới cuối**; (3) tầng 2 không giảm kích thước
+  (stride 1), giữ chi tiết cho đĩa đệm nhỏ. Tích chập đầu là (3, 7, 7), bước nhảy (1, 2, 2).
+
+**Hỏi: Đầu ra của ResNet trong bài em là gì?**
+- **Trả lời:** Sau tầng 4 là khối đặc trưng `[512, 9, 7, 14]`, qua GAP thành **vector 512 chiều**. Vector
+  này vào Fusion MLP cùng vector của BiomedCLIP (Hybrid), hoặc vào đầu ra tuyến tính 3 lớp (bản CBAM).
 
 ### E. Tiền xử lý của nhánh BiomedCLIP (`biomedclip_wrapper.py`)
 
