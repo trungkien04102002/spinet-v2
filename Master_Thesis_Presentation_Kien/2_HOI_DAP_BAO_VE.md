@@ -1333,7 +1333,7 @@ Thầy có thể hỏi "mô hình nền em dùng làm gì, học trên dữ li�
   |---|---|---|---|---|---|
   | SpineNetV2 (nền) | tắt | tắt | 0.420 | 0.123 | 0.152 |
   | CBAM | **bật** | tắt | 0.477 | 0.288 | 0.262 ± 0.082 |
-  | BMC-only | tắt | **bật** | 0.482 | 0.316 | 0.268 ± 0.034 |
+  | BMC-only (bỏ luôn ResNet-34, chỉ còn BiomedCLIP + đầu cô-sin) | tắt | **bật** | 0.482 | 0.316 | 0.268 ± 0.034 |
   | Hybrid | **bật** | **bật** | **0.527** | **0.486** | **0.356 ± 0.017** |
 
   "Bật riêng từng nhánh đều tăng Severe F1 lên khoảng 0.26; bật cả hai lên 0.356 và ổn định hơn hẳn (độ
