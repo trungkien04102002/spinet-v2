@@ -194,6 +194,24 @@ thành bài báo bình duyệt."
 
 ### Trang 12: Bộ dữ liệu
 
+**Số liệu cần thuộc** (đếm trực tiếp từ dữ liệu đã tiền xử lý và code chia tập):
+
+| | RSNA 2024 (huấn luyện chính) | SPIDER (kiểm tra ngoài, tinh chỉnh) |
+|---|---|---|
+| Bệnh nhân | **1,973** | **218** |
+| Đĩa đệm | **9,748** (khoảng 5 tầng mỗi người, L1/L2 → L5/S1) | **1,174** đĩa đệm code dùng khi tinh chỉnh |
+| Chia tập | **Theo bệnh nhân**, 80/20: khoảng **1,578 train / 395 val** bệnh nhân. Seed 42: 7,806 / **1,942** đĩa đệm | 80/20 **theo đĩa đệm** |
+| Mỗi seed | Chia lại khác (42, 123, 456), số đĩa đệm val xê dịch quanh 1,950 | Cùng một phép chia cho cả 4 cấu hình |
+| Severe | Ống sống 468 (4.8%), lỗ liên hợp trái 397 (4.1%), phải 379 (3.9%): **khoảng 4%** | Trượt đốt sống 2.8%, thoát vị 4.7% |
+| Normal/Mild | Ống sống 87.7%, trái 77.6%, phải 78.0%: trung bình **khoảng 81%** | |
+| Nhãn thiếu | 10 đĩa thiếu nhãn trái, 40 thiếu nhãn phải (ghi −1, bỏ qua khi tính loss) | |
+
+Thí nghiệm chọn mô hình (trang 14) dùng riêng **150 bệnh nhân** của tập val RSNA. Bộ Chu (chọn mô hình phân
+vùng, trang 13) có **23 bệnh nhân**.
+
+**Câu nói gọn:** "Dạ RSNA có 1,973 bệnh nhân, gần 9,750 đĩa đệm. Em chia theo bệnh nhân 80/20, khoảng 1,580
+bệnh nhân để học, 395 để đánh giá, tức gần 1,950 đĩa đệm val, chạy 3 lần với 3 cách chia."
+
 **Hỏi: RSNA 2024 gồm gì?**
 - **Trả lời:** Bộ dữ liệu cuộc thi của RSNA và ASNR, từ 8 trung tâm, 5 châu lục, hơn 50 bác sĩ chẩn
   đoán hình ảnh gán nhãn. Mỗi bệnh nhân có sagittal T2/STIR, sagittal T1, axial T2. Nhãn 5 tình trạng

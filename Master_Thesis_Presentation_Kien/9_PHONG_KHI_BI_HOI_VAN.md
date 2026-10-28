@@ -145,3 +145,13 @@ văn đã nộp nên không sửa, nhưng phải có câu trả lời sẵn.
   (63.5 triệu tham số), stride chỉ trên chiều cao và rộng. Paper cũng mô tả đầu ra là MLP 2 lớp; trong
   luận văn, cấu hình SpineNetV2 và CBAM gắn **một đầu tuyến tính** cho mỗi nhãn. Nếu hỏi: "Em theo đúng
   code và trọng số nhóm tác giả công bố."
+
+---
+
+## Số bệnh nhân RSNA ghi trong luận văn
+
+- Luận văn (chương 5, mục bộ dữ liệu) ghi "tập train khoảng 1,800 bệnh nhân, tập val khoảng 225". Thực tế
+  thí nghiệm: 1,973 bệnh nhân, chia theo bệnh nhân 80/20, khoảng 1,578 / 395 (seed 42: 1,942 đĩa đệm val).
+- Nếu bị hỏi: "Dạ con số thí nghiệm là 1,973 bệnh nhân chia 80/20 theo bệnh nhân, 395 bệnh nhân val; dòng
+  mô tả trong chương 5 em ghi chưa khớp, em sẽ sửa trong bản cuối."
+- SPIDER: luận văn ghi khoảng 1,520 mẫu đĩa đệm là của cả bộ dữ liệu; code tinh chỉnh dùng 1,174 đĩa đệm.
