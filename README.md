@@ -1,3 +1,9 @@
+> **Thesis fork.** This copy of SpineNet holds the training code of the
+> master's thesis on lumbar MRI grading. To re-train the model used by the app
+> ([spine-labeling-app](https://github.com/trungkien04102002/spine-labeling-app)),
+> read [TRAINING.md](TRAINING.md). The rest of this README is the upstream
+> SpineNet documentation.
+
 <p align="center">
 <img width='100%' src='spinenetlogo.png'> 
 </p>

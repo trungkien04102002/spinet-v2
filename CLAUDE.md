@@ -21,7 +21,7 @@ export PYTHONPATH=$PYTHONPATH:$(pwd)   # required — this repo is NOT installed
 
 There are **two separate weight stores** — don't confuse them:
 - `./spinenet/weights/` — original VGG SpineNet weights (detect-vfr, appearance, context, grading). Downloaded via `spinenet.download_weights()` in Python, consumed by `SpineNet(...)` inference.
-- `~/.spinenet/weights/ckpt1.pt` — the pretrained 3D ResNet34 backbone reused by `train_rsna_*` / `train_spider.py`. Downloaded via `./3_download_weights.sh <gdrive_file_id>`.
+- `~/.spinenet/weights/ckpt1.pt` — the pretrained 3D ResNet34 backbone reused by `train_rsna_*` / `train_spider.py`. It is SpineNet's `grading/ckpt1.pt`; see `TRAINING.md` §2 for where to download it.
 
 ## Common commands
 
@@ -37,7 +37,7 @@ Training (RSNA):
 ```bash
 python3 train_rsna_baseline.py  --epochs 30 --batch-size 32 --lr 1e-3
 python3 train_rsna_attention.py --epochs 30 --batch-size 32 --lr 1e-3
-# Ablation flags: --no-cbam  --use-focal=False  --use-uncertainty=False
+# Ablation flags: --no-cbam  --use-uncertainty false  (focal loss has no off switch)
 #                 --augmentation {none,light,medium,heavy}  --oversample-factor N
 # Fine-tune full backbone: --no-freeze --lr 1e-4   (always drop LR when unfreezing)
 # Resume: --resume checkpoints/checkpoint_attention_epoch_30.pth
@@ -104,7 +104,7 @@ Label convention in the RSNA pipeline: `-1` means "missing label" and MUST be pr
 - **PYTHONPATH**: Imports like `from spinenet.models.grading_attention import ...` rely on the repo root being on `sys.path`. Running scripts from subdirs without setting `PYTHONPATH` will break imports.
 - **No pip-installable package**: `pyproject.toml` only configures Black. Don't `pip install -e .` — there's no setup metadata.
 - **Don't re-download big data**: `rsna_preprocessed/`, `rsna-2024-lumbar-spine-degenerative-classification/`, `checkpoints/`, `*.npy`, `*.pth`, `spider/`, and `spinenet-venv/` are gitignored. `rsna_preprocessed.zip` (~8GB) lives at repo root on some machines — don't delete without asking.
-- **Class imbalance is the whole point**: the attention/focal/uncertainty/oversample stack exists because Severe class F1 is ~0.0 on the baseline. When changing training code, watch per-class F1 (printed every 5 epochs), not just mean accuracy.
+- **Class imbalance is the whole point**: the attention/focal/uncertainty/oversample stack exists because Severe class F1 is ~0.0 on the baseline. When changing training code, watch per-class F1 (printed after every epoch), not just mean accuracy.
 - **RSNA vs SPIDER head shapes differ** — swapping checkpoints between `GradingModelBaseline`/`WithCBAM` and `grading_spider.py` requires skipping head weights during load (`train_spider.py` already does this via the `--rsna-checkpoint` flow).
 
 ## Reference docs in the repo

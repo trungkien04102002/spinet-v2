@@ -52,11 +52,20 @@ tar -xf spinenet_weights.tar weights/grading/ckpt1.pt
 mkdir -p ~/.spinenet/weights && mv weights/grading/ckpt1.pt ~/.spinenet/weights/
 ```
 
+Keep only this file in `~/.spinenet/weights/` (the loader takes the newest
+`*.pt` there). Check the start of the training log: it must report the
+backbone parameters as loaded. If the folder is missing, training only prints
+a warning and carries on with a random, frozen backbone, which trains but is
+useless.
+
 ## 3. Data
 
 [RSNA 2024 Lumbar Spine Degenerative Classification](https://www.kaggle.com/competitions/rsna-2024-lumbar-spine-degenerative-classification)
 (~35 GB of DICOM; accept the competition rules on Kaggle first; the data may
 not be redistributed).
+
+Downloading needs the Kaggle CLI (`pip install kaggle`) and an API token in
+`~/.kaggle/kaggle.json` (Kaggle -> Settings -> Create New Token).
 
 ```bash
 kaggle competitions download -c rsna-2024-lumbar-spine-degenerative-classification
@@ -83,8 +92,10 @@ python3 train_rsna_attention.py \
 # -> checkpoints/best_model_attention.pth  (+ metrics JSON/CSV next to it)
 ```
 
-CBAM, focal loss and a frozen backbone are on by default (`--no-cbam`,
-`--use-focal`, `--no-freeze` change them). `--no-hflip-swap-labels`
+CBAM, focal loss and a frozen backbone are on by default (`--no-cbam` and
+`--no-freeze` turn the first and last off; focal loss has no off switch). The
+app always builds model A with CBAM, so a `--no-cbam` checkpoint will not load
+there. `--no-hflip-swap-labels`
 reproduces the shipped model exactly: when that model was trained, a
 horizontal flip did not swap left/right foraminal labels. That was a bug,
 fixed afterwards; **for a new model leave the flag out** (the default swaps
@@ -92,7 +103,7 @@ them correctly). `--class-weight-mode sqrt` gives the minority (Severe) class
 more weight and was the best setting in later experiments.
 
 Validation is 20% of patients, split with `train_test_split(..., random_state=--seed)` (default 42). Watch the
-per-class F1 printed every 5 epochs, not only accuracy: the point of the
+per-class F1 printed after every epoch, not only accuracy: the point of the
 whole imbalance stack (focal loss, oversampling, class weights) is the
 Severe class, which a model can ignore and still score high accuracy.
 
